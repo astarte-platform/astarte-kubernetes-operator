@@ -74,7 +74,7 @@
       tags:
         - realm_management
       astarte_app_name: realm_management
-      k8s_deployment_replicas: "{{ astarte_realm_management_api_k8s_replicas }}"
+      k8s_deployment_replicas: "{{ astarte_realm_management_k8s_replicas }}"
       k8s_deployment_resources_requests_cpu: "{{ astarte_realm_management_k8s_resources_requests_cpu }}"
       k8s_deployment_resources_requests_memory: "{{ astarte_realm_management_k8s_resources_requests_memory }}"
       k8s_deployment_resources_limits_cpu: "{{ astarte_realm_management_k8s_resources_limits_cpu }}"
@@ -95,7 +95,7 @@
       tags:
         - pairing
       astarte_app_name: pairing
-      k8s_deployment_replicas: "{{ astarte_pairing_api_k8s_replicas }}"
+      k8s_deployment_replicas: "{{ astarte_pairing_k8s_replicas }}"
       k8s_deployment_resources_requests_cpu: "{{ astarte_pairing_k8s_resources_requests_cpu }}"
       k8s_deployment_resources_requests_memory: "{{ astarte_pairing_k8s_resources_requests_memory }}"
       k8s_deployment_resources_limits_cpu: "{{ astarte_pairing_k8s_resources_limits_cpu }}"
