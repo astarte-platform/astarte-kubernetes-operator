@@ -148,3 +148,25 @@
         - name: DATA_UPDATER_PLANT_AMQP_PRODUCER_PASSWORD
           secret_name: rabbitmq-user-credentials
           secret_key: admin-password
+
+    # Deploy Trigger Engine
+    - role: astarte-generic-backend-service
+      when: deploy_astarte_trigger_engine
+      tags:
+        - trigger_engine
+      astarte_app_name: trigger_engine
+      k8s_deployment_replicas: "{{ astarte_trigger_engine_k8s_replicas }}"
+      k8s_deployment_resources_requests_cpu: "{{ astarte_trigger_engine_k8s_resources_requests_cpu }}"
+      k8s_deployment_resources_requests_memory: "{{ astarte_trigger_engine_k8s_resources_requests_memory }}"
+      k8s_deployment_resources_limits_cpu: "{{ astarte_trigger_engine_k8s_resources_limits_cpu }}"
+      k8s_deployment_resources_limits_memory: "{{ astarte_trigger_engine_k8s_resources_limits_memory }}"
+      k8s_deployment_additional_variables:
+        - name: TRIGGER_ENGINE_AMQP_CONSUMER_HOST
+          value: "{{ rabbitmq_connection_host }}"
+      k8s_deployment_additional_secret_variables:
+        - name: TRIGGER_ENGINE_AMQP_CONSUMER_USERNAME
+          secret_name: rabbitmq-user-credentials
+          secret_key: admin-username
+        - name: TRIGGER_ENGINE_AMQP_CONSUMER_PASSWORD
+          secret_name: rabbitmq-user-credentials
+          secret_key: admin-password
