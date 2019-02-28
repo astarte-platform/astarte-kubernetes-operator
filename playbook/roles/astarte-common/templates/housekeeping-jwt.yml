@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: housekeeping-jwt
+  namespace: {{ astarte_k8s_namespace }}
+type: Opaque
+data:
+  public-key: {{ lookup('file', 'housekeeping.pub') | b64encode }}
