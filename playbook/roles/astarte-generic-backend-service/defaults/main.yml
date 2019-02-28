@@ -1,4 +1,4 @@
-k8s_deployment_name: "astarte-{{ astarte_app_name }}"
+k8s_deployment_name: "astarte-{{ astarte_app_name | regex_replace('_', '-') }}"
 k8s_deployment_replicas: 1
 k8s_deployment_image: "{{ astarte_distribution_channel }}/astarte_{{ astarte_app_name }}:{{ astarte_tag }}"
 k8s_deployment_image_pull_policy: "Always"
@@ -6,7 +6,7 @@ k8s_deployment_resources_requests_cpu: 100m
 k8s_deployment_resources_requests_memory: 128M
 k8s_deployment_resources_limits_cpu: 200m
 k8s_deployment_resources_limits_memory: 256M
-k8s_service_name: "{{ astarte_app_name }}"
+k8s_service_name: "{{ astarte_app_name | regex_replace('_', '-') }}"
 astarte_app_amqp_connection_host: "{{ rabbitmq_connection_host }}"
 astarte_app_cassandra_nodes: "{{ cassandra_nodes }}"
 
