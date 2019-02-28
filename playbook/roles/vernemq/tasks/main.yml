@@ -1,0 +1,22 @@
+- name: Ensure Astarte namespace
+  k8s:
+    name: "{{ astarte_k8s_namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Create VerneMQ Service Account
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'vernemq-rbac.yml') }}"
+  when: k8s_use_rbac
+
+- name: Ensure VerneMQ StatefulSet
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'vernemq-statefulset.yml') }}"
+
+- name: Ensure VerneMQ Service
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'vernemq-service.yml') }}"
