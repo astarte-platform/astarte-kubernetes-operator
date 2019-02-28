@@ -5,6 +5,7 @@ astarte_tag: 0.10.0-beta.3
 
 # Reasonable defaults for standard K8S deployments
 rabbitmq_connection_host: "rabbitmq.{{ astarte_k8s_namespace }}.svc.cluster.local"
+rabbitmq_connection_port: "5672"
 cassandra_nodes: "cassandra.{{ astarte_k8s_namespace }}.svc.cluster.local:9042"
 cfssl_url: "http://cfssl.astarte.svc.cluster.local"
 mqtt_broker_url:
@@ -18,6 +19,9 @@ k8s_storage_class_name:
 deploy_rabbitmq_k8s: true
 deploy_cassandra_k8s: true
 deploy_cfssl_k8s: true
+
+### Data Updater Plant AMQP policies
+
 
 ### Astarte Applications Resources and Replicas. You might want to override these.
 ## Housekeeping
@@ -53,3 +57,9 @@ astarte_pairing_api_k8s_resources_requests_memory: 128M
 astarte_pairing_api_k8s_resources_limits_cpu: 200m
 astarte_pairing_api_k8s_resources_limits_memory: 256M
 astarte_pairing_api_k8s_replicas: 1
+## Data Updater Plant
+astarte_data_updater_plant_k8s_resources_requests_cpu: 400m
+astarte_data_updater_plant_k8s_resources_requests_memory: 512M
+astarte_data_updater_plant_k8s_resources_limits_cpu: 1000m
+astarte_data_updater_plant_k8s_resources_limits_memory: 1024M
+astarte_data_updater_plant_k8s_replicas: 1
