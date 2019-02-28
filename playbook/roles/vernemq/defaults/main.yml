@@ -1,0 +1,12 @@
+vernemq_k8s_enable_antiaffinity: true
+
+vernemq_k8s_replicas: 1
+
+vernemq_k8s_resources_requests_cpu: 200m
+vernemq_k8s_resources_requests_memory: 512M
+vernemq_k8s_resources_limits_cpu: 8000m
+vernemq_k8s_resources_limits_memory: 1024M
+
+vernemq_k8s_volume_definition:
+vernemq_k8s_storage_class_name: "{{ k8s_storage_class_name }}"
+vernemq_k8s_volume_size: 4Gi

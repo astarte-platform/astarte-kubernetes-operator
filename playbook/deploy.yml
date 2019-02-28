@@ -9,6 +9,16 @@
     - name: rabbitmq
       when: deploy_rabbitmq_k8s
 
+- name: Deploy VerneMQ
+  hosts: localhost
+  remote_user: root
+  connection: local
+  tags:
+    - vernemq
+  roles:
+    - name: vernemq
+      when: deploy_vernemq_k8s
+
 - name: Deploy CFSSL
   hosts: localhost
   remote_user: root
