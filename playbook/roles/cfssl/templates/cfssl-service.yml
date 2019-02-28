@@ -6,7 +6,6 @@ metadata:
   name: cfssl
   namespace: {{ astarte_k8s_namespace }}
 spec:
-  clusterIP: None
   ports:
     - port: 80
       targetPort: 8080
