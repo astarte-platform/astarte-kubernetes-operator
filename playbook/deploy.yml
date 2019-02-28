@@ -3,6 +3,8 @@
   hosts: localhost
   remote_user: root
   connection: local
+  tags:
+    - rabbitmq
   roles:
     - name: rabbitmq
       when: deploy_rabbitmq_k8s
@@ -11,6 +13,8 @@
   hosts: localhost
   remote_user: root
   connection: local
+  tags:
+    - cassandra
   roles:
     - name: cassandra
       when: deploy_cassandra_k8s
@@ -19,6 +23,8 @@
   hosts: localhost
   remote_user: root
   connection: local
+  tags:
+    - astarte
   roles:
     # This deploys all needed dependencies such as secrets, configurations...
     - astarte-common
