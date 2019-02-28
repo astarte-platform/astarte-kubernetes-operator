@@ -149,6 +149,31 @@
           secret_name: rabbitmq-user-credentials
           secret_key: admin-password
 
+    # Deploy AppEngine API
+    - role: astarte-generic-api-service
+      when: deploy_astarte_trigger_engine
+      tags:
+        - appengine
+      astarte_app_name: appengine
+      k8s_deployment_replicas: "{{ astarte_appengine_api_k8s_replicas }}"
+      k8s_deployment_resources_requests_cpu: "{{ astarte_appengine_api_k8s_resources_requests_cpu }}"
+      k8s_deployment_resources_requests_memory: "{{ astarte_appengine_api_k8s_resources_requests_memory }}"
+      k8s_deployment_resources_limits_cpu: "{{ astarte_appengine_api_k8s_resources_limits_cpu }}"
+      k8s_deployment_resources_limits_memory: "{{ astarte_appengine_api_k8s_resources_limits_memory }}"
+      k8s_deployment_additional_variables:
+        - name: APPENGINE_API_ROOMS_AMQP_CLIENT_HOST
+          value: "{{ astarte_appengine_api_rooms_amqp_client_host }}"
+        - name: ASTARTE_CASSANDRA_NODES
+          value: "{{ cassandra_nodes }}"
+      k8s_deployment_additional_secret_variables:
+        - name: APPENGINE_API_ROOMS_AMQP_CLIENT_USERNAME
+          secret_name: "{{ astarte_appengine_api_rooms_amqp_client_username_secret_name }}"
+          secret_key: "{{ astarte_appengine_api_rooms_amqp_client_username_secret_key }}"
+        - name: APPENGINE_API_ROOMS_AMQP_CLIENT_PASSWORD
+          secret_name: "{{ astarte_appengine_api_rooms_amqp_client_password_secret_name }}"
+          secret_key: "{{ astarte_appengine_api_rooms_amqp_client_password_secret_key }}"
+      check_api_health: false
+
     # Deploy Trigger Engine
     - role: astarte-generic-backend-service
       when: deploy_astarte_trigger_engine
