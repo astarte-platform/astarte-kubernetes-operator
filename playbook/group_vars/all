@@ -7,6 +7,8 @@ astarte_tag: 0.10.0-beta.3
 rabbitmq_connection_host: "rabbitmq.{{ astarte_k8s_namespace }}.svc.cluster.local"
 cassandra_nodes: "cassandra.{{ astarte_k8s_namespace }}.svc.cluster.local:9042"
 cfssl_url: "http://cfssl.astarte.svc.cluster.local"
+mqtt_broker_url:
+mqtt_broker_port: 8883
 
 # Reasonable K8S Deployment Policies
 k8s_use_rbac: true
@@ -40,3 +42,14 @@ astarte_realm_management_api_k8s_resources_requests_memory: 128M
 astarte_realm_management_api_k8s_resources_limits_cpu: 200m
 astarte_realm_management_api_k8s_resources_limits_memory: 256M
 astarte_realm_management_api_k8s_replicas: 1
+## Pairing
+astarte_pairing_k8s_resources_requests_cpu: 100m
+astarte_pairing_k8s_resources_requests_memory: 128M
+astarte_pairing_k8s_resources_limits_cpu: 200m
+astarte_pairing_k8s_resources_limits_memory: 256M
+astarte_pairing_k8s_replicas: 1
+astarte_pairing_api_k8s_resources_requests_cpu: 100m
+astarte_pairing_api_k8s_resources_requests_memory: 128M
+astarte_pairing_api_k8s_resources_limits_cpu: 200m
+astarte_pairing_api_k8s_resources_limits_memory: 256M
+astarte_pairing_api_k8s_replicas: 1
