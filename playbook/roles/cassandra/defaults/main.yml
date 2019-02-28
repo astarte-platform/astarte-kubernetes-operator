@@ -1,0 +1,14 @@
+cassandra_k8s_enable_antiaffinity: true
+
+cassandra_image_tag: 3.11.3
+cassandra_cluster_size: 1
+cassandra_max_heap_size: 1024M
+cassandra_heap_new_size: 256M
+cassandra_resources_requests_cpu: 1000m
+cassandra_resources_requests_memory: 1024M
+cassandra_resources_limits_cpu: 2000m
+cassandra_resources_limits_memory: 2048M
+cassandra_k8s_storage_class_name: "{{ k8s_storage_class_name }}"
+cassandra_k8s_volume_size: 30Gi
+
+cassandra_k8s_volume_definition:

@@ -1,0 +1,16 @@
+- name: Ensure Astarte namespace
+  k8s:
+    name: "{{ astarte_k8s_namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Ensure Astarte Generic Erlang Configuration
+  k8s:
+    state: present
+    definition: "{{ lookup('file', 'astarte-generic-erlang-configuration.yml') }}"
+
+- name: Ensure Housekeeping public key
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'housekeeping-jwt.yml') }}" 

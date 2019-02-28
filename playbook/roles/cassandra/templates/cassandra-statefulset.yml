@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cassandra
+  namespace: {{ astarte_k8s_namespace }}
+  labels:
+    app: cassandra
+spec:
+  serviceName: cassandra
+  replicas: {{ cassandra_cluster_size }}
+  selector:
+    matchLabels:
+      app: cassandra
+  template:
+    metadata:
+      labels:
+        app: cassandra
+    spec:
+      terminationGracePeriodSeconds: 1800
+{% if cassandra_k8s_enable_antiaffinity %}
+      # Affinity - just don't run two instances on the same node. It doesn't make sense.
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - cassandra
+            topologyKey: kubernetes.io/hostname
+{% endif %}
+      containers:
+      - name: cassandra
+        image: gcr.io/google-samples/cassandra:v13
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 7000
+          name: intra-node
+        - containerPort: 7001
+          name: tls-intra-node
+        - containerPort: 7199
+          name: jmx
+        - containerPort: 9042
+          name: cql
+        resources:
+          limits:
+            cpu: "{{ cassandra_resources_limits_cpu }}"
+            memory: {{ cassandra_resources_limits_memory }}
+          requests:
+            cpu: "{{ cassandra_resources_requests_cpu }}"
+            memory: {{ cassandra_resources_requests_memory }}
+        securityContext:
+          capabilities:
+            add:
+              - IPC_LOCK
+        lifecycle:
+          preStop:
+            exec:
+              command: 
+              - /bin/sh
+              - -c
+              - nodetool drain
+        env:
+          - name: MAX_HEAP_SIZE
+            value: {{ cassandra_max_heap_size }}
+          - name: HEAP_NEWSIZE
+            value: {{ cassandra_heap_new_size }}
+          - name: CASSANDRA_SEEDS
+            value: "cassandra-0.cassandra.{{ astarte_k8s_namespace }}.svc.cluster.local"
+          - name: CASSANDRA_CLUSTER_NAME
+            value: "AstarteCassandra"
+          - name: CASSANDRA_DC
+            value: "DC1-AstarteCassandra"
+          - name: CASSANDRA_RACK
+            value: "Rack1-AstarteCassandra"
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - /ready-probe.sh
+          initialDelaySeconds: 15
+          timeoutSeconds: 5
+{% if cassandra_k8s_volume_definition %}
+        volumes:
+        - name: cassandra-data
+          {{ cassandra_k8s_volume_definition | to_nice_yaml }}
+{% endif %}
+        volumeMounts:
+        - name: cassandra-data
+          mountPath: /cassandra_data
+{% if not cassandra_k8s_volume_definition %}
+  volumeClaimTemplates:
+  - metadata:
+      name: cassandra-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+{% if cassandra_k8s_storage_class_name %}
+      storageClassName: "{{ cassandra_k8s_storage_class_name }}"
+{% endif %}
+      resources:
+        requests:
+          storage: {{ cassandra_k8s_volume_size }}
+{% endif %}

@@ -1,0 +1,22 @@
+---
+astarte_k8s_namespace: astarte
+astarte_distribution_channel: astarte # This defaults to the OSS public release on Docker Hub
+astarte_tag: 0.10.0-beta.3
+
+# Reasonable defaults for standard K8S deployments
+rabbitmq_connection_host: "rabbitmq.{{ astarte_k8s_namespace }}.svc.cluster.local"
+
+# Reasonable K8S Deployment Policies
+k8s_use_rbac: true
+k8s_storage_class_name:
+
+### Control RabbitMQ deployment
+deploy_rabbitmq_k8s: true
+deploy_cassandra_k8s: true
+
+### Astarte Applications Resources and Replicas. You might want to override these.
+astarte_housekeeping_api_k8s_resources_requests_cpu: 100m
+astarte_housekeeping_api_k8s_resources_requests_memory: 128M
+astarte_housekeeping_api_k8s_resources_limits_cpu: 200m
+astarte_housekeeping_api_k8s_resources_limits_memory: 256M
+astarte_housekeeping_api_k8s_replicas: 1
