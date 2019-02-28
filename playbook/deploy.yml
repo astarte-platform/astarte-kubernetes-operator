@@ -204,3 +204,9 @@
         - name: TRIGGER_ENGINE_AMQP_CONSUMER_PASSWORD
           secret_name: rabbitmq-user-credentials
           secret_key: admin-password
+
+    # Deploy Dashboard
+    - role: astarte-dashboard
+      when: deploy_astarte_dashboard
+      tags:
+        - dashboard

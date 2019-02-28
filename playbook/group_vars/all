@@ -8,7 +8,9 @@ rabbitmq_connection_host: "rabbitmq.{{ astarte_k8s_namespace }}.svc.cluster.loca
 rabbitmq_connection_port: "5672"
 cassandra_nodes: "cassandra.{{ astarte_k8s_namespace }}.svc.cluster.local:9042"
 cfssl_url: "http://cfssl.astarte.svc.cluster.local"
-mqtt_broker_url:
+astarte_api_use_ssl: true
+astarte_api_dns:
+mqtt_broker_dns:
 mqtt_broker_port: 8883
 
 # Reasonable K8S Deployment Policies
@@ -22,6 +24,7 @@ deploy_cfssl_k8s: true
 
 ### Control additional Astarte components deployment
 deploy_astarte_trigger_engine: true
+deploy_astarte_dashboard: true
 
 ### Data Updater Plant AMQP policies
 
