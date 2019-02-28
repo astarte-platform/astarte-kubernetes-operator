@@ -9,7 +9,7 @@
   k8s_facts:
     api_version: v1
     kind: Secret
-    name: astarte-{{ astarte_app_name }}-api-cookie
+    name: astarte-{{ astarte_app_name | regex_replace('_', '-') }}-api-cookie
     namespace: astarte
   register: astarte_app_cookie
 

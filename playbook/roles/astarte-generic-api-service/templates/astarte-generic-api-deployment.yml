@@ -4,23 +4,23 @@ metadata:
   name: {{ k8s_deployment_name }}
   namespace: {{ astarte_k8s_namespace }}
   labels:
-    app: astarte-{{ astarte_app_name }}-api
-    astarte-service: {{ astarte_app_name }}
+    app: astarte-{{ astarte_app_name | regex_replace('_', '-') }}-api
+    astarte-service: {{ astarte_app_name | regex_replace('_', '-') }}
     component: astarte
 spec:
   replicas: {{ k8s_deployment_replicas }}
   selector:
     matchLabels:
-      app: astarte-{{ astarte_app_name }}-api
+      app: astarte-{{ astarte_app_name | regex_replace('_', '-') }}-api
   template:
     metadata:
       labels:
-        app: astarte-{{ astarte_app_name }}-api
-        astarte-service: {{ astarte_app_name }}
+        app: astarte-{{ astarte_app_name | regex_replace('_', '-') }}-api
+        astarte-service: {{ astarte_app_name | regex_replace('_', '-') }}
         component: astarte
     spec:
       containers:
-      - name: astarte-{{ astarte_app_name }}-api
+      - name: astarte-{{ astarte_app_name | regex_replace('_', '-') }}-api
         image: {{ k8s_deployment_image }}
         imagePullPolicy: Always
         readinessProbe:
@@ -66,7 +66,7 @@ spec:
           - name: ERLANG_COOKIE
             valueFrom:
               secretKeyRef:
-                name: astarte-{{ astarte_app_name }}-api-cookie
+                name: astarte-{{ astarte_app_name | regex_replace('_', '-') }}-api-cookie
                 key: erlang-cookie
           # Actual configuration variables
           - name: ASTARTE_RPC_AMQP_CONNECTION_USERNAME
