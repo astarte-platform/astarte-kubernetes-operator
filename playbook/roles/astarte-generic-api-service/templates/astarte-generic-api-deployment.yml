@@ -23,6 +23,7 @@ spec:
       - name: astarte-{{ astarte_app_name | regex_replace('_', '-') }}-api
         image: {{ k8s_deployment_image }}
         imagePullPolicy: Always
+{% if check_api_health %}
         readinessProbe:
           httpGet:
             path: /v1/health
@@ -30,6 +31,7 @@ spec:
           initialDelaySeconds: 10
           periodSeconds: 10
           timeoutSeconds: 5
+{% endif %}
         ports:
           - containerPort: 4000
             name: apiout
