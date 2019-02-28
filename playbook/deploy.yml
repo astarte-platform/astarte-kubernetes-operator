@@ -19,6 +19,15 @@
     - name: cfssl
       when: deploy_cfssl_k8s
 
+- name: Retrieve CFSSL CA Secret
+  hosts: localhost
+  remote_user: root
+  connection: local
+  tags:
+    - cfssl
+  roles:
+    - cfssl-ca-secret-job
+
 - name: Deploy Cassandra
   hosts: localhost
   remote_user: root
