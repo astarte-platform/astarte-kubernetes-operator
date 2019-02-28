@@ -1,0 +1,25 @@
+- name: Ensure Astarte namespace
+  k8s:
+    name: "{{ astarte_k8s_namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Retrieve Astarte App cookie secret
+  k8s_facts:
+    api_version: v1
+    kind: Secret
+    name: astarte-{{ astarte_app_name }}-cookie
+    namespace: astarte
+  register: astarte_app_cookie
+
+- name: Create Astarte App cookie secret
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'astarte-generic-backend-cookie.yml') }}"
+  when: not astarte_app_cookie.resources
+
+- name: Ensure Astarte App Deployment
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'astarte-generic-backend-deployment.yml') }}"
