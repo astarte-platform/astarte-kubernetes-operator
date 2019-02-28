@@ -6,14 +6,16 @@ astarte_tag: 0.10.0-beta.3
 # Reasonable defaults for standard K8S deployments
 rabbitmq_connection_host: "rabbitmq.{{ astarte_k8s_namespace }}.svc.cluster.local"
 cassandra_nodes: "cassandra.{{ astarte_k8s_namespace }}.svc.cluster.local:9042"
+cfssl_url: "http://cfssl.astarte.svc.cluster.local"
 
 # Reasonable K8S Deployment Policies
 k8s_use_rbac: true
 k8s_storage_class_name:
 
-### Control RabbitMQ deployment
+### Control 3rd Party components deployment
 deploy_rabbitmq_k8s: true
 deploy_cassandra_k8s: true
+deploy_cfssl_k8s: true
 
 ### Astarte Applications Resources and Replicas. You might want to override these.
 ## Housekeeping

@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cfssl
+  namespace: {{ astarte_k8s_namespace }}
+  labels:
+    app: cfssl
+spec:
+  serviceName: cfssl
+  replicas: {{ cfssl_k8s_replicas }}
+  selector:
+    matchLabels:
+      app: cfssl
+  template:
+    metadata:
+      labels:
+        app: cfssl
+    spec:
+      containers:
+      - name: cfssl
+        image: {{ astarte_distribution_channel }}/cfssl:latest
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: "{{ cfssl_k8s_resources_requests_cpu }}"
+            memory: "{{ cfssl_k8s_resources_requests_memory }}"
+          limits:
+            cpu: "{{ cfssl_k8s_resources_limits_cpu }}"
+            memory: "{{ cfssl_k8s_resources_limits_memory }}"
+        livenessProbe:
+          tcpSocket:
+            port: 8080
+          # Start checking after 1 minute, every minute
+          initialDelaySeconds: 60
+          periodSeconds: 60
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          # Assume it takes at least 10 seconds to start up
+          initialDelaySeconds: 10
+        volumeMounts:
+        - name: cfssl-data
+          mountPath: /data
+        - name: config-volume
+          mountPath: /etc/cfssl
+      volumes:
+{% if cfssl_k8s_volume_definition %}
+      - name: cfssl-data
+        {{ cfssl_k8s_volume_definition | to_nice_yaml }}
+{% endif %}
+      - name: config-volume
+        configMap:
+          name: cfssl-config
+{% if not cfssl_k8s_volume_definition %}
+  volumeClaimTemplates:
+  - metadata:
+      name: cfssl-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+{% if cfssl_k8s_storage_class_name %}
+      storageClassName: "{{ cfssl_k8s_storage_class_name }}"
+{% endif %}
+      resources:
+        requests:
+          storage: {{ cfssl_k8s_volume_size }}
+{% endif %}

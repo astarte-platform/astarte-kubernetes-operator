@@ -1,0 +1,55 @@
+cfssl_k8s_enable_antiaffinity: true
+
+cfssl_k8s_replicas: 1
+
+cfssl_k8s_resources_requests_cpu: 100m
+cfssl_k8s_resources_requests_memory: 128M
+cfssl_k8s_resources_limits_cpu: 200m
+cfssl_k8s_resources_limits_memory: 256M
+
+cfssl_k8s_volume_definition:
+cfssl_k8s_storage_class_name: "{{ k8s_storage_class_name }}"
+cfssl_k8s_volume_size: 2Gi
+
+cfssl_db_driver: sqlite3
+cfssl_db_data_source: "/data/certs.db"
+
+cfssl_ca_expiry: 262800h
+cfssl_ca_certificate_expiry: 2190h
+cfssl_ca_cn: Astarte Root CA
+cfssl_ca_key_algo: ecdsa
+cfssl_ca_key_size: 256
+cfssl_ca_names:
+  - C: IT
+    L: Milan
+    O: Astarte User
+    OU: IoT Division
+    ST: Lombardia
+
+
+cfssl_db_config:
+  driver: "{{ cfssl_db_driver }}"
+  data_source: "{{ cfssl_db_data_source }}"
+
+cfssl_csr_root_ca:
+  CN: "{{ cfssl_ca_cn }}"
+  key:
+    algo: "{{ cfssl_ca_key_algo }}"
+    size: "{{ cfssl_ca_key_size }}"
+  names: "{{ cfssl_ca_names }}"
+  ca:
+    expiry: "{{ cfssl_ca_expiry }}"
+
+cfssl_ca_root_config:
+  signing:
+    default:
+      usages:
+        - "digital signature"
+        - "cert sign"
+        - "crl sign"
+        - "signing"
+      expiry: "{{ cfssl_ca_certificate_expiry }}"
+      ca_constraint:
+        is_ca: true
+        max_path_len: 0
+        max_path_len_zero: true

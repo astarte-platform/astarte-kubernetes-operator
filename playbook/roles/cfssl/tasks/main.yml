@@ -1,0 +1,21 @@
+- name: Ensure Astarte namespace
+  k8s:
+    name: "{{ astarte_k8s_namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Ensure CFSSL ConfigMap
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'cfssl-configmap.yml') }}"
+
+- name: Ensure CFSSL StatefulSet
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'cfssl-statefulset.yml') }}"
+
+- name: Ensure CFSSL Service
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'cfssl-service.yml') }}"
