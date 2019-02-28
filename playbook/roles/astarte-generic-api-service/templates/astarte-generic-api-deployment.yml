@@ -34,11 +34,13 @@ spec:
           - containerPort: 4000
             name: apiout
         volumeMounts:
+{% if k8s_deployment_additional_volume_mounts %}
 {% for volume_mounts in k8s_deployment_additional_volume_mounts %}
           - name: {{ volume_mounts.name }}
             mountPath: {{ volume_mounts.mountPath }}
             readOnly: {{ volume_mounts.readOnly }}
 {% endfor %}
+{% endif %}
           - name: config-volume
             mountPath: /beamconfig
             readOnly: true
@@ -81,16 +83,20 @@ spec:
             value: "{{ astarte_app_amqp_connection_host }}"
           - name: {{ astarte_app_name | upper }}_API_PORT
             value: "{{ astarte_app_api_port }}"
+{% if k8s_deployment_additional_variables %}
 {% for variable in k8s_deployment_additional_variables %}
           - name: {{ variable.name }}
             value: {{ variable.value }}
 {% endfor %}
+{% endif %}
       volumes:
+{% if k8s_deployment_additional_secret_volumes %}
 {% for secret_volume in k8s_deployment_additional_secret_volumes %}
       - name: {{ secret_volume.name }}
         secret:
           secretName: {{ secret_volume.secretName }}
 {% endfor %}
+{% endif %}
       - name: config-volume
         configMap:
           name: astarte-generic-erlang-configuration

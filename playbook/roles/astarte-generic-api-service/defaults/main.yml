@@ -9,3 +9,7 @@ k8s_deployment_resources_limits_memory: 256M
 k8s_service_name: "{{ astarte_app_name }}"
 astarte_app_amqp_connection_host: "{{ rabbitmq_connection_host }}"
 astarte_app_api_port: 4000
+
+k8s_deployment_additional_volume_mounts:
+k8s_deployment_additional_variables:
+k8s_deployment_additional_secret_volumes:
