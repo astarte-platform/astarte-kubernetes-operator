@@ -5,6 +5,7 @@ astarte_tag: 0.10.0-beta.3
 
 # Reasonable defaults for standard K8S deployments
 rabbitmq_connection_host: "rabbitmq.{{ astarte_k8s_namespace }}.svc.cluster.local"
+cassandra_nodes: "cassandra.astarte.svc.cluster.local:9042"
 
 # Reasonable K8S Deployment Policies
 k8s_use_rbac: true
