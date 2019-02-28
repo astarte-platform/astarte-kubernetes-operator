@@ -9,6 +9,16 @@
     - name: rabbitmq
       when: deploy_rabbitmq_k8s
 
+- name: Deploy CFSSL
+  hosts: localhost
+  remote_user: root
+  connection: local
+  tags:
+    - cfssl
+  roles:
+    - name: cfssl
+      when: deploy_cfssl_k8s
+
 - name: Deploy Cassandra
   hosts: localhost
   remote_user: root

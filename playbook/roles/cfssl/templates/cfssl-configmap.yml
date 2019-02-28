@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cfssl-config
+  namespace: {{ astarte_k8s_namespace }}
+data:
+  db_config.json: >
+    {{ cfssl_db_config | to_json }}
+  csr_root_ca.json: >
+    {{ cfssl_csr_root_ca | to_json }}
+  ca_root_config.json: >
+    {{ cfssl_ca_root_config | to_json }}
