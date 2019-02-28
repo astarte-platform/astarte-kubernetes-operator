@@ -115,3 +115,36 @@
       k8s_deployment_resources_limits_cpu: "{{ astarte_pairing_api_k8s_resources_limits_cpu }}"
       k8s_deployment_resources_limits_memory: "{{ astarte_pairing_api_k8s_resources_limits_memory }}"
       check_api_health: false
+
+    # Deploy Data Updater Plant
+    - role: astarte-generic-backend-service
+      tags:
+        - data_updater_plant
+      astarte_app_name: data_updater_plant
+      k8s_deployment_replicas: "{{ astarte_data_updater_plant_k8s_replicas }}"
+      k8s_deployment_resources_requests_cpu: "{{ astarte_data_updater_plant_k8s_resources_requests_cpu }}"
+      k8s_deployment_resources_requests_memory: "{{ astarte_data_updater_plant_k8s_resources_requests_memory }}"
+      k8s_deployment_resources_limits_cpu: "{{ astarte_data_updater_plant_k8s_resources_limits_cpu }}"
+      k8s_deployment_resources_limits_memory: "{{ astarte_data_updater_plant_k8s_resources_limits_memory }}"
+      k8s_deployment_additional_variables:
+        - name: DATA_UPDATER_PLANT_AMQP_CONSUMER_HOST
+          value: "{{ rabbitmq_connection_host }}"
+        - name: DATA_UPDATER_PLANT_AMQP_PRODUCER_HOST
+          value: "{{ rabbitmq_connection_host }}"
+        - name: DATA_UPDATER_PLANT_AMQP_PRODUCER_VIRTUAL_HOST
+          value: "/"
+        - name: DATA_UPDATER_PLANT_AMQP_PRODUCER_PORT
+          value: "{{ rabbitmq_connection_port }}"
+      k8s_deployment_additional_secret_variables:
+        - name: DATA_UPDATER_PLANT_AMQP_CONSUMER_USERNAME
+          secret_name: rabbitmq-user-credentials
+          secret_key: admin-username
+        - name: DATA_UPDATER_PLANT_AMQP_CONSUMER_PASSWORD
+          secret_name: rabbitmq-user-credentials
+          secret_key: admin-password
+        - name: DATA_UPDATER_PLANT_AMQP_PRODUCER_USERNAME
+          secret_name: rabbitmq-user-credentials
+          secret_key: admin-username
+        - name: DATA_UPDATER_PLANT_AMQP_PRODUCER_PASSWORD
+          secret_name: rabbitmq-user-credentials
+          secret_key: admin-password
