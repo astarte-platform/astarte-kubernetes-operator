@@ -76,7 +76,16 @@ spec:
 {% if k8s_deployment_additional_variables %}
 {% for variable in k8s_deployment_additional_variables %}
           - name: {{ variable.name }}
-            value: {{ variable.value }}
+            value: "{{ variable.value }}"
+{% endfor %}
+{% endif %}
+{% if k8s_deployment_additional_secret_variables %}
+{% for variable in k8s_deployment_additional_secret_variables %}
+          - name: {{ variable.name }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ variable.secret_name }}
+                key: {{ variable.secret_key }}
 {% endfor %}
 {% endif %}
       volumes:

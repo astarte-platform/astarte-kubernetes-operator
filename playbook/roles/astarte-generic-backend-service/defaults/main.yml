@@ -13,3 +13,4 @@ astarte_app_cassandra_nodes: "{{ cassandra_nodes }}"
 k8s_deployment_additional_volume_mounts:
 k8s_deployment_additional_variables:
 k8s_deployment_additional_secret_volumes:
+k8s_deployment_additional_secret_variables:
