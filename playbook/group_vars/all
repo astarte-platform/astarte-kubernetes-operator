@@ -16,6 +16,7 @@ deploy_rabbitmq_k8s: true
 deploy_cassandra_k8s: true
 
 ### Astarte Applications Resources and Replicas. You might want to override these.
+## Housekeeping
 astarte_housekeeping_k8s_resources_requests_cpu: 100m
 astarte_housekeeping_k8s_resources_requests_memory: 128M
 astarte_housekeeping_k8s_resources_limits_cpu: 200m
@@ -26,3 +27,14 @@ astarte_housekeeping_api_k8s_resources_requests_memory: 128M
 astarte_housekeeping_api_k8s_resources_limits_cpu: 200m
 astarte_housekeeping_api_k8s_resources_limits_memory: 256M
 astarte_housekeeping_api_k8s_replicas: 1
+## Realm Management
+astarte_realm_management_k8s_resources_requests_cpu: 100m
+astarte_realm_management_k8s_resources_requests_memory: 128M
+astarte_realm_management_k8s_resources_limits_cpu: 200m
+astarte_realm_management_k8s_resources_limits_memory: 256M
+astarte_realm_management_k8s_replicas: 1
+astarte_realm_management_api_k8s_resources_requests_cpu: 100m
+astarte_realm_management_api_k8s_resources_requests_memory: 128M
+astarte_realm_management_api_k8s_resources_limits_cpu: 200m
+astarte_realm_management_api_k8s_resources_limits_memory: 256M
+astarte_realm_management_api_k8s_replicas: 1

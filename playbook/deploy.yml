@@ -53,3 +53,23 @@
           mountPath: "/jwtpubkey"
           readOnly: true
 
+    # Deploy Realm Management
+    - role: astarte-generic-backend-service
+      tags:
+        - realm_management
+      astarte_app_name: realm_management
+      k8s_deployment_replicas: "{{ astarte_realm_management_api_k8s_replicas }}"
+      k8s_deployment_resources_requests_cpu: "{{ astarte_realm_management_k8s_resources_requests_cpu }}"
+      k8s_deployment_resources_requests_memory: "{{ astarte_realm_management_k8s_resources_requests_memory }}"
+      k8s_deployment_resources_limits_cpu: "{{ astarte_realm_management_k8s_resources_limits_cpu }}"
+      k8s_deployment_resources_limits_memory: "{{ astarte_realm_management_k8s_resources_limits_memory }}"
+    - role: astarte-generic-api-service
+      tags:
+        - realm_management
+      astarte_app_name: realm_management
+      k8s_deployment_replicas: "{{ astarte_realm_management_api_k8s_replicas }}"
+      k8s_deployment_resources_requests_cpu: "{{ astarte_realm_management_api_k8s_resources_requests_cpu }}"
+      k8s_deployment_resources_requests_memory: "{{ astarte_realm_management_api_k8s_resources_requests_memory }}"
+      k8s_deployment_resources_limits_cpu: "{{ astarte_realm_management_api_k8s_resources_limits_cpu }}"
+      k8s_deployment_resources_limits_memory: "{{ astarte_realm_management_api_k8s_resources_limits_memory }}"
+      check_api_health: false
