@@ -1,0 +1,14 @@
+astarte_dashboard_default_realm: default
+
+astarte_dashboard_k8s_resources_requests_cpu: 100m
+astarte_dashboard_k8s_resources_requests_memory: 128M
+astarte_dashboard_k8s_resources_limits_cpu: 200m
+astarte_dashboard_k8s_resources_limits_memory: 256M
+astarte_dashboard_k8s_replicas: 1
+
+astarte_dashboard_config:
+  realm_management_api_url: "{{ 'https' if astarte_api_use_ssl else 'http' }}://{{ astarte_api_dns }}/realmmanagement/v1/"
+  default_realm: "{{ astarte_dashboard_default_realm }}"
+  default_auth: token
+  auth:
+    - type: token

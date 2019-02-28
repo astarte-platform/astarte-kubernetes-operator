@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: astarte-dashboard
+  namespace: {{ astarte_k8s_namespace }}
+  labels:
+    app: astarte-dashboard
+    astarte-service: dashboard
+    component: {{ astarte_k8s_namespace }}
+spec:
+  replicas: {{ astarte_dashboard_k8s_replicas }}
+  selector:
+    matchLabels:
+      app: astarte-dashboard
+  template:
+    metadata:
+      labels:
+        app: astarte-dashboard
+        astarte-service: dashboard
+        component: {{ astarte_k8s_namespace }}
+    spec:
+      containers:
+      - name: astarte-dashboard
+        image: {{ astarte_distribution_channel }}/astarte-dashboard:{{ astarte_tag }}
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 80
+            name: httpout
+        resources:
+          requests:
+            cpu: "{{ astarte_dashboard_k8s_resources_requests_cpu }}"
+            memory: "{{ astarte_dashboard_k8s_resources_requests_memory }}"
+          limits:
+            cpu: "{{ astarte_dashboard_k8s_resources_limits_cpu }}"
+            memory: "{{ astarte_dashboard_k8s_resources_limits_memory }}"
+        env:
+          - name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        volumeMounts:
+        - name: config
+          mountPath: /usr/share/nginx/html/user-config
+      volumes:
+      - name: config
+        configMap:
+          name: astarte-dashboard-config
+          items:
+          - key: config.json
+            path: config.json
