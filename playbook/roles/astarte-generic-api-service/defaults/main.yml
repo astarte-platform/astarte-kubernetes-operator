@@ -14,3 +14,4 @@ check_api_health: true
 k8s_deployment_additional_volume_mounts:
 k8s_deployment_additional_variables:
 k8s_deployment_additional_secret_volumes:
+k8s_deployment_additional_secret_variables:
