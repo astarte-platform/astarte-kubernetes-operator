@@ -36,7 +36,7 @@
 - name: Create RabbitMQ Service Account
   k8s:
     state: present
-    definition: "{{ lookup('file', 'rabbitmq-rbac.yml') }}"
+    definition: "{{ lookup('template', 'rabbitmq-rbac.yml') }}"
   when: k8s_use_rbac
 
 - name: Ensure RabbitMQ StatefulSet
