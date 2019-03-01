@@ -22,6 +22,12 @@ mqtt_broker_port: 8883
 k8s_use_rbac: true
 k8s_storage_class_name:
 
+### Ingress deployment control
+##### Voyager
+deploy_voyager_broker_ingress: true
+deploy_voyager_api_ingress: true
+voyager_use_letsencrypt: true
+
 ### Control 3rd Party components deployment
 deploy_vernemq_k8s: true
 deploy_rabbitmq_k8s: true

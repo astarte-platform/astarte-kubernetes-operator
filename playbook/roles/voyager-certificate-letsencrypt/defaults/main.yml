@@ -1,0 +1,3 @@
+voyager_letsencrypt_acme_email: none@example.com
+voyager_letsencrypt_challenge_provider:
+voyager_letsencrypt_domains:

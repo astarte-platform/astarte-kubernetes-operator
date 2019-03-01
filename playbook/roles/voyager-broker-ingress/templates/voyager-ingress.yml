@@ -1,0 +1,42 @@
+apiVersion: voyager.appscode.com/v1beta1
+kind: Ingress
+metadata:
+  name: vernemq-ingress
+  namespace: {{ astarte_k8s_namespace }}
+  annotations:
+    ingress.appscode.com/type: {{ voyager_broker_ingress_config.type }}
+    # Configure depending on the load
+    ingress.appscode.com/replicas: '{{ voyager_broker_ingress_config.replicas }}'
+{% if voyager_broker_ingress_config.node_selector %}
+    ingress.appscode.com/node-selector: '{{ voyager_broker_ingress_config.node_selector }}'
+{% endif %}
+    # Keep source IP - we need this for a number of reasons
+    ingress.appscode.com/keep-source-ip: "true"
+    # These options are here to please VerneMQ/Astarte
+    ingress.appscode.com/auth-tls-secret: cfssl-ca
+    ingress.appscode.com/auth-tls-verify-client: required
+    # This is soft-capped to prevent Astarte from freaking out
+    ingress.appscode.com/max-connections: "{{ voyager_broker_ingress_config.max_connections }}"
+    # Meaningful options
+    ingress.appscode.com/default-option: '{"tcplog": "true", "dontlognull": "true", "clitcpka": "true"}'
+    # Configure these timeouts according to how frequently your client sends a PINGREQ - 1h is more than enough
+    ingress.appscode.com/default-timeout: '{"connect": "30s", "server": "1h", "client": "1h", "tunnel": "1h"}'
+spec:
+  tls:
+{% if voyager_use_letsencrypt %}
+  - secretName: tls-astarte-ingress-certificate
+{% else %}
+  - secretName: {{ voyager_tls_broker_secret_name }}
+{% endif %}
+    hosts:
+    - {{ mqtt_broker_dns }}
+  rules:
+  - host: {{ mqtt_broker_dns }}
+    tcp:
+      port: '{{ mqtt_broker_port }}'
+      backend:
+        serviceName: vernemq
+        servicePort: '1885'
+        backendRule:
+        - 'balance source'
+

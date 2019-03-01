@@ -1,0 +1,6 @@
+voyager_tls_api_secret_name:
+
+voyager_api_ingress_config:
+  type: LoadBalancer
+  replicas: 1
+  node_selector:

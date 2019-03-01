@@ -1,0 +1,35 @@
+---
+- name: Obtain Voyager Let's Encrypt Certificate
+  hosts: localhost
+  remote_user: root
+  connection: local
+  tags:
+    - voyager
+    - letsencrypt
+  roles:
+    - name: voyager-certificate-letsencrypt
+      when:
+        - voyager_use_letsencrypt
+        - deploy_voyager_broker_ingress or deploy_voyager_api_ingress
+
+- name: Deploy Voyager Broker Ingress
+  hosts: localhost
+  remote_user: root
+  connection: local
+  tags:
+    - voyager
+  roles:
+    - name: voyager-broker-ingress
+      when:
+        - deploy_voyager_broker_ingress
+
+- name: Deploy Voyager API Ingress
+  hosts: localhost
+  remote_user: root
+  connection: local
+  tags:
+    - voyager
+  roles:
+    - name: voyager-api-ingress
+      when:
+        - deploy_voyager_api_ingress

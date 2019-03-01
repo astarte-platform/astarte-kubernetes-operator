@@ -1,0 +1,16 @@
+- name: Ensure Astarte namespace
+  k8s:
+    name: "{{ astarte_k8s_namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Ensure Voyager ACME Credentials
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'voyager-acme-account.yml') }}"
+
+- name: Ensure Voyager Let's Encrypt Certificate
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'voyager-certificate.yml') }}"
