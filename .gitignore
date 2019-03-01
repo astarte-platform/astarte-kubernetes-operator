@@ -1,3 +1,4 @@
 inventories/*
+vars/*
 files/housekeeping.*
 *.retry
