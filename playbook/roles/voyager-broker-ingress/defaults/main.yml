@@ -1,0 +1,7 @@
+voyager_tls_broker_secret_name:
+
+voyager_broker_ingress_config:
+  type: LoadBalancer
+  replicas: 1
+  node_selector:
+  max_connections: 10000
