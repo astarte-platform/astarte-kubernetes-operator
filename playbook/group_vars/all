@@ -9,7 +9,12 @@ rabbitmq_connection_port: "5672"
 cassandra_nodes: "cassandra.{{ astarte_k8s_namespace }}.svc.cluster.local:9042"
 cfssl_url: "http://cfssl.astarte.svc.cluster.local"
 astarte_api_use_ssl: true
+astarte_api_expose_housekeeping: true
+astarte_api_enable_cors: false
 astarte_api_dns:
+astarte_dashboard_use_ssl: "{{ deploy_astarte_dashboard }}"
+astarte_dashboard_use_dedicated_dns: "{{ deploy_astarte_dashboard }}"
+astarte_dashboard_dns:
 mqtt_broker_dns:
 mqtt_broker_port: 8883
 
