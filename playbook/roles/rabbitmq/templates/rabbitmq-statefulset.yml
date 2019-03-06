@@ -96,7 +96,7 @@ spec:
             fieldRef:
               fieldPath: metadata.name
         - name: RABBITMQ_NODENAME
-          value: "rabbit@$(MY_POD_NAME).rabbitmq.{{ astarte_k8s_namespace }}.svc.cluster.local"
+          value: "{{ resources_computed_prefix }}rabbit@$(MY_POD_NAME).{{ resources_computed_prefix }}rabbitmq.{{ astarte_k8s_namespace }}.svc.cluster.local"
         - name: K8S_SERVICE_NAME
           value: "{{ resources_computed_prefix }}rabbitmq"
         - name: RABBITMQ_DEFAULT_USER
