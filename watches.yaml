@@ -2,4 +2,4 @@
 - version: v1alpha1
   group: api.astarte-project.org
   kind: Astarte
-  playbook: /opt/ansible/playbook.yml
+  playbook: /opt/ansible/playbook/deploy.yml
