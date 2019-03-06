@@ -1,57 +1,57 @@
 ---
-astarte_k8s_namespace: "{{ lookup('vars', 'meta.namespace', default='astarte') }}"
-astarte_distribution_channel: "{{ lookup('vars', 'distribution_channel', default='astarte') }}" # This defaults to the OSS public release on Docker Hub
-astarte_tag: "{{ lookup('vars', 'version', default='0.10.0-beta.3') }}"
-astarte_image_pull_policy: "{{ lookup('vars', 'image_pull_policy', default='IfNotPresent') }}"
+astarte_k8s_namespace: "{{ vars | json_query('meta.namespace') | default('astarte') }}"
+astarte_distribution_channel: "{{ distribution_channel|default('astarte') }}" # This defaults to the OSS public release on Docker Hub
+astarte_tag: "{{ version|default('0.10.0-beta.3') }}"
+astarte_image_pull_policy: "{{ image_pull_policy|default('IfNotPresent') }}"
 
 # Resource prefix. Most useful for Operator.
-astarte_resources_prefix: "{{ lookup('vars', 'meta.name', default='astarte') }}"
+astarte_resources_prefix: "{{ vars | json_query('meta.namespace') | default('astarte') }}"
 resources_computed_prefix: "{{ '' if not astarte_resources_prefix else astarte_resources_prefix + '-' }}"
 
 # Reasonable defaults for standard K8S deployments
 rabbitmq_connection_host: "{{ resources_computed_prefix }}rabbitmq.{{ astarte_k8s_namespace }}.svc.cluster.local"
 rabbitmq_connection_port: "5672"
-rabbitmq_connection_username: "{{ lookup('vars', 'rabbitmq.connection.username', default='astarte-admin') }}"
-rabbitmq_connection_password: "{{ lookup('vars', 'rabbitmq.connection.password', default=lookup('password', '/dev/null length=16 chars=ascii_letters')) }}"
-rabbitmq_connection_k8s_credentials_secret_name: "{{ lookup('vars', 'rabbitmq.connection.secret.name', default=resources_computed_prefix + 'rabbitmq-user-credentials') }}"
-rabbitmq_connection_k8s_credentials_secret_username_key: "{{ lookup('vars', 'rabbitmq.connection.secret.username_key', default='admin-username') }}"
-rabbitmq_connection_k8s_credentials_secret_password_key: "{{ lookup('vars', 'rabbitmq.connection.secret.password_key', default='admin-password') }}"
+rabbitmq_connection_username: "{{ vars | json_query('rabbitmq.connection.username') | default('astarte-admin') }}"
+rabbitmq_connection_password: "{{ vars | json_query('rabbitmq.connection.password') | default(lookup('password', '/dev/null length=16 chars=ascii_letters')) }}"
+rabbitmq_connection_k8s_credentials_secret_name: "{{ vars | json_query('rabbitmq.connection.secret.name') | default(resources_computed_prefix + 'rabbitmq-user-credentials') }}"
+rabbitmq_connection_k8s_credentials_secret_username_key: "{{ vars | json_query('rabbitmq.connection.secret.username_key') | default('admin-username') }}"
+rabbitmq_connection_k8s_credentials_secret_password_key: "{{ vars | json_query('rabbitmq.connection.secret.password_key') | default('admin-password') }}"
 
 cassandra_nodes: "{{ resources_computed_prefix }}cassandra.{{ astarte_k8s_namespace }}.svc.cluster.local:9042"
 cfssl_url: "http://{{ resources_computed_prefix }}cfssl.{{ astarte_k8s_namespace }}.svc.cluster.local"
 # This weird conditional means: default to empty when running from the Operator, and to 'housekeeping.pub'
 # when running as a standard playbook.
-astarte_housekeeping_key_file: "{{ '' if lookup('vars', 'meta.name', default='') else 'housekeeping.pub' }}"
+astarte_housekeeping_key_file: "{{ '' if vars | json_query('meta.name') else 'housekeeping.pub' }}"
 astarte_housekeeping_key_secret: "{{ resources_computed_prefix }}housekeeping-jwt"
 
 # Reasonable K8S Deployment Policies
-k8s_storage_class_name: "{{ lookup('vars', 'storage_class_name', default='') }}"
-k8s_use_rbac: "{{ lookup('vars', 'rbac', default=true) }}"
+k8s_storage_class_name: "{{ vars | json_query('storage_class_name') | default('') }}"
+k8s_use_rbac: "{{ vars | json_query('rbac') | default(true) }}"
 
 ### Ingress deployment control
-astarte_api_use_ssl: "{{ lookup('vars', 'api.ssl', default=true) }}"
+astarte_api_use_ssl: "{{ vars | json_query('api.ssl') | default(true) }}"
 astarte_api_expose_housekeeping: true
 astarte_api_enable_cors: false
-astarte_api_host: "{{ lookup('vars', 'api.host', default='') }}"
-astarte_dashboard_use_ssl: "{{ lookup('vars', 'components.dashboard.ssl', default=astarte_api_use_ssl) }}"
-astarte_dashboard_use_dedicated_host: "{{ lookup('vars', 'components.dashboard.dedicated_host', default=deploy_astarte_dashboard) }}"
-astarte_dashboard_host: "{{ lookup('vars', 'components.dashboard.host', default='') }}"
-mqtt_broker_host: "{{ lookup('vars', 'vernemq.host', default='') }}"
-mqtt_broker_port: "{{ lookup('vars', 'vernemq.port', default=8883) }}"
+astarte_api_host: "{{ vars | json_query('api.host') | default('') }}"
+astarte_dashboard_use_ssl: "{{ vars | json_query('components.dashboard.ssl') | default(astarte_api_use_ssl) }}"
+astarte_dashboard_use_dedicated_host: "{{ vars | json_query('components.dashboard.dedicated_host') | default(deploy_astarte_dashboard) }}"
+astarte_dashboard_host: "{{ vars | json_query('components.dashboard.host') | default('') }}"
+mqtt_broker_host: "{{ vars | json_query('vernemq.host') | default('') }}"
+mqtt_broker_port: "{{ vars | json_query('vernemq.port') | default(8883) }}"
 ##### Voyager
 deploy_voyager_broker_ingress: true
 deploy_voyager_api_ingress: true
 voyager_use_letsencrypt: true
 
 ### Control 3rd Party components deployment
-deploy_vernemq_k8s: "{{ lookup('vars', 'vernemq.deploy', default=true) }}"
-deploy_rabbitmq_k8s: "{{ lookup('vars', 'rabbitmq.deploy', default=true) }}"
-deploy_cassandra_k8s: "{{ lookup('vars', 'cassandra.deploy', default=true) }}"
-deploy_cfssl_k8s: "{{ lookup('vars', 'cfssl.deploy', default=true) }}"
+deploy_vernemq_k8s: "{{ vars | json_query('vernemq.deploy') | default(true) }}"
+deploy_rabbitmq_k8s: "{{ vars | json_query('rabbitmq.deploy') | default(true) }}"
+deploy_cassandra_k8s: "{{ vars | json_query('cassandra.deploy') | default(true) }}"
+deploy_cfssl_k8s: "{{ vars | json_query('cfssl.deploy') | default(true) }}"
 
 ### Control additional Astarte components deployment
-deploy_astarte_trigger_engine: "{{ lookup('vars', 'components.trigger_engine.deploy', default=true) }}"
-deploy_astarte_dashboard: "{{ lookup('vars', 'components.dashboard.deploy', default=true) }}"
+deploy_astarte_trigger_engine: "{{ vars | json_query('components.trigger_engine.deploy') | default(true) }}"
+deploy_astarte_dashboard: "{{ vars | json_query('components.dashboard.deploy') | default(true) }}"
 
 ### Data Updater Plant AMQP policies
 
@@ -64,10 +64,10 @@ astarte_appengine_api_rooms_amqp_client_password_secret_key: "{{ rabbitmq_connec
 
 ### Astarte Applications Resources and Replicas. You might want to override these.
 ## Global allocation. This is used to auto-weight resources.
-astarte_k8s_resources_requests_cpu: "{{ lookup('vars', 'components.resources.requests.cpu', default='2000m') }}"
-astarte_k8s_resources_requests_memory: "{{ lookup('vars', 'components.resources.requests.memory', default='4096M') }}"
-astarte_k8s_resources_limits_cpu: "{{ lookup('vars', 'components.resources.limits.cpu', default='4000m') }}"
-astarte_k8s_resources_limits_memory: "{{ lookup('vars', 'components.resources.limits.memory', default='8192M') }}"
+astarte_k8s_resources_requests_cpu: "{{ vars | json_query('components.resources.requests.cpu') | default('2000m') }}"
+astarte_k8s_resources_requests_memory: "{{ vars | json_query('components.resources.requests.memory') | default('4096M') }}"
+astarte_k8s_resources_limits_cpu: "{{ vars | json_query('components.resources.limits.cpu') | default('4000m') }}"
+astarte_k8s_resources_limits_memory: "{{ vars | json_query('components.resources.limits.memory') | default('8192M') }}"
 
 ## Derived variables. Don't touch!
 astarte_k8s_resources_requests_cpu_millis: "{{ (astarte_k8s_resources_requests_cpu * 1000)|float if astarte_k8s_resources_requests_cpu is number else astarte_k8s_resources_requests_cpu|replace('m','')|float }}"
