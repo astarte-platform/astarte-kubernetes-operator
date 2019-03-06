@@ -19,6 +19,12 @@ spec:
     connection:
       host: "rabbitmq.astarte.svc.cluster.local"
       port: "5672"
+      username: "astarte-admin"
+      password: "yourverystrongpassword"
+      secret:
+        name: "rabbitmq-user-credentials"
+        usernameKey: "admin-username"
+        passwordKey: "admin-password"
     replicas: 1
     antiAffinity: true
     storage:
