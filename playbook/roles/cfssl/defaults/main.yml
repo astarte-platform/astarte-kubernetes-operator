@@ -1,22 +1,22 @@
-cfssl_k8s_enable_antiaffinity: "{{ lookup('vars', 'cfssl.anti_affinity', default=true) }}"
+cfssl_k8s_enable_antiaffinity: "{{ vars | json_query('cfssl.anti_affinity') | default(true) }}"
 
-cfssl_k8s_replicas: "{{ lookup('vars', 'cfssl.replicas', default='1') }}"
+cfssl_k8s_replicas: "{{ vars | json_query('cfssl.replicas') | default('1') }}"
 
-cfssl_k8s_resources_requests_cpu: "{{ lookup('vars', 'cfssl.resources.requests.cpu', default='100m') }}"
-cfssl_k8s_resources_requests_memory: "{{ lookup('vars', 'cfssl.resources.requests.memory', default='128M') }}"
-cfssl_k8s_resources_limits_cpu: "{{ lookup('vars', 'cfssl.resources.limits.cpu', default='200m') }}"
-cfssl_k8s_resources_limits_memory: "{{ lookup('vars', 'cfssl.resources.limits.memory', default='256M') }}"
+cfssl_k8s_resources_requests_cpu: "{{ vars | json_query('cfssl.resources.requests.cpu') | default('100m') }}"
+cfssl_k8s_resources_requests_memory: "{{ vars | json_query('cfssl.resources.requests.memory') | default('128M') }}"
+cfssl_k8s_resources_limits_cpu: "{{ vars | json_query('cfssl.resources.limits.cpu') | default('200m') }}"
+cfssl_k8s_resources_limits_memory: "{{ vars | json_query('cfssl.resources.limits.memory') | default('256M') }}"
 
-cfssl_k8s_volume_definition: "{{ lookup('vars', 'cfssl.storage.volume_definition', default='') }}"
-cfssl_k8s_storage_class_name: "{{ lookup('vars', 'cfssl.storage.class_name', default=k8s_storage_class_name) }}"
-cfssl_k8s_volume_size: "{{ lookup('vars', 'cfssl.storage.size', default='2Gi') }}"
+cfssl_k8s_volume_definition: "{{ vars | json_query('cfssl.storage.volume_definition') | default('') }}"
+cfssl_k8s_storage_class_name: "{{ vars | json_query('cfssl.storage.class_name') | default(k8s_storage_class_name) }}"
+cfssl_k8s_volume_size: "{{ vars | json_query('cfssl.storage.size') | default('2Gi') }}"
 
 # These defaults are OK: the operator, in case, will rewrite entire objects.
 cfssl_db_driver: sqlite3
 cfssl_db_data_source: "/data/certs.db"
 
-cfssl_ca_expiry: "{{ lookup('vars', 'cfssl.ca_expiry', default='262800h') }}"
-cfssl_ca_certificate_expiry: "{{ lookup('vars', 'cfssl.ca_expiry', default='2190h') }}"
+cfssl_ca_expiry: "{{ vars | json_query('cfssl.ca_expiry') | default('262800h') }}"
+cfssl_ca_certificate_expiry: "{{ vars | json_query('cfssl.ca_expiry') | default('2190h') }}"
 cfssl_ca_cn: Astarte Root CA
 cfssl_ca_key_algo: ecdsa
 cfssl_ca_key_size: 256

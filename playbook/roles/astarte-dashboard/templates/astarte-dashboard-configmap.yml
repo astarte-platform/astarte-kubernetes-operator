@@ -5,4 +5,4 @@ metadata:
   namespace: {{ astarte_k8s_namespace }}
 data:
   config.json: >
-    {{ lookup('vars', 'components.dashboard.config', default=astarte_dashboard_config) | to_json }}
+    {{ vars | json_query('components.dashboard.config') | default(astarte_dashboard_config) | to_json }}
