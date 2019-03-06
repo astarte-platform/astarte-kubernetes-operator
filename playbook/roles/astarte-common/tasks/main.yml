@@ -8,9 +8,9 @@
 - name: Ensure Astarte Generic Erlang Configuration
   k8s:
     state: present
-    definition: "{{ lookup('file', 'astarte-generic-erlang-configuration.yml') }}"
+    definition: "{{ lookup('template', 'astarte-generic-erlang-configuration.yml') }}"
 
 - name: Ensure Housekeeping public key
   k8s:
     state: present
-    definition: "{{ lookup('template', 'housekeeping-jwt.yml') }}" 
+    definition: "{{ lookup('template', 'housekeeping-jwt.yml') }}"

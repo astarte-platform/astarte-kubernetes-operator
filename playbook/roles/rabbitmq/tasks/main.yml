@@ -10,7 +10,7 @@
     api_version: v1
     kind: Secret
     name: rabbitmq-cookie
-    namespace: astarte
+    namespace: "{{ astarte_k8s_namespace }}"
   register: rabbitmq_cookie
 
 - name: Create RabbitMQ cookie secret
@@ -24,7 +24,7 @@
     api_version: v1
     kind: Secret
     name: rabbitmq-user-credentials
-    namespace: astarte
+    namespace: "{{ astarte_k8s_namespace }}"
   register: rabbitmq_user_credentials
 
 - name: Create RabbitMQ user credentials

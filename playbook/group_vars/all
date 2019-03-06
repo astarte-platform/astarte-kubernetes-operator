@@ -7,7 +7,7 @@ astarte_tag: "{{ lookup('vars', 'version', default='0.10.0-beta.3') }}"
 rabbitmq_connection_host: "rabbitmq.{{ astarte_k8s_namespace }}.svc.cluster.local"
 rabbitmq_connection_port: "5672"
 cassandra_nodes: "cassandra.{{ astarte_k8s_namespace }}.svc.cluster.local:9042"
-cfssl_url: "http://cfssl.astarte.svc.cluster.local"
+cfssl_url: "http://cfssl.{{ astarte_k8s_namespace }}.svc.cluster.local"
 astarte_api_use_ssl: true
 astarte_api_expose_housekeeping: true
 astarte_api_enable_cors: false
