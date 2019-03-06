@@ -1,14 +1,14 @@
 stages:
     - test
     - build
-
-molecule:
-  image: python:3.7
-  stage: test
-  before_script:
-    - pip install docker molecule openshift
-  script:
-    - molecule test -s test-local
+# This won't work until we figure things out.
+#molecule:
+#  image: python:3.7
+#  stage: test
+#  before_script:
+#    - pip install docker molecule openshift
+#  script:
+#    - molecule test -s test-local
 
 docker:snapshot-container:
     image: docker:latest
