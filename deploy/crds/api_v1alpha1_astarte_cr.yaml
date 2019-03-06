@@ -1,7 +1,8 @@
 apiVersion: api.astarte-project.org/v1alpha1
 kind: Astarte
 metadata:
-  name: example-astarte-all-configuratioms
+  name: example-astarte-all-configuration
+  namespace: astarte
 spec:
   ## This part is specific to the Ansible Operator. We're building a meaningful hierarchy
   ## which can be used from the Operator's CRD.
