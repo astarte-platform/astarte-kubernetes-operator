@@ -5,19 +5,11 @@
     kind: Namespace
     state: present
 
-- name: Retrieve Astarte App cookie secret
-  k8s_facts:
-    api_version: v1
-    kind: Secret
-    name: astarte-{{ astarte_app_name | regex_replace('_', '-') }}-cookie
-    namespace: "{{ astarte_k8s_namespace }}"
-  register: astarte_app_cookie
-
 - name: Create Astarte App cookie secret
   k8s:
     state: present
     definition: "{{ lookup('template', 'astarte-generic-backend-cookie.yml') }}"
-  when: not astarte_app_cookie.resources
+  when: not lookup('k8s', kind='Secret', resource_name=k8s_erlang_cookie_name, namespace=astarte_k8s_namespace)
 
 - name: Ensure Astarte App Deployment
   k8s:

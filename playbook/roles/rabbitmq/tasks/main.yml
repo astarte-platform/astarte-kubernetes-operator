@@ -5,33 +5,17 @@
     kind: Namespace
     state: present
 
-- name: Retrieve RabbitMQ cookie secret
-  k8s_facts:
-    api_version: v1
-    kind: Secret
-    name: rabbitmq-cookie
-    namespace: "{{ astarte_k8s_namespace }}"
-  register: rabbitmq_cookie
-
 - name: Create RabbitMQ cookie secret
   k8s:
     state: present
     definition: "{{ lookup('template', 'rabbitmq-cookie.yml') }}"
-  when: not rabbitmq_cookie.resources
-
-- name: Retrieve RabbitMQ user credentials
-  k8s_facts:
-    api_version: v1
-    kind: Secret
-    name: rabbitmq-user-credentials
-    namespace: "{{ astarte_k8s_namespace }}"
-  register: rabbitmq_user_credentials
+  when: not lookup('k8s', kind='Secret', resource_name='rabbitmq-cookie', namespace=astarte_k8s_namespace)
 
 - name: Create RabbitMQ user credentials
   k8s:
     state: present
     definition: "{{ lookup('template', 'rabbitmq-user-credentials.yml') }}"
-  when: not rabbitmq_user_credentials.resources
+  when: not lookup('k8s', kind='Secret', resource_name='rabbitmq-user-credentials', namespace=astarte_k8s_namespace)
 
 - name: Create RabbitMQ Service Account
   k8s:
