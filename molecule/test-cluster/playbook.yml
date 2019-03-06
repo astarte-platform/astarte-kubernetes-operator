@@ -1,0 +1,33 @@
+---
+
+- name: Converge
+  hosts: localhost
+  connection: local
+  vars:
+    ansible_python_interpreter: '{{ ansible_playbook_python }}'
+    deploy_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/deploy"
+    image_name: api.astarte-project.org/kubernetes-operator:testing
+    custom_resource: "{{ lookup('file', '/'.join([deploy_dir, 'crds/api_v1alpha1_astarte_cr.yaml'])) | from_yaml }}"
+  tasks:
+  - name: Create the api.astarte-project.org/v1alpha1.Astarte
+    k8s:
+      namespace: '{{ namespace }}'
+      definition: "{{ lookup('file', '/'.join([deploy_dir, 'crds/api_v1alpha1_astarte_cr.yaml'])) }}"
+
+  - name: Get the newly created Custom Resource
+    debug:
+      msg: "{{ lookup('k8s', group='api.astarte-project.org', api_version='v1alpha1', kind='Astarte', namespace=namespace, resource_name=custom_resource.metadata.name) }}"
+
+  - name: Wait 40s for reconcilation to run
+    k8s_facts:
+      api_version: 'v1alpha1'
+      kind: 'Astarte'
+      namespace: '{{ namespace }}'
+      name: '{{ custom_resource.metadata.name }}'
+    register: reconcile_cr
+    until:
+    - "'Successful' in (reconcile_cr | json_query('resources[].status.conditions[].reason'))"
+    delay: 4
+    retries: 10
+
+- import_playbook: "{{ playbook_dir }}/../default/asserts.yml"
