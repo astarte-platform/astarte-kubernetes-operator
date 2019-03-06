@@ -8,7 +8,7 @@ k8s_deployment_resources_requests_memory: 128M
 k8s_deployment_resources_limits_cpu: 200m
 k8s_deployment_resources_limits_memory: 256M
 k8s_erlang_cookie_name: "{{ resources_computed_prefix }}{{ k8s_service_name }}-api-cookie"
-astarte_app_amqp_connection_host: "{{ vars | json_query('rabbitmq.connection.host') | default(rabbitmq_connection_host) }}"
+astarte_app_amqp_connection_host: "{{ vars | json_query('rabbitmq.connection.host') | default(rabbitmq_connection_host, true) }}"
 astarte_app_api_port: 4000
 check_api_health: true
 

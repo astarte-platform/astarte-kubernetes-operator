@@ -1,12 +1,12 @@
-vernemq_k8s_enable_antiaffinity: "{{ lookup('vars', 'vernemq.anti_affinity', default=true) }}"
+vernemq_k8s_enable_antiaffinity: "{{ vars | json_query('vernemq.anti_affinity') | default(true, true) }}"
 
-vernemq_k8s_replicas: "{{ lookup('vars', 'vernemq.replicas', default='1') }}"
+vernemq_k8s_replicas: "{{ vars | json_query('vernemq.replicas') | default('1', true) }}"
 
-vernemq_k8s_resources_requests_cpu: "{{ lookup('vars', 'vernemq.resources.requests.cpu', default='200m') }}"
-vernemq_k8s_resources_requests_memory: "{{ lookup('vars', 'vernemq.resources.requests.memory', default='512M') }}"
-vernemq_k8s_resources_limits_cpu: "{{ lookup('vars', 'vernemq.resources.limits.cpu', default='800m') }}"
-vernemq_k8s_resources_limits_memory: "{{ lookup('vars', 'vernemq.resources.limits.memory', default='1024M') }}"
+vernemq_k8s_resources_requests_cpu: "{{ vars | json_query('vernemq.resources.requests.cpu') | default('200m', true) }}"
+vernemq_k8s_resources_requests_memory: "{{ vars | json_query('vernemq.resources.requests.memory') | default('512M', true) }}"
+vernemq_k8s_resources_limits_cpu: "{{ vars | json_query('vernemq.resources.limits.cpu') | default('800m', true) }}"
+vernemq_k8s_resources_limits_memory: "{{ vars | json_query('vernemq.resources.limits.memory') | default('1024M', true) }}"
 
-vernemq_k8s_volume_definition: "{{ lookup('vars', 'vernemq.storage.volume_definition', default='') }}"
-vernemq_k8s_storage_class_name: "{{ lookup('vars', 'vernemq.storage.class_name', default=k8s_storage_class_name) }}"
-vernemq_k8s_volume_size: "{{ lookup('vars', 'vernemq.storage.size', default='4Gi') }}"
+vernemq_k8s_volume_definition: "{{ vars | json_query('vernemq.storage.volume_definition') | default('', true) }}"
+vernemq_k8s_storage_class_name: "{{ vars | json_query('vernemq.storage.class_name') | default(k8s_storage_class_name, true) }}"
+vernemq_k8s_volume_size: "{{ vars | json_query('vernemq.storage.size') | default('4Gi', true) }}"
