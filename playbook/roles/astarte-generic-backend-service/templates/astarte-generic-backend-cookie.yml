@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: astarte-{{ astarte_app_name | regex_replace('_', '-') }}-cookie
+  name: {{ k8s_erlang_cookie_name }}
   namespace: {{ astarte_k8s_namespace }}
 type: Opaque
 data:
