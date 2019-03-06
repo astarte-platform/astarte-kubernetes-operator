@@ -10,7 +10,7 @@ data:
       ## Clustering
       cluster_formation.peer_discovery_backend  = rabbit_peer_discovery_k8s
       cluster_formation.k8s.host = kubernetes.default.svc.cluster.local
-      cluster_formation.k8s.hostname_suffix = .rabbitmq.astarte.svc.cluster.local
+      cluster_formation.k8s.hostname_suffix = .rabbitmq.{{ astarte_k8s_namespace }}.svc.cluster.local
       cluster_formation.k8s.address_type = hostname
       cluster_formation.node_cleanup.interval = 10
       cluster_formation.node_cleanup.only_log_warning = true

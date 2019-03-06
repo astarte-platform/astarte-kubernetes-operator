@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: astarte-dashboard-config
-  namespace: astarte
+  namespace: {{ astarte_k8s_namespace }}
 data:
   config.json: >
     {{ astarte_dashboard_config | to_json }}

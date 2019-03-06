@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: astarte-generic-erlang-configuration
-  namespace: astarte
+  namespace: {{ astarte_k8s_namespace }}
 data:
   vm.args: |
       ## Name of the node
@@ -27,4 +27,3 @@ data:
 
       # Enable SMP automatically based on availability
       -smp auto
-

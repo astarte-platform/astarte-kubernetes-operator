@@ -10,7 +10,7 @@
     api_version: v1
     kind: Secret
     name: astarte-{{ astarte_app_name | regex_replace('_', '-') }}-cookie
-    namespace: astarte
+    namespace: "{{ astarte_k8s_namespace }}"
   register: astarte_app_cookie
 
 - name: Create Astarte App cookie secret
