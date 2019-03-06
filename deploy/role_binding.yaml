@@ -5,6 +5,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: astarte-operator
+  namespace: kube-system
 roleRef:
   kind: Role
   name: astarte-operator
