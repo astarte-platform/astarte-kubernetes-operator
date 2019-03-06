@@ -1,3 +1,10 @@
+- debug:
+    msg: "This playbook is running in Operator mode. If this is not what you want, ensure the 'meta.name' variable is not defined"
+  when: lookup('vars', 'meta.name', default='')
+
+- debug:
+    msg: "Will install Astarte version '{{ astarte_tag }}' in namespace '{{ astarte_k8s_namespace }}' with prefix '{{ resources_computed_prefix }}'"
+
 - name: Ensure Astarte namespace
   k8s:
     name: "{{ astarte_k8s_namespace }}"

@@ -1,26 +1,26 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: vernemq
+  name: {{ resources_computed_prefix }}vernemq
   namespace: {{ astarte_k8s_namespace }}
   labels:
-    app: vernemq
+    app: {{ resources_computed_prefix }}vernemq
 spec:
-  serviceName: vernemq
+  serviceName: {{ resources_computed_prefix }}vernemq
   replicas: {{ vernemq_k8s_replicas }}
   selector:
     matchLabels:
-      app: vernemq
+      app: {{ resources_computed_prefix }}vernemq
   template:
     metadata:
       labels:
-        app: vernemq
+        app: {{ resources_computed_prefix }}vernemq
     spec:
       # Give it some time.
       terminationGracePeriodSeconds: 30
 {% if k8s_use_rbac %}
       # Service account
-      serviceAccountName: vernemq
+      serviceAccountName: {{ resources_computed_prefix }}vernemq
 {% endif %}
 {% if vernemq_k8s_enable_antiaffinity %}
       # Affinity - just don't run two instances on the same node. It doesn't make sense.
@@ -32,13 +32,13 @@ spec:
               - key: app
                 operator: In
                 values:
-                - vernemq
+                - {{ resources_computed_prefix }}vernemq
             topologyKey: kubernetes.io/hostname
 {% endif %}
       containers:
       - name: vernemq
         image: {{ astarte_distribution_channel }}/vernemq:{{ astarte_tag }}
-        imagePullPolicy: Always
+        imagePullPolicy: {{ astarte_image_pull_policy }}
         resources:
           requests:
             cpu: "{{ vernemq_k8s_resources_requests_cpu }}"
@@ -75,13 +75,13 @@ spec:
           - name: DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__USERNAME
             valueFrom:
               secretKeyRef:
-                name: rabbitmq-user-credentials
-                key: admin-username
+                name: {{ rabbitmq_connection_k8s_credentials_secret_name }}
+                key: {{ rabbitmq_connection_k8s_credentials_secret_username_key }}
           - name: DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__PASSWORD
             valueFrom:
               secretKeyRef:
-                name: rabbitmq-user-credentials
-                key: admin-password
+                name: {{ rabbitmq_connection_k8s_credentials_secret_name }}
+                key: {{ rabbitmq_connection_k8s_credentials_secret_password_key }}
           - name: DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__HOST
             value: "{{ lookup('vars', 'rabbitmq.connection.host', default=rabbitmq_connection_host) }}"
           - name: DISCOVERY_KUBERNETES
@@ -110,17 +110,17 @@ spec:
           initialDelaySeconds: 60
           periodSeconds: 5
         volumeMounts:
-        - name: vernemq-data
+        - name: {{ resources_computed_prefix }}vernemq-data
           mountPath: /opt/vernemq/data
 {% if vernemq_k8s_volume_definition %}
       volumes:
-      - name: vernemq-data
+      - name: {{ resources_computed_prefix }}vernemq-data
         {{ vernemq_k8s_volume_definition | to_nice_yaml }}
 {% endif %}
 {% if not vernemq_k8s_volume_definition %}
   volumeClaimTemplates:
   - metadata:
-      name: vernemq-data
+      name: {{ resources_computed_prefix }}vernemq-data
     spec:
       accessModes: [ "ReadWriteOnce" ]
 {% if vernemq_k8s_storage_class_name %}

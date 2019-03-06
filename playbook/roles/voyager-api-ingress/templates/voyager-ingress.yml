@@ -1,7 +1,7 @@
 apiVersion: voyager.appscode.com/v1beta1
 kind: Ingress
 metadata:
-  name: api-ingress
+  name: {{ resources_computed_prefix }}api-ingress
   namespace: {{ astarte_k8s_namespace }}
   annotations:
     ingress.appscode.com/type: {{ voyager_api_ingress_config.type }}
@@ -30,7 +30,7 @@ spec:
 {% if astarte_api_use_ssl or (deploy_astarte_dashboard and astarte_dashboard_use_ssl) %}
   tls:
 {% if voyager_use_letsencrypt %}
-  - secretName: tls-astarte-ingress-certificate
+  - secretName: tls-{{ resources_computed_prefix }}ingress-certificate
 {% else %}
   - secretName: {{ voyager_tls_api_secret_name }}
 {% endif %}
@@ -49,29 +49,29 @@ spec:
 {% if astarte_api_expose_housekeeping %}
       - path: /housekeeping
         backend:
-          serviceName: housekeeping
+          serviceName: {{ resources_computed_prefix }}housekeeping
           servicePort: '4000'
 {% endif %}
       - path: /realm
         backend:
-          serviceName: realm
+          serviceName: {{ resources_computed_prefix }}realm
           servicePort: '4000'
       - path: /realmmanagement
         backend:
-          serviceName: realm
+          serviceName: {{ resources_computed_prefix }}realm
           servicePort: '4000'
       - path: /pairing
         backend:
-          serviceName: pairing
+          serviceName: {{ resources_computed_prefix }}pairing
           servicePort: '4000'
       - path: /appengine
         backend:
-          serviceName: appengine
+          serviceName: {{ resources_computed_prefix }}appengine
           servicePort: '4000'
 {% if not astarte_dashboard_use_dedicated_host %}
       - path: /dashboard
         backend:
-          serviceName: astarte-dashboard
+          serviceName: {{ resources_computed_prefix }}dashboard
           servicePort: '80'
 {% endif %}
 {% if astarte_dashboard_use_dedicated_host %}
@@ -80,6 +80,6 @@ spec:
       paths:
       - path: /
         backend:
-          serviceName: astarte-dashboard
+          serviceName: {{ resources_computed_prefix }}dashboard
           servicePort: '80'
 {% endif %}

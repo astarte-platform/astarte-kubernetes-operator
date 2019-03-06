@@ -2,13 +2,13 @@
   k8s:
     state: present
     definition: "{{ lookup('template', 'rabbitmq-cookie.yml') }}"
-  when: not lookup('k8s', kind='Secret', resource_name='rabbitmq-cookie', namespace=astarte_k8s_namespace)
+  when: not lookup('k8s', kind='Secret', resource_name=resources_computed_prefix + 'rabbitmq-cookie', namespace=astarte_k8s_namespace)
 
 - name: Create RabbitMQ user credentials
   k8s:
     state: present
     definition: "{{ lookup('template', 'rabbitmq-user-credentials.yml') }}"
-  when: not lookup('k8s', kind='Secret', resource_name='rabbitmq-user-credentials', namespace=astarte_k8s_namespace)
+  when: not lookup('k8s', kind='Secret', resource_name=rabbitmq_connection_k8s_credentials_secret_name, namespace=astarte_k8s_namespace)
 
 - name: Create RabbitMQ Service Account
   k8s:

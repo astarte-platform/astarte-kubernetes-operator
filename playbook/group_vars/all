@@ -4,15 +4,25 @@ astarte_distribution_channel: "{{ lookup('vars', 'distribution_channel', default
 astarte_tag: "{{ lookup('vars', 'version', default='0.10.0-beta.3') }}"
 astarte_image_pull_policy: "{{ lookup('vars', 'image_pull_policy', default='IfNotPresent') }}"
 
+# Resource prefix. Most useful for Operator.
+astarte_resources_prefix: "{{ lookup('vars', 'meta.name', default='astarte') }}"
+resources_computed_prefix: "{{ '' if not astarte_resources_prefix else astarte_resources_prefix + '-' }}"
+
 # Reasonable defaults for standard K8S deployments
-rabbitmq_connection_host: "rabbitmq.{{ astarte_k8s_namespace }}.svc.cluster.local"
+rabbitmq_connection_host: "{{ resources_computed_prefix }}rabbitmq.{{ astarte_k8s_namespace }}.svc.cluster.local"
 rabbitmq_connection_port: "5672"
-cassandra_nodes: "cassandra.{{ astarte_k8s_namespace }}.svc.cluster.local:9042"
-cfssl_url: "http://cfssl.{{ astarte_k8s_namespace }}.svc.cluster.local"
+rabbitmq_connection_username: "{{ lookup('vars', 'rabbitmq.connection.username', default='astarte-admin') }}"
+rabbitmq_connection_password: "{{ lookup('vars', 'rabbitmq.connection.password', default=lookup('password', '/dev/null length=16 chars=ascii_letters')) }}"
+rabbitmq_connection_k8s_credentials_secret_name: "{{ lookup('vars', 'rabbitmq.connection.secret.name', default=resources_computed_prefix + 'rabbitmq-user-credentials') }}"
+rabbitmq_connection_k8s_credentials_secret_username_key: "{{ lookup('vars', 'rabbitmq.connection.secret.username_key', default='admin-username') }}"
+rabbitmq_connection_k8s_credentials_secret_password_key: "{{ lookup('vars', 'rabbitmq.connection.secret.password_key', default='admin-password') }}"
+
+cassandra_nodes: "{{ resources_computed_prefix }}cassandra.{{ astarte_k8s_namespace }}.svc.cluster.local:9042"
+cfssl_url: "http://{{ resources_computed_prefix }}cfssl.{{ astarte_k8s_namespace }}.svc.cluster.local"
 # This weird conditional means: default to empty when running from the Operator, and to 'housekeeping.pub'
 # when running as a standard playbook.
 astarte_housekeeping_key_file: "{{ '' if lookup('vars', 'meta.name', default='') else 'housekeeping.pub' }}"
-astarte_housekeeping_key_secret: housekeeping-jwt
+astarte_housekeeping_key_secret: "{{ resources_computed_prefix }}housekeeping-jwt"
 
 # Reasonable K8S Deployment Policies
 k8s_storage_class_name: "{{ lookup('vars', 'storage_class_name', default='') }}"
@@ -47,10 +57,10 @@ deploy_astarte_dashboard: "{{ lookup('vars', 'components.dashboard.deploy', defa
 
 ### AppEngine API AMQP policies
 astarte_appengine_api_rooms_amqp_client_host: "{{ rabbitmq_connection_host }}"
-astarte_appengine_api_rooms_amqp_client_username_secret_name: rabbitmq-user-credentials
-astarte_appengine_api_rooms_amqp_client_username_secret_key: admin-username
-astarte_appengine_api_rooms_amqp_client_password_secret_name: rabbitmq-user-credentials
-astarte_appengine_api_rooms_amqp_client_password_secret_key: admin-password
+astarte_appengine_api_rooms_amqp_client_username_secret_name: "{{ rabbitmq_connection_k8s_credentials_secret_name }}"
+astarte_appengine_api_rooms_amqp_client_username_secret_key: "{{ rabbitmq_connection_k8s_credentials_secret_username_key }}"
+astarte_appengine_api_rooms_amqp_client_password_secret_name: "{{ rabbitmq_connection_k8s_credentials_secret_name }}"
+astarte_appengine_api_rooms_amqp_client_password_secret_key: "{{ rabbitmq_connection_k8s_credentials_secret_password_key }}"
 
 ### Astarte Applications Resources and Replicas. You might want to override these.
 ## Global allocation. This is used to auto-weight resources.

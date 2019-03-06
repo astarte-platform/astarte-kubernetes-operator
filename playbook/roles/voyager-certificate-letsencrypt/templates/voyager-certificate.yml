@@ -1,7 +1,7 @@
 apiVersion: voyager.appscode.com/v1beta1
 kind: Certificate
 metadata:
-  name: astarte-ingress-certificate
+  name: {{ resources_computed_prefix }}ingress-certificate
   namespace: {{ astarte_k8s_namespace }}
 spec:
 {% if voyager_letsencrypt_domains %}
@@ -16,5 +16,5 @@ spec:
 {% endif %}
     - {{ mqtt_broker_host }}
 {% endif %}
-  acmeUserSecretName: voyager-acme-account
+  acmeUserSecretName: {{ resources_computed_prefix }}voyager-acme-account
   challengeProvider: {{ voyager_letsencrypt_challenge_provider }}
