@@ -25,7 +25,7 @@
   k8s:
     state: present
     definition: "{{ lookup('template', 'housekeeping-jwt.yml') }}"
-  when: vars['astarte_housekeeping_key_file']
+  when: vars['astarte_housekeeping_key_file'] != ""
 
 # If a file was not given, generate a housekeeping key only if one does not exist yet.
 - import_tasks: generate-housekeeping-key.yml
