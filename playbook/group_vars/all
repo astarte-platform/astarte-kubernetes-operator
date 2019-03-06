@@ -1,7 +1,7 @@
 ---
-astarte_k8s_namespace: astarte
-astarte_distribution_channel: astarte # This defaults to the OSS public release on Docker Hub
-astarte_tag: 0.10.0-beta.3
+astarte_k8s_namespace: "{{ lookup('vars', 'meta.namespace', default='astarte') }}"
+astarte_distribution_channel: "{{ lookup('vars', 'distribution_channel', default='astarte') }}" # This defaults to the OSS public release on Docker Hub
+astarte_tag: "{{ lookup('vars', 'version', default='0.10.0-beta.3') }}"
 
 # Reasonable defaults for standard K8S deployments
 rabbitmq_connection_host: "rabbitmq.{{ astarte_k8s_namespace }}.svc.cluster.local"
@@ -19,8 +19,8 @@ mqtt_broker_dns:
 mqtt_broker_port: 8883
 
 # Reasonable K8S Deployment Policies
-k8s_use_rbac: true
-k8s_storage_class_name:
+k8s_storage_class_name: "{{ lookup('vars', 'storage_class_name', default='') }}"
+k8s_use_rbac: "{{ lookup('vars', 'rbac', default=true) }}"
 
 ### Ingress deployment control
 ##### Voyager

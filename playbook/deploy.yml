@@ -107,7 +107,7 @@
         - name: PAIRING_CFSSL_URL
           value: "{{ cfssl_url }}"
         - name: PAIRING_BROKER_URL
-          value: "ssl://{{ mqtt_broker_dns }}:{{ mqtt_broker_port}}/"
+          value: "ssl://{{ mqtt_broker_dns }}:{{ mqtt_broker_port }}/"
     - role: astarte-generic-api-service
       tags:
         - pairing
