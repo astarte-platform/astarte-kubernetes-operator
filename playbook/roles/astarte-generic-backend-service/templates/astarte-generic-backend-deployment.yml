@@ -4,23 +4,23 @@ metadata:
   name: {{ k8s_deployment_name }}
   namespace: {{ astarte_k8s_namespace }}
   labels:
-    app: astarte-{{ astarte_app_name | regex_replace('_', '-') }}
-    astarte-service: {{ astarte_app_name | regex_replace('_', '-') }}
+    app: astarte-{{ k8s_service_name }}
+    astarte-service: {{ k8s_service_name }}
     component: astarte
 spec:
   replicas: {{ k8s_deployment_replicas }}
   selector:
     matchLabels:
-      app: astarte-{{ astarte_app_name | regex_replace('_', '-') }}
+      app: astarte-{{ k8s_service_name }}
   template:
     metadata:
       labels:
-        app: astarte-{{ astarte_app_name | regex_replace('_', '-') }}
-        astarte-service: {{ astarte_app_name | regex_replace('_', '-') }}
+        app: astarte-{{ k8s_service_name }}
+        astarte-service: {{ k8s_service_name }}
         component: astarte
     spec:
       containers:
-      - name: astarte-{{ astarte_app_name | regex_replace('_', '-') }}
+      - name: astarte-{{ k8s_service_name }}
         image: {{ k8s_deployment_image }}
         imagePullPolicy: Always
         volumeMounts:
@@ -56,7 +56,7 @@ spec:
           - name: ERLANG_COOKIE
             valueFrom:
               secretKeyRef:
-                name: astarte-{{ astarte_app_name | regex_replace('_', '-') }}-cookie
+                name: {{ k8s_erlang_cookie_name }}
                 key: erlang-cookie
           # Actual configuration variables
           - name: ASTARTE_RPC_AMQP_CONNECTION_USERNAME
