@@ -2,8 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: rabbitmq
-  name: rabbitmq
+    app: {{ resources_computed_prefix }}rabbitmq
+  name: {{ resources_computed_prefix }}rabbitmq
   namespace: {{ astarte_k8s_namespace }}
 spec:
   # Allow DNS only
@@ -14,5 +14,5 @@ spec:
     - name: management
       port: 15672
   selector:
-    app: rabbitmq
+    app: {{ resources_computed_prefix }}rabbitmq
 

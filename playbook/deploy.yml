@@ -147,17 +147,17 @@
           value: "{{ lookup('vars', 'rabbitmq.connection.port', default=rabbitmq_connection_port) }}"
       k8s_deployment_additional_secret_variables:
         - name: DATA_UPDATER_PLANT_AMQP_CONSUMER_USERNAME
-          secret_name: rabbitmq-user-credentials
-          secret_key: admin-username
+          secret_name: "{{ rabbitmq_connection_k8s_credentials_secret_name }}"
+          secret_key: "{{ rabbitmq_connection_k8s_credentials_secret_username_key }}"
         - name: DATA_UPDATER_PLANT_AMQP_CONSUMER_PASSWORD
-          secret_name: rabbitmq-user-credentials
-          secret_key: admin-password
+          secret_name: "{{ rabbitmq_connection_k8s_credentials_secret_name }}"
+          secret_key: "{{ rabbitmq_connection_k8s_credentials_secret_password_key }}"
         - name: DATA_UPDATER_PLANT_AMQP_PRODUCER_USERNAME
-          secret_name: rabbitmq-user-credentials
-          secret_key: admin-username
+          secret_name: "{{ rabbitmq_connection_k8s_credentials_secret_name }}"
+          secret_key: "{{ rabbitmq_connection_k8s_credentials_secret_username_key }}"
         - name: DATA_UPDATER_PLANT_AMQP_PRODUCER_PASSWORD
-          secret_name: rabbitmq-user-credentials
-          secret_key: admin-password
+          secret_name: "{{ rabbitmq_connection_k8s_credentials_secret_name }}"
+          secret_key: "{{ rabbitmq_connection_k8s_credentials_secret_password_key }}"
 
     # Deploy AppEngine API
     - role: astarte-generic-api-service
@@ -199,11 +199,11 @@
           value: "{{ lookup('vars', 'rabbitmq.connection.host', default=rabbitmq_connection_host) }}"
       k8s_deployment_additional_secret_variables:
         - name: TRIGGER_ENGINE_AMQP_CONSUMER_USERNAME
-          secret_name: rabbitmq-user-credentials
-          secret_key: admin-username
+          secret_name: "{{ rabbitmq_connection_k8s_credentials_secret_name }}"
+          secret_key: "{{ rabbitmq_connection_k8s_credentials_secret_username_key }}"
         - name: TRIGGER_ENGINE_AMQP_CONSUMER_PASSWORD
-          secret_name: rabbitmq-user-credentials
-          secret_key: admin-password
+          secret_name: "{{ rabbitmq_connection_k8s_credentials_secret_name }}"
+          secret_key: "{{ rabbitmq_connection_k8s_credentials_secret_password_key }}"
 
     # Deploy Dashboard
     - role: astarte-dashboard

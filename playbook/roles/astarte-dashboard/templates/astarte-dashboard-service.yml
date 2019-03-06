@@ -2,15 +2,15 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: astarte-dashboard
+    app: {{ resources_computed_prefix }}dashboard
     astarte-service: dashboard
     component: astarte
-  name: astarte-dashboard
+  name: {{ resources_computed_prefix }}dashboard
   namespace: {{ astarte_k8s_namespace }}
 spec:
   clusterIP: None
   ports:
     - port: 80
   selector:
-    app: astarte-dashboard
+    app: {{ resources_computed_prefix }}dashboard
 

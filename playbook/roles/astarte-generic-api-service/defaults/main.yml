@@ -1,5 +1,5 @@
 k8s_service_name: "{{ astarte_app_name | regex_replace('_', '-') }}"
-k8s_deployment_name: "astarte-{{ k8s_service_name }}-api"
+k8s_deployment_name: "{{ resources_computed_prefix }}{{ k8s_service_name }}-api"
 k8s_deployment_replicas: 1
 k8s_deployment_image: "{{ astarte_distribution_channel }}/astarte_{{ astarte_app_name }}_api:{{ astarte_tag }}"
 k8s_deployment_image_pull_policy: "{{ astarte_image_pull_policy }}"
@@ -7,7 +7,7 @@ k8s_deployment_resources_requests_cpu: 100m
 k8s_deployment_resources_requests_memory: 128M
 k8s_deployment_resources_limits_cpu: 200m
 k8s_deployment_resources_limits_memory: 256M
-k8s_erlang_cookie_name: "astarte-{{ k8s_service_name }}-api-cookie"
+k8s_erlang_cookie_name: "{{ resources_computed_prefix }}{{ k8s_service_name }}-api-cookie"
 astarte_app_amqp_connection_host: "{{ lookup('vars', 'rabbitmq.connection.host', default=rabbitmq_connection_host) }}"
 astarte_app_api_port: 4000
 check_api_health: true

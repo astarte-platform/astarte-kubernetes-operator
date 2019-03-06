@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: cassandra
+  name: {{ resources_computed_prefix }}cassandra
   namespace: {{ astarte_k8s_namespace }}
   labels:
-    app: cassandra
+    app: {{ resources_computed_prefix }}cassandra
 spec:
-  serviceName: cassandra
+  serviceName: {{ resources_computed_prefix }}cassandra
   replicas: {{ cassandra_cluster_size }}
   selector:
     matchLabels:
-      app: cassandra
+      app: {{ resources_computed_prefix }}cassandra
   template:
     metadata:
       labels:
-        app: cassandra
+        app: {{ resources_computed_prefix }}cassandra
     spec:
       terminationGracePeriodSeconds: 1800
 {% if cassandra_k8s_enable_antiaffinity %}
@@ -27,7 +27,7 @@ spec:
               - key: app
                 operator: In
                 values:
-                - cassandra
+                - {{ resources_computed_prefix }}cassandra
             topologyKey: kubernetes.io/hostname
 {% endif %}
       containers:
@@ -67,7 +67,7 @@ spec:
           - name: HEAP_NEWSIZE
             value: {{ cassandra_heap_new_size }}
           - name: CASSANDRA_SEEDS
-            value: "cassandra-0.cassandra.{{ astarte_k8s_namespace }}.svc.cluster.local"
+            value: "{{ resources_computed_prefix }}cassandra-0.{{ resources_computed_prefix }}cassandra.{{ astarte_k8s_namespace }}.svc.cluster.local"
           - name: CASSANDRA_CLUSTER_NAME
             value: "AstarteCassandra"
           - name: CASSANDRA_DC
@@ -88,16 +88,16 @@ spec:
           timeoutSeconds: 5
 {% if cassandra_k8s_volume_definition %}
         volumes:
-        - name: cassandra-data
+        - name: {{ resources_computed_prefix }}cassandra-data
           {{ cassandra_k8s_volume_definition | to_nice_yaml }}
 {% endif %}
         volumeMounts:
-        - name: cassandra-data
+        - name: {{ resources_computed_prefix }}cassandra-data
           mountPath: /cassandra_data
 {% if not cassandra_k8s_volume_definition %}
   volumeClaimTemplates:
   - metadata:
-      name: cassandra-data
+      name: {{ resources_computed_prefix }}cassandra-data
     spec:
       accessModes: [ "ReadWriteOnce" ]
 {% if cassandra_k8s_storage_class_name %}

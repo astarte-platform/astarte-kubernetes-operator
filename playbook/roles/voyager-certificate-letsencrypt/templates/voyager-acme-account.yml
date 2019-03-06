@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: voyager-acme-account
+  name: {{ resources_computed_prefix }}voyager-acme-account
   namespace: {{ astarte_k8s_namespace }}
 type: Opaque
 data:

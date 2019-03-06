@@ -2,15 +2,15 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: {{ astarte_app_name | regex_replace('_', '-') }}
-    astarte-service: {{ astarte_app_name | regex_replace('_', '-') }}
+    app: {{ resources_computed_prefix }}{{ k8s_service_name }}-api
+    astarte-service: {{ k8s_service_name }}
     component: astarte
-  name: {{ astarte_app_name | regex_replace('_', '-') }}
+  name: { resources_computed_prefix }}{{ k8s_service_name }}
   namespace: {{ astarte_k8s_namespace }}
 spec:
   clusterIP: None
   ports:
     - port: {{ astarte_app_api_port }}
   selector:
-    app: astarte-{{ astarte_app_name | regex_replace('_', '-') }}-api
+    app: {{ resources_computed_prefix }}{{ k8s_service_name }}-api
 
