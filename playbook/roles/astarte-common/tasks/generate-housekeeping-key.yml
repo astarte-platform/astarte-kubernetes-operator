@@ -1,0 +1,35 @@
+- name: Generating RSA Housekeeping private key
+  openssl_privatekey:
+    path: astarte_housekeeping_private_key.pem
+    size: 4096
+    type: RSA
+    force: yes
+
+- name: Generating RSA Housekeeping public key
+  openssl_publickey:
+    path: astarte_housekeeping_private_key.pub
+    privatekey_path: astarte_housekeeping_private_key.pem
+    format: PEM
+    force: yes
+
+- name: Store Housekeeping private key in dedicated K8S secret
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'housekeeping-jwt-private.yml') }}"
+  ignore_errors: yes
+  register: housekeeping_public_key_installed
+
+- name: Ensure Housekeeping public key from generated file
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'housekeeping-jwt-generated.yml') }}"
+
+- name: Delete RSA Housekeeping private key
+  openssl_privatekey:
+    path: astarte_housekeeping_private_key.pem
+    state: absent
+
+- name: Delete RSA Housekeeping public key
+  openssl_publickey:
+    path: astarte_housekeeping_private_key.pub
+    state: absent
