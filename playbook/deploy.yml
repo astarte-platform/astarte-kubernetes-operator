@@ -1,5 +1,5 @@
 ---
-- name: Deploy RabbitMQ
+- name: Deploy Astarte Dependencies
   hosts: localhost
   remote_user: root
   connection: local
@@ -8,26 +8,20 @@
   roles:
     - name: rabbitmq
       when: deploy_rabbitmq_k8s
-
-- name: Deploy VerneMQ
-  hosts: localhost
-  remote_user: root
-  connection: local
-  tags:
-    - vernemq
-  roles:
+      tags:
+        - rabbitmq
     - name: vernemq
       when: deploy_vernemq_k8s
-
-- name: Deploy CFSSL
-  hosts: localhost
-  remote_user: root
-  connection: local
-  tags:
-    - cfssl
-  roles:
+      tags:
+        - vernemq
     - name: cfssl
       when: deploy_cfssl_k8s
+      tags:
+        - cfssl
+    - name: cassandra
+      when: deploy_cassandra_k8s
+      tags:
+        - cassandra
 
 - name: Retrieve CFSSL CA Secret
   hosts: localhost
@@ -37,16 +31,6 @@
     - cfssl
   roles:
     - cfssl-ca-secret-job
-
-- name: Deploy Cassandra
-  hosts: localhost
-  remote_user: root
-  connection: local
-  tags:
-    - cassandra
-  roles:
-    - name: cassandra
-      when: deploy_cassandra_k8s
 
 - name: Deploy Astarte
   hosts: localhost
