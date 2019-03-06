@@ -34,5 +34,7 @@ docker:snapshot-container:
         - master@Astarte-NG/kubernetes-operator
     script:
         - cd $CI_PROJECT_DIR
+        # Don't clutter our image with git history
+        - rm -rf playbook/.git
         - /go/bin/operator-sdk build $DOCKER_REGISTRY/astarte-ng/kubernetes-operator:snapshot
         - docker push $DOCKER_REGISTRY/astarte-ng/kubernetes-operator:snapshot
