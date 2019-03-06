@@ -5,4 +5,4 @@ metadata:
   namespace: {{ astarte_k8s_namespace }}
 type: Opaque
 data:
-  public-key: {{ lookup('file', 'astarte_housekeeping_private_key.pub') | b64encode }}
+  public-key: {{ lookup('file', '/tmp/astarte_housekeeping_private_key.pub') | b64encode }}

@@ -1,14 +1,14 @@
 - name: Generating RSA Housekeeping private key
   openssl_privatekey:
-    path: astarte_housekeeping_private_key.pem
+    path: /tmp/astarte_housekeeping_private_key.pem
     size: 4096
     type: RSA
     force: yes
 
 - name: Generating RSA Housekeeping public key
   openssl_publickey:
-    path: astarte_housekeeping_private_key.pub
-    privatekey_path: astarte_housekeeping_private_key.pem
+    path: /tmp/astarte_housekeeping_private_key.pub
+    privatekey_path: /tmp/astarte_housekeeping_private_key.pem
     format: PEM
     force: yes
 
@@ -26,10 +26,10 @@
 
 - name: Delete RSA Housekeeping private key
   openssl_privatekey:
-    path: astarte_housekeeping_private_key.pem
+    path: /tmp/astarte_housekeeping_private_key.pem
     state: absent
 
 - name: Delete RSA Housekeeping public key
   openssl_publickey:
-    path: astarte_housekeeping_private_key.pub
+    path: /tmp/astarte_housekeeping_private_key.pub
     state: absent
