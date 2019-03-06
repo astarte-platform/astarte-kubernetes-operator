@@ -3,6 +3,7 @@ kind: Role
 metadata:
   creationTimestamp: null
   name: astarte-operator
+  namespace: kube-system
 rules:
 - apiGroups:
   - ""
