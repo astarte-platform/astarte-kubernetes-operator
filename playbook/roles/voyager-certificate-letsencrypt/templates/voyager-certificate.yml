@@ -8,13 +8,13 @@ spec:
   domains: {{ voyager_letsencrypt_domains | to_yaml }}
 {% else %}
   domains:
-{% if astarte_dashboard_use_ssl and astarte_dashboard_use_dedicated_dns and deploy_astarte_dashboard %}
-    - {{ astarte_dashboard_dns }}
+{% if astarte_dashboard_use_ssl and astarte_dashboard_use_dedicated_host and deploy_astarte_dashboard %}
+    - {{ astarte_dashboard_host }}
 {% endif %}
 {% if astarte_api_use_ssl %}
-    - {{ astarte_api_dns }}
+    - {{ astarte_api_host }}
 {% endif %}
-    - {{ mqtt_broker_dns }}
+    - {{ mqtt_broker_host }}
 {% endif %}
   acmeUserSecretName: voyager-acme-account
   challengeProvider: {{ voyager_letsencrypt_challenge_provider }}

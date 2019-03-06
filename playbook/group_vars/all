@@ -2,41 +2,42 @@
 astarte_k8s_namespace: "{{ lookup('vars', 'meta.namespace', default='astarte') }}"
 astarte_distribution_channel: "{{ lookup('vars', 'distribution_channel', default='astarte') }}" # This defaults to the OSS public release on Docker Hub
 astarte_tag: "{{ lookup('vars', 'version', default='0.10.0-beta.3') }}"
+astarte_image_pull_policy: "{{ lookup('vars', 'image_pull_policy', default='IfNotPresent') }}"
 
 # Reasonable defaults for standard K8S deployments
 rabbitmq_connection_host: "rabbitmq.{{ astarte_k8s_namespace }}.svc.cluster.local"
 rabbitmq_connection_port: "5672"
 cassandra_nodes: "cassandra.{{ astarte_k8s_namespace }}.svc.cluster.local:9042"
 cfssl_url: "http://cfssl.{{ astarte_k8s_namespace }}.svc.cluster.local"
-astarte_api_use_ssl: true
-astarte_api_expose_housekeeping: true
-astarte_api_enable_cors: false
-astarte_api_dns:
-astarte_dashboard_use_ssl: "{{ deploy_astarte_dashboard }}"
-astarte_dashboard_use_dedicated_dns: "{{ deploy_astarte_dashboard }}"
-astarte_dashboard_dns:
-mqtt_broker_dns:
-mqtt_broker_port: 8883
 
 # Reasonable K8S Deployment Policies
 k8s_storage_class_name: "{{ lookup('vars', 'storage_class_name', default='') }}"
 k8s_use_rbac: "{{ lookup('vars', 'rbac', default=true) }}"
 
 ### Ingress deployment control
+astarte_api_use_ssl: "{{ lookup('vars', 'api.ssl', default=true) }}"
+astarte_api_expose_housekeeping: true
+astarte_api_enable_cors: false
+astarte_api_host: "{{ lookup('vars', 'api.host', default='') }}"
+astarte_dashboard_use_ssl: "{{ lookup('vars', 'components.dashboard.ssl', default=astarte_api_use_ssl) }}"
+astarte_dashboard_use_dedicated_host: "{{ lookup('vars', 'components.dashboard.dedicated_host', default=deploy_astarte_dashboard) }}"
+astarte_dashboard_host: "{{ lookup('vars', 'components.dashboard.host', default='') }}"
+mqtt_broker_host: "{{ lookup('vars', 'vernemq.host', default='') }}"
+mqtt_broker_port: "{{ lookup('vars', 'vernemq.port', default=8883) }}"
 ##### Voyager
 deploy_voyager_broker_ingress: true
 deploy_voyager_api_ingress: true
 voyager_use_letsencrypt: true
 
 ### Control 3rd Party components deployment
-deploy_vernemq_k8s: true
-deploy_rabbitmq_k8s: true
-deploy_cassandra_k8s: true
-deploy_cfssl_k8s: true
+deploy_vernemq_k8s: "{{ lookup('vars', 'vernemq.deploy', default=true) }}"
+deploy_rabbitmq_k8s: "{{ lookup('vars', 'rabbitmq.deploy', default=true) }}"
+deploy_cassandra_k8s: "{{ lookup('vars', 'cassandra.deploy', default=true) }}"
+deploy_cfssl_k8s: "{{ lookup('vars', 'cfssl.deploy', default=true) }}"
 
 ### Control additional Astarte components deployment
-deploy_astarte_trigger_engine: true
-deploy_astarte_dashboard: true
+deploy_astarte_trigger_engine: "{{ lookup('vars', 'components.trigger_engine.deploy', default=true) }}"
+deploy_astarte_dashboard: "{{ lookup('vars', 'components.dashboard.deploy', default=true) }}"
 
 ### Data Updater Plant AMQP policies
 
