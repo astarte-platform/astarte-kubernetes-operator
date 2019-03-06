@@ -49,54 +49,66 @@ astarte_appengine_api_rooms_amqp_client_password_secret_name: rabbitmq-user-cred
 astarte_appengine_api_rooms_amqp_client_password_secret_key: admin-password
 
 ### Astarte Applications Resources and Replicas. You might want to override these.
+## Global allocation. This is used to auto-weight resources.
+astarte_k8s_resources_requests_cpu: "{{ lookup('vars', 'components.resources.requests.cpu', default='2000m') }}"
+astarte_k8s_resources_requests_memory: "{{ lookup('vars', 'components.resources.requests.memory', default='4096M') }}"
+astarte_k8s_resources_limits_cpu: "{{ lookup('vars', 'components.resources.limits.cpu', default='4000m') }}"
+astarte_k8s_resources_limits_memory: "{{ lookup('vars', 'components.resources.limits.memory', default='8192M') }}"
+
+## Derived variables. Don't touch!
+astarte_k8s_resources_requests_cpu_millis: "{{ (astarte_k8s_resources_requests_cpu * 1000)|float if astarte_k8s_resources_requests_cpu is number else astarte_k8s_resources_requests_cpu|replace('m','')|float }}"
+astarte_k8s_resources_requests_memory_megs: "{{ astarte_k8s_resources_requests_memory|replace('M','')|float if 'M' in astarte_k8s_resources_requests_memory else astarte_k8s_resources_requests_memory|replace('G','')|float * 1024.0 }}"
+astarte_k8s_resources_limits_cpu_millis: "{{ (astarte_k8s_resources_limits_cpu * 1000)|float if astarte_k8s_resources_limits_cpu is number else astarte_k8s_resources_limits_cpu|replace('m','')|float }}"
+astarte_k8s_resources_limits_memory_megs: "{{ astarte_k8s_resources_limits_memory|replace('M','')|float if 'M' in astarte_k8s_resources_limits_memory else astarte_k8s_resources_limits_memory|replace('G','')|float * 1024.0 }}"
+
 ## Housekeeping
-astarte_housekeeping_k8s_resources_requests_cpu: 100m
-astarte_housekeeping_k8s_resources_requests_memory: 128M
-astarte_housekeeping_k8s_resources_limits_cpu: 200m
-astarte_housekeeping_k8s_resources_limits_memory: 256M
+astarte_housekeeping_k8s_resources_requests_cpu: "{{ (astarte_k8s_resources_requests_cpu_millis|float * 0.07) | round(0, 'floor') | int | string + 'm' }}"
+astarte_housekeeping_k8s_resources_requests_memory: "{{ (astarte_k8s_resources_requests_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
+astarte_housekeeping_k8s_resources_limits_cpu: "{{ (astarte_k8s_resources_limits_cpu_millis|float * 0.07) | round(0, 'floor') | int | string + 'm' }}"
+astarte_housekeeping_k8s_resources_limits_memory: "{{ (astarte_k8s_resources_limits_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
 astarte_housekeeping_k8s_replicas: 1
-astarte_housekeeping_api_k8s_resources_requests_cpu: 100m
-astarte_housekeeping_api_k8s_resources_requests_memory: 128M
-astarte_housekeeping_api_k8s_resources_limits_cpu: 200m
-astarte_housekeeping_api_k8s_resources_limits_memory: 256M
+astarte_housekeeping_api_k8s_resources_requests_cpu: "{{ (astarte_k8s_resources_requests_cpu_millis|float * 0.07) | round(0, 'floor') | int | string + 'm' }}"
+astarte_housekeeping_api_k8s_resources_requests_memory: "{{ (astarte_k8s_resources_requests_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
+astarte_housekeeping_api_k8s_resources_limits_cpu: "{{ (astarte_k8s_resources_limits_cpu_millis|float * 0.07) | round(0, 'floor') | int | string + 'm' }}"
+astarte_housekeeping_api_k8s_resources_limits_memory: "{{ (astarte_k8s_resources_limits_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
 astarte_housekeeping_api_k8s_replicas: 1
 ## Realm Management
-astarte_realm_management_k8s_resources_requests_cpu: 100m
-astarte_realm_management_k8s_resources_requests_memory: 128M
-astarte_realm_management_k8s_resources_limits_cpu: 200m
-astarte_realm_management_k8s_resources_limits_memory: 256M
+astarte_realm_management_k8s_resources_requests_cpu: "{{ (astarte_k8s_resources_requests_cpu_millis|float * 0.07) | round(0, 'floor') | int | string + 'm' }}"
+astarte_realm_management_k8s_resources_requests_memory: "{{ (astarte_k8s_resources_requests_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
+astarte_realm_management_k8s_resources_limits_cpu: "{{ (astarte_k8s_resources_limits_cpu_millis|float * 0.07) | round(0, 'floor') | int | string + 'm' }}"
+astarte_realm_management_k8s_resources_limits_memory: "{{ (astarte_k8s_resources_limits_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
 astarte_realm_management_k8s_replicas: 1
-astarte_realm_management_api_k8s_resources_requests_cpu: 100m
-astarte_realm_management_api_k8s_resources_requests_memory: 128M
-astarte_realm_management_api_k8s_resources_limits_cpu: 200m
-astarte_realm_management_api_k8s_resources_limits_memory: 256M
+astarte_realm_management_api_k8s_resources_requests_cpu: "{{ (astarte_k8s_resources_requests_cpu_millis|float * 0.07) | round(0, 'floor') | int | string + 'm' }}"
+astarte_realm_management_api_k8s_resources_requests_memory: "{{ (astarte_k8s_resources_requests_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
+astarte_realm_management_api_k8s_resources_limits_cpu: "{{ (astarte_k8s_resources_limits_cpu_millis|float * 0.07) | round(0, 'floor') | int | string + 'm' }}"
+astarte_realm_management_api_k8s_resources_limits_memory: "{{ (astarte_k8s_resources_limits_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
 astarte_realm_management_api_k8s_replicas: 1
 ## Pairing
-astarte_pairing_k8s_resources_requests_cpu: 100m
-astarte_pairing_k8s_resources_requests_memory: 128M
-astarte_pairing_k8s_resources_limits_cpu: 200m
-astarte_pairing_k8s_resources_limits_memory: 256M
+astarte_pairing_k8s_resources_requests_cpu: "{{ (astarte_k8s_resources_requests_cpu_millis|float * 0.07) | round(0, 'floor') | int | string + 'm' }}"
+astarte_pairing_k8s_resources_requests_memory: "{{ (astarte_k8s_resources_requests_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
+astarte_pairing_k8s_resources_limits_cpu: "{{ (astarte_k8s_resources_limits_cpu_millis|float * 0.07) | round(0, 'floor') | int | string + 'm' }}"
+astarte_pairing_k8s_resources_limits_memory: "{{ (astarte_k8s_resources_limits_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
 astarte_pairing_k8s_replicas: 1
-astarte_pairing_api_k8s_resources_requests_cpu: 100m
-astarte_pairing_api_k8s_resources_requests_memory: 128M
-astarte_pairing_api_k8s_resources_limits_cpu: 200m
-astarte_pairing_api_k8s_resources_limits_memory: 256M
+astarte_pairing_api_k8s_resources_requests_cpu: "{{ (astarte_k8s_resources_requests_cpu_millis|float * 0.07) | round(0, 'floor') | int | string + 'm' }}"
+astarte_pairing_api_k8s_resources_requests_memory: "{{ (astarte_k8s_resources_requests_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
+astarte_pairing_api_k8s_resources_limits_cpu: "{{ (astarte_k8s_resources_limits_cpu_millis|float * 0.07) | round(0, 'floor') | int | string + 'm' }}"
+astarte_pairing_api_k8s_resources_limits_memory: "{{ (astarte_k8s_resources_limits_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
 astarte_pairing_api_k8s_replicas: 1
 ## Data Updater Plant
-astarte_data_updater_plant_k8s_resources_requests_cpu: 400m
-astarte_data_updater_plant_k8s_resources_requests_memory: 512M
-astarte_data_updater_plant_k8s_resources_limits_cpu: 1000m
-astarte_data_updater_plant_k8s_resources_limits_memory: 1024M
+astarte_data_updater_plant_k8s_resources_requests_cpu: "{{ (astarte_k8s_resources_requests_cpu_millis|float * 0.22) | round(0, 'floor') | int | string + 'm' }}"
+astarte_data_updater_plant_k8s_resources_requests_memory: "{{ (astarte_k8s_resources_requests_memory_megs|float * 0.22) | round(0, 'floor') | int | string + 'M' }}"
+astarte_data_updater_plant_k8s_resources_limits_cpu: "{{ (astarte_k8s_resources_limits_cpu_millis|float * 0.22) | round(0, 'floor') | int | string + 'm' }}"
+astarte_data_updater_plant_k8s_resources_limits_memory: "{{ (astarte_k8s_resources_limits_memory_megs|float * 0.22) | round(0, 'floor') | int | string + 'M' }}"
 astarte_data_updater_plant_k8s_replicas: 1
 ## AppEngine API
-astarte_appengine_api_k8s_resources_requests_cpu: 400m
-astarte_appengine_api_k8s_resources_requests_memory: 512M
-astarte_appengine_api_k8s_resources_limits_cpu: 1000m
-astarte_appengine_api_k8s_resources_limits_memory: 1024M
+astarte_appengine_api_k8s_resources_requests_cpu: "{{ (astarte_k8s_resources_requests_cpu_millis|float * 0.22) | round(0, 'floor') | int | string + 'm' }}"
+astarte_appengine_api_k8s_resources_requests_memory: "{{ (astarte_k8s_resources_requests_memory_megs|float * 0.22) | round(0, 'floor') | int | string + 'M' }}"
+astarte_appengine_api_k8s_resources_limits_cpu: "{{ (astarte_k8s_resources_limits_cpu_millis|float * 0.22) | round(0, 'floor') | int | string + 'm' }}"
+astarte_appengine_api_k8s_resources_limits_memory: "{{ (astarte_k8s_resources_limits_memory_megs|float * 0.22) | round(0, 'floor') | int | string + 'M' }}"
 astarte_appengine_api_k8s_replicas: 1
 ## Trigger Engine
-astarte_trigger_engine_k8s_resources_requests_cpu: 200m
-astarte_trigger_engine_k8s_resources_requests_memory: 256M
-astarte_trigger_engine_k8s_resources_limits_cpu: 500m
-astarte_trigger_engine_k8s_resources_limits_memory: 512M
+astarte_trigger_engine_k8s_resources_requests_cpu: "{{ (astarte_k8s_resources_requests_cpu_millis|float * 0.14) | round(0, 'floor') | int | string + 'm' }}"
+astarte_trigger_engine_k8s_resources_requests_memory: "{{ (astarte_k8s_resources_requests_memory_megs|float * 0.14) | round(0, 'floor') | int | string + 'M' }}"
+astarte_trigger_engine_k8s_resources_limits_cpu: "{{ (astarte_k8s_resources_limits_cpu_millis|float * 0.14) | round(0, 'floor') | int | string + 'm' }}"
+astarte_trigger_engine_k8s_resources_limits_memory: "{{ (astarte_k8s_resources_limits_memory_megs|float * 0.14) | round(0, 'floor') | int | string + 'M' }}"
 astarte_trigger_engine_k8s_replicas: 1
