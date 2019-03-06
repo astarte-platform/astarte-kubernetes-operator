@@ -29,9 +29,9 @@ spec:
   - secretName: {{ voyager_tls_broker_secret_name }}
 {% endif %}
     hosts:
-    - {{ mqtt_broker_dns }}
+    - {{ mqtt_broker_host }}
   rules:
-  - host: {{ mqtt_broker_dns }}
+  - host: {{ mqtt_broker_host }}
     tcp:
       port: '{{ mqtt_broker_port }}'
       backend:

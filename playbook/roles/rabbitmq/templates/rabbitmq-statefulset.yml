@@ -69,7 +69,7 @@ spec:
               mountPath: /etc/rabbitmq
       containers:
       - name: rabbitmq
-        image: rabbitmq:3.7.12
+        image: rabbitmq:{{ rabbitmq_image_tag }}
         livenessProbe:
           exec:
             command: ["rabbitmqctl", "status"]

@@ -36,14 +36,14 @@ spec:
 {% endif %}
     hosts:
 {% if astarte_api_use_ssl %}
-    - {{ astarte_api_dns }}
+    - {{ astarte_api_host }}
 {% endif %}
-{% if astarte_dashboard_use_ssl and deploy_astarte_dashboard and astarte_dashboard_use_dedicated_dns %}
-    - {{ astarte_dashboard_dns }}
+{% if astarte_dashboard_use_ssl and deploy_astarte_dashboard and astarte_dashboard_use_dedicated_host %}
+    - {{ astarte_dashboard_host }}
 {% endif %}
 {% endif %}
   rules:
-  - host: {{ astarte_api_dns }}
+  - host: {{ astarte_api_host }}
     http:
       paths:
 {% if astarte_api_expose_housekeeping %}
@@ -68,14 +68,14 @@ spec:
         backend:
           serviceName: appengine
           servicePort: '4000'
-{% if not astarte_dashboard_use_dedicated_dns %}
+{% if not astarte_dashboard_use_dedicated_host %}
       - path: /dashboard
         backend:
           serviceName: astarte-dashboard
           servicePort: '80'
 {% endif %}
-{% if astarte_dashboard_use_dedicated_dns %}
-  - host: {{ astarte_dashboard_dns }}
+{% if astarte_dashboard_use_dedicated_host %}
+  - host: {{ astarte_dashboard_host }}
     http:
       paths:
       - path: /
