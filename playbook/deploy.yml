@@ -1,4 +1,14 @@
 ---
+- name: Deploy Common Astarte Resources
+  hosts: localhost
+  remote_user: root
+  connection: local
+  tags:
+    - astarte
+  roles:
+    # This deploys all needed dependencies such as secrets, configurations...
+    - astarte-common
+
 - name: Deploy Astarte Dependencies
   hosts: localhost
   remote_user: root
@@ -39,9 +49,6 @@
   tags:
     - astarte
   roles:
-    # This deploys all needed dependencies such as secrets, configurations...
-    - astarte-common
-
     # Deploy Housekeeping
     - role: astarte-generic-backend-service
       tags:
