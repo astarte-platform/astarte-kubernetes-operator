@@ -9,6 +9,10 @@ rabbitmq_connection_host: "rabbitmq.{{ astarte_k8s_namespace }}.svc.cluster.loca
 rabbitmq_connection_port: "5672"
 cassandra_nodes: "cassandra.{{ astarte_k8s_namespace }}.svc.cluster.local:9042"
 cfssl_url: "http://cfssl.{{ astarte_k8s_namespace }}.svc.cluster.local"
+# This weird conditional means: default to empty when running from the Operator, and to 'housekeeping.pub'
+# when running as a standard playbook.
+astarte_housekeeping_key_file: "{{ '' if lookup('vars', 'meta.name', default='') else 'housekeeping.pub' }}"
+astarte_housekeeping_key_secret: housekeeping-jwt
 
 # Reasonable K8S Deployment Policies
 k8s_storage_class_name: "{{ lookup('vars', 'storage_class_name', default='') }}"

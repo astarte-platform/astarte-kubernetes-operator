@@ -2,3 +2,6 @@ inventories/*
 vars/*
 files/housekeeping.*
 *.retry
+*.pem
+*.pub
+*.key

@@ -10,7 +10,15 @@
     state: present
     definition: "{{ lookup('template', 'astarte-generic-erlang-configuration.yml') }}"
 
-- name: Ensure Housekeeping public key
+# If a file was explicitly given, then let's ensure the secret every time.
+- name: Ensure Housekeeping public key from local file
   k8s:
     state: present
     definition: "{{ lookup('template', 'housekeeping-jwt.yml') }}"
+  when: vars['astarte_housekeeping_key_file']
+
+# If a file was not given, generate a housekeeping key only if one does not exist yet.
+- import_tasks: generate-housekeeping-key.yml
+  when:
+    - not astarte_housekeeping_key_file
+    - not lookup('k8s', kind='Secret', resource_name=astarte_housekeeping_key_secret, namespace=astarte_k8s_namespace)
