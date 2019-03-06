@@ -1,0 +1,27 @@
+stages:
+    - test
+    - build
+
+molecule:
+  image: python:3.7
+  stage: test
+  before_script:
+    - pip install docker molecule openshift
+  script:
+    - molecule test -s test-local
+
+docker:snapshot-container:
+    image: docker:latest
+    before_script:
+        - docker info
+        - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $DOCKER_REGISTRY
+        # Install Operator SDK
+        - curl https://github.com/operator-framework/operator-sdk/releases/download/v0.5.0/operator-sdk-v0.5.0-x86_64-linux-gnu -o /usr/local/bin/operator-sdk
+    services:
+        - docker:stable-dind
+    stage: build
+    only:
+        - master@Astarte-NG/kubernetes-operator
+    script:
+        - operator-sdk build $DOCKER_REGISTRY/astarte-ng/kubernetes-operator:snapshot
+        - docker push $DOCKER_REGISTRY/astarte-ng/kubernetes-operator:snapshot
