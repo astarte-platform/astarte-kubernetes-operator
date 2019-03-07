@@ -12,10 +12,10 @@ spec:
   rabbitmq:
     resources:
       requests:
-        cpu: 500m
-        memory: 1000M
+        cpu: 300m
+        memory: 512M
       limits:
-        cpu: 500m
+        cpu: 1
         memory: 1000M
   cassandra:
     maxHeapSize: 1024M
@@ -24,19 +24,19 @@ spec:
       size: 30Gi
     resources:
       requests:
-        cpu: 500m
-        memory: 1000M
+        cpu: 1
+        memory: 1024M
       limits:
-        cpu: 500m
-        memory: 1000M
+        cpu: 2
+        memory: 2048M
   vernemq:
     resources:
       requests:
         cpu: 500m
-        memory: 1000M
+        memory: 1024M
       limits:
-        cpu: 500m
-        memory: 1000M
+        cpu: 1000m
+        memory: 2048M
   components:
     # Global resource allocation. Automatically allocates resources to components weighted in a
     # reasonable way.
