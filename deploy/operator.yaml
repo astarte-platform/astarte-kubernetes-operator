@@ -17,8 +17,8 @@ spec:
       containers:
         - name: astarte-operator
           # Replace this with the built image name
-          image: "{{ REPLACE_IMAGE }}"
-          imagePullPolicy: "{{ pull_policy|default('Always') }}"
+          image: astarte/astarte-kubernetes-operator:0.10-snapshot
+          imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
               value: ""
