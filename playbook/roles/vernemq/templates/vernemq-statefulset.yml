@@ -84,8 +84,10 @@ spec:
                 key: {{ rabbitmq_connection_k8s_credentials_secret_password_key }}
           - name: DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__HOST
             value: "{{ vars | json_query('rabbitmq.connection.host') | default(rabbitmq_connection_host, true) }}"
-          - name: DISCOVERY_KUBERNETES
+          - name: DOCKER_VERNEMQ_DISCOVERY_KUBERNETES
             value: "1"
+          - name: DOCKER_VERNEMQ_KUBERNETES_LABEL_SELECTOR
+            value: "app={{ resources_computed_prefix }}vernemq"
           - name: MY_POD_IP
             valueFrom:
               fieldRef:
