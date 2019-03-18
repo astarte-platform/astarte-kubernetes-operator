@@ -1,12 +1,12 @@
 apiVersion: api.astarte-project.org/v1alpha1
 kind: AstarteVoyagerIngress
 metadata:
-  name: example-astarte-ingress-all-configuration
+  name: example
   namespace: astarte
 spec:
   ### Astarte Voyager Ingress CRD
   imagePullPolicy: IfNotPresent
-  astarte: example-astarte-all-configuration
+  astarte: example
   api:
     deploy: true
     cors: false

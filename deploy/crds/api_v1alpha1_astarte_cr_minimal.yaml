@@ -1,7 +1,7 @@
 apiVersion: api.astarte-project.org/v1alpha1
 kind: Astarte
 metadata:
-  name: example-astarte-minimal-configuration
+  name: example-minimal
   namespace: astarte
 spec:
   # This is the most minimal set of reasonable configuration to spin up an Astarte
