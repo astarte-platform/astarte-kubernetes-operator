@@ -35,7 +35,7 @@ spec:
     tcp:
       port: '{{ mqtt_broker_port }}'
       backend:
-        serviceName: {{ resources_computed_prefix }}vernemq
+        serviceName: {{ parent_resources_computed_prefix }}vernemq
         servicePort: '1885'
         backendRule:
         - 'balance source'
