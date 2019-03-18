@@ -19,6 +19,7 @@ rabbitmq_connection_k8s_credentials_secret_password_key: "{{ vars | json_query('
 
 cassandra_nodes: "{{ resources_computed_prefix }}cassandra.{{ astarte_k8s_namespace }}.svc.cluster.local:9042"
 cfssl_url: "http://{{ resources_computed_prefix }}cfssl.{{ astarte_k8s_namespace }}.svc.cluster.local"
+
 # This weird conditional means: default to empty when running from the Operator, and to 'housekeeping.pub'
 # when running as a standard playbook.
 astarte_housekeeping_key_file: "{{ '' if vars | json_query('meta.name') else 'housekeeping.pub' }}"
@@ -33,9 +34,9 @@ astarte_api_use_ssl: "{{ vars | json_query('api.ssl') | default(true, true) }}"
 astarte_api_expose_housekeeping: true
 astarte_api_enable_cors: false
 astarte_api_host: "{{ vars | json_query('api.host') | default('', true) }}"
-astarte_dashboard_use_ssl: "{{ vars | json_query('components.dashboard.ssl') | default(astarte_api_use_ssl, true) }}"
-astarte_dashboard_use_dedicated_host: "{{ vars | json_query('components.dashboard.dedicated_host') | default(deploy_astarte_dashboard, true) }}"
-astarte_dashboard_host: "{{ vars | json_query('components.dashboard.host') | default('', true) }}"
+astarte_dashboard_use_ssl: "{{ vars | json_query('dashboard.ssl') | default(astarte_api_use_ssl, true) }}"
+astarte_dashboard_use_dedicated_host: "{{ false if (vars | json_query('dashboard.host')) == '' else true }}"
+astarte_dashboard_host: "{{ vars | json_query('dashboard.host') | default('', true) }}"
 mqtt_broker_host: "{{ vars | json_query('vernemq.host') | default('', true) }}"
 mqtt_broker_port: "{{ vars | json_query('vernemq.port') | default(8883, true) }}"
 mqtt_broker_ca_secret: "{{ vars | json_query('vernemq.ca_secret') | default(resources_computed_prefix + 'cfssl-ca', true) }}"

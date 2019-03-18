@@ -68,13 +68,13 @@ spec:
         backend:
           serviceName: {{ resources_computed_prefix }}appengine
           servicePort: '4000'
-{% if not astarte_dashboard_use_dedicated_host %}
+{% if deploy_astarte_dashboard and not astarte_dashboard_use_dedicated_host %}
       - path: /dashboard
         backend:
           serviceName: {{ resources_computed_prefix }}dashboard
           servicePort: '80'
 {% endif %}
-{% if astarte_dashboard_use_dedicated_host %}
+{% if deploy_astarte_dashboard and astarte_dashboard_use_dedicated_host %}
   - host: {{ astarte_dashboard_host }}
     http:
       paths:
