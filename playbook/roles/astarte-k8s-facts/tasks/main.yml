@@ -1,0 +1,24 @@
+- name: Retrieve Astarte object
+  k8s_facts:
+    api_version: api.astarte-project.org/v1alpha1
+    kind: Astarte
+    name: "{{ astarte }}"
+    namespace: "{{ meta.namespace }}"
+  register: astarte_k8s_object
+
+- debug:
+    var: astarte_k8s_object
+    verbosity: 2
+
+- name: Setting facts based on the main Astarte object
+  set_fact:
+    astarte_api_use_ssl: "{{ astarte_k8s_object.resources | first | json_query('spec.api.ssl') | default(true, true) }}"
+    astarte_api_host: "{{ astarte_k8s_object.resources[0].spec.api.host }}"
+    mqtt_broker_host: "{{ astarte_k8s_object.resources[0].spec.vernemq.host }}"
+    mqtt_broker_port: "{{ astarte_k8s_object.resources | first | json_query('spec.vernemq.port') | default(8883, true) }}"
+    mqtt_broker_ca_secret: "{{ astarte_k8s_object.resources | first | json_query('spec.vernemq.ca_secret') | default(astarte + '-cfssl-ca', true) }}"
+    deploy_astarte_dashboard: "{{ astarte_k8s_object.resources | first | json_query('spec.components.dashboard.deploy') | default(true, true) }}"
+
+- debug:
+    msg: "Setting facts: {{ astarte_api_use_ssl }}, {{ astarte_api_host }}, {{ mqtt_broker_host }}, {{ mqtt_broker_port }}, {{ mqtt_broker_ca_secret }}, {{ deploy_astarte_dashboard }}"
+    verbosity: 2
