@@ -59,9 +59,12 @@ spec:
         cpu: 2000m
         memory: 2048M
   vernemq:
+    host: "broker.astarte-example.com"
+    port: 8883
     deploy: true
     replicas: 1
     antiAffinity: true
+    caSecret: example-astarte-all-configuration-cfssl-ca
     storage:
       size: 5Gi
       className: do-block-storage
@@ -216,12 +219,11 @@ spec:
     dashboard:
       deploy: true
       replicas: 1
-      ssl: true
       defaultRealm: default
       config:
-        realm_management_api_url: https://api.astarte-example.com/realmmanagement/v1/"
-        default_realm: default
-        default_auth: token
+        realmManagementApiUrl: https://api.astarte-example.com/realmmanagement/v1/"
+        defaultRealm: default
+        defaultAuth: token
         auth:
           - type: token
       resources:
