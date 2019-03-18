@@ -11,10 +11,12 @@ metadata:
     ingress.appscode.com/replicas: '{{ voyager_api_ingress_config.replicas }}'
     ingress.appscode.com/rewrite-target: /
     # HSTS
+{% if astarte_api_use_ssl or (deploy_astarte_dashboard and astarte_dashboard_use_ssl) %}
     ingress.appscode.com/hsts: "true"
     ingress.appscode.com/hsts-preload: "true"
     ingress.appscode.com/hsts-include-subdomains: "true"
     ingress.appscode.com/hsts-max-age: "100"
+{% endif %}
 {% if voyager_api_ingress_config.node_selector %}
     ingress.appscode.com/node-selector: '{{ voyager_api_ingress_config.node_selector }}'
 {% endif %}
