@@ -38,6 +38,7 @@ astarte_dashboard_use_dedicated_host: "{{ vars | json_query('components.dashboar
 astarte_dashboard_host: "{{ vars | json_query('components.dashboard.host') | default('', true) }}"
 mqtt_broker_host: "{{ vars | json_query('vernemq.host') | default('', true) }}"
 mqtt_broker_port: "{{ vars | json_query('vernemq.port') | default(8883, true) }}"
+mqtt_broker_ca_secret: "{{ vars | json_query('vernemq.ca_secret') | default(resources_computed_prefix + 'cfssl-ca', true) }}"
 ##### Voyager
 deploy_voyager_broker_ingress: true
 deploy_voyager_api_ingress: true

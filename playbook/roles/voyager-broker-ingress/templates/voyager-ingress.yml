@@ -13,7 +13,7 @@ metadata:
     # Keep source IP - we need this for a number of reasons
     ingress.appscode.com/keep-source-ip: "true"
     # These options are here to please VerneMQ/Astarte
-    ingress.appscode.com/auth-tls-secret: cfssl-ca
+    ingress.appscode.com/auth-tls-secret: {{ mqtt_broker_ca_secret }}
     ingress.appscode.com/auth-tls-verify-client: required
     # This is soft-capped to prevent Astarte from freaking out
     ingress.appscode.com/max-connections: "{{ voyager_broker_ingress_config.max_connections }}"
@@ -39,4 +39,3 @@ spec:
         servicePort: '1885'
         backendRule:
         - 'balance source'
-
