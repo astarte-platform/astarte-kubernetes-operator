@@ -18,7 +18,9 @@
     mqtt_broker_port: "{{ astarte_k8s_object.resources | first | json_query('spec.vernemq.port') | default(8883, true) }}"
     mqtt_broker_ca_secret: "{{ astarte_k8s_object.resources | first | json_query('spec.vernemq.ca_secret') | default(astarte + '-cfssl-ca', true) }}"
     deploy_astarte_dashboard: "{{ astarte_k8s_object.resources | first | json_query('spec.components.dashboard.deploy') | default(true, true) }}"
+    # We need to change this to ensure resource pointers are in sync
+    parent_resources_computed_prefix: "{{ astarte }}-"
 
 - debug:
-    msg: "Setting facts: {{ astarte_api_use_ssl }}, {{ astarte_api_host }}, {{ mqtt_broker_host }}, {{ mqtt_broker_port }}, {{ mqtt_broker_ca_secret }}, {{ deploy_astarte_dashboard }}"
+    msg: "Setting facts: {{ resources_computed_prefix }}, {{ astarte_api_use_ssl }}, {{ astarte_api_host }}, {{ mqtt_broker_host }}, {{ mqtt_broker_port }}, {{ mqtt_broker_ca_secret }}, {{ deploy_astarte_dashboard }}"
     verbosity: 2

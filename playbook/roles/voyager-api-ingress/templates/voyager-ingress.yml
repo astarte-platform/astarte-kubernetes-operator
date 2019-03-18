@@ -51,29 +51,29 @@ spec:
 {% if astarte_api_expose_housekeeping %}
       - path: /housekeeping
         backend:
-          serviceName: {{ resources_computed_prefix }}housekeeping
+          serviceName: {{ parent_resources_computed_prefix }}housekeeping
           servicePort: '4000'
 {% endif %}
       - path: /realm
         backend:
-          serviceName: {{ resources_computed_prefix }}realm
+          serviceName: {{ parent_resources_computed_prefix }}realm
           servicePort: '4000'
       - path: /realmmanagement
         backend:
-          serviceName: {{ resources_computed_prefix }}realm
+          serviceName: {{ parent_resources_computed_prefix }}realm
           servicePort: '4000'
       - path: /pairing
         backend:
-          serviceName: {{ resources_computed_prefix }}pairing
+          serviceName: {{ parent_resources_computed_prefix }}pairing
           servicePort: '4000'
       - path: /appengine
         backend:
-          serviceName: {{ resources_computed_prefix }}appengine
+          serviceName: {{ parent_resources_computed_prefix }}appengine
           servicePort: '4000'
 {% if deploy_astarte_dashboard and not astarte_dashboard_use_dedicated_host %}
       - path: /dashboard
         backend:
-          serviceName: {{ resources_computed_prefix }}dashboard
+          serviceName: {{ parent_resources_computed_prefix }}dashboard
           servicePort: '80'
 {% endif %}
 {% if deploy_astarte_dashboard and astarte_dashboard_use_dedicated_host %}
@@ -82,6 +82,6 @@ spec:
       paths:
       - path: /
         backend:
-          serviceName: {{ resources_computed_prefix }}dashboard
+          serviceName: {{ parent_resources_computed_prefix }}dashboard
           servicePort: '80'
 {% endif %}
