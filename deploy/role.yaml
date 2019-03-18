@@ -61,7 +61,7 @@ rules:
   verbs:
   - '*'
 - apiGroups:
-  - api.astarte-project.org
+  - voyager.appscode.com
   resources:
   - '*'
   verbs:
