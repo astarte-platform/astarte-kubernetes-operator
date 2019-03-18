@@ -28,7 +28,7 @@ docker:snapshot-container:
         - cd $GOPATH/src/github.com/operator-framework
         - git clone https://github.com/operator-framework/operator-sdk
         - cd operator-sdk
-        - git checkout v0.5.0
+        - git checkout v0.6.0
         - make dep
         - make install
     services:
