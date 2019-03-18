@@ -10,6 +10,8 @@ spec:
     listKind: AstarteList
     plural: astartes
     singular: astarte
+    categories:
+    - all
   scope: Namespaced
   subresources:
     status: {}
