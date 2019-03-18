@@ -56,11 +56,11 @@ spec:
 {% endif %}
       - path: /realm
         backend:
-          serviceName: {{ parent_resources_computed_prefix }}realm
+          serviceName: {{ parent_resources_computed_prefix }}realm-management
           servicePort: '4000'
       - path: /realmmanagement
         backend:
-          serviceName: {{ parent_resources_computed_prefix }}realm
+          serviceName: {{ parent_resources_computed_prefix }}realm-management
           servicePort: '4000'
       - path: /pairing
         backend:
