@@ -15,6 +15,7 @@
   k8s:
     state: absent
     name: "{{ resources_computed_prefix }}cfssl-ca-secret-job"
+    namespace: "{{ astarte_k8s_namespace }}"
     api_version: batch/v1
     kind: Job
   # Ensure we run this only when the secret has been created by the job.
