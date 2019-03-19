@@ -12,12 +12,12 @@
 
 - name: Setting facts based on the main Astarte object
   set_fact:
-    astarte_api_use_ssl: "{{ astarte_k8s_object.resources | first | json_query('spec.api.ssl') | default(true, true) }}"
+    astarte_api_use_ssl: "{{ false if (astarte_k8s_object.resources | first | json_query('spec.api.ssl')) is sameas false else true }}"
     astarte_api_host: "{{ astarte_k8s_object.resources[0].spec.api.host }}"
     mqtt_broker_host: "{{ astarte_k8s_object.resources[0].spec.vernemq.host }}"
     mqtt_broker_port: "{{ astarte_k8s_object.resources | first | json_query('spec.vernemq.port') | default(8883, true) }}"
     mqtt_broker_ca_secret: "{{ astarte_k8s_object.resources | first | json_query('spec.vernemq.ca_secret') | default(astarte + '-cfssl-ca', true) }}"
-    deploy_astarte_dashboard: "{{ astarte_k8s_object.resources | first | json_query('spec.components.dashboard.deploy') | default(true, true) }}"
+    deploy_astarte_dashboard: "{{ false if (astarte_k8s_object.resources | first | json_query('spec.components.dashboard.deploy')) is sameas false else true }}"
     # We need to change this to ensure resource pointers are in sync
     parent_resources_computed_prefix: "{{ astarte }}-"
 

@@ -1,4 +1,4 @@
-cassandra_k8s_enable_antiaffinity: "{{ vars | json_query('cassandra.anti_affinity') | default(true, true) }}"
+cassandra_k8s_enable_antiaffinity: "{{ false if (vars | json_query('cassandra.anti_affinity')) is sameas false else true }}"
 
 cassandra_image_tag: "{{ vars | json_query('cassandra.version') | default('3.11.3', true) }}"
 cassandra_cluster_size: "{{ vars | json_query('cassandra.replicas') | default('1', true) }}"

@@ -1,4 +1,4 @@
-cfssl_k8s_enable_antiaffinity: "{{ vars | json_query('cfssl.anti_affinity') | default(true, true) }}"
+cfssl_k8s_enable_antiaffinity: "{{ false if (vars | json_query('cfssl.anti_affinity')) is sameas false else true }}"
 
 cfssl_k8s_replicas: "{{ vars | json_query('cfssl.replicas') | default('1', true) }}"
 

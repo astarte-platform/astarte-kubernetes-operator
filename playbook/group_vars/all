@@ -28,33 +28,33 @@ astarte_housekeeping_key_secret: "{{ resources_computed_prefix }}housekeeping-jw
 
 # Reasonable K8S Deployment Policies
 k8s_storage_class_name: "{{ vars | json_query('storage_class_name') | default('', true) }}"
-k8s_use_rbac: "{{ vars | json_query('rbac') | default(true, true) }}"
+k8s_use_rbac: "{{ false if (vars | json_query('rbac')) is sameas false else true }}"
 
 ### Ingress deployment control
-astarte_api_use_ssl: "{{ vars | json_query('api.ssl') | default(true, true) }}"
+astarte_api_use_ssl: "{{ false if (vars | json_query('api.ssl')) is sameas false else true }}"
 astarte_api_expose_housekeeping: true
-astarte_api_enable_cors: "{{ vars | json_query('api.cors') | default(false, true) }}"
-astarte_api_host: "{{ vars | json_query('api.host') | default('', true) }}"
+astarte_api_enable_cors: "{{ true if (vars | json_query('api.cors')) is sameas true else false }}"
+astarte_api_host: "{{ vars | json_query('api.host') | default(None, true) }}"
 astarte_dashboard_use_ssl: "{{ vars | json_query('dashboard.ssl') | default(astarte_api_use_ssl, true) }}"
 astarte_dashboard_use_dedicated_host: "{{ false if (vars | json_query('dashboard.host')) == '' else true }}"
 astarte_dashboard_host: "{{ vars | json_query('dashboard.host') | default('', true) }}"
-mqtt_broker_host: "{{ vars | json_query('vernemq.host') | default('', true) }}"
+mqtt_broker_host: "{{ vars | json_query('vernemq.host') | default(None, true) }}"
 mqtt_broker_port: "{{ vars | json_query('vernemq.port') | default(8883, true) }}"
 mqtt_broker_ca_secret: "{{ vars | json_query('vernemq.ca_secret') | default(resources_computed_prefix + 'cfssl-ca', true) }}"
 ##### Voyager
-deploy_voyager_broker_ingress: "{{ vars | json_query('api.deploy') | default(true, true) }}"
-deploy_voyager_api_ingress: "{{ vars | json_query('broker.deploy') | default(true, true) }}"
-voyager_use_letsencrypt: "{{ vars | json_query('letsencrypt.use') | default(true, true) }}"
+deploy_voyager_broker_ingress: "{{ false if (vars | json_query('api.deploy')) is sameas false else true }}"
+deploy_voyager_api_ingress: "{{ false if (vars | json_query('broker.deploy')) is sameas false else true }}"
+voyager_use_letsencrypt: "{{ false if (vars | json_query('letsencrypt.use')) is sameas false else true }}"
 
 ### Control 3rd Party components deployment
-deploy_vernemq_k8s: "{{ vars | json_query('vernemq.deploy') | default(true, true) }}"
-deploy_rabbitmq_k8s: "{{ vars | json_query('rabbitmq.deploy') | default(true, true) }}"
-deploy_cassandra_k8s: "{{ vars | json_query('cassandra.deploy') | default(true, true) }}"
-deploy_cfssl_k8s: "{{ vars | json_query('cfssl.deploy') | default(true, true) }}"
+deploy_vernemq_k8s: "{{ false if (vars | json_query('vernemq.deploy')) is sameas false else true }}"
+deploy_rabbitmq_k8s: "{{ false if (vars | json_query('rabbitmq.deploy')) is sameas false else true }}"
+deploy_cassandra_k8s: "{{ false if (vars | json_query('cassandra.deploy')) is sameas false else true }}"
+deploy_cfssl_k8s: "{{ false if (vars | json_query('cfssl.deploy')) is sameas false else true }}"
 
 ### Control additional Astarte components deployment
-deploy_astarte_trigger_engine: "{{ vars | json_query('components.trigger_engine.deploy') | default(true, true) }}"
-deploy_astarte_dashboard: "{{ vars | json_query('components.dashboard.deploy') | default(true, true) }}"
+deploy_astarte_trigger_engine: "{{ false if (vars | json_query('components.trigger_engine.deploy')) is sameas false else true }}"
+deploy_astarte_dashboard: "{{ false if (vars | json_query('components.dashboard.deploy')) is sameas false else true }}"
 
 ### Data Updater Plant AMQP policies
 
