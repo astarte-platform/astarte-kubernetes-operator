@@ -1,0 +1,9 @@
+---
+- version: v1alpha1
+  group: api.astarte-project.org
+  kind: Astarte
+  playbook: /opt/ansible/playbook/deploy.yml
+- version: v1alpha1
+  group: api.astarte-project.org
+  kind: AstarteVoyagerIngress
+  playbook: /opt/ansible/playbook/deploy-ingresses.yml

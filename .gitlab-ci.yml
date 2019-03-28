@@ -1,0 +1,44 @@
+stages:
+    - test
+    - build
+# This won't work until we figure things out.
+#molecule:
+#  image: python:3.7
+#  variables:
+#    GOPATH: /go
+#    GIT_SUBMODULE_STRATEGY: recursive
+#  stage: test
+#  before_script:
+#    - pip install docker molecule openshift
+#  script:
+#    - molecule test -s test-local
+
+docker:snapshot-container:
+    image: docker:stable
+    variables:
+        GOPATH: /go
+        GIT_SUBMODULE_STRATEGY: recursive
+    before_script:
+        - docker info
+        - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $DOCKER_REGISTRY
+        # Install Operator SDK
+        - mkdir /go
+        - apk add --no-cache go git dep make musl-dev
+        - mkdir -p $GOPATH/src/github.com/operator-framework
+        - cd $GOPATH/src/github.com/operator-framework
+        - git clone https://github.com/operator-framework/operator-sdk
+        - cd operator-sdk
+        - git checkout v0.6.0
+        - make dep
+        - make install
+    services:
+        - docker:stable-dind
+    stage: build
+    only:
+        - master@Astarte-NG/kubernetes-operator
+    script:
+        - cd $CI_PROJECT_DIR
+        # Don't clutter our image with git history
+        - rm -rf playbook/.git
+        - /go/bin/operator-sdk build $DOCKER_REGISTRY/astarte-ng/kubernetes-operator:snapshot
+        - docker push $DOCKER_REGISTRY/astarte-ng/kubernetes-operator:snapshot

@@ -1,0 +1,10 @@
+- name: Create Astarte App cookie secret
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'astarte-generic-backend-cookie.yml') }}"
+  when: not lookup('k8s', kind='Secret', resource_name=k8s_erlang_cookie_name, namespace=astarte_k8s_namespace)
+
+- name: Ensure Astarte App Deployment
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'astarte-generic-backend-deployment.yml') }}"

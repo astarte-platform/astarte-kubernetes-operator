@@ -1,0 +1,154 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ resources_computed_prefix }}rabbitmq-config
+  namespace: {{ astarte_k8s_namespace }}
+data:
+  enabled_plugins: |
+      [rabbitmq_management,rabbitmq_peer_discovery_k8s].
+  rabbitmq.conf: |
+      ## Clustering
+      cluster_formation.peer_discovery_backend  = rabbit_peer_discovery_k8s
+      cluster_formation.k8s.host = kubernetes.default.svc.cluster.local
+      cluster_formation.k8s.hostname_suffix = .{{ resources_computed_prefix }}rabbitmq.{{ astarte_k8s_namespace }}.svc.cluster.local
+      cluster_formation.k8s.address_type = hostname
+      cluster_formation.node_cleanup.interval = 10
+      cluster_formation.node_cleanup.only_log_warning = true
+      cluster_partition_handling = autoheal
+      ## queue master locator 
+      queue_master_locator=min-masters
+      ## enable guest user  
+      loopback_users.guest = false
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ resources_computed_prefix }}rabbitmq
+  namespace: {{ astarte_k8s_namespace }}
+  labels:
+    app: {{ resources_computed_prefix }}rabbitmq
+# Configuration goes here.
+spec:
+  serviceName: "{{ resources_computed_prefix }}rabbitmq"
+  replicas: {{ rabbitmq_k8s_replicas }}
+  selector:
+    matchLabels:
+      app: {{ resources_computed_prefix }}rabbitmq
+  template:
+    metadata:
+      labels:
+        app: {{ resources_computed_prefix }}rabbitmq
+    spec:
+      # Give it some time.
+      terminationGracePeriodSeconds: 30
+{% if k8s_use_rbac %}
+      # Service account
+      serviceAccountName: {{ resources_computed_prefix }}rabbitmq
+{% endif %}
+{% if rabbitmq_k8s_enable_antiaffinity %}
+      # Affinity - just don't run two instances on the same node. It doesn't make sense.
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - {{ resources_computed_prefix }}rabbitmq
+            topologyKey: kubernetes.io/hostname
+{% endif %}
+      initContainers:
+        - name: copy-rabbitmq-config
+          image: busybox
+          command: ['sh', '-c', 'cp /configmap/* /etc/rabbitmq']
+          volumeMounts:
+            - name: config-volume
+              mountPath: /configmap
+            - name: config
+              mountPath: /etc/rabbitmq
+      containers:
+      - name: rabbitmq
+        image: rabbitmq:{{ rabbitmq_image_tag }}
+        livenessProbe:
+          exec:
+            command: ["rabbitmqctl", "status"]
+          initialDelaySeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          exec:
+            command: ["rabbitmqctl", "status"]
+          initialDelaySeconds: 10
+          timeoutSeconds: 10
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: "{{ rabbitmq_k8s_resources_requests_cpu }}"
+            memory: "{{ rabbitmq_k8s_resources_requests_memory }}"
+          limits:
+            cpu: "{{ rabbitmq_k8s_resources_limits_cpu }}"
+            memory: "{{ rabbitmq_k8s_resources_requests_memory }}"
+        env:
+        - name: RABBITMQ_USE_LONGNAME
+          value: "true"
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: RABBITMQ_NODENAME
+          value: "{{ resources_computed_prefix }}rabbit@$(MY_POD_NAME).{{ resources_computed_prefix }}rabbitmq.{{ astarte_k8s_namespace }}.svc.cluster.local"
+        - name: K8S_SERVICE_NAME
+          value: "{{ resources_computed_prefix }}rabbitmq"
+        - name: RABBITMQ_DEFAULT_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ resources_computed_prefix }}rabbitmq-user-credentials
+              key: admin-username
+        - name: RABBITMQ_DEFAULT_PASS
+          valueFrom:
+            secretKeyRef:
+              name: {{ resources_computed_prefix }}rabbitmq-user-credentials
+              key: admin-password
+        - name: RABBITMQ_ERLANG_COOKIE
+          valueFrom:
+            secretKeyRef:
+              name: {{ resources_computed_prefix }}rabbitmq-cookie
+              key: erlang-cookie
+        ports:
+        - containerPort: 5672
+          name: amqp
+        - containerPort: 15672
+          name: management
+        volumeMounts:
+        - name: {{ resources_computed_prefix }}rabbitmq-data
+          mountPath: /var/lib/rabbitmq
+        - name: config
+          mountPath: /etc/rabbitmq
+      volumes:
+{% if rabbitmq_k8s_volume_definition %}
+      - name: {{ resources_computed_prefix }}rabbitmq-data
+        {{ rabbitmq_k8s_volume_definition | to_nice_yaml }}
+{% endif %}
+      - name: config
+        emptyDir: {}
+      - name: config-volume
+        configMap:
+          name: {{ resources_computed_prefix }}rabbitmq-config
+          items:
+          - key: rabbitmq.conf
+            path: rabbitmq.conf
+          - key: enabled_plugins
+            path: enabled_plugins
+{% if not rabbitmq_k8s_volume_definition %}
+  volumeClaimTemplates:
+  - metadata:
+      name: {{ resources_computed_prefix }}rabbitmq-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+{% if rabbitmq_k8s_storage_class_name %}
+      storageClassName: "{{ rabbitmq_k8s_storage_class_name }}"
+{% endif %}
+      resources:
+        requests:
+          storage: {{ rabbitmq_k8s_volume_size }}
+{% endif %}

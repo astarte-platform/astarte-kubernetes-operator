@@ -1,0 +1,31 @@
+apiVersion: voyager.appscode.com/v1beta1
+kind: Certificate
+metadata:
+  name: {{ resources_computed_prefix }}ingress-certificate
+  namespace: {{ astarte_k8s_namespace }}
+spec:
+{% if voyager_letsencrypt_domains %}
+  domains: {{ voyager_letsencrypt_domains | to_yaml }}
+{% else %}
+  domains:
+{% if astarte_dashboard_use_ssl and astarte_dashboard_use_dedicated_host and deploy_astarte_dashboard %}
+    - {{ astarte_dashboard_host }}
+{% endif %}
+{% if astarte_api_use_ssl %}
+    - {{ astarte_api_host }}
+{% endif %}
+    - {{ mqtt_broker_host }}
+{% endif %}
+  acmeUserSecretName: {{ resources_computed_prefix }}voyager-acme-account
+  challengeProvider:
+{% if voyager_letsencrypt_challenge == 'dns' %}
+    dns:
+      provider: {{ voyager_letsencrypt_challenge_provider }}
+      credentialSecretName: {{ voyager_letsencrypt_challenge_credential_secret_name }}
+{% else %}
+    http:
+      ingress:
+        apiVersion: voyager.appscode.com/v1beta1
+        kind: Ingress
+        name: {{ resources_computed_prefix }}api-ingress
+{% endif %}

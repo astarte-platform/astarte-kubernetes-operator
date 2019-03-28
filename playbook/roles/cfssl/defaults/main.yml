@@ -1,0 +1,56 @@
+cfssl_k8s_enable_antiaffinity: "{{ false if (vars | json_query('cfssl.anti_affinity')) is sameas false else true }}"
+
+cfssl_k8s_replicas: "{{ vars | json_query('cfssl.replicas') | default('1', true) }}"
+
+cfssl_k8s_resources_requests_cpu: "{{ vars | json_query('cfssl.resources.requests.cpu') | default('100m', true) }}"
+cfssl_k8s_resources_requests_memory: "{{ vars | json_query('cfssl.resources.requests.memory') | default('128M', true) }}"
+cfssl_k8s_resources_limits_cpu: "{{ vars | json_query('cfssl.resources.limits.cpu') | default('200m', true) }}"
+cfssl_k8s_resources_limits_memory: "{{ vars | json_query('cfssl.resources.limits.memory') | default('256M', true) }}"
+
+cfssl_k8s_volume_definition: "{{ vars | json_query('cfssl.storage.volume_definition') | default('', true) }}"
+cfssl_k8s_storage_class_name: "{{ vars | json_query('cfssl.storage.class_name') | default(k8s_storage_class_name, true) }}"
+cfssl_k8s_volume_size: "{{ vars | json_query('cfssl.storage.size') | default('2Gi', true) }}"
+
+# These defaults are OK: the operator, in case, will rewrite entire objects.
+cfssl_db_driver: sqlite3
+cfssl_db_data_source: "/data/certs.db"
+
+cfssl_ca_expiry: "{{ vars | json_query('cfssl.ca_expiry') | default('262800h', true) }}"
+cfssl_ca_certificate_expiry: "{{ vars | json_query('cfssl.ca_expiry') | default('2190h', true) }}"
+cfssl_ca_cn: Astarte Root CA
+cfssl_ca_key_algo: ecdsa
+cfssl_ca_key_size: 256
+cfssl_ca_names:
+  - C: IT
+    L: Milan
+    O: Astarte User
+    OU: IoT Division
+    ST: Lombardia
+
+
+cfssl_db_config:
+  driver: "{{ cfssl_db_driver }}"
+  data_source: "{{ cfssl_db_data_source }}"
+
+cfssl_csr_root_ca:
+  CN: "{{ cfssl_ca_cn }}"
+  key:
+    algo: "{{ cfssl_ca_key_algo }}"
+    size: "{{ cfssl_ca_key_size }}"
+  names: "{{ cfssl_ca_names }}"
+  ca:
+    expiry: "{{ cfssl_ca_expiry }}"
+
+cfssl_ca_root_config:
+  signing:
+    default:
+      usages:
+        - "digital signature"
+        - "cert sign"
+        - "crl sign"
+        - "signing"
+      expiry: "{{ cfssl_ca_certificate_expiry }}"
+      ca_constraint:
+        is_ca: true
+        max_path_len: 0
+        max_path_len_zero: true

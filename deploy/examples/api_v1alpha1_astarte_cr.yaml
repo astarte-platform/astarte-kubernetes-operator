@@ -1,0 +1,237 @@
+apiVersion: api.astarte-project.org/v1alpha1
+kind: Astarte
+metadata:
+  name: example
+  namespace: astarte
+spec:
+  ## This part is specific to the Ansible Operator. We're building a meaningful hierarchy
+  ## which can be used from the Operator's CRD.
+  ### Astarte CRD
+  version: 0.10.0-beta.3
+  imagePullPolicy: IfNotPresent
+  distributionChannel: astarte
+  rbac: true
+  storageClassName:
+  api:
+    ssl: true
+    host: "api.astarte-example.com" # MANDATORY
+  rabbitmq:
+    deploy: true
+    connection:
+      host: "rabbitmq.astarte.svc.cluster.local"
+      port: "5672"
+      username: "astarte-admin"
+      password: "yourverystrongpassword"
+      secret:
+        name: "rabbitmq-user-credentials"
+        usernameKey: "admin-username"
+        passwordKey: "admin-password"
+    replicas: 1
+    antiAffinity: true
+    storage:
+      size: 4Gi
+      className: do-block-storage
+      volumeDefinition:
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512M
+      limits:
+        cpu: 1000m
+        memory: 1024M
+  cassandra:
+    deploy: true
+    version: 3.11.3
+    nodes: "cassandra.astarte.svc.cluster.local:9042"
+    replicas: 1
+    antiAffinity: true
+    maxHeapSize: 1024M
+    heapNewSize: 256M
+    storage:
+      size: 30Gi
+      className: do-block-storage
+      volumeDefinition:
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 1024M
+      limits:
+        cpu: 2000m
+        memory: 2048M
+  vernemq:
+    host: "broker.astarte-example.com"
+    port: 8883
+    deploy: true
+    replicas: 1
+    antiAffinity: true
+    caSecret: example-astarte-all-configuration-cfssl-ca
+    storage:
+      size: 5Gi
+      className: do-block-storage
+      volumeDefinition:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512M
+      limits:
+        cpu: 800m
+        memory: 1024M
+  cfssl:
+    replicas: 1
+    url: "http://cfssl.astarte.svc.cluster.local"
+    caExpiry: 262800h
+    certificateExpiry: 2190h
+    dbConfig:
+      driver: "sqlite3"
+      dataSource: "/data/certs.db"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128M
+      limits:
+        cpu: 200m
+        memory: 256M
+    storage:
+      size: 2Gi
+      className: do-block-storage
+      volumeDefinition:
+    csrRootCa:
+      CN: Astarte Root CA
+      key:
+        algo: ecdsa
+        size: 256
+      names:
+        - C: IT
+          L: Milan
+          O: Astarte User
+          OU: IoT Division
+          ST: Lombardia
+      ca:
+        expiry: 262800h
+    caRootConfig:
+      signing:
+        default:
+          usages:
+            - "digital signature"
+            - "cert sign"
+            - "crl sign"
+            - "signing"
+          expiry: 2190h
+          caConstraint:
+            isCa: true
+            maxPathLen: 0
+            maxPathLenZero: true
+  components:
+    # Global resource allocation. Automatically allocates resources to components weighted in a
+    # reasonable way. Will be overridden in case any more specific resource allocation is configured.
+    resources:
+      requests:
+        cpu: 2000m
+        memory: 40968M
+      limits:
+        cpu: 4000m
+        memory: 8192M
+    housekeeping:
+      api:
+        replicas: 1
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128M
+          limits:
+            cpu: 200m
+            memory: 256M
+      backend:
+        replicas: 1
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128M
+          limits:
+            cpu: 200m
+            memory: 256M
+    realmManagement:
+      api:
+        replicas: 1
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128M
+          limits:
+            cpu: 200m
+            memory: 256M
+      backend:
+        replicas: 1
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128M
+          limits:
+            cpu: 200m
+            memory: 256M
+    pairing:
+      api:
+        replicas: 1
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128M
+          limits:
+            cpu: 200m
+            memory: 256M
+      backend:
+        replicas: 1
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128M
+          limits:
+            cpu: 200m
+            memory: 256M
+    dataUpdaterPlant:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 400m
+          memory: 512M
+        limits:
+          cpu: 1000m
+          memory: 1024M
+    appengineApi:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 400m
+          memory: 512M
+        limits:
+          cpu: 1000m
+          memory: 1024M
+    triggerEngine:
+      deploy: true
+      replicas: 1
+      resources:
+        requests:
+          cpu: 200m
+          memory: 256M
+        limits:
+          cpu: 400m
+          memory: 512M
+    dashboard:
+      deploy: true
+      replicas: 1
+      defaultRealm: default
+      config:
+        realmManagementApiUrl: https://api.astarte-example.com/realmmanagement/v1/"
+        defaultRealm: default
+        defaultAuth: token
+        auth:
+          - type: token
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128M
+        limits:
+          cpu: 200m
+          memory: 256M
+
+

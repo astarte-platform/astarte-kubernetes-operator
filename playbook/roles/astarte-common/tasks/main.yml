@@ -1,0 +1,34 @@
+- debug:
+    msg: "This playbook is running in Operator mode. If this is not what you want, ensure the 'meta.name' variable is not defined"
+  when: vars | json_query('meta.name')
+
+- debug:
+    msg: "Will install Astarte version '{{ astarte_tag }}' in namespace '{{ astarte_k8s_namespace }}' with prefix '{{ resources_computed_prefix }}'"
+
+- name: Ensure Astarte namespace
+  k8s:
+    name: "{{ astarte_k8s_namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: present
+  # Avoid patching the namespace from the operator
+  when:
+    - not (vars | json_query('meta.name'))
+
+- name: Ensure Astarte Generic Erlang Configuration
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'astarte-generic-erlang-configuration.yml') }}"
+
+# If a file was explicitly given, then let's ensure the secret every time.
+- name: Ensure Housekeeping public key from local file
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'housekeeping-jwt.yml') }}"
+  when: astarte_housekeeping_key_file
+
+# If a file was not given, generate a housekeeping key only if one does not exist yet.
+- import_tasks: generate-housekeeping-key.yml
+  when:
+    - not astarte_housekeeping_key_file
+    - not lookup('k8s', kind='Secret', resource_name=astarte_housekeeping_key_secret, namespace=astarte_k8s_namespace)

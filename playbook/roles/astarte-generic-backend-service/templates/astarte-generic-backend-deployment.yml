@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ k8s_deployment_name }}
+  namespace: {{ astarte_k8s_namespace }}
+  labels:
+    app: {{ resources_computed_prefix }}{{ k8s_service_name }}
+    astarte-service: {{ k8s_service_name }}
+    component: astarte
+spec:
+  replicas: {{ k8s_deployment_replicas }}
+  selector:
+    matchLabels:
+      app: {{ resources_computed_prefix }}{{ k8s_service_name }}
+  template:
+    metadata:
+      labels:
+        app: {{ resources_computed_prefix }}{{ k8s_service_name }}
+        astarte-service: {{ k8s_service_name }}
+        component: astarte
+    spec:
+      containers:
+      - name: {{ k8s_service_name }}
+        image: {{ k8s_deployment_image }}
+        imagePullPolicy: {{ astarte_image_pull_policy }}
+        volumeMounts:
+{% if k8s_deployment_additional_volume_mounts %}
+{% for volume_mounts in k8s_deployment_additional_volume_mounts %}
+          - name: {{ volume_mounts.name }}
+            mountPath: {{ volume_mounts.mountPath }}
+            readOnly: {{ volume_mounts.readOnly }}
+{% endfor %}
+{% endif %}
+          - name: config-volume
+            mountPath: /beamconfig
+            readOnly: true
+        resources:
+          requests:
+            cpu: "{{ k8s_deployment_resources_requests_cpu }}"
+            memory: "{{ k8s_deployment_resources_requests_memory }}"
+          limits:
+            cpu: "{{ k8s_deployment_resources_limits_cpu }}"
+            memory: "{{ k8s_deployment_resources_limits_memory }}"
+        env:
+          # These are needed for tweaking the Erlang VM
+          - name: RELEASE_CONFIG_DIR
+            value: /beamconfig
+          - name: REPLACE_OS_VARS
+            value: "true"
+          - name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: RELEASE_NAME
+            value: astarte_{{ astarte_app_name }}
+          - name: ERLANG_COOKIE
+            valueFrom:
+              secretKeyRef:
+                name: {{ k8s_erlang_cookie_name }}
+                key: erlang-cookie
+          # Actual configuration variables
+          - name: ASTARTE_RPC_AMQP_CONNECTION_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: {{ rabbitmq_connection_k8s_credentials_secret_name }}
+                key: {{ rabbitmq_connection_k8s_credentials_secret_username_key }}
+          - name: ASTARTE_RPC_AMQP_CONNECTION_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ rabbitmq_connection_k8s_credentials_secret_name }}
+                key: {{ rabbitmq_connection_k8s_credentials_secret_password_key }}
+          - name: ASTARTE_RPC_AMQP_CONNECTION_HOST
+            value: "{{ astarte_app_amqp_connection_host }}"
+          - name: ASTARTE_CASSANDRA_NODES
+            value: "{{ astarte_app_cassandra_nodes }}"
+{% if k8s_deployment_additional_variables %}
+{% for variable in k8s_deployment_additional_variables %}
+          - name: {{ variable.name }}
+            value: "{{ variable.value }}"
+{% endfor %}
+{% endif %}
+{% if k8s_deployment_additional_secret_variables %}
+{% for variable in k8s_deployment_additional_secret_variables %}
+          - name: {{ variable.name }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ variable.secret_name }}
+                key: {{ variable.secret_key }}
+{% endfor %}
+{% endif %}
+      volumes:
+{% if k8s_deployment_additional_secret_volumes %}
+{% for secret_volume in k8s_deployment_additional_secret_volumes %}
+      - name: {{ secret_volume.name }}
+        secret:
+          secretName: {{ secret_volume.secretName }}
+{% endfor %}
+{% endif %}
+      - name: config-volume
+        configMap:
+          name: {{ resources_computed_prefix }}generic-erlang-configuration
+          items:
+          - key: vm.args
+            path: vm.args

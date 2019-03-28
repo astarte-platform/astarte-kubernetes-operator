@@ -1,0 +1,22 @@
+- name: Create CFSSL CA Secret Job Service Account
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'cfssl-ca-secret-job-rbac.yml') }}"
+  when: k8s_use_rbac
+
+- name: Ensure CFSSL CA Secret Job
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'cfssl-ca-secret-job.yml') }}"
+  when: not lookup('k8s', kind='Secret', resource_name=mqtt_broker_ca_secret, namespace=astarte_k8s_namespace)
+
+# This job is mostly meant for the operator to clean up once it runs again.
+- name: Cleanup CFSSL CA Secret Job
+  k8s:
+    state: absent
+    name: "{{ resources_computed_prefix }}cfssl-ca-secret-job"
+    namespace: "{{ astarte_k8s_namespace }}"
+    api_version: batch/v1
+    kind: Job
+  # Ensure we run this only when the secret has been created by the job.
+  when: lookup('k8s', kind='Secret', resource_name=mqtt_broker_ca_secret, namespace=astarte_k8s_namespace)

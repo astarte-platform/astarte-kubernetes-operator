@@ -1,0 +1,4 @@
+- name: Ensure Voyager API Ingress
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'voyager-ingress.yml') }}"

@@ -1,0 +1,212 @@
+---
+- name: Deploy Common Astarte Resources
+  hosts: localhost
+  remote_user: root
+  connection: local
+  tags:
+    - astarte
+  roles:
+    # This deploys all needed dependencies such as secrets, configurations...
+    - astarte-common
+
+- name: Deploy Astarte Dependencies
+  hosts: localhost
+  remote_user: root
+  connection: local
+  tags:
+    - rabbitmq
+  roles:
+    - name: rabbitmq
+      when: deploy_rabbitmq_k8s
+      tags:
+        - rabbitmq
+    - name: vernemq
+      when: deploy_vernemq_k8s
+      tags:
+        - vernemq
+    - name: cfssl
+      when: deploy_cfssl_k8s
+      tags:
+        - cfssl
+    - name: cassandra
+      when: deploy_cassandra_k8s
+      tags:
+        - cassandra
+
+- name: Retrieve CFSSL CA Secret
+  hosts: localhost
+  remote_user: root
+  connection: local
+  tags:
+    - cfssl
+  roles:
+    - cfssl-ca-secret-job
+
+- name: Deploy Astarte
+  hosts: localhost
+  remote_user: root
+  connection: local
+  tags:
+    - astarte
+  roles:
+    # Deploy Housekeeping
+    - role: astarte-generic-backend-service
+      tags:
+        - housekeeping
+      astarte_app_name: housekeeping
+      k8s_deployment_replicas: "{{ vars | json_query('components.housekeeping.backend.replicas') | default(astarte_housekeeping_k8s_replicas, true) }}"
+      k8s_deployment_resources_requests_cpu: "{{ vars | json_query('components.housekeeping.backend.resources.requests.cpu') | default(astarte_housekeeping_k8s_resources_requests_cpu, true) }}"
+      k8s_deployment_resources_requests_memory: "{{ vars | json_query('components.housekeeping.backend.resources.requests.memory') | default(astarte_housekeeping_k8s_resources_requests_memory, true) }}"
+      k8s_deployment_resources_limits_cpu: "{{ vars | json_query('components.housekeeping.backend.resources.limits.cpu') | default(astarte_housekeeping_k8s_resources_limits_cpu, true) }}"
+      k8s_deployment_resources_limits_memory: "{{ vars | json_query('components.housekeeping.backend.resources.limits.memory') | default(astarte_housekeeping_k8s_resources_limits_memory, true) }}"
+    - role: astarte-generic-api-service
+      tags:
+        - housekeeping
+      astarte_app_name: housekeeping
+      k8s_deployment_replicas: "{{ vars | json_query('components.housekeeping.api.replicas') | default(astarte_housekeeping_api_k8s_replicas, true) }}"
+      k8s_deployment_resources_requests_cpu: "{{ vars | json_query('components.housekeeping.api.resources.requests.cpu') | default(astarte_housekeeping_api_k8s_resources_requests_cpu, true) }}"
+      k8s_deployment_resources_requests_memory: "{{ vars | json_query('components.housekeeping.api.resources.requests.memory') | default(astarte_housekeeping_api_k8s_resources_requests_memory, true) }}"
+      k8s_deployment_resources_limits_cpu: "{{ vars | json_query('components.housekeeping.api.resources.limits.cpu') | default(astarte_housekeeping_api_k8s_resources_limits_cpu, true) }}"
+      k8s_deployment_resources_limits_memory: "{{ vars | json_query('components.housekeeping.api.resources.limits.memory') | default(astarte_housekeeping_api_k8s_resources_limits_memory, true) }}"
+      k8s_deployment_additional_variables:
+        - name: HOUSEKEEPING_API_JWT_PUBLIC_KEY_PATH
+          value: "/jwtpubkey/public-key"
+      k8s_deployment_additional_secret_volumes:
+        - name: jwtpubkey
+          secretName: "{{ astarte_housekeeping_key_secret }}"
+      k8s_deployment_additional_volume_mounts:
+        - name: jwtpubkey
+          mountPath: "/jwtpubkey"
+          readOnly: true
+
+    # Deploy Realm Management
+    - role: astarte-generic-backend-service
+      tags:
+        - realm_management
+      astarte_app_name: realm_management
+      k8s_deployment_replicas: "{{ vars | json_query('components.realm_management.backend.replicas') | default(astarte_realm_management_k8s_replicas, true) }}"
+      k8s_deployment_resources_requests_cpu: "{{ vars | json_query('components.realm_management.backend.resources.requests.cpu') | default(astarte_realm_management_k8s_resources_requests_cpu, true) }}"
+      k8s_deployment_resources_requests_memory: "{{ vars | json_query('components.realm_management.backend.resources.requests.memory') | default(astarte_realm_management_k8s_resources_requests_memory, true) }}"
+      k8s_deployment_resources_limits_cpu: "{{ vars | json_query('components.realm_management.backend.resources.limits.cpu') | default(astarte_realm_management_k8s_resources_limits_cpu, true) }}"
+      k8s_deployment_resources_limits_memory: "{{ vars | json_query('components.realm_management.backend.resources.limits.memory') | default(astarte_realm_management_k8s_resources_limits_memory, true) }}"
+    - role: astarte-generic-api-service
+      tags:
+        - realm_management
+      astarte_app_name: realm_management
+      k8s_deployment_replicas: "{{ vars | json_query('components.realm_management.api.replicas') | default(astarte_realm_management_api_k8s_replicas, true) }}"
+      k8s_deployment_resources_requests_cpu: "{{ vars | json_query('components.realm_management.api.resources.requests.cpu') | default(astarte_realm_management_api_k8s_resources_requests_cpu, true) }}"
+      k8s_deployment_resources_requests_memory: "{{ vars | json_query('components.realm_management.api.resources.requests.memory') | default(astarte_realm_management_api_k8s_resources_requests_memory, true) }}"
+      k8s_deployment_resources_limits_cpu: "{{ vars | json_query('components.realm_management.api.resources.limits.cpu') | default(astarte_realm_management_api_k8s_resources_limits_cpu, true) }}"
+      k8s_deployment_resources_limits_memory: "{{ vars | json_query('components.realm_management.api.resources.limits.memory') | default(astarte_realm_management_api_k8s_resources_limits_memory, true) }}"
+      check_api_health: false
+
+    # Deploy Pairing
+    - role: astarte-generic-backend-service
+      tags:
+        - pairing
+      astarte_app_name: pairing
+      k8s_deployment_replicas: "{{ vars | json_query('components.pairing.backend.replicas') | default(astarte_pairing_k8s_replicas, true) }}"
+      k8s_deployment_resources_requests_cpu: "{{ vars | json_query('components.pairing.backend.resources.requests.cpu') | default(astarte_pairing_k8s_resources_requests_cpu, true) }}"
+      k8s_deployment_resources_requests_memory: "{{ vars | json_query('components.pairing.backend.resources.requests.memory') | default(astarte_pairing_k8s_resources_requests_memory, true) }}"
+      k8s_deployment_resources_limits_cpu: "{{ vars | json_query('components.pairing.backend.resources.limits.cpu') | default(astarte_pairing_k8s_resources_limits_cpu, true) }}"
+      k8s_deployment_resources_limits_memory: "{{ vars | json_query('components.pairing.backend.resources.limits.memory') | default(astarte_pairing_k8s_resources_limits_memory, true) }}"
+      k8s_deployment_additional_variables:
+        - name: PAIRING_CFSSL_URL
+          value: "{{ vars | json_query('cfssl.url') | default(cfssl_url, true) }}"
+        - name: PAIRING_BROKER_URL
+          value: "ssl://{{ mqtt_broker_host }}:{{ mqtt_broker_port }}/"
+    - role: astarte-generic-api-service
+      tags:
+        - pairing
+      astarte_app_name: pairing
+      k8s_deployment_replicas: "{{ vars | json_query('components.pairing.api.replicas') | default(astarte_pairing_api_k8s_replicas, true) }}"
+      k8s_deployment_resources_requests_cpu: "{{ vars | json_query('components.pairing.api.resources.requests.cpu') | default(astarte_pairing_api_k8s_resources_requests_cpu, true) }}"
+      k8s_deployment_resources_requests_memory: "{{ vars | json_query('components.pairing.api.resources.requests.memory') | default(astarte_pairing_api_k8s_resources_requests_memory, true) }}"
+      k8s_deployment_resources_limits_cpu: "{{ vars | json_query('components.pairing.api.resources.limits.cpu') | default(astarte_pairing_api_k8s_resources_limits_cpu, true) }}"
+      k8s_deployment_resources_limits_memory: "{{ vars | json_query('components.pairing.api.resources.limits.memory') | default(astarte_pairing_api_k8s_resources_limits_memory, true) }}"
+      check_api_health: false
+
+    # Deploy Data Updater Plant
+    - role: astarte-generic-backend-service
+      tags:
+        - data_updater_plant
+      astarte_app_name: data_updater_plant
+      k8s_deployment_replicas: "{{ vars | json_query('components.data_updater_plant.replicas') | default(astarte_data_updater_plant_k8s_replicas, true) }}"
+      k8s_deployment_resources_requests_cpu: "{{ vars | json_query('components.data_updater_plant.resources.requests.cpu') | default(astarte_data_updater_plant_k8s_resources_requests_cpu, true) }}"
+      k8s_deployment_resources_requests_memory: "{{ vars | json_query('components.data_updater_plant.resources.requests.memory') | default(astarte_data_updater_plant_k8s_resources_requests_memory, true) }}"
+      k8s_deployment_resources_limits_cpu: "{{ vars | json_query('components.data_updater_plant.resources.limits.cpu') | default(astarte_data_updater_plant_k8s_resources_limits_cpu, true) }}"
+      k8s_deployment_resources_limits_memory: "{{ vars | json_query('components.data_updater_plant.resources.limits.memory') | default(astarte_data_updater_plant_k8s_resources_limits_memory, true) }}"
+      k8s_deployment_additional_variables:
+        - name: DATA_UPDATER_PLANT_AMQP_CONSUMER_HOST
+          value: "{{ vars | json_query('rabbitmq.connection.host') | default(rabbitmq_connection_host, true) }}"
+        - name: DATA_UPDATER_PLANT_AMQP_PRODUCER_HOST
+          value: "{{ vars | json_query('rabbitmq.connection.host') | default(rabbitmq_connection_host, true) }}"
+        - name: DATA_UPDATER_PLANT_AMQP_PRODUCER_VIRTUAL_HOST
+          value: "/"
+        - name: DATA_UPDATER_PLANT_AMQP_PRODUCER_PORT
+          value: "{{ vars | json_query('rabbitmq.connection.port') | default(rabbitmq_connection_port, true) }}"
+      k8s_deployment_additional_secret_variables:
+        - name: DATA_UPDATER_PLANT_AMQP_CONSUMER_USERNAME
+          secret_name: "{{ rabbitmq_connection_k8s_credentials_secret_name }}"
+          secret_key: "{{ rabbitmq_connection_k8s_credentials_secret_username_key }}"
+        - name: DATA_UPDATER_PLANT_AMQP_CONSUMER_PASSWORD
+          secret_name: "{{ rabbitmq_connection_k8s_credentials_secret_name }}"
+          secret_key: "{{ rabbitmq_connection_k8s_credentials_secret_password_key }}"
+        - name: DATA_UPDATER_PLANT_AMQP_PRODUCER_USERNAME
+          secret_name: "{{ rabbitmq_connection_k8s_credentials_secret_name }}"
+          secret_key: "{{ rabbitmq_connection_k8s_credentials_secret_username_key }}"
+        - name: DATA_UPDATER_PLANT_AMQP_PRODUCER_PASSWORD
+          secret_name: "{{ rabbitmq_connection_k8s_credentials_secret_name }}"
+          secret_key: "{{ rabbitmq_connection_k8s_credentials_secret_password_key }}"
+
+    # Deploy AppEngine API
+    - role: astarte-generic-api-service
+      tags:
+        - appengine
+      astarte_app_name: appengine
+      k8s_deployment_replicas: "{{ vars | json_query('components.appengine_api.replicas') | default(astarte_appengine_api_k8s_replicas, true) }}"
+      k8s_deployment_resources_requests_cpu: "{{ vars | json_query('components.appengine_api.resources.requests.cpu') | default(astarte_appengine_api_k8s_resources_requests_cpu, true) }}"
+      k8s_deployment_resources_requests_memory: "{{ vars | json_query('components.appengine_api.resources.requests.memory') | default(astarte_appengine_api_k8s_resources_requests_memory, true) }}"
+      k8s_deployment_resources_limits_cpu: "{{ vars | json_query('components.appengine_api.resources.limits.cpu') | default(astarte_appengine_api_k8s_resources_limits_cpu, true) }}"
+      k8s_deployment_resources_limits_memory: "{{ vars | json_query('components.appengine_api.resources.limits.memory') | default(astarte_appengine_api_k8s_resources_limits_memory, true) }}"
+      k8s_deployment_additional_variables:
+        - name: APPENGINE_API_ROOMS_AMQP_CLIENT_HOST
+          value: "{{ astarte_appengine_api_rooms_amqp_client_host }}"
+        - name: ASTARTE_CASSANDRA_NODES
+          value: "{{ vars | json_query('cassandra.nodes') | default(cassandra_nodes, true) }}"
+      k8s_deployment_additional_secret_variables:
+        - name: APPENGINE_API_ROOMS_AMQP_CLIENT_USERNAME
+          secret_name: "{{ astarte_appengine_api_rooms_amqp_client_username_secret_name }}"
+          secret_key: "{{ astarte_appengine_api_rooms_amqp_client_username_secret_key }}"
+        - name: APPENGINE_API_ROOMS_AMQP_CLIENT_PASSWORD
+          secret_name: "{{ astarte_appengine_api_rooms_amqp_client_password_secret_name }}"
+          secret_key: "{{ astarte_appengine_api_rooms_amqp_client_password_secret_key }}"
+      check_api_health: false
+
+    # Deploy Trigger Engine
+    - role: astarte-generic-backend-service
+      when: deploy_astarte_trigger_engine
+      tags:
+        - trigger_engine
+      astarte_app_name: trigger_engine
+      k8s_deployment_replicas: "{{ vars | json_query('components.trigger_engine.replicas') | default(astarte_trigger_engine_k8s_replicas, true) }}"
+      k8s_deployment_resources_requests_cpu: "{{ vars | json_query('components.trigger_engine.resources.requests.cpu') | default(astarte_trigger_engine_k8s_resources_requests_cpu, true) }}"
+      k8s_deployment_resources_requests_memory: "{{ vars | json_query('components.trigger_engine.resources.requests.memory') | default(astarte_trigger_engine_k8s_resources_requests_memory, true) }}"
+      k8s_deployment_resources_limits_cpu: "{{ vars | json_query('components.trigger_engine.resources.limits.cpu') | default(astarte_trigger_engine_k8s_resources_limits_cpu, true) }}"
+      k8s_deployment_resources_limits_memory: "{{ vars | json_query('components.trigger_engine.resources.limits.memory') | default(astarte_trigger_engine_k8s_resources_limits_memory, true) }}"
+      k8s_deployment_additional_variables:
+        - name: TRIGGER_ENGINE_AMQP_CONSUMER_HOST
+          value: "{{ vars | json_query('rabbitmq.connection.host') | default(rabbitmq_connection_host, true) }}"
+      k8s_deployment_additional_secret_variables:
+        - name: TRIGGER_ENGINE_AMQP_CONSUMER_USERNAME
+          secret_name: "{{ rabbitmq_connection_k8s_credentials_secret_name }}"
+          secret_key: "{{ rabbitmq_connection_k8s_credentials_secret_username_key }}"
+        - name: TRIGGER_ENGINE_AMQP_CONSUMER_PASSWORD
+          secret_name: "{{ rabbitmq_connection_k8s_credentials_secret_name }}"
+          secret_key: "{{ rabbitmq_connection_k8s_credentials_secret_password_key }}"
+
+    # Deploy Dashboard
+    - role: astarte-dashboard
+      when: deploy_astarte_dashboard
+      tags:
+        - dashboard

@@ -1,0 +1,38 @@
+apiVersion: api.astarte-project.org/v1alpha1
+kind: AstarteVoyagerIngress
+metadata:
+  name: example
+  namespace: astarte
+spec:
+  ### Astarte Voyager Ingress CRD
+  imagePullPolicy: IfNotPresent
+  astarte: example
+  api:
+    deploy: true
+    cors: false
+    replicas: 1
+    type: LoadBalancer
+    nodeSelector: "mynodeselector"
+    exposeHousekeeping: true
+    tlsSecret: my-custom-broker-ssl-certificate
+  dashboard:
+    ssl: true
+    host: "dashboard.astarte-example.com" # When not specified, dashboard will be deployed in /dashboard in the API host.
+  broker:
+    deploy: true
+    replicas: 1
+    type: LoadBalancer
+    nodeSelector: "mynodeselector"
+    maxConnections: 10000
+    tlsSecret: my-custom-api-ssl-certificate
+  letsencrypt:
+    use: true
+    acmeEmail: info@example.com
+    domains:
+      - broker.mydomain.com
+      - api.mydomain.com
+      - dashboard.mydomain.com
+    challengeProvider:
+      dns:
+        provider: digitalocean
+        credentialSecretName: voyager-digitalocean

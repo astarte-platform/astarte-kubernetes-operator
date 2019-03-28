@@ -1,0 +1,13 @@
+rabbitmq_k8s_enable_antiaffinity: "{{ false if (vars | json_query('rabbitmq.anti_affinity')) is sameas false else true }}"
+
+rabbitmq_image_tag: "{{ vars | json_query('rabbitmq.version') | default('3.7.12', true) }}"
+rabbitmq_k8s_replicas: "{{ vars | json_query('rabbitmq.replicas') | default('1', true) }}"
+
+rabbitmq_k8s_resources_requests_cpu: "{{ vars | json_query('rabbitmq.resources.requests.cpu') | default('500m', true) }}"
+rabbitmq_k8s_resources_requests_memory: "{{ vars | json_query('rabbitmq.resources.requests.memory') | default('512M', true) }}"
+rabbitmq_k8s_resources_limits_cpu: "{{ vars | json_query('rabbitmq.resources.limits.cpu') | default('1000m', true) }}"
+rabbitmq_k8s_resources_limits_memory: "{{ vars | json_query('rabbitmq.resources.limits.memory') | default('1024M', true) }}"
+
+rabbitmq_k8s_volume_definition: "{{ vars | json_query('rabbitmq.storage.volume_definition') | default('', true) }}"
+rabbitmq_k8s_storage_class_name: "{{ vars | json_query('rabbitmq.storage.class_name') | default(k8s_storage_class_name, true) }}"
+rabbitmq_k8s_volume_size: "{{ vars | json_query('rabbitmq.storage.size') | default('4Gi', true) }}"

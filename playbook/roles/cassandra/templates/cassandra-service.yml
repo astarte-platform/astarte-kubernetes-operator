@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ resources_computed_prefix }}cassandra
+  name: {{ resources_computed_prefix }}cassandra
+  namespace: {{ astarte_k8s_namespace }}
+spec:
+  clusterIP: None
+  ports:
+  - port: 9042
+  selector:
+    app: {{ resources_computed_prefix }}cassandra
+

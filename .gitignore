@@ -1,0 +1,15 @@
+inventories/*
+vars/*
+files/housekeeping.*
+*.retry
+*.pem
+*.pub
+*.key
+
+playbook/inventories/*
+playbook/vars/*
+playbook/files/housekeeping.*
+playbook/*.retry
+playbook/*.pem
+playbook/*.pub
+playbook/*.key

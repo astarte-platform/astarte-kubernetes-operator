@@ -1,0 +1,87 @@
+apiVersion: voyager.appscode.com/v1beta1
+kind: Ingress
+metadata:
+  name: {{ resources_computed_prefix }}api-ingress
+  namespace: {{ astarte_k8s_namespace }}
+  annotations:
+    ingress.appscode.com/type: {{ voyager_api_ingress_config.type }}
+    # Keep source IP - we need this for a number of reasons
+    ingress.appscode.com/keep-source-ip: "true"
+    # Configure depending on the load
+    ingress.appscode.com/replicas: '{{ voyager_api_ingress_config.replicas }}'
+    ingress.appscode.com/rewrite-target: /
+    # HSTS
+{% if astarte_api_use_ssl or (deploy_astarte_dashboard and astarte_dashboard_use_ssl) %}
+    ingress.appscode.com/hsts: "true"
+    ingress.appscode.com/hsts-preload: "true"
+    ingress.appscode.com/hsts-include-subdomains: "true"
+    ingress.appscode.com/hsts-max-age: "100"
+{% endif %}
+{% if voyager_api_ingress_config.node_selector %}
+    ingress.appscode.com/node-selector: '{{ voyager_api_ingress_config.node_selector }}'
+{% endif %}
+{% if astarte_api_enable_cors %}
+    # CORS
+    ingress.kubernetes.io/enable-cors: 'true'
+{% endif %}
+    # Meaningful options
+    ingress.appscode.com/default-option: '{"forwardfor": "true", "dontlognull": "true"}'
+    # Tunnel is for websockets - 10m is more then enough
+    ingress.appscode.com/default-timeout: '{"tunnel": "10m"}'
+spec:
+{% if astarte_api_use_ssl or (deploy_astarte_dashboard and astarte_dashboard_use_ssl) %}
+  tls:
+{% if voyager_use_letsencrypt %}
+  - secretName: tls-{{ resources_computed_prefix }}ingress-certificate
+{% else %}
+  - secretName: {{ voyager_tls_api_secret_name }}
+{% endif %}
+    hosts:
+{% if astarte_api_use_ssl %}
+    - {{ astarte_api_host }}
+{% endif %}
+{% if astarte_dashboard_use_ssl and deploy_astarte_dashboard and astarte_dashboard_use_dedicated_host %}
+    - {{ astarte_dashboard_host }}
+{% endif %}
+{% endif %}
+  rules:
+  - host: {{ astarte_api_host }}
+    http:
+      paths:
+{% if astarte_api_expose_housekeeping %}
+      - path: /housekeeping
+        backend:
+          serviceName: {{ parent_resources_computed_prefix }}housekeeping
+          servicePort: '4000'
+{% endif %}
+      - path: /realm
+        backend:
+          serviceName: {{ parent_resources_computed_prefix }}realm-management
+          servicePort: '4000'
+      - path: /realmmanagement
+        backend:
+          serviceName: {{ parent_resources_computed_prefix }}realm-management
+          servicePort: '4000'
+      - path: /pairing
+        backend:
+          serviceName: {{ parent_resources_computed_prefix }}pairing
+          servicePort: '4000'
+      - path: /appengine
+        backend:
+          serviceName: {{ parent_resources_computed_prefix }}appengine
+          servicePort: '4000'
+{% if deploy_astarte_dashboard and not astarte_dashboard_use_dedicated_host %}
+      - path: /dashboard
+        backend:
+          serviceName: {{ parent_resources_computed_prefix }}dashboard
+          servicePort: '80'
+{% endif %}
+{% if deploy_astarte_dashboard and astarte_dashboard_use_dedicated_host %}
+  - host: {{ astarte_dashboard_host }}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: {{ parent_resources_computed_prefix }}dashboard
+          servicePort: '80'
+{% endif %}

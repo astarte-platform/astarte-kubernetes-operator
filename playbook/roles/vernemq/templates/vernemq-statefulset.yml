@@ -1,0 +1,134 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ resources_computed_prefix }}vernemq
+  namespace: {{ astarte_k8s_namespace }}
+  labels:
+    app: {{ resources_computed_prefix }}vernemq
+spec:
+  serviceName: {{ resources_computed_prefix }}vernemq
+  replicas: {{ vernemq_k8s_replicas }}
+  selector:
+    matchLabels:
+      app: {{ resources_computed_prefix }}vernemq
+  template:
+    metadata:
+      labels:
+        app: {{ resources_computed_prefix }}vernemq
+    spec:
+      # Give it some time.
+      terminationGracePeriodSeconds: 30
+{% if k8s_use_rbac %}
+      # Service account
+      serviceAccountName: {{ resources_computed_prefix }}vernemq
+{% endif %}
+{% if vernemq_k8s_enable_antiaffinity %}
+      # Affinity - just don't run two instances on the same node. It doesn't make sense.
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - {{ resources_computed_prefix }}vernemq
+            topologyKey: kubernetes.io/hostname
+{% endif %}
+      containers:
+      - name: vernemq
+        image: {{ astarte_distribution_channel }}/vernemq:{{ astarte_tag }}
+        imagePullPolicy: {{ astarte_image_pull_policy }}
+        resources:
+          requests:
+            cpu: "{{ vernemq_k8s_resources_requests_cpu }}"
+            memory: "{{ vernemq_k8s_resources_requests_memory }}"
+          limits:
+            cpu: "{{ vernemq_k8s_resources_limits_cpu }}"
+            memory: "{{ vernemq_k8s_resources_limits_memory }}"
+        ports:
+          - containerPort: 8883
+            name: mqtt-ssl
+          - containerPort: 80
+            name: acme-verify
+          - containerPort: 1883
+            name: mqtt
+          - containerPort: 1885
+            name: mqtt-reverse
+          - containerPort: 44053
+            name: vmq-msg-dist
+          - containerPort: 4369
+            name: epmd
+          - containerPort: 8888
+            name: prometheus
+          - containerPort: 9100
+          - containerPort: 9101
+          - containerPort: 9102
+          - containerPort: 9103
+          - containerPort: 9104
+          - containerPort: 9105
+          - containerPort: 9106
+          - containerPort: 9107
+          - containerPort: 9108
+          - containerPort: 9109
+        env:
+          - name: DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: {{ rabbitmq_connection_k8s_credentials_secret_name }}
+                key: {{ rabbitmq_connection_k8s_credentials_secret_username_key }}
+          - name: DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ rabbitmq_connection_k8s_credentials_secret_name }}
+                key: {{ rabbitmq_connection_k8s_credentials_secret_password_key }}
+          - name: DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__HOST
+            value: "{{ vars | json_query('rabbitmq.connection.host') | default(rabbitmq_connection_host, true) }}"
+          - name: DOCKER_VERNEMQ_DISCOVERY_KUBERNETES
+            value: "1"
+          - name: DOCKER_VERNEMQ_KUBERNETES_LABEL_SELECTOR
+            value: "app={{ resources_computed_prefix }}vernemq"
+          - name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+        livenessProbe:
+          httpGet:
+            path: /metrics
+            port: 8888
+          # Start checking after 1 minute, every 20 seconds, fail after the 3rd attempt
+          initialDelaySeconds: 60
+          periodSeconds: 20
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /metrics
+            port: 8888
+          # Assume it takes at least 60 seconds to start up
+          initialDelaySeconds: 60
+          periodSeconds: 5
+        volumeMounts:
+        - name: {{ resources_computed_prefix }}vernemq-data
+          mountPath: /opt/vernemq/data
+{% if vernemq_k8s_volume_definition %}
+      volumes:
+      - name: {{ resources_computed_prefix }}vernemq-data
+        {{ vernemq_k8s_volume_definition | to_nice_yaml }}
+{% endif %}
+{% if not vernemq_k8s_volume_definition %}
+  volumeClaimTemplates:
+  - metadata:
+      name: {{ resources_computed_prefix }}vernemq-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+{% if vernemq_k8s_storage_class_name %}
+      storageClassName: "{{ vernemq_k8s_storage_class_name }}"
+{% endif %}
+      resources:
+        requests:
+          storage: {{ vernemq_k8s_volume_size }}
+{% endif %}
