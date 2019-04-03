@@ -89,6 +89,7 @@ astarte_housekeeping_api_k8s_resources_requests_memory: "{{ (astarte_k8s_resourc
 astarte_housekeeping_api_k8s_resources_limits_cpu: "{{ (astarte_k8s_resources_limits_cpu_millis|float * 0.07) | round(0, 'floor') | int | string + 'm' }}"
 astarte_housekeeping_api_k8s_resources_limits_memory: "{{ (astarte_k8s_resources_limits_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
 astarte_housekeeping_api_k8s_replicas: 1
+astarte_housekeeping_api_k8s_disable_authentication: "{{ true if (vars | json_query('components.housekeeping.api.disable_authentication')) is sameas true else false }}"
 ## Realm Management
 astarte_realm_management_k8s_resources_requests_cpu: "{{ (astarte_k8s_resources_requests_cpu_millis|float * 0.07) | round(0, 'floor') | int | string + 'm' }}"
 astarte_realm_management_k8s_resources_requests_memory: "{{ (astarte_k8s_resources_requests_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
@@ -100,6 +101,7 @@ astarte_realm_management_api_k8s_resources_requests_memory: "{{ (astarte_k8s_res
 astarte_realm_management_api_k8s_resources_limits_cpu: "{{ (astarte_k8s_resources_limits_cpu_millis|float * 0.07) | round(0, 'floor') | int | string + 'm' }}"
 astarte_realm_management_api_k8s_resources_limits_memory: "{{ (astarte_k8s_resources_limits_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
 astarte_realm_management_api_k8s_replicas: 1
+astarte_realm_management_api_k8s_disable_authentication: "{{ true if (vars | json_query('components.realm_management.api.disable_authentication')) is sameas true else false }}"
 ## Pairing
 astarte_pairing_k8s_resources_requests_cpu: "{{ (astarte_k8s_resources_requests_cpu_millis|float * 0.07) | round(0, 'floor') | int | string + 'm' }}"
 astarte_pairing_k8s_resources_requests_memory: "{{ (astarte_k8s_resources_requests_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
@@ -110,6 +112,7 @@ astarte_pairing_api_k8s_resources_requests_cpu: "{{ (astarte_k8s_resources_reque
 astarte_pairing_api_k8s_resources_requests_memory: "{{ (astarte_k8s_resources_requests_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
 astarte_pairing_api_k8s_resources_limits_cpu: "{{ (astarte_k8s_resources_limits_cpu_millis|float * 0.07) | round(0, 'floor') | int | string + 'm' }}"
 astarte_pairing_api_k8s_resources_limits_memory: "{{ (astarte_k8s_resources_limits_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
+astarte_pairing_api_k8s_disable_authentication: "{{ true if (vars | json_query('components.pairing.api.disable_authentication')) is sameas true else false }}"
 astarte_pairing_api_k8s_replicas: 1
 ## Data Updater Plant
 astarte_data_updater_plant_k8s_resources_requests_cpu: "{{ (astarte_k8s_resources_requests_cpu_millis|float * 0.22) | round(0, 'floor') | int | string + 'm' }}"
@@ -122,6 +125,7 @@ astarte_appengine_api_k8s_resources_requests_cpu: "{{ (astarte_k8s_resources_req
 astarte_appengine_api_k8s_resources_requests_memory: "{{ (astarte_k8s_resources_requests_memory_megs|float * 0.22) | round(0, 'floor') | int | string + 'M' }}"
 astarte_appengine_api_k8s_resources_limits_cpu: "{{ (astarte_k8s_resources_limits_cpu_millis|float * 0.22) | round(0, 'floor') | int | string + 'm' }}"
 astarte_appengine_api_k8s_resources_limits_memory: "{{ (astarte_k8s_resources_limits_memory_megs|float * 0.22) | round(0, 'floor') | int | string + 'M' }}"
+astarte_appengine_api_k8s_disable_authentication: "{{ true if (vars | json_query('components.appengine.api.disable_authentication')) is sameas true else false }}"
 astarte_appengine_api_k8s_replicas: 1
 ## Trigger Engine
 astarte_trigger_engine_k8s_resources_requests_cpu: "{{ (astarte_k8s_resources_requests_cpu_millis|float * 0.14) | round(0, 'floor') | int | string + 'm' }}"
