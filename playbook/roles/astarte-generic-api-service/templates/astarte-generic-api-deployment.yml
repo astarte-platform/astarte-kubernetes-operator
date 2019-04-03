@@ -85,6 +85,10 @@ spec:
             value: "{{ astarte_app_amqp_connection_host }}"
           - name: {{ astarte_app_name | upper }}_API_PORT
             value: "{{ astarte_app_api_port }}"
+{% if disable_authentication %}
+          - name: {{ astarte_app_name | upper }}_API_DISABLE_AUTHENTICATION
+            value: "true"
+{% endif %}
 {% if k8s_deployment_additional_variables %}
 {% for variable in k8s_deployment_additional_variables %}
           - name: {{ variable.name }}

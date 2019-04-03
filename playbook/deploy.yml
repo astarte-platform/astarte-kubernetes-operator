@@ -63,6 +63,7 @@
       tags:
         - housekeeping
       astarte_app_name: housekeeping
+      disable_authentication: "{{ astarte_housekeeping_api_k8s_disable_authentication }}"
       k8s_deployment_replicas: "{{ vars | json_query('components.housekeeping.api.replicas') | default(astarte_housekeeping_api_k8s_replicas, true) }}"
       k8s_deployment_resources_requests_cpu: "{{ vars | json_query('components.housekeeping.api.resources.requests.cpu') | default(astarte_housekeeping_api_k8s_resources_requests_cpu, true) }}"
       k8s_deployment_resources_requests_memory: "{{ vars | json_query('components.housekeeping.api.resources.requests.memory') | default(astarte_housekeeping_api_k8s_resources_requests_memory, true) }}"
@@ -93,6 +94,7 @@
       tags:
         - realm_management
       astarte_app_name: realm_management
+      disable_authentication: "{{ astarte_realm_management_api_k8s_disable_authentication }}"
       k8s_deployment_replicas: "{{ vars | json_query('components.realm_management.api.replicas') | default(astarte_realm_management_api_k8s_replicas, true) }}"
       k8s_deployment_resources_requests_cpu: "{{ vars | json_query('components.realm_management.api.resources.requests.cpu') | default(astarte_realm_management_api_k8s_resources_requests_cpu, true) }}"
       k8s_deployment_resources_requests_memory: "{{ vars | json_query('components.realm_management.api.resources.requests.memory') | default(astarte_realm_management_api_k8s_resources_requests_memory, true) }}"
@@ -119,6 +121,7 @@
       tags:
         - pairing
       astarte_app_name: pairing
+      disable_authentication: "{{ astarte_pairing_api_k8s_disable_authentication }}"
       k8s_deployment_replicas: "{{ vars | json_query('components.pairing.api.replicas') | default(astarte_pairing_api_k8s_replicas, true) }}"
       k8s_deployment_resources_requests_cpu: "{{ vars | json_query('components.pairing.api.resources.requests.cpu') | default(astarte_pairing_api_k8s_resources_requests_cpu, true) }}"
       k8s_deployment_resources_requests_memory: "{{ vars | json_query('components.pairing.api.resources.requests.memory') | default(astarte_pairing_api_k8s_resources_requests_memory, true) }}"
@@ -164,6 +167,7 @@
       tags:
         - appengine
       astarte_app_name: appengine
+      disable_authentication: "{{ astarte_appengine_api_k8s_disable_authentication }}"
       k8s_deployment_replicas: "{{ vars | json_query('components.appengine_api.replicas') | default(astarte_appengine_api_k8s_replicas, true) }}"
       k8s_deployment_resources_requests_cpu: "{{ vars | json_query('components.appengine_api.resources.requests.cpu') | default(astarte_appengine_api_k8s_resources_requests_cpu, true) }}"
       k8s_deployment_resources_requests_memory: "{{ vars | json_query('components.appengine_api.resources.requests.memory') | default(astarte_appengine_api_k8s_resources_requests_memory, true) }}"
