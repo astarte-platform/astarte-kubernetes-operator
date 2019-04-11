@@ -1,4 +1,4 @@
-apiVersion: api.astarte-project.org/v1alpha1
+apiVersion: api.astarte-platform.org/v1alpha1
 kind: Astarte
 metadata:
   name: example-minimal

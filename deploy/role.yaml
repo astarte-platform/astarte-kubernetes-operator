@@ -47,7 +47,7 @@ rules:
   - get
   - create
 - apiGroups:
-  - api.astarte-project.org
+  - api.astarte-platform.org
   resources:
   - '*'
   verbs:
