@@ -74,7 +74,7 @@
           value: "/jwtpubkey/public-key"
       k8s_deployment_additional_secret_volumes:
         - name: jwtpubkey
-          secretName: "{{ astarte_housekeeping_key_secret }}"
+          secretName: "{{ astarte_housekeeping_public_key_secret }}"
       k8s_deployment_additional_volume_mounts:
         - name: jwtpubkey
           mountPath: "/jwtpubkey"

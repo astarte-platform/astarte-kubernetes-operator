@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ astarte_housekeeping_key_secret }}
+  name: {{ astarte_housekeeping_public_key_secret }}
   namespace: {{ astarte_k8s_namespace }}
 type: Opaque
 data:
