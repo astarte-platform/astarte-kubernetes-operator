@@ -25,10 +25,10 @@
   k8s:
     state: present
     definition: "{{ lookup('template', 'housekeeping-public-key-from-file.yml') }}"
-  when: astarte_housekeeping_key_file
+  when: astarte_housekeeping_public_key_file
 
 # If a file was not given, generate a housekeeping key only if one does not exist yet.
 - import_tasks: generate-housekeeping-key.yml
   when:
-    - not astarte_housekeeping_key_file
+    - not astarte_housekeeping_public_key_file
     - not lookup('k8s', kind='Secret', resource_name=astarte_housekeeping_public_key_secret, namespace=astarte_k8s_namespace)
