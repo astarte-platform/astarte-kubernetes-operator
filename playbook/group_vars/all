@@ -23,8 +23,9 @@ cfssl_url: "http://{{ resources_computed_prefix }}cfssl.{{ astarte_k8s_namespace
 
 # This weird conditional means: default to empty when running from the Operator, and to 'housekeeping.pub'
 # when running as a standard playbook.
-astarte_housekeeping_key_file: "{{ '' if vars | json_query('meta.name') else 'housekeeping.pub' }}"
-astarte_housekeeping_key_secret: "{{ resources_computed_prefix }}housekeeping-jwt"
+astarte_housekeeping_public_key_file: "{{ '' if vars | json_query('meta.name') else 'housekeeping.pub' }}"
+astarte_housekeeping_public_key_secret: "{{ resources_computed_prefix }}housekeeping-public-key"
+astarte_housekeeping_private_key_secret: "{{ resources_computed_prefix }}housekeeping-private-key"
 
 # Reasonable K8S Deployment Policies
 k8s_storage_class_name: "{{ vars | json_query('storage_class_name') | default('', true) }}"
