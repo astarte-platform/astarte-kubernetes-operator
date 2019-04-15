@@ -39,6 +39,16 @@ spec:
       limits:
         cpu: 1000m
         memory: 2048M
+  cfssl:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128M
+      limits:
+        cpu: 200m
+        memory: 256M
+    storage:
+      size: 2Gi
   components:
     # Global resource allocation. Automatically allocates resources to components weighted in a
     # reasonable way.
