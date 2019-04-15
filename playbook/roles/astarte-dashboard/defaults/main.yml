@@ -1,10 +1,10 @@
 astarte_dashboard_default_realm: "{{ vars | json_query('components.dashboard.default_realm') | default('default', true) }}"
 
-astarte_dashboard_k8s_resources_requests_cpu: "{{ vars | json_query('components.dashboard.resources.requests.cpu') | default('100m', true) }}"
-astarte_dashboard_k8s_resources_requests_memory: "{{ vars | json_query('components.dashboard.resources.requests.memory') | default('128M', true) }}"
-astarte_dashboard_k8s_resources_limits_cpu: "{{ vars | json_query('components.dashboard.resources.limits.cpu') | default('200m', true) }}"
-astarte_dashboard_k8s_resources_limits_memory: "{{ vars | json_query('components.dashboard.resources.limits.memory') | default('256M', true) }}"
-astarte_dashboard_k8s_replicas: "{{ vars | json_query('components.dashboard.replicas') | default('1', true) }}"
+astarte_dashboard_resources_requests_cpu: "{{ vars | json_query('components.dashboard.resources.requests.cpu') | default(astarte_dashboard_k8s_resources_requests_cpu, true) }}"
+astarte_dashboard_resources_requests_memory: "{{ vars | json_query('components.dashboard.resources.requests.memory') | default(astarte_dashboard_k8s_resources_requests_memory, true) }}"
+astarte_dashboard_resources_limits_cpu: "{{ vars | json_query('components.dashboard.resources.limits.cpu') | default(astarte_dashboard_k8s_resources_limits_cpu, true) }}"
+astarte_dashboard_resources_limits_memory: "{{ vars | json_query('components.dashboard.resources.limits.memory') | default(astarte_dashboard_k8s_resources_limits_memory, true) }}"
+astarte_dashboard_replicas: "{{ vars | json_query('components.dashboard.replicas') | default(astarte_dashboard_k8s_replicas, true) }}"
 
 astarte_dashboard_config:
   realm_management_api_url: "{{ 'https' if astarte_api_use_ssl else 'http' }}://{{ astarte_api_host }}/realmmanagement/v1/"
