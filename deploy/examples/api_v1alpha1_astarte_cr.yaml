@@ -225,7 +225,7 @@ spec:
       replicas: 1
       defaultRealm: default
       config:
-        realmManagementApiUrl: https://api.astarte-example.com/realmmanagement/v1/"
+        realmManagementApiUrl: https://api.astarte-example.com/realmmanagement/v1/
         defaultRealm: default
         defaultAuth: token
         auth:
