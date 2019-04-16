@@ -34,7 +34,7 @@ spec:
     host: "broker.astarte-example.com"
     resources:
       requests:
-        cpu: 300m
+        cpu: 200m
         memory: 1024M
       limits:
         cpu: 1000m
@@ -54,7 +54,7 @@ spec:
     # reasonable way.
     resources:
       requests:
-        cpu: 1500m
+        cpu: 1200m
         memory: 3072M
       limits:
         cpu: 3000m
