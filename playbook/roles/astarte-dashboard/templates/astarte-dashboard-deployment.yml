@@ -8,7 +8,7 @@ metadata:
     astarte-service: dashboard
     component: {{ astarte_k8s_namespace }}
 spec:
-  replicas: {{ astarte_dashboard_k8s_replicas }}
+  replicas: {{ astarte_dashboard_replicas }}
   selector:
     matchLabels:
       app: {{ resources_computed_prefix }}dashboard
@@ -28,11 +28,11 @@ spec:
             name: httpout
         resources:
           requests:
-            cpu: "{{ astarte_dashboard_k8s_resources_requests_cpu }}"
-            memory: "{{ astarte_dashboard_k8s_resources_requests_memory }}"
+            cpu: "{{ astarte_dashboard_resources_requests_cpu }}"
+            memory: "{{ astarte_dashboard_resources_requests_memory }}"
           limits:
-            cpu: "{{ astarte_dashboard_k8s_resources_limits_cpu }}"
-            memory: "{{ astarte_dashboard_k8s_resources_limits_memory }}"
+            cpu: "{{ astarte_dashboard_resources_limits_cpu }}"
+            memory: "{{ astarte_dashboard_resources_limits_memory }}"
         env:
           - name: MY_POD_IP
             valueFrom:
