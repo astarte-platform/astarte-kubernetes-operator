@@ -80,15 +80,15 @@ astarte_k8s_resources_limits_cpu_millis: "{{ (astarte_k8s_resources_limits_cpu *
 astarte_k8s_resources_limits_memory_megs: "{{ astarte_k8s_resources_limits_memory|replace('M','')|float if 'M' in astarte_k8s_resources_limits_memory else astarte_k8s_resources_limits_memory|replace('G','')|float * 1024.0 }}"
 
 ## Housekeeping
-astarte_housekeeping_k8s_resources_requests_cpu: "{{ (astarte_k8s_resources_requests_cpu_millis|float * 0.07) | round(0, 'floor') | int | string + 'm' }}"
-astarte_housekeeping_k8s_resources_requests_memory: "{{ (astarte_k8s_resources_requests_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
-astarte_housekeeping_k8s_resources_limits_cpu: "{{ (astarte_k8s_resources_limits_cpu_millis|float * 0.07) | round(0, 'floor') | int | string + 'm' }}"
-astarte_housekeeping_k8s_resources_limits_memory: "{{ (astarte_k8s_resources_limits_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
+astarte_housekeeping_k8s_resources_requests_cpu: "{{ (astarte_k8s_resources_requests_cpu_millis|float * 0.03) | round(0, 'floor') | int | string + 'm' }}"
+astarte_housekeeping_k8s_resources_requests_memory: "{{ (astarte_k8s_resources_requests_memory_megs|float * 0.03) | round(0, 'floor') | int | string + 'M' }}"
+astarte_housekeeping_k8s_resources_limits_cpu: "{{ (astarte_k8s_resources_limits_cpu_millis|float * 0.03) | round(0, 'floor') | int | string + 'm' }}"
+astarte_housekeeping_k8s_resources_limits_memory: "{{ (astarte_k8s_resources_limits_memory_megs|float * 0.03) | round(0, 'floor') | int | string + 'M' }}"
 astarte_housekeeping_k8s_replicas: 1
-astarte_housekeeping_api_k8s_resources_requests_cpu: "{{ (astarte_k8s_resources_requests_cpu_millis|float * 0.03) | round(0, 'floor') | int | string + 'm' }}"
-astarte_housekeeping_api_k8s_resources_requests_memory: "{{ (astarte_k8s_resources_requests_memory_megs|float * 0.03) | round(0, 'floor') | int | string + 'M' }}"
-astarte_housekeeping_api_k8s_resources_limits_cpu: "{{ (astarte_k8s_resources_limits_cpu_millis|float * 0.03) | round(0, 'floor') | int | string + 'm' }}"
-astarte_housekeeping_api_k8s_resources_limits_memory: "{{ (astarte_k8s_resources_limits_memory_megs|float * 0.03) | round(0, 'floor') | int | string + 'M' }}"
+astarte_housekeeping_api_k8s_resources_requests_cpu: "{{ (astarte_k8s_resources_requests_cpu_millis|float * 0.07) | round(0, 'floor') | int | string + 'm' }}"
+astarte_housekeeping_api_k8s_resources_requests_memory: "{{ (astarte_k8s_resources_requests_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
+astarte_housekeeping_api_k8s_resources_limits_cpu: "{{ (astarte_k8s_resources_limits_cpu_millis|float * 0.07) | round(0, 'floor') | int | string + 'm' }}"
+astarte_housekeeping_api_k8s_resources_limits_memory: "{{ (astarte_k8s_resources_limits_memory_megs|float * 0.07) | round(0, 'floor') | int | string + 'M' }}"
 astarte_housekeeping_api_k8s_replicas: 1
 astarte_housekeeping_api_k8s_disable_authentication: "{{ true if (vars | json_query('components.housekeeping.api.disable_authentication')) is sameas true else false }}"
 ## Realm Management
