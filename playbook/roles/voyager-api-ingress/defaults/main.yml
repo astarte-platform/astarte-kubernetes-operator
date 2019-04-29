@@ -2,5 +2,6 @@ voyager_tls_api_secret_name: "{{ vars | json_query('api.tls_secret') | default(N
 
 voyager_api_ingress_config:
   type: "{{ vars | json_query('api.type') | default('LoadBalancer', true) }}"
+  load_balancer_ip: "{{ vars | json_query('api.load_balancer_ip') | default(None, true) }}"
   replicas: "{{ vars | json_query('api.replicas') | default(1, true) }}"
   node_selector: "{{ vars | json_query('api.node_selector') | default(None, true) }}"

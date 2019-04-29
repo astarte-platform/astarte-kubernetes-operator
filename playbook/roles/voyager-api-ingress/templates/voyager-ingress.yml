@@ -5,6 +5,9 @@ metadata:
   namespace: {{ astarte_k8s_namespace }}
   annotations:
     ingress.appscode.com/type: {{ voyager_api_ingress_config.type }}
+{% if voyager_api_ingress_config.load_balancer_ip %}
+    ingress.appscode.com/load-balancer-ip: '{{ voyager_api_ingress_config.load_balancer_ip }}'
+{% endif %}
     # Keep source IP - we need this for a number of reasons
     ingress.appscode.com/keep-source-ip: "true"
     # Configure depending on the load

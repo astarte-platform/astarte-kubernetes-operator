@@ -12,6 +12,7 @@ spec:
     cors: false
     replicas: 1
     type: LoadBalancer
+    loadBalancerIp: "203.0.113.1"
     nodeSelector: "mynodeselector"
     exposeHousekeeping: true
     tlsSecret: my-custom-broker-ssl-certificate
@@ -22,6 +23,7 @@ spec:
     deploy: true
     replicas: 1
     type: LoadBalancer
+    loadBalancerIp: "203.0.113.2"
     nodeSelector: "mynodeselector"
     maxConnections: 10000
     tlsSecret: my-custom-api-ssl-certificate

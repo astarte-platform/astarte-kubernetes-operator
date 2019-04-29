@@ -5,6 +5,9 @@ metadata:
   namespace: {{ astarte_k8s_namespace }}
   annotations:
     ingress.appscode.com/type: {{ voyager_broker_ingress_config.type }}
+{% if voyager_broker_ingress_config.load_balancer_ip %}
+    ingress.appscode.com/load-balancer-ip: '{{ voyager_broker_ingress_config.load_balancer_ip }}'
+{% endif %}
     # Configure depending on the load
     ingress.appscode.com/replicas: '{{ voyager_broker_ingress_config.replicas }}'
 {% if voyager_broker_ingress_config.node_selector %}
