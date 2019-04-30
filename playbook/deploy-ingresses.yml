@@ -10,19 +10,6 @@
       when:
         - vars | json_query('meta.name')
 
-- name: Obtain Voyager Let's Encrypt Certificate
-  hosts: localhost
-  remote_user: root
-  connection: local
-  tags:
-    - voyager
-    - letsencrypt
-  roles:
-    - name: voyager-certificate-letsencrypt
-      when:
-        - voyager_use_letsencrypt
-        - deploy_voyager_broker_ingress or deploy_voyager_api_ingress
-
 - name: Deploy Voyager Broker Ingress
   hosts: localhost
   remote_user: root
@@ -44,3 +31,16 @@
     - name: voyager-api-ingress
       when:
         - deploy_voyager_api_ingress
+
+- name: Obtain Voyager Let's Encrypt Certificate
+  hosts: localhost
+  remote_user: root
+  connection: local
+  tags:
+    - voyager
+    - letsencrypt
+  roles:
+    - name: voyager-certificate-letsencrypt
+      when:
+        - voyager_use_letsencrypt
+        - deploy_voyager_broker_ingress or deploy_voyager_api_ingress

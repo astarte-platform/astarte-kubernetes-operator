@@ -34,31 +34,26 @@ metadata:
 spec:
 {% if astarte_api_use_ssl or (deploy_astarte_dashboard and astarte_dashboard_use_ssl) %}
   tls:
-{% if voyager_use_letsencrypt %}
   - hosts:
 {% if astarte_api_use_ssl %}
     - {{ astarte_api_host }}
-{% endif %}
+{% endif %} # if astarte_api_use_ssl
 {% if astarte_dashboard_use_ssl and deploy_astarte_dashboard and astarte_dashboard_use_dedicated_host %}
     - {{ astarte_dashboard_host }}
-{% endif %}
+{% endif %} # if astarte_dashboard_use_ssl and deploy_astarte_dashboard and astarte_dashboard_use_dedicated_host
     ref:
+{% if voyager_use_letsencrypt %}
       kind: Certificate
 {% if voyager_letsencrypt_challenge == 'dns' %}
       name: {{ resources_computed_prefix }}ingress-certificate
-{% else %}
+{% else %} # if voyager_letsencrypt_challenge == 'dns'
       name: {{ resources_computed_prefix }}api-ingress-certificate
-{% endif %}
-{% else %}
-  - secretName: {{ voyager_tls_broker_secret_name }}
-    hosts:
-{% if astarte_api_use_ssl %}
-    - {{ astarte_api_host }}
-{% endif %}
-{% if astarte_dashboard_use_ssl and deploy_astarte_dashboard and astarte_dashboard_use_dedicated_host %}
-    - {{ astarte_dashboard_host }}
-{% endif %}
-{% endif %}
+{% endif %} # if voyager_letsencrypt_challenge == 'dns'
+{% else %} # if voyager_use_letsencrypt
+      kind: Secret
+      name: {{ voyager_tls_broker_secret_name }}
+{% endif %} # if voyager_use_letsencrypt
+{% endif %} # if astarte_api_use_ssl or (deploy_astarte_dashboard and astarte_dashboard_use_ssl)
   rules:
   - host: {{ astarte_api_host }}
     http:

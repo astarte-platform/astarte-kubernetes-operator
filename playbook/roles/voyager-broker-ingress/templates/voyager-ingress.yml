@@ -26,10 +26,10 @@ metadata:
     ingress.appscode.com/default-timeout: '{"connect": "30s", "server": "1h", "client": "1h", "tunnel": "1h"}'
 spec:
   tls:
-{% if voyager_use_letsencrypt %}
   - hosts:
     - {{ mqtt_broker_host }}
     ref:
+{% if voyager_use_letsencrypt %}
       kind: Certificate
 {% if voyager_letsencrypt_challenge == 'dns' %}
       name: {{ resources_computed_prefix }}ingress-certificate
@@ -37,9 +37,8 @@ spec:
       name: {{ resources_computed_prefix }}broker-ingress-certificate
 {% endif %}
 {% else %}
-  - secretName: {{ voyager_tls_broker_secret_name }}
-    hosts:
-    - {{ mqtt_broker_host }}
+      kind: Secret
+      name: {{ voyager_tls_broker_secret_name }}
 {% endif %}
   rules:
   - host: {{ mqtt_broker_host }}
@@ -50,3 +49,13 @@ spec:
         servicePort: '1885'
         backendRule:
         - 'balance source'
+{% if voyager_letsencrypt_challenge == 'http' %}
+# If we're using the http-01 challenge, we need to let the LoadBalancer know that port 80 has to be open and routed. We'll expose pairing here.
+  - host: {{ mqtt_broker_host }}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: {{ parent_resources_computed_prefix }}pairing
+          servicePort: '4000'
+{% endif %}
