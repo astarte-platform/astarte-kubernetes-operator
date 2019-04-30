@@ -35,10 +35,22 @@ spec:
 {% if astarte_api_use_ssl or (deploy_astarte_dashboard and astarte_dashboard_use_ssl) %}
   tls:
 {% if voyager_use_letsencrypt %}
-  - secretName: tls-{{ resources_computed_prefix }}ingress-certificate
-{% else %}
-  - secretName: {{ voyager_tls_api_secret_name }}
+  - hosts:
+{% if astarte_api_use_ssl %}
+    - {{ astarte_api_host }}
 {% endif %}
+{% if astarte_dashboard_use_ssl and deploy_astarte_dashboard and astarte_dashboard_use_dedicated_host %}
+    - {{ astarte_dashboard_host }}
+{% endif %}
+    ref:
+      kind: Certificate
+{% if voyager_letsencrypt_challenge == 'dns' %}
+      name: {{ resources_computed_prefix }}ingress-certificate
+{% else %}
+      name: {{ resources_computed_prefix }}api-ingress-certificate
+{% endif %}
+{% else %}
+  - secretName: {{ voyager_tls_broker_secret_name }}
     hosts:
 {% if astarte_api_use_ssl %}
     - {{ astarte_api_host }}

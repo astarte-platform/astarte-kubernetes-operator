@@ -27,12 +27,20 @@ metadata:
 spec:
   tls:
 {% if voyager_use_letsencrypt %}
-  - secretName: tls-{{ resources_computed_prefix }}ingress-certificate
+  - hosts:
+    - {{ mqtt_broker_host }}
+    ref:
+      kind: Certificate
+{% if voyager_letsencrypt_challenge == 'dns' %}
+      name: {{ resources_computed_prefix }}ingress-certificate
+{% else %}
+      name: {{ resources_computed_prefix }}broker-ingress-certificate
+{% endif %}
 {% else %}
   - secretName: {{ voyager_tls_broker_secret_name }}
-{% endif %}
     hosts:
     - {{ mqtt_broker_host }}
+{% endif %}
   rules:
   - host: {{ mqtt_broker_host }}
     tcp:
