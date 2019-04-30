@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Added static IP support to load balancer in AVI
 
+### Fixed
+- Ensure Let's Encrypt http-01 challenge works in AVI
+
 ## [0.10.0] - 2019-04-17
 ### Changed
 - Change Houseekeeping API secrets naming
