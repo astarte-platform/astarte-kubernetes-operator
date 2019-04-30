@@ -49,3 +49,13 @@ spec:
         servicePort: '1885'
         backendRule:
         - 'balance source'
+{% if voyager_letsencrypt_challenge == 'http' %}
+# If we're using the http-01 challenge, we need to let the LoadBalancer know that port 80 has to be open and routed. We'll expose pairing here.
+  - host: {{ mqtt_broker_host }}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: {{ parent_resources_computed_prefix }}pairing
+          servicePort: '4000'
+{% endif %}
