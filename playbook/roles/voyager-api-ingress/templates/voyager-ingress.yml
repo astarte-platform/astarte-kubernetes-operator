@@ -12,7 +12,6 @@ metadata:
     ingress.appscode.com/keep-source-ip: "true"
     # Configure depending on the load
     ingress.appscode.com/replicas: '{{ voyager_api_ingress_config.replicas }}'
-    ingress.appscode.com/rewrite-target: /
     # HSTS
 {% if astarte_api_use_ssl or (deploy_astarte_dashboard and astarte_dashboard_use_ssl) %}
     ingress.appscode.com/hsts: "true"
@@ -66,28 +65,40 @@ spec:
         backend:
           serviceName: {{ parent_resources_computed_prefix }}housekeeping
           servicePort: '4000'
+          backendRules:
+          - 'reqrep ^([^\ :]*)\ /housekeeping(.*$) \1\ /\2'
 {% endif %}
       - path: /realm
         backend:
           serviceName: {{ parent_resources_computed_prefix }}realm-management
           servicePort: '4000'
+          backendRules:
+          - 'reqrep ^([^\ :]*)\ /realm(.*$) \1\ /\2'
       - path: /realmmanagement
         backend:
           serviceName: {{ parent_resources_computed_prefix }}realm-management
           servicePort: '4000'
+          backendRules:
+          - 'reqrep ^([^\ :]*)\ /realmmanagement(.*$) \1\ /\2'
       - path: /pairing
         backend:
           serviceName: {{ parent_resources_computed_prefix }}pairing
           servicePort: '4000'
+          backendRules:
+          - 'reqrep ^([^\ :]*)\ /pairing(.*$) \1\ /\2'
       - path: /appengine
         backend:
           serviceName: {{ parent_resources_computed_prefix }}appengine
           servicePort: '4000'
+          backendRules:
+          - 'reqrep ^([^\ :]*)\ /appengine(.*$) \1\ /\2'
 {% if deploy_astarte_dashboard and not astarte_dashboard_use_dedicated_host %}
       - path: /dashboard
         backend:
           serviceName: {{ parent_resources_computed_prefix }}dashboard
           servicePort: '80'
+          backendRules:
+          - 'reqrep ^([^\ :]*)\ /dashboard(.*$) \1\ /\2'
 {% endif %}
 {% if deploy_astarte_dashboard and astarte_dashboard_use_dedicated_host %}
   - host: {{ astarte_dashboard_host }}
