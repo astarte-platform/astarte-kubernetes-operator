@@ -35,7 +35,7 @@ metadata:
     # Tunnel is for websockets - 10m is more then enough
     ingress.appscode.com/default-timeout: '{"tunnel": "10m"}'
 spec:
-{% if astarte_api_use_ssl or (deploy_astarte_dashboard and astarte_dashboard_use_ssl) %}
+{% if (not voyager_bootstrapping_http_01) and (astarte_api_use_ssl or (deploy_astarte_dashboard and astarte_dashboard_use_ssl)) %}
   tls:
   - hosts:
 {% if astarte_api_use_ssl %}
@@ -56,7 +56,7 @@ spec:
       kind: Secret
       name: {{ voyager_tls_broker_secret_name }}
 {% endif %} # if voyager_use_letsencrypt
-{% endif %} # if astarte_api_use_ssl or (deploy_astarte_dashboard and astarte_dashboard_use_ssl)
+{% endif %} # if (not voyager_bootstrapping_http_01) and (astarte_api_use_ssl or (deploy_astarte_dashboard and astarte_dashboard_use_ssl))
   rules:
   - host: {{ astarte_api_host }}
     http:

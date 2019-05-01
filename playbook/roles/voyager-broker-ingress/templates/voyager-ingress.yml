@@ -28,6 +28,7 @@ metadata:
     # Configure these timeouts according to how frequently your client sends a PINGREQ - 1h is more than enough
     ingress.appscode.com/default-timeout: '{"connect": "30s", "server": "1h", "client": "1h", "tunnel": "1h"}'
 spec:
+{% if not voyager_bootstrapping_http_01 %}
   tls:
   - hosts:
     - {{ mqtt_broker_host }}
@@ -43,6 +44,7 @@ spec:
       kind: Secret
       name: {{ voyager_tls_broker_secret_name }}
 {% endif %}
+{% endif %} # if not voyager_bootstrapping_http_01
   rules:
   - host: {{ mqtt_broker_host }}
     tcp:
