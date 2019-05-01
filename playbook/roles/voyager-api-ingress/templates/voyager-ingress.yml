@@ -53,7 +53,7 @@ spec:
 {% endif %} # if voyager_letsencrypt_challenge == 'dns'
 {% else %} # if voyager_use_letsencrypt
       kind: Secret
-      name: {{ voyager_tls_broker_secret_name }}
+      name: {{ voyager_tls_api_secret_name }}
 {% endif %} # if voyager_use_letsencrypt
 {% endif %} # if (not voyager_bootstrapping_http_01) and (astarte_api_use_ssl or (deploy_astarte_dashboard and astarte_dashboard_use_ssl))
   rules:
