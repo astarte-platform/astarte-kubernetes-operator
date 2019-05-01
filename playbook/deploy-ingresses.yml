@@ -1,4 +1,12 @@
 ---
+- name: Setting play-specific variables
+  hosts: localhost
+  remote_user: root
+  connection: local
+  tasks:
+    - set_fact:
+        astarte_resource_type: "AstarteVoyagerIngress"
+
 - name: Gather facts from existing Astarte Operator object
   hosts: localhost
   remote_user: root
