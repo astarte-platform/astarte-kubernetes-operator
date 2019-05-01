@@ -46,11 +46,7 @@ spec:
     ref:
 {% if voyager_use_letsencrypt %}
       kind: Certificate
-{% if voyager_letsencrypt_challenge == 'dns' %}
       name: {{ resources_computed_prefix }}ingress-certificate
-{% else %} # if voyager_letsencrypt_challenge == 'dns'
-      name: {{ resources_computed_prefix }}api-ingress-certificate
-{% endif %} # if voyager_letsencrypt_challenge == 'dns'
 {% else %} # if voyager_use_letsencrypt
       kind: Secret
       name: {{ voyager_tls_api_secret_name }}

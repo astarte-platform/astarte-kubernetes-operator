@@ -35,11 +35,7 @@ spec:
     ref:
 {% if voyager_use_letsencrypt %}
       kind: Certificate
-{% if voyager_letsencrypt_challenge == 'dns' %}
       name: {{ resources_computed_prefix }}ingress-certificate
-{% else %}
-      name: {{ resources_computed_prefix }}broker-ingress-certificate
-{% endif %}
 {% else %}
       kind: Secret
       name: {{ voyager_tls_broker_secret_name }}

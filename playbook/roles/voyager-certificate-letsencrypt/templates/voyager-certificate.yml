@@ -22,4 +22,10 @@ spec:
     dns:
       provider: {{ voyager_letsencrypt_challenge_provider }}
       credentialSecretName: {{ voyager_letsencrypt_challenge_credential_secret_name }}
+{% elif voyager_letsencrypt_challenge == 'http' %}
+    http:
+      ingress:
+        apiVersion: voyager.appscode.com/v1beta1
+        kind: Ingress
+        name: {{ resources_computed_prefix }}api-ingress
 {% endif %}
