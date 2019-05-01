@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.10.1] - Unreleased
 ### Added
 - Added static IP support to load balancer in AVI
+- Support to Let's Encrypt Staging in AVI Certificates
 
 ### Fixed
 - Ensure Let's Encrypt http-01 challenge works in AVI

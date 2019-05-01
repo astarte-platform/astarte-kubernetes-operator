@@ -29,6 +29,7 @@ spec:
     tlsSecret: my-custom-api-ssl-certificate
   letsencrypt:
     use: true
+    staging: false
     acmeEmail: info@example.com
     domains:
       - broker.mydomain.com
