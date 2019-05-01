@@ -42,6 +42,16 @@ spec:
 {% endif %}
 {% endif %} # if not voyager_bootstrapping_http_01
   rules:
+{% if voyager_letsencrypt_challenge == 'http' %}
+# If we're using the http-01 challenge, we need to let the LoadBalancer know that port 80 has to be open and routed.
+  - http:
+      noTLS: true
+      paths:
+      - path: /.well-known/acme-challenge/
+        backend:
+          serviceName: voyager-operator.kube-system
+          servicePort: '56791'
+{% endif %}
   - host: {{ mqtt_broker_host }}
     tcp:
       port: '{{ mqtt_broker_port }}'
@@ -50,13 +60,3 @@ spec:
         servicePort: '1885'
         backendRule:
         - 'balance source'
-{% if voyager_letsencrypt_challenge == 'http' %}
-# If we're using the http-01 challenge, we need to let the LoadBalancer know that port 80 has to be open and routed. We'll expose pairing here.
-  - host: {{ mqtt_broker_host }}
-    http:
-      paths:
-      - path: /
-        backend:
-          serviceName: {{ parent_resources_computed_prefix }}pairing
-          servicePort: '4000'
-{% endif %}
