@@ -7,3 +7,4 @@ voyager_api_ingress_config:
   load_balancer_ip: "{{ vars | json_query('api.load_balancer_ip') | default(None, true) }}"
   replicas: "{{ vars | json_query('api.replicas') | default(1, true) }}"
   node_selector: "{{ vars | json_query('api.node_selector') | default(None, true) }}"
+  annotations_service: "{{ vars | json_query('api.annotations_service') | default(None, true) }}"

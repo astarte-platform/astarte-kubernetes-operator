@@ -7,4 +7,5 @@ voyager_broker_ingress_config:
   load_balancer_ip: "{{ vars | json_query('broker.load_balancer_ip') | default(None, true) }}"
   replicas: "{{ vars | json_query('broker.replicas') | default(1, true) }}"
   node_selector: "{{ vars | json_query('broker.node_selector') | default(None, true) }}"
+  annotations_service: "{{ vars | json_query('broker.annotations_service') | default(None, true) }}"
   max_connections: "{{ vars | json_query('broker.max_connections') | default(10000, true) }}"

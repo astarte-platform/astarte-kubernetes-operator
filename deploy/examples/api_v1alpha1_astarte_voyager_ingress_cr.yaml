@@ -16,6 +16,8 @@ spec:
     nodeSelector: "mynodeselector"
     exposeHousekeeping: true
     tlsSecret: my-custom-broker-ssl-certificate
+    annotationsService:
+      service.beta.kubernetes.io/aws-load-balancer-internal: "0.0.0.0/0"
   dashboard:
     ssl: true
     host: "dashboard.astarte-example.com" # When not specified, dashboard will be deployed in /dashboard in the API host.
@@ -27,6 +29,8 @@ spec:
     nodeSelector: "mynodeselector"
     maxConnections: 10000
     tlsSecret: my-custom-api-ssl-certificate
+    annotationsService:
+      service.beta.kubernetes.io/aws-load-balancer-internal": "0.0.0.0/0"
   letsencrypt:
     use: true
     acmeEmail: info@example.com

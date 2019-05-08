@@ -13,6 +13,9 @@ metadata:
 {% if voyager_broker_ingress_config.node_selector %}
     ingress.appscode.com/node-selector: '{{ voyager_broker_ingress_config.node_selector }}'
 {% endif %}
+{% if voyager_broker_ingress_config.annotations_service %}
+    ingress.appscode.com/annotations-service: '{{ voyager_broker_ingress_config.annotations_service | to_json | replace('_','-') }}'
+{% endif %}
     # Keep source IP - we need this for a number of reasons
     ingress.appscode.com/keep-source-ip: "true"
     # These options are here to please VerneMQ/Astarte
