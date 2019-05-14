@@ -23,6 +23,9 @@ metadata:
 {% if voyager_api_ingress_config.node_selector %}
     ingress.appscode.com/node-selector: '{{ voyager_api_ingress_config.node_selector }}'
 {% endif %}
+{% if voyager_api_ingress_config.annotations_service %}
+    ingress.appscode.com/annotations-service: '{{ voyager_api_ingress_config.annotations_service | to_json | replace('_','-') }}'
+{% endif %}
 {% if astarte_api_enable_cors %}
     # CORS
     ingress.kubernetes.io/enable-cors: 'true'
