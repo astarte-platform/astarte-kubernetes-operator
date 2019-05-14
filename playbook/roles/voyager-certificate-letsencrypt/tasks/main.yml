@@ -7,16 +7,5 @@
   k8s:
     state: present
     definition: "{{ lookup('template', 'voyager-certificate.yml') }}"
-  when: voyager_letsencrypt_challenge == 'dns'
-
-- name: Ensure Voyager Let's Encrypt API Certificate
-  k8s:
-    state: present
-    definition: "{{ lookup('template', 'voyager-certificate-api-http.yml') }}"
-  when: voyager_letsencrypt_challenge == 'http'
-
-- name: Ensure Voyager Let's Encrypt Broker Certificate
-  k8s:
-    state: present
-    definition: "{{ lookup('template', 'voyager-certificate-broker-http.yml') }}"
-  when: voyager_letsencrypt_challenge == 'http'
+  when:
+    - voyager_letsencrypt_challenge == 'dns' or not avi_ingresses_ready

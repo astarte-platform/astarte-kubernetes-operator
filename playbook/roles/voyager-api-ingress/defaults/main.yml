@@ -1,6 +1,5 @@
 voyager_tls_api_secret_name: "{{ vars | json_query('api.tls_secret') | default(None, true) }}"
-# TODO: Currently LE does not provide any alternative - still, we might want to adopt better semantics in 0.11
-voyager_letsencrypt_challenge: "{{ 'dns' if 'dns' in (vars | json_query('letsencrypt.challenge_provider')) else 'http' }}"
+voyager_bootstrapping_http_01: false
 
 voyager_api_ingress_config:
   type: "{{ vars | json_query('api.type') | default('LoadBalancer', true) }}"

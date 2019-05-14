@@ -12,7 +12,6 @@ metadata:
     ingress.appscode.com/keep-source-ip: "true"
     # Configure depending on the load
     ingress.appscode.com/replicas: '{{ voyager_api_ingress_config.replicas }}'
-    ingress.appscode.com/rewrite-target: /
     # HSTS
 {% if astarte_api_use_ssl or (deploy_astarte_dashboard and astarte_dashboard_use_ssl) %}
     ingress.appscode.com/hsts: "true"
@@ -35,7 +34,7 @@ metadata:
     # Tunnel is for websockets - 10m is more then enough
     ingress.appscode.com/default-timeout: '{"tunnel": "10m"}'
 spec:
-{% if astarte_api_use_ssl or (deploy_astarte_dashboard and astarte_dashboard_use_ssl) %}
+{% if (not voyager_bootstrapping_http_01) and (astarte_api_use_ssl or (deploy_astarte_dashboard and astarte_dashboard_use_ssl)) %}
   tls:
   - hosts:
 {% if astarte_api_use_ssl %}
@@ -47,16 +46,12 @@ spec:
     ref:
 {% if voyager_use_letsencrypt %}
       kind: Certificate
-{% if voyager_letsencrypt_challenge == 'dns' %}
       name: {{ resources_computed_prefix }}ingress-certificate
-{% else %} # if voyager_letsencrypt_challenge == 'dns'
-      name: {{ resources_computed_prefix }}api-ingress-certificate
-{% endif %} # if voyager_letsencrypt_challenge == 'dns'
 {% else %} # if voyager_use_letsencrypt
       kind: Secret
-      name: {{ voyager_tls_broker_secret_name }}
+      name: {{ voyager_tls_api_secret_name }}
 {% endif %} # if voyager_use_letsencrypt
-{% endif %} # if astarte_api_use_ssl or (deploy_astarte_dashboard and astarte_dashboard_use_ssl)
+{% endif %} # if (not voyager_bootstrapping_http_01) and (astarte_api_use_ssl or (deploy_astarte_dashboard and astarte_dashboard_use_ssl))
   rules:
   - host: {{ astarte_api_host }}
     http:
@@ -66,28 +61,40 @@ spec:
         backend:
           serviceName: {{ parent_resources_computed_prefix }}housekeeping
           servicePort: '4000'
+          backendRules:
+          - 'reqrep ^([^\ :]*)\ /housekeeping(.*$) \1\ /\2'
 {% endif %}
       - path: /realm
         backend:
           serviceName: {{ parent_resources_computed_prefix }}realm-management
           servicePort: '4000'
+          backendRules:
+          - 'reqrep ^([^\ :]*)\ /realm(.*$) \1\ /\2'
       - path: /realmmanagement
         backend:
           serviceName: {{ parent_resources_computed_prefix }}realm-management
           servicePort: '4000'
+          backendRules:
+          - 'reqrep ^([^\ :]*)\ /realmmanagement(.*$) \1\ /\2'
       - path: /pairing
         backend:
           serviceName: {{ parent_resources_computed_prefix }}pairing
           servicePort: '4000'
+          backendRules:
+          - 'reqrep ^([^\ :]*)\ /pairing(.*$) \1\ /\2'
       - path: /appengine
         backend:
           serviceName: {{ parent_resources_computed_prefix }}appengine
           servicePort: '4000'
+          backendRules:
+          - 'reqrep ^([^\ :]*)\ /appengine(.*$) \1\ /\2'
 {% if deploy_astarte_dashboard and not astarte_dashboard_use_dedicated_host %}
       - path: /dashboard
         backend:
           serviceName: {{ parent_resources_computed_prefix }}dashboard
           servicePort: '80'
+          backendRules:
+          - 'reqrep ^([^\ :]*)\ /dashboard(.*$) \1\ /\2'
 {% endif %}
 {% if deploy_astarte_dashboard and astarte_dashboard_use_dedicated_host %}
   - host: {{ astarte_dashboard_host }}

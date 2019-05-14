@@ -21,6 +21,10 @@
     # We need to change this to ensure resource pointers are in sync
     parent_resources_computed_prefix: "{{ astarte }}-"
 
+- name: Include AVI tasks
+  include_tasks: "avi.yml"
+  when: astarte_resource_type == 'AstarteVoyagerIngress'
+
 - debug:
     msg: "Setting facts: {{ resources_computed_prefix }}, {{ astarte_api_use_ssl }}, {{ astarte_api_host }}, {{ mqtt_broker_host }}, {{ mqtt_broker_port }}, {{ mqtt_broker_ca_secret }}, {{ deploy_astarte_dashboard }}"
     verbosity: 2

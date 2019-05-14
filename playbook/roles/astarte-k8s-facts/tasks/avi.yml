@@ -1,0 +1,49 @@
+- name: Set AVI LE facts
+  set_fact:
+    # TODO: Currently LE does not provide any alternative - still, we might want to adopt better semantics in 0.11
+    voyager_letsencrypt_challenge: "{{ 'dns' if 'dns' in (vars | json_query('letsencrypt.challenge_provider')) else 'http' }}"
+    avi_using_loadbalancer: "{{ (vars | json_query('api.type') | default('LoadBalancer', true)) == 'LoadBalancer' or (vars | json_query('api.type') | default('LoadBalancer', true)) == 'LoadBalancer' }}"
+  when: voyager_use_letsencrypt
+
+- name: Set whether we're bootstrapping Voyager HTTP-01 LE
+  set_fact:
+    voyager_api_bootstrapping_http_01: true
+  when:
+    - voyager_use_letsencrypt
+    - not lookup('k8s', kind='Secret', resource_name='tls-' + resources_computed_prefix + 'ingress-certificate', namespace=astarte_k8s_namespace)
+    - astarte_api_use_ssl
+    - voyager_letsencrypt_challenge == 'http'
+
+- name: Retrieve API Ingress
+  k8s_facts:
+    api_version: voyager.appscode.com/v1beta1
+    kind: Ingress
+    name: "{{ resources_computed_prefix }}api-ingress"
+    namespace: "{{ astarte_k8s_namespace }}"
+  register: avi_api_ingress
+
+- name: Retrieve Broker Ingress
+  k8s_facts:
+    api_version: voyager.appscode.com/v1beta1
+    kind: Ingress
+    name: "{{ resources_computed_prefix }}vernemq-ingress"
+    namespace: "{{ astarte_k8s_namespace }}"
+  register: avi_broker_ingress
+
+- name: Set whether API ingress is ready
+  set_fact:
+    avi_api_ingress_ready: "{{ avi_api_ingress.resources[0].status.loadBalancer.ingress }}"
+  ignore_errors: yes
+
+- name: Set whether Broker ingress is ready
+  set_fact:
+    avi_broker_ingress_ready: "{{ avi_broker_ingress.resources[0].status.loadBalancer.ingress }}"
+  ignore_errors: yes
+
+# FIXME: We have to try this with NodePort and other mechanisms. For now we assume that what isn't a load balancer is ready.
+- name: Compute overall Ingress readiness
+  set_fact:
+    avi_ingresses_ready: "{{ (avi_api_ingress_ready and avi_broker_ingress_ready) or not avi_using_loadbalancer }}"
+  when:
+    - avi_broker_ingress_ready is defined
+    - avi_api_ingress_ready is defined
