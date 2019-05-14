@@ -33,6 +33,7 @@ spec:
       service.beta.kubernetes.io/aws-load-balancer-internal": "0.0.0.0/0"
   letsencrypt:
     use: true
+    staging: false
     acmeEmail: info@example.com
     domains:
       - broker.mydomain.com

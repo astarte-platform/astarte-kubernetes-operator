@@ -6,3 +6,6 @@ metadata:
 type: Opaque
 data:
   ACME_EMAIL: {{ voyager_letsencrypt_acme_email | b64encode }}
+{% if voyager_letsencrypt_staging %}
+  ACME_SERVER_URL: {{ 'https://acme-staging-v02.api.letsencrypt.org/directory' | b64encode }}
+{% endif %}
