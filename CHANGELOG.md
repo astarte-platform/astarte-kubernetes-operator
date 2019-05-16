@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - Ensure Let's Encrypt http-01 challenge works in AVI
+- Fixed typo which caused RabbitMQ pods to have memory limits identical to requests, even when explicitly set otherwise
 
 ## [0.10.0] - 2019-04-17
 ### Changed
