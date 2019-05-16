@@ -87,7 +87,7 @@ spec:
             memory: "{{ rabbitmq_k8s_resources_requests_memory }}"
           limits:
             cpu: "{{ rabbitmq_k8s_resources_limits_cpu }}"
-            memory: "{{ rabbitmq_k8s_resources_requests_memory }}"
+            memory: "{{ rabbitmq_k8s_resources_limits_memory }}"
         env:
         - name: RABBITMQ_USE_LONGNAME
           value: "true"
