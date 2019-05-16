@@ -1,7 +1,11 @@
 ---
 - name: Setting play-specific variables
-  set_fact:
-    astarte_resource_type: "Astarte"
+  hosts: localhost
+  remote_user: root
+  connection: local
+  tasks:
+    - set_fact:
+        astarte_resource_type: "Astarte"
 
 - name: Deploy Common Astarte Resources
   hosts: localhost
