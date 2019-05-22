@@ -37,7 +37,7 @@ spec:
 {% endif %}
       containers:
       - name: vernemq
-        image: {{ astarte_distribution_channel }}/vernemq:{{ astarte_tag }}
+        image: {{ astarte_distribution_channel }}/vernemq:{{ vernemq_version }}
         imagePullPolicy: {{ astarte_image_pull_policy }}
         resources:
           requests:
