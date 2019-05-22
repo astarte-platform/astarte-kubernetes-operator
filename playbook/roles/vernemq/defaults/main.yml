@@ -1,3 +1,4 @@
+vernemq_version: "{{ vars | json_query('vernemq.version') | default(astarte_tag, true) }}"
 vernemq_k8s_enable_antiaffinity: "{{ false if (vars | json_query('vernemq.anti_affinity')) is sameas false else true }}"
 
 vernemq_k8s_replicas: "{{ vars | json_query('vernemq.replicas') | default('1', true) }}"

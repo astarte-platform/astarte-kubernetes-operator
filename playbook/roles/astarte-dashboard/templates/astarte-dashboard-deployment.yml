@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: dashboard
-        image: {{ astarte_distribution_channel }}/astarte-dashboard:{{ astarte_tag }}
+        image: {{ astarte_distribution_channel }}/astarte-dashboard:{{ astarte_dashboard_version }}
         imagePullPolicy: {{ astarte_image_pull_policy }}
         ports:
           - containerPort: 80
