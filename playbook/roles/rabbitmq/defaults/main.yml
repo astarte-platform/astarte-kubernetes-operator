@@ -1,6 +1,6 @@
 rabbitmq_k8s_enable_antiaffinity: "{{ false if (vars | json_query('rabbitmq.anti_affinity')) is sameas false else true }}"
 
-rabbitmq_image_tag: "{{ vars | json_query('rabbitmq.version') | default('3.7.12', true) }}"
+rabbitmq_image_tag: "{{ vars | json_query('rabbitmq.version') | default('3.7.15', true) }}"
 rabbitmq_k8s_replicas: "{{ vars | json_query('rabbitmq.replicas') | default('1', true) }}"
 
 rabbitmq_k8s_resources_requests_cpu: "{{ vars | json_query('rabbitmq.resources.requests.cpu') | default('500m', true) }}"
