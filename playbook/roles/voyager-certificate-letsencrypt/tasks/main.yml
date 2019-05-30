@@ -8,4 +8,4 @@
     state: present
     definition: "{{ lookup('template', 'voyager-certificate.yml') }}"
   when:
-    - voyager_letsencrypt_challenge == 'dns' or not avi_ingresses_ready
+    - voyager_letsencrypt_challenge == 'dns' or avi_ingresses_ready

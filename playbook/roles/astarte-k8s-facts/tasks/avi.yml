@@ -7,7 +7,7 @@
 
 - name: Set whether we're bootstrapping Voyager HTTP-01 LE
   set_fact:
-    voyager_api_bootstrapping_http_01: true
+    voyager_bootstrapping_http_01: true
   when:
     - voyager_use_letsencrypt
     - not lookup('k8s', kind='Secret', resource_name='tls-' + resources_computed_prefix + 'ingress-certificate', namespace=astarte_k8s_namespace)
