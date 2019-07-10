@@ -1,6 +1,7 @@
 k8s_service_name: "{{ astarte_app_name | regex_replace('_', '-') }}"
 k8s_deployment_name: "{{ resources_computed_prefix }}{{ k8s_service_name }}-api"
 k8s_deployment_replicas: 1
+k8s_deployment_custom_image:
 k8s_deployment_image: "{{ astarte_distribution_channel }}/astarte_{{ astarte_app_name }}_api:{{ astarte_app_version }}"
 k8s_deployment_image_pull_policy: "{{ astarte_image_pull_policy }}"
 k8s_deployment_resources_requests_cpu: 100m
