@@ -220,6 +220,10 @@ spec:
       # version: 0.10.999
       replicas: 1
       disableAuthentication: false
+      # Handle with care: this controls page size in AppEngine queries, and can easily
+      # put unneeded pressure on your Cluster if configured improperly. If in doubt,
+      # leave the default value.
+      maxResultsLimit: 10000
       resources:
         requests:
           cpu: 400m
