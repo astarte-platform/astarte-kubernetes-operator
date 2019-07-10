@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added static IP support to load balancer in AVI
 - Support to Let's Encrypt Staging in AVI Certificates
 - Allow setting a different version for each Astarte component
+- Support setting maxResultsLimit in AppEngine API
 
 ### Fixed
 - Ensure Let's Encrypt http-01 challenge works in AVI
