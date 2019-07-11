@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Allow setting a different version for each Astarte component
 - Allow setting custom images for individual Astarte components
 - Support setting maxResultsLimit in AppEngine API
+- Support fetching images from private registries
 
 ### Fixed
 - Ensure Let's Encrypt http-01 challenge works in AVI
