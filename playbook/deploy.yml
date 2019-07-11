@@ -202,6 +202,8 @@
           value: "{{ astarte_appengine_api_rooms_amqp_client_host }}"
         - name: ASTARTE_CASSANDRA_NODES
           value: "{{ vars | json_query('cassandra.nodes') | default(cassandra_nodes, true) }}"
+        - name: APPENGINE_API_MAX_RESULTS_LIMIT
+          value: "{{ vars | json_query('components.appengine_api.max_results_limit') | default('10000', true) }}"
       k8s_deployment_additional_secret_variables:
         - name: APPENGINE_API_ROOMS_AMQP_CLIENT_USERNAME
           secret_name: "{{ astarte_appengine_api_rooms_amqp_client_username_secret_name }}"

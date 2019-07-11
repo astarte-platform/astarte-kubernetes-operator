@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Support to Let's Encrypt Staging in AVI Certificates
 - Allow setting a different version for each Astarte component
 - Allow setting custom images for individual Astarte components
+- Support setting maxResultsLimit in AppEngine API
 
 ### Fixed
 - Ensure Let's Encrypt http-01 challenge works in AVI
