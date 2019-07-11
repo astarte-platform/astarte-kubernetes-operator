@@ -21,7 +21,11 @@ spec:
     spec:
       containers:
       - name: {{ k8s_service_name }}-api
+{% if k8s_deployment_custom_image %}
+        image: {{ k8s_deployment_custom_image }}
+{% else %}
         image: {{ k8s_deployment_image }}
+{% endif %}
         imagePullPolicy: {{ astarte_image_pull_policy }}
 {% if check_api_health %}
         readinessProbe:
