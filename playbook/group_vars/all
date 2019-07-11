@@ -3,6 +3,7 @@ astarte_k8s_namespace: "{{ vars | json_query('meta.namespace') | default('astart
 astarte_distribution_channel: "{{ distribution_channel|default('astarte', true) }}" # This defaults to the OSS public release on Docker Hub
 astarte_tag: "{{ version|default('0.10.0', true) }}"
 astarte_image_pull_policy: "{{ image_pull_policy|default('IfNotPresent', true) }}"
+k8s_image_pull_secrets: "{{ image_pull_secrets|default('', true) }}"
 
 # Resource prefix. Most useful for Operator.
 astarte_resources_prefix: "{{ vars | json_query('meta.name') | default('astarte', true) }}"

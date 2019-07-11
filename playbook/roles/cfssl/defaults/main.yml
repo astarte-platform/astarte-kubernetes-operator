@@ -1,6 +1,7 @@
 cfssl_k8s_enable_antiaffinity: "{{ false if (vars | json_query('cfssl.anti_affinity')) is sameas false else true }}"
 
 cfssl_k8s_replicas: "{{ vars | json_query('cfssl.replicas') | default('1', true) }}"
+k8s_image_pull_secrets:
 
 cfssl_k8s_resources_requests_cpu: "{{ vars | json_query('cfssl.resources.requests.cpu') | default('100m', true) }}"
 cfssl_k8s_resources_requests_memory: "{{ vars | json_query('cfssl.resources.requests.memory') | default('128M', true) }}"
