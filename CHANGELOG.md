@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Ensure Let's Encrypt http-01 challenge works in AVI
 - Fixed typo which caused RabbitMQ pods to have memory limits identical to requests, even when explicitly set otherwise
 - AVI: Fixed typo which caused the Playbook operator to crash when Dashboard host was not defined
+- Use mqtts URI scheme in PAIRING_BROKER_URL
 
 ## [0.10.0] - 2019-04-17
 ### Changed
