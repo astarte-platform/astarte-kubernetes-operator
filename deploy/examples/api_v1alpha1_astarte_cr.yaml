@@ -9,6 +9,8 @@ spec:
   ### Astarte CRD
   version: 0.10.0
   imagePullPolicy: IfNotPresent
+  imagePullSecrets:
+    - "secretname"
   distributionChannel: astarte
   rbac: true
   storageClassName:

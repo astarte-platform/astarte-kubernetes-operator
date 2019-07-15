@@ -35,6 +35,12 @@ spec:
                 - {{ resources_computed_prefix }}vernemq
             topologyKey: kubernetes.io/hostname
 {% endif %}
+{% if k8s_image_pull_secrets %}
+      imagePullSecrets:
+{% for image_pull_secret in k8s_image_pull_secrets %}
+      - name: {{ image_pull_secret }}
+{% endfor %}
+{% endif %}
       containers:
       - name: vernemq
         image: {{ astarte_distribution_channel }}/vernemq:{{ vernemq_version }}
