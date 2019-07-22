@@ -30,6 +30,12 @@ spec:
                 - {{ resources_computed_prefix }}cassandra
             topologyKey: kubernetes.io/hostname
 {% endif %}
+{% if k8s_image_pull_secrets %}
+      imagePullSecrets:
+{% for image_pull_secret in k8s_image_pull_secrets %}
+      - name: {{ image_pull_secret }}
+{% endfor %}
+{% endif %}
       containers:
       - name: cassandra
         image: gcr.io/google-samples/cassandra:v13
@@ -86,15 +92,14 @@ spec:
             - /ready-probe.sh
           initialDelaySeconds: 15
           timeoutSeconds: 5
-{% if cassandra_k8s_volume_definition %}
-        volumes:
-        - name: {{ resources_computed_prefix }}cassandra-data
-          {{ cassandra_k8s_volume_definition | to_nice_yaml }}
-{% endif %}
         volumeMounts:
         - name: {{ resources_computed_prefix }}cassandra-data
           mountPath: /cassandra_data
-{% if not cassandra_k8s_volume_definition %}
+{% if cassandra_k8s_volume_definition %}
+      volumes:
+      - name: {{ resources_computed_prefix }}cassandra-data
+        {{ cassandra_k8s_volume_definition | to_nice_yaml }}
+{% else %}
   volumeClaimTemplates:
   - metadata:
       name: {{ resources_computed_prefix }}cassandra-data

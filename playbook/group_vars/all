@@ -3,6 +3,7 @@ astarte_k8s_namespace: "{{ vars | json_query('meta.namespace') | default('astart
 astarte_distribution_channel: "{{ distribution_channel|default('astarte', true) }}" # This defaults to the OSS public release on Docker Hub
 astarte_tag: "{{ version|default('0.10.0', true) }}"
 astarte_image_pull_policy: "{{ image_pull_policy|default('IfNotPresent', true) }}"
+k8s_image_pull_secrets: "{{ image_pull_secrets|default('', true) }}"
 
 # Resource prefix. Most useful for Operator.
 astarte_resources_prefix: "{{ vars | json_query('meta.name') | default('astarte', true) }}"
@@ -37,7 +38,7 @@ astarte_api_expose_housekeeping: true
 astarte_api_enable_cors: "{{ true if (vars | json_query('api.cors')) is sameas true else false }}"
 astarte_api_host: "{{ vars | json_query('api.host') | default(None, true) }}"
 astarte_dashboard_use_ssl: "{{ vars | json_query('dashboard.ssl') | default(astarte_api_use_ssl, true) }}"
-astarte_dashboard_use_dedicated_host: "{{ false if (vars | json_query('dashboard.host')) == '' else true }}"
+astarte_dashboard_use_dedicated_host: "{{ false if (vars | json_query('dashboard.host') | default('', true)) == '' else true }}"
 astarte_dashboard_host: "{{ vars | json_query('dashboard.host') | default('', true) }}"
 mqtt_broker_host: "{{ vars | json_query('vernemq.host') | default(None, true) }}"
 mqtt_broker_port: "{{ vars | json_query('vernemq.port') | default(8883, true) }}"

@@ -7,6 +7,8 @@ astarte_dashboard_resources_limits_cpu: "{{ vars | json_query('components.dashbo
 astarte_dashboard_resources_limits_memory: "{{ vars | json_query('components.dashboard.resources.limits.memory') | default(astarte_dashboard_k8s_resources_limits_memory, true) }}"
 astarte_dashboard_replicas: "{{ vars | json_query('components.dashboard.replicas') | default(astarte_dashboard_k8s_replicas, true) }}"
 
+k8s_image_pull_secrets:
+
 astarte_dashboard_config:
   realm_management_api_url: "{{ 'https' if astarte_api_use_ssl else 'http' }}://{{ astarte_api_host }}/realmmanagement/v1/"
   default_realm: "{{ astarte_dashboard_default_realm }}"

@@ -11,10 +11,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added static IP support to load balancer in AVI
 - Support to Let's Encrypt Staging in AVI Certificates
 - Allow setting a different version for each Astarte component
+- Allow setting custom images for individual Astarte components
+- Support setting maxResultsLimit in AppEngine API
+- Support fetching images from private registries
+
+### Changed
+- Update default RabbitMQ version to 3.7.15
 
 ### Fixed
 - Ensure Let's Encrypt http-01 challenge works in AVI
 - Fixed typo which caused RabbitMQ pods to have memory limits identical to requests, even when explicitly set otherwise
+- AVI: Fixed typo which caused the Playbook operator to crash when Dashboard host was not defined
+- Use mqtts URI scheme in PAIRING_BROKER_URL
+- Fixed an issue which resulted in an invalid resource when using a Cassandra custom volume definition
 
 ## [0.10.0] - 2019-04-17
 ### Changed

@@ -21,7 +21,11 @@ spec:
     spec:
       containers:
       - name: {{ k8s_service_name }}-api
+{% if k8s_deployment_custom_image %}
+        image: {{ k8s_deployment_custom_image }}
+{% else %}
         image: {{ k8s_deployment_image }}
+{% endif %}
         imagePullPolicy: {{ astarte_image_pull_policy }}
 {% if check_api_health %}
         readinessProbe:
@@ -118,3 +122,9 @@ spec:
           items:
           - key: vm.args
             path: vm.args
+{% if k8s_image_pull_secrets %}
+      imagePullSecrets:
+{% for image_pull_secret in k8s_image_pull_secrets %}
+      - name: {{ image_pull_secret }}
+{% endfor %}
+{% endif %}

@@ -48,3 +48,9 @@ spec:
           items:
           - key: config.json
             path: config.json
+{% if k8s_image_pull_secrets %}
+      imagePullSecrets:
+{% for image_pull_secret in k8s_image_pull_secrets %}
+      - name: {{ image_pull_secret }}
+{% endfor %}
+{% endif %}
