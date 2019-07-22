@@ -92,15 +92,14 @@ spec:
             - /ready-probe.sh
           initialDelaySeconds: 15
           timeoutSeconds: 5
-{% if cassandra_k8s_volume_definition %}
-        volumes:
-        - name: {{ resources_computed_prefix }}cassandra-data
-          {{ cassandra_k8s_volume_definition | to_nice_yaml }}
-{% endif %}
         volumeMounts:
         - name: {{ resources_computed_prefix }}cassandra-data
           mountPath: /cassandra_data
-{% if not cassandra_k8s_volume_definition %}
+{% if cassandra_k8s_volume_definition %}
+      volumes:
+      - name: {{ resources_computed_prefix }}cassandra-data
+        {{ cassandra_k8s_volume_definition | to_nice_yaml }}
+{% else %}
   volumeClaimTemplates:
   - metadata:
       name: {{ resources_computed_prefix }}cassandra-data
