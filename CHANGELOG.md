@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Support setting maxResultsLimit in AppEngine API
 - Support fetching images from private registries
 
+### Changed
+- Update default RabbitMQ version to 3.7.15
+
 ### Fixed
 - Ensure Let's Encrypt http-01 challenge works in AVI
 - Fixed typo which caused RabbitMQ pods to have memory limits identical to requests, even when explicitly set otherwise
