@@ -43,7 +43,11 @@ spec:
 {% endif %}
       containers:
       - name: vernemq
+{% if vernemq_k8s_custom_image %}
+        image: {{ vernemq_k8s_custom_image }}
+{% else %}
         image: {{ astarte_distribution_channel }}/vernemq:{{ vernemq_version }}
+{% endif %}
         imagePullPolicy: {{ astarte_image_pull_policy }}
         resources:
           requests:
