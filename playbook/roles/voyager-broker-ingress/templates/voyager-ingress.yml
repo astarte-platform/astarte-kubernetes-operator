@@ -42,6 +42,7 @@ spec:
 {% endif %}
 {% endif %} # if not voyager_bootstrapping_http_01
   rules:
+{% if voyager_use_letsencrypt %}
 {% if voyager_letsencrypt_challenge == 'http' %}
 # If we're using the http-01 challenge, we need to let the LoadBalancer know that port 80 has to be open and routed.
   - http:
@@ -51,6 +52,7 @@ spec:
         backend:
           serviceName: voyager-operator.kube-system
           servicePort: '56791'
+{% endif %}
 {% endif %}
   - host: {{ mqtt_broker_host }}
     tcp:
