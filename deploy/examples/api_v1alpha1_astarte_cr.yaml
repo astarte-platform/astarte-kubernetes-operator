@@ -210,6 +210,7 @@ spec:
       # You can specify a component-specific version or tag
       # version: 0.10.999
       replicas: 1
+      dataQueueCount: 1
       resources:
         requests:
           cpu: 400m

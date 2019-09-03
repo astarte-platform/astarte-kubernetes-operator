@@ -94,6 +94,8 @@ spec:
                 key: {{ rabbitmq_connection_k8s_credentials_secret_password_key }}
           - name: DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__HOST
             value: "{{ vars | json_query('rabbitmq.connection.host') | default(rabbitmq_connection_host, true) }}"
+          - name: DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__DATA_QUEUE_COUNT
+            value: "{{ vernemq_k8s_amqp_data_queue_count }}"
           - name: DOCKER_VERNEMQ_DISCOVERY_KUBERNETES
             value: "1"
           - name: DOCKER_VERNEMQ_KUBERNETES_LABEL_SELECTOR

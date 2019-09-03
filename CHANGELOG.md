@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Added support for multi-queue Data Updater Plant and VerneMQ plugin. When migrating from single-queue deployments,
+the recommended procedure is this: scale VerneMQ to 0 replicas to allow the existing queue to be emptied. When it
+is empty, replace Data Updater Plant with the new version and bring VerneMQ back up to start publishing on the new queues.
 
 ## [0.10.1] - Unreleased
 ### Added

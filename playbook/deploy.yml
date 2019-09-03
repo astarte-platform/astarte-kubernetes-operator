@@ -170,6 +170,12 @@
           value: "/"
         - name: DATA_UPDATER_PLANT_AMQP_PRODUCER_PORT
           value: "{{ vars | json_query('rabbitmq.connection.port') | default(rabbitmq_connection_port, true) }}"
+        - name: DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_RANGE_START
+          # TODO: this is fixed to 0 for now, it will change when multiple Data Updater Plants are supported
+          value: "0"
+        - name: DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_RANGE_END
+          # TODO: same as above, but fixed at queue count. Subtract 1 since the range ends at count - 1
+          value: "{{ astarte_k8s_data_queue_count | int - 1 }}"
       k8s_deployment_additional_secret_variables:
         - name: DATA_UPDATER_PLANT_AMQP_CONSUMER_USERNAME
           secret_name: "{{ rabbitmq_connection_k8s_credentials_secret_name }}"

@@ -58,6 +58,9 @@ deploy_cfssl_k8s: "{{ false if (vars | json_query('cfssl.deploy')) is sameas fal
 deploy_astarte_trigger_engine: "{{ false if (vars | json_query('components.trigger_engine.deploy')) is sameas false else true }}"
 deploy_astarte_dashboard: "{{ false if (vars | json_query('components.dashboard.deploy')) is sameas false else true }}"
 
+### Data queue count, used by Data Updater Plant and VerneMQ
+astarte_k8s_data_queue_count: "{{ vars | json_query('components.data_updater_plant.data_queue_count') | default(1, true) }}"
+
 ### Data Updater Plant AMQP policies
 
 ### AppEngine API AMQP policies
