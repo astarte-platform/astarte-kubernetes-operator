@@ -13,3 +13,5 @@ vernemq_k8s_resources_limits_memory: "{{ vars | json_query('vernemq.resources.li
 vernemq_k8s_volume_definition: "{{ vars | json_query('vernemq.storage.volume_definition') | default('', true) }}"
 vernemq_k8s_storage_class_name: "{{ vars | json_query('vernemq.storage.class_name') | default(k8s_storage_class_name, true) }}"
 vernemq_k8s_volume_size: "{{ vars | json_query('vernemq.storage.size') | default('4Gi', true) }}"
+
+vernemq_k8s_amqp_data_queue_count: "{{ astarte_k8s_data_queue_count }}"
