@@ -18,6 +18,7 @@ is empty, replace Data Updater Plant with the new version and bring VerneMQ back
 - Allow setting custom images for individual Astarte components
 - Support setting maxResultsLimit in AppEngine API
 - Support fetching images from private registries
+- Allow setting a custom image for RabbitMQ
 
 ### Changed
 - Update default RabbitMQ version to 3.7.15
