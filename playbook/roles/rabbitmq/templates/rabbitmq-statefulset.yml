@@ -75,7 +75,11 @@ spec:
 {% endif %}
       containers:
       - name: rabbitmq
+{% if rabbitmq_k8s_custom_image %}
+        image: {{ rabbitmq_k8s_custom_image }}
+{% else %}
         image: rabbitmq:{{ rabbitmq_image_tag }}
+{% endif %}
         livenessProbe:
           exec:
             command: ["rabbitmqctl", "status"]
