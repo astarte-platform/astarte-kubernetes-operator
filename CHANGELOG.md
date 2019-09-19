@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Support setting maxResultsLimit in AppEngine API
 - Support fetching images from private registries
 - Allow setting a custom image for RabbitMQ
+- Support enabling additional plugins in RabbitMQ
 
 ### Changed
 - Update default RabbitMQ version to 3.7.15
