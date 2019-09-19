@@ -5,7 +5,7 @@ metadata:
   namespace: {{ astarte_k8s_namespace }}
 data:
   enabled_plugins: |
-      [rabbitmq_management,rabbitmq_peer_discovery_k8s].
+      [{{ rabbitmq_k8s_enabled_plugins | list | join(",") }}].
   rabbitmq.conf: |
       ## Clustering
       cluster_formation.peer_discovery_backend  = rabbit_peer_discovery_k8s

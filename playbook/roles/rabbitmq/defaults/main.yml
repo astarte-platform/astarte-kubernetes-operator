@@ -13,3 +13,9 @@ rabbitmq_k8s_resources_limits_memory: "{{ vars | json_query('rabbitmq.resources.
 rabbitmq_k8s_volume_definition: "{{ vars | json_query('rabbitmq.storage.volume_definition') | default('', true) }}"
 rabbitmq_k8s_storage_class_name: "{{ vars | json_query('rabbitmq.storage.class_name') | default(k8s_storage_class_name, true) }}"
 rabbitmq_k8s_volume_size: "{{ vars | json_query('rabbitmq.storage.size') | default('4Gi', true) }}"
+
+rabbitmq_k8s_base_enabled_plugins:
+  - rabbitmq_management
+  - rabbitmq_peer_discovery_k8s
+rabbitmq_k8s_additional_enabled_plugins: "{{ vars | json_query('rabbitmq.additional_plugins') | default([], true) }}"
+rabbitmq_k8s_enabled_plugins: "{{ rabbitmq_k8s_base_enabled_plugins + rabbitmq_k8s_additional_enabled_plugins }}"
