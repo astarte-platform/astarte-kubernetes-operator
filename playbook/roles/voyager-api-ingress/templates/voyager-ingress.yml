@@ -62,39 +62,39 @@ spec:
           serviceName: {{ parent_resources_computed_prefix }}housekeeping
           servicePort: '4000'
           backendRules:
-          - 'reqrep ^([^\ :]*)\ /housekeeping(.*$) \1\ /\2'
+          - 'reqrep ^([^\ :]*)\ /housekeeping/(.*$) \1\ /\2'
 {% endif %}
       - path: /realm
         backend:
           serviceName: {{ parent_resources_computed_prefix }}realm-management
           servicePort: '4000'
           backendRules:
-          - 'reqrep ^([^\ :]*)\ /realm(.*$) \1\ /\2'
+          - 'reqrep ^([^\ :]*)\ /realm/(.*$) \1\ /\2'
       - path: /realmmanagement
         backend:
           serviceName: {{ parent_resources_computed_prefix }}realm-management
           servicePort: '4000'
           backendRules:
-          - 'reqrep ^([^\ :]*)\ /realmmanagement(.*$) \1\ /\2'
+          - 'reqrep ^([^\ :]*)\ /realmmanagement/(.*$) \1\ /\2'
       - path: /pairing
         backend:
           serviceName: {{ parent_resources_computed_prefix }}pairing
           servicePort: '4000'
           backendRules:
-          - 'reqrep ^([^\ :]*)\ /pairing(.*$) \1\ /\2'
+          - 'reqrep ^([^\ :]*)\ /pairing/(.*$) \1\ /\2'
       - path: /appengine
         backend:
           serviceName: {{ parent_resources_computed_prefix }}appengine
           servicePort: '4000'
           backendRules:
-          - 'reqrep ^([^\ :]*)\ /appengine(.*$) \1\ /\2'
+          - 'reqrep ^([^\ :]*)\ /appengine/(.*$) \1\ /\2'
 {% if deploy_astarte_dashboard and not astarte_dashboard_use_dedicated_host %}
       - path: /dashboard
         backend:
           serviceName: {{ parent_resources_computed_prefix }}dashboard
           servicePort: '80'
           backendRules:
-          - 'reqrep ^([^\ :]*)\ /dashboard(.*$) \1\ /\2'
+          - 'reqrep ^([^\ :]*)\ /dashboard/(.*$) \1\ /\2'
 {% endif %}
 {% if deploy_astarte_dashboard and astarte_dashboard_use_dedicated_host %}
   - host: {{ astarte_dashboard_host }}
