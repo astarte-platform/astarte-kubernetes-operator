@@ -1,7 +1,13 @@
 sudo: required
 services: docker
 language: python
+env:
+  global:
+    - TEST_NAMESPACE="astarte"
+  jobs:
+    - TEST_SUITE="test-local"
+
 install:
   - pip3 install docker molecule openshift jmespath
 script:
-  - molecule test -s test-local
+  - molecule test -s $TEST_SUITE
