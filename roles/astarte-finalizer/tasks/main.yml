@@ -1,0 +1,9 @@
+---
+- name: Delete CFSSL generated CA
+  k8s:
+    api_version: v1
+    state: absent
+    kind: Secret
+    namespace: "{{ astarte_k8s_namespace }}"
+    name: "{{ mqtt_broker_ca_secret }}"
+  when: lookup('k8s', kind='Secret', resource_name=mqtt_broker_ca_secret, namespace=astarte_k8s_namespace)
