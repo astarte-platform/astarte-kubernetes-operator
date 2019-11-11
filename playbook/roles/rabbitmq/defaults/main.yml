@@ -1,4 +1,5 @@
 rabbitmq_k8s_enable_antiaffinity: "{{ false if (vars | json_query('rabbitmq.anti_affinity')) is sameas false else true }}"
+rabbitmq_k8s_deploy: true
 k8s_image_pull_secrets:
 
 rabbitmq_k8s_custom_image: "{{ vars | json_query('rabbitmq.image') | default('', true) }}"
