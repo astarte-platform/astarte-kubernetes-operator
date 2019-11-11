@@ -1,16 +1,14 @@
 ---
 - name: Setting play-specific variables
   hosts: localhost
-  remote_user: root
-  connection: local
+  gather_facts: no
   tasks:
     - set_fact:
         astarte_resource_type: "Astarte"
 
 - name: Deploy Common Astarte Resources
   hosts: localhost
-  remote_user: root
-  connection: local
+  gather_facts: no
   tags:
     - astarte
   roles:
@@ -19,8 +17,7 @@
 
 - name: Deploy Astarte Dependencies
   hosts: localhost
-  remote_user: root
-  connection: local
+  gather_facts: no
   tags:
     - rabbitmq
   roles:
@@ -43,8 +40,7 @@
 
 - name: Retrieve CFSSL CA Secret
   hosts: localhost
-  remote_user: root
-  connection: local
+  gather_facts: no
   tags:
     - cfssl
   roles:
@@ -52,8 +48,7 @@
 
 - name: Deploy Astarte
   hosts: localhost
-  remote_user: root
-  connection: local
+  gather_facts: no
   tags:
     - astarte
   roles:
