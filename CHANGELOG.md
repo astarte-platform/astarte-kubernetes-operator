@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 the recommended procedure is this: scale VerneMQ to 0 replicas to allow the existing queue to be emptied. When it
 is empty, replace Data Updater Plant with the new version and bring VerneMQ back up to start publishing on the new queues.
 
-## [0.10.1] - Unreleased
+## [0.10.1] - 2019-10-02
 ### Added
 - Added static IP support to load balancer in AVI
 - Support to Let's Encrypt Staging in AVI Certificates
@@ -31,6 +31,7 @@ is empty, replace Data Updater Plant with the new version and bring VerneMQ back
 - Use mqtts URI scheme in PAIRING_BROKER_URL
 - Fixed an issue which resulted in an invalid resource when using a Cassandra custom volume definition
 - Fixed an issue which prevented using a custom TLS secret
+- Remove extra leading / in URL rewrites
 
 ## [0.10.0] - 2019-04-17
 ### Changed

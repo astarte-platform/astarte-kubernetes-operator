@@ -6,7 +6,7 @@
   vars:
     ansible_python_interpreter: '{{ ansible_playbook_python }}'
     deploy_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/deploy"
-    image_name: api.astarte-platform.org/astarte-operator:0.10.0
+    image_name: api.astarte-platform.org/astarte-operator:0.10.1
     custom_resource: "{{ lookup('file', '/'.join([deploy_dir, 'crds/api_v1alpha1_astarte_cr.yaml'])) | from_yaml }}"
   tasks:
   - name: Create the api.astarte-platform.org/v1alpha1.Astarte
