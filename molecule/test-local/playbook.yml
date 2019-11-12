@@ -24,7 +24,7 @@
     deploy_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/deploy"
     pull_policy: Never
     REPLACE_IMAGE: astarte-kubernetes-operator-molecule:testing
-    custom_resource: "{{ lookup('file', '/'.join([deploy_dir, 'examples/api_v1alpha1_astarte_cr_minimal.yaml'])) | from_yaml }}"
+    custom_resource: "{{ lookup('file', '/'.join([deploy_dir, 'test/api_v1alpha1_astarte_cr_minimal.yaml'])) | from_yaml }}"
   tasks:
   - block:
     - name: Delete the Operator Deployment
@@ -71,6 +71,21 @@
       - "'Successful' in (cr | json_query('resources[].status.conditions[].reason'))"
       delay: 10
       retries: 60
+
+    - name: Wait for 5m until all pods are running
+      k8s_info:
+        kind: Pod
+        namespace: '{{ namespace }}'
+        # Exclude Job Pods, which of course aren't deleted.
+        label_selectors:
+          - "!job-name"
+        field_selectors:
+          - "status.phase!=Running"
+      register: non_running_pods_list
+      until:
+      - "non_running_pods_list.resources|length == 0"
+      delay: 10
+      retries: 30
     rescue:
     - name: debug cr
       ignore_errors: yes
@@ -98,6 +113,124 @@
           label_selector="component=astarte"
         )}}'
 
+    - name: describe nodes
+      ignore_errors: yes
+      failed_when: false
+      command: kubectl describe nodes
+      environment:
+        KUBECONFIG: '{{ lookup("env", "KUBECONFIG") }}'
+      register: nodes_describe
+
+    - name: describe operator
+      ignore_errors: yes
+      failed_when: false
+      command: kubectl describe deployment/{{ definition.metadata.name }} -n kube-system
+      environment:
+        KUBECONFIG: '{{ lookup("env", "KUBECONFIG") }}'
+      vars:
+        definition: "{{ lookup('template', '/'.join([deploy_dir, 'test/operator-test.yaml'])) | from_yaml }}"
+      register: operator_describe
+
+    - name: get operator logs
+      ignore_errors: yes
+      failed_when: false
+      command: kubectl logs deployment/{{ definition.metadata.name }} -n kube-system
+      environment:
+        KUBECONFIG: '{{ lookup("env", "KUBECONFIG") }}'
+      vars:
+        definition: "{{ lookup('template', '/'.join([deploy_dir, 'test/operator-test.yaml'])) | from_yaml }}"
+      register: log
+
+    - debug: var=operator_describe.stdout_lines
+
+    - debug: var=nodes_describe.stdout_lines
+
+    - debug: var=log.stdout_lines
+
+    - fail:
+        msg: "Failed on action: converge"
+
+- import_playbook: '{{ playbook_dir }}/../default/asserts.yml'
+
+# Validate deletion
+- name: Delete
+  hosts: localhost
+  connection: local
+  vars:
+    ansible_python_interpreter: '{{ ansible_playbook_python }}'
+    deploy_dir: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}/deploy"
+    pull_policy: Never
+    REPLACE_IMAGE: astarte-kubernetes-operator-molecule:testing
+    custom_resource: "{{ lookup('file', '/'.join([deploy_dir, 'test/api_v1alpha1_astarte_cr_minimal.yaml'])) | from_yaml }}"
+  tasks:
+  - block:
+    - name: Delete the api.astarte-platform.org/v1alpha1.Astarte
+      k8s:
+        state: absent
+        namespace: '{{ namespace }}'
+        definition: '{{ custom_resource }}'
+
+    - name: Wait 5m until all pods are down
+      k8s_info:
+        kind: Pod
+        namespace: '{{ namespace }}'
+        # Exclude Job Pods, which of course aren't deleted.
+        label_selectors:
+          - "!job-name"
+      register: pod_list
+      until:
+      - "pod_list.resources|length == 0"
+      delay: 10
+      retries: 30
+
+    - name: Ensure no secrets are left
+      k8s_info:
+        kind: Secret
+        namespace: '{{ namespace }}'
+        # Exclude Job Pods, which of course aren't deleted.
+        field_selectors:
+          - "type=Opaque"
+      register: secret_list
+      until:
+      - "secret_list.resources|length == 0"
+      delay: 10
+      retries: 12
+    rescue:
+    - name: debug cr
+      ignore_errors: yes
+      failed_when: false
+      debug:
+        var: debug_cr
+      vars:
+        debug_cr: '{{ lookup("k8s",
+          kind=custom_resource.kind,
+          api_version=custom_resource.apiVersion,
+          namespace=namespace,
+          resource_name=custom_resource.metadata.name
+        )}}'
+
+    - name: debug pods lookup
+      ignore_errors: yes
+      failed_when: false
+      debug:
+        var: deploy
+      vars:
+        deploy: '{{ lookup("k8s",
+          kind="Pod",
+          namespace=namespace
+        )}}'
+
+    - name: debug secrets lookup
+      ignore_errors: yes
+      failed_when: false
+      debug:
+        var: deploy
+      vars:
+        deploy: '{{ lookup("k8s",
+          kind="Secret",
+          namespace=namespace
+        )}}'
+
     - name: describe operator
       ignore_errors: yes
       failed_when: false
@@ -123,6 +256,4 @@
     - debug: var=log.stdout_lines
 
     - fail:
-        msg: "Failed on action: converge"
-
-- import_playbook: '{{ playbook_dir }}/../default/asserts.yml'
+        msg: "Failed on action: delete"
