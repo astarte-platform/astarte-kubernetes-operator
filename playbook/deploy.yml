@@ -25,9 +25,9 @@
     - rabbitmq
   roles:
     - name: rabbitmq
-      when: deploy_rabbitmq_k8s
       tags:
         - rabbitmq
+      rabbitmq_k8s_deploy: "{{ deploy_rabbitmq_k8s }}"
     - name: vernemq
       when: deploy_vernemq_k8s
       tags:

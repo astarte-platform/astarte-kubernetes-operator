@@ -2,7 +2,9 @@
   k8s:
     state: present
     definition: "{{ lookup('template', 'rabbitmq-cookie.yml') }}"
-  when: not lookup('k8s', kind='Secret', resource_name=resources_computed_prefix + 'rabbitmq-cookie', namespace=astarte_k8s_namespace)
+  when:
+    - not lookup('k8s', kind='Secret', resource_name=resources_computed_prefix + 'rabbitmq-cookie', namespace=astarte_k8s_namespace)
+    - rabbitmq_k8s_deploy
 
 - name: Create RabbitMQ user credentials
   k8s:
@@ -14,14 +16,18 @@
   k8s:
     state: present
     definition: "{{ lookup('template', 'rabbitmq-rbac.yml') }}"
-  when: k8s_use_rbac
+  when:
+    - k8s_use_rbac
+    - rabbitmq_k8s_deploy
 
 - name: Ensure RabbitMQ StatefulSet
   k8s:
     state: present
     definition: "{{ lookup('template', 'rabbitmq-statefulset.yml') }}"
+  when: rabbitmq_k8s_deploy
 
 - name: Ensure RabbitMQ Service
   k8s:
     state: present
     definition: "{{ lookup('template', 'rabbitmq-service.yml') }}"
+  when: rabbitmq_k8s_deploy
