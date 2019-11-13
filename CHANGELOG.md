@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added support for multi-queue Data Updater Plant and VerneMQ plugin. When migrating from single-queue deployments,
 the recommended procedure is this: scale VerneMQ to 0 replicas to allow the existing queue to be emptied. When it
 is empty, replace Data Updater Plant with the new version and bring VerneMQ back up to start publishing on the new queues.
+- Molecule-based CI
+- Added Finalizers upon Astarte deletion
+
+### Fixed
+- Reconciliation policy now prevents the Operator from reconciling forever for no reason
+- Fix deprecations in Playbook
+
+### Changed
+- Updated Operator SDK to 0.12
+- Updated Kubernetes minimum requirement to 1.14
+- Updated RBAC APIs
 
 ## [0.10.1] - 2019-10-02
 ### Added
