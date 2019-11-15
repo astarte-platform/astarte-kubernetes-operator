@@ -1,16 +1,14 @@
 ---
 - name: Setting play-specific variables
   hosts: localhost
-  remote_user: root
-  connection: local
+  gather_facts: no
   tasks:
     - set_fact:
         astarte_resource_type: "AstarteVoyagerIngress"
 
 - name: Gather facts from existing Astarte Operator object
   hosts: localhost
-  remote_user: root
-  connection: local
+  gather_facts: no
   tags:
     - operator
   roles:
@@ -20,8 +18,7 @@
 
 - name: Deploy Voyager Broker Ingress
   hosts: localhost
-  remote_user: root
-  connection: local
+  gather_facts: no
   tags:
     - voyager
   roles:
@@ -31,8 +28,7 @@
 
 - name: Deploy Voyager API Ingress
   hosts: localhost
-  remote_user: root
-  connection: local
+  gather_facts: no
   tags:
     - voyager
   roles:
@@ -42,8 +38,7 @@
 
 - name: Obtain Voyager Let's Encrypt Certificate
   hosts: localhost
-  remote_user: root
-  connection: local
+  gather_facts: no
   tags:
     - voyager
     - letsencrypt

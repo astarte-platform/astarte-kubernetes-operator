@@ -1,9 +1,8 @@
-FROM quay.io/operator-framework/ansible-operator:v0.6.0
+FROM quay.io/operator-framework/ansible-operator:v0.12.0
 
 # Add needed modules
-USER 0
-RUN pip install pyopenssl
-USER 1001
+RUN pip3 install --user pyopenssl jmespath
 
 COPY playbook/ ${HOME}/playbook/
+COPY roles/ ${HOME}/roles/
 COPY watches.yaml ${HOME}/watches.yaml

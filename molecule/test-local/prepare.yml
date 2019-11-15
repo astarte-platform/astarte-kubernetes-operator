@@ -12,6 +12,10 @@
     k8s:
       definition: "{{ lookup('file', '/'.join([deploy_dir, 'crds/api_v1alpha1_astarte_crd.yaml'])) }}"
 
+  - name: Create Custom Resource Definition
+    k8s:
+      definition: "{{ lookup('file', '/'.join([deploy_dir, 'crds/api_v1alpha1_astarte_voyager_ingress_crd.yaml'])) }}"
+
   - name: Ensure specified namespace is present
     k8s:
       api_version: v1

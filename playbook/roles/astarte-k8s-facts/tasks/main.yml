@@ -1,5 +1,5 @@
 - name: Retrieve Astarte object
-  k8s_facts:
+  k8s_info:
     api_version: api.astarte-platform.org/v1alpha1
     kind: Astarte
     name: "{{ astarte }}"

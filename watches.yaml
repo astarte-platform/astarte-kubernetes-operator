@@ -3,7 +3,12 @@
   group: api.astarte-platform.org
   kind: Astarte
   playbook: /opt/ansible/playbook/deploy.yml
+  reconcilePeriod: 2m
+  finalizer:
+    name: finalizer.astarte.astarte-platform.org
+    role: /opt/ansible/roles/astarte-finalizer
 - version: v1alpha1
   group: api.astarte-platform.org
   kind: AstarteVoyagerIngress
   playbook: /opt/ansible/playbook/deploy-ingresses.yml
+  reconcilePeriod: 2m

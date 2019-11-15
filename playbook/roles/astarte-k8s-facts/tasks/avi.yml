@@ -15,7 +15,7 @@
     - voyager_letsencrypt_challenge == 'http'
 
 - name: Retrieve API Ingress
-  k8s_facts:
+  k8s_info:
     api_version: voyager.appscode.com/v1beta1
     kind: Ingress
     name: "{{ resources_computed_prefix }}api-ingress"
@@ -23,7 +23,7 @@
   register: avi_api_ingress
 
 - name: Retrieve Broker Ingress
-  k8s_facts:
+  k8s_info:
     api_version: voyager.appscode.com/v1beta1
     kind: Ingress
     name: "{{ resources_computed_prefix }}vernemq-ingress"
