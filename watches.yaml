@@ -4,6 +4,8 @@
   kind: Astarte
   playbook: /opt/ansible/playbook/deploy.yml
   reconcilePeriod: 2m
+  vars:
+    running_in_operator: yes
   finalizer:
     name: finalizer.astarte.astarte-platform.org
     role: /opt/ansible/roles/astarte-finalizer
@@ -12,3 +14,5 @@
   kind: AstarteVoyagerIngress
   playbook: /opt/ansible/playbook/deploy-ingresses.yml
   reconcilePeriod: 2m
+  vars:
+    running_in_operator: yes
