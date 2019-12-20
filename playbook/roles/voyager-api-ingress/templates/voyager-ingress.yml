@@ -64,12 +64,6 @@ spec:
           backendRules:
           - 'reqrep ^([^\ :]*)\ /housekeeping/(.*$) \1\ /\2'
 {% endif %}
-      - path: /realm
-        backend:
-          serviceName: {{ parent_resources_computed_prefix }}realm-management
-          servicePort: '4000'
-          backendRules:
-          - 'reqrep ^([^\ :]*)\ /realm/(.*$) \1\ /\2'
       - path: /realmmanagement
         backend:
           serviceName: {{ parent_resources_computed_prefix }}realm-management
