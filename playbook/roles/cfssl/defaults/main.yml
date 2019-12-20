@@ -17,7 +17,7 @@ cfssl_db_driver: sqlite3
 cfssl_db_data_source: "/data/certs.db"
 
 cfssl_ca_expiry: "{{ vars | json_query('cfssl.ca_expiry') | default('262800h', true) }}"
-cfssl_ca_certificate_expiry: "{{ vars | json_query('cfssl.ca_expiry') | default('2190h', true) }}"
+cfssl_ca_certificate_expiry: "{{ vars | json_query('cfssl.certificate_expiry') | default('2190h', true) }}"
 cfssl_ca_cn: Astarte Root CA
 cfssl_ca_key_algo: ecdsa
 cfssl_ca_key_size: 256

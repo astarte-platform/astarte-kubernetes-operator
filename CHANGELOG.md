@@ -15,6 +15,7 @@ is empty, replace Data Updater Plant with the new version and bring VerneMQ back
 ### Fixed
 - Reconciliation policy now prevents the Operator from reconciling forever for no reason
 - Fix deprecations in Playbook
+- Allow correctly passing the certificate expiry to CFSSL
 
 ### Changed
 - Updated Operator SDK to 0.12
