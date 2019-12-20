@@ -14,7 +14,7 @@
   roles:
     - name: astarte-k8s-facts
       when:
-        - vars | json_query('meta.name')
+        - running_in_operator
 
 - name: Deploy Voyager Broker Ingress
   hosts: localhost

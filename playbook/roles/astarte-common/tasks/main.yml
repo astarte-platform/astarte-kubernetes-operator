@@ -1,6 +1,6 @@
 - debug:
-    msg: "This playbook is running in Operator mode. If this is not what you want, ensure the 'meta.name' variable is not defined"
-  when: vars | json_query('meta.name')
+    msg: "This playbook is running in Operator mode."
+  when: running_in_operator
 
 - debug:
     msg: "Will install Astarte version '{{ astarte_tag }}' in namespace '{{ astarte_k8s_namespace }}' with prefix '{{ resources_computed_prefix }}'"
@@ -13,7 +13,7 @@
     state: present
   # Avoid patching the namespace from the operator
   when:
-    - not (vars | json_query('meta.name'))
+    - not running_in_operator
 
 - name: Ensure Astarte Generic Erlang Configuration
   k8s:
