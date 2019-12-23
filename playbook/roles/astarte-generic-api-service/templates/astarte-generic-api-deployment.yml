@@ -30,7 +30,7 @@ spec:
 {% if check_api_health %}
         readinessProbe:
           httpGet:
-            path: /v1/health
+            path: /health
             port: 4000
           initialDelaySeconds: 10
           periodSeconds: 10
