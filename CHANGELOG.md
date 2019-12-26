@@ -25,6 +25,8 @@ is empty, replace Data Updater Plant with the new version and bring VerneMQ back
 ### Removed
 - Remove deprecated `/realm` path, use `/realmmanagement` to access Realm Management
 
+## [0.10.2] - 2019-12-09
+
 ## [0.10.1] - 2019-10-02
 ### Added
 - Added static IP support to load balancer in AVI

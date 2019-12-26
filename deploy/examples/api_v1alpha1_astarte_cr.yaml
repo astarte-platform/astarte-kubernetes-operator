@@ -7,7 +7,7 @@ spec:
   ## This part is specific to the Ansible Operator. We're building a meaningful hierarchy
   ## which can be used from the Operator's CRD.
   ### Astarte CRD
-  version: 0.10.1
+  version: 0.10.2
   imagePullPolicy: IfNotPresent
   imagePullSecrets:
     - "secretname"
