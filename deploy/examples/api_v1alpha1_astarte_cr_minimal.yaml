@@ -6,8 +6,8 @@ metadata:
 spec:
   # This is the most minimal set of reasonable configuration to spin up an Astarte
   # instance with reasonable defaults and enough control over the deployment.
-  version: 0.10.2
-  imagePullPolicy: Always
+  version: 0.11.0-beta.1
+  imagePullPolicy: IfNotPresent
   api:
     host: "api.astarte-example.com" # MANDATORY
   rabbitmq:
