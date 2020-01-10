@@ -1,4 +1,0 @@
-- name: Ensure Voyager Broker Ingress
-  k8s:
-    state: present
-    definition: "{{ lookup('template', 'voyager-ingress.yml') }}"

@@ -1,9 +1,0 @@
----
-astarte_k8s_namespace: "{{ vars | json_query('meta.namespace') | default('astarte', true) }}"
-
-# Resource prefix. Most useful for Operator.
-astarte_resources_prefix: "{{ vars | json_query('meta.name') | default('astarte', true) }}"
-resources_computed_prefix: "{{ '' if not astarte_resources_prefix else astarte_resources_prefix + '-' }}"
-parent_resources_computed_prefix: "{{ '' if not astarte_resources_prefix else astarte_resources_prefix + '-' }}"
-
-mqtt_broker_ca_secret: "{{ vars | json_query('vernemq.ca_secret') | default(resources_computed_prefix + 'cfssl-ca', true) }}"

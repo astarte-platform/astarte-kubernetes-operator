@@ -1,9 +1,0 @@
-- name: Ensure Cassandra StatefulSet
-  k8s:
-    state: present
-    definition: "{{ lookup('template', 'cassandra-statefulset.yml') }}"
-
-- name: Ensure Cassandra Service
-  k8s:
-    state: present
-    definition: "{{ lookup('template', 'cassandra-service.yml') }}"

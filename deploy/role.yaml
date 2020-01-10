@@ -9,21 +9,20 @@ rules:
   resources:
   - pods
   - services
+  - services/finalizers
   - endpoints
   - persistentvolumeclaims
   - events
   - configmaps
   - secrets
-  - serviceaccounts
   verbs:
-  - '*'
-- apiGroups:
-  - ""
-  resources:
-  - namespaces
-  verbs:
+  - create
+  - delete
   - get
   - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -32,13 +31,13 @@ rules:
   - replicasets
   - statefulsets
   verbs:
-  - '*'
-- apiGroups:
-  - batch
-  resources:
-  - jobs
-  verbs:
-  - '*'
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -47,22 +46,36 @@ rules:
   - get
   - create
 - apiGroups:
+  - apps
+  resourceNames:
+  - astarte-operator
+  resources:
+  - deployments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  - deployments
+  verbs:
+  - get
+- apiGroups:
   - api.astarte-platform.org
   resources:
   - '*'
+  - astartevoyageringresses
   verbs:
-  - '*'
-- apiGroups:
-  - rbac.authorization.k8s.io
-  resources:
-  - roles
-  - rolebindings
-  - serviceaccounts
-  verbs:
-  - '*'
-- apiGroups:
-  - voyager.appscode.com
-  resources:
-  - '*'
-  verbs:
-  - '*'
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
