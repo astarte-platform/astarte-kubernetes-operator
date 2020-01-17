@@ -58,10 +58,12 @@ jobs:
       run: |
         kubectl apply -f test/oldoperator/data/oldastarte.yaml
     - name: Wait for Astarte to come up
-      run: ./test/oldoperator/data/wait-for-housekeeping.sh
+      run: ./test/oldoperator/data/wait-for-astarte.sh
     - name: Show pod states
       run: |
         kubectl get pods -n astarte-test
+        kubectl describe pods  -n astarte-test example-astarte-rabbitmq-0
+        kubectl describe statefulset  -n astarte-test example-astarte-rabbitmq
     - name: Bring down old operator
       run: |
         kubectl scale -n kube-system deployments/astarte-operator --replicas=0

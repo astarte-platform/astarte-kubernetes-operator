@@ -26,6 +26,7 @@ import (
 
 	semver "github.com/Masterminds/semver/v3"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/controller/astarte/migrate"
 	recon "github.com/astarte-platform/astarte-kubernetes-operator/pkg/controller/astarte/reconcile"
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/controller/astarte/upgrade"
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
@@ -45,11 +46,6 @@ import (
 )
 
 var log = logf.Log.WithName("controller_astarte")
-
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
 
 // Add creates a new Astarte Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -122,8 +118,7 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 
 	// Fetch the Astarte instance
 	instance := &apiv1alpha1.Astarte{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
-	if err != nil {
+	if err := r.client.Get(context.TODO(), request.NamespacedName, instance); err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
@@ -181,18 +176,6 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, nil
 	}
 
-	// Add finalizer for this CR
-	if !contains(instance.GetFinalizers(), astarteFinalizer) {
-		if err := r.addFinalizer(instance); err != nil {
-			if errors.IsInvalid(err) && strings.Contains(err.Error(), "status.") {
-				// In this case we might be upgrading from a previous resource Version. Avoid acting on the resource at this time.
-				reqLogger.Info("Found an invalid status. Will skip Finalizer installation for this reconcilation cycle.")
-			} else {
-				return reconcile.Result{}, err
-			}
-		}
-	}
-
 	// Ensure we know which version we're dealing with
 	if instance.Status.AstarteVersion == "" {
 		// Ok, in this case there's two potential situations: we're on our first reconcile, or the status is
@@ -201,8 +184,24 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 		err := r.client.Get(context.TODO(),
 			types.NamespacedName{Name: instance.Name + "-housekeeping", Namespace: instance.Namespace}, hkDeployment)
 		if err == nil {
-			// In this case, we might be in a weird state (e.g.: migrating from the old operator). Let's try and fix this.
-			reqLogger.Info("Astarte Version not found in Status! Trying to reconcile it from Housekeeping's image tag")
+			// In this case, we are in a weird state (e.g.: migrating from the old operator). Let's try and fix this.
+			// First of all, try and migrate it.
+			reqLogger.Info("Found an invalid status. Attempting to migrate the resource.")
+			if err := migrate.ToNewCR(instance, r.client, r.scheme); err != nil {
+				return reconcile.Result{}, err
+			}
+
+			// Second of all, we want to ensure we have a clean start without losing anything. To do so, we need to bring it to a state
+			// where it can always be reconciled.
+			// Let's just ensure the Status struct is meaningful: reconstruct it from what we know/can access.
+			instance.Status.ReconciliationPhase = apiv1alpha1.ReconciliationPhaseReconciling
+			instance.Status.OperatorVersion = version.Version
+			// red before anything else happens
+			instance.Status.Health = "red"
+			instance.Status.BaseAPIURL = instance.Spec.API.Host
+			instance.Status.BrokerURL = instance.Spec.VerneMQ.Host
+
+			reqLogger.Info("Reconciling Astarte Version from Housekeeping's image tag")
 			hkImage := hkDeployment.Spec.Template.Spec.Containers[0].Image
 			hkImageTokens := strings.Split(hkImage, ":")
 			if len(hkImageTokens) != 2 {
@@ -217,12 +216,25 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 				reqLogger.Error(err, "Failed to update Astarte status.")
 				return reconcile.Result{}, err
 			}
+
+			// If we got here, we want to Get the instance again. Given the modifications we made, we want to ensure we're in sync.
+			instance := &apiv1alpha1.Astarte{}
+			if err := r.client.Get(context.TODO(), request.NamespacedName, instance); err != nil {
+				return reconcile.Result{}, err
+			}
 		} else if !errors.IsNotFound(err) {
 			// There was some issue in reading the Object - requeue
 			return reconcile.Result{}, err
 		}
 
 		reqLogger.V(1).Info("Apparently running first reconciliation.")
+	}
+
+	// Add finalizer for this CR
+	if !contains(instance.GetFinalizers(), astarteFinalizer) {
+		if err := r.addFinalizer(instance); err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
 	// First of all, check the current version, and see if we need to transition to an upgrade.
