@@ -1,7 +1,0 @@
-#!/bin/bash
-
-cd ..
-pwd
-docker run --rm byrnedo/alpine-curl -L https://github.com/operator-framework/operator-sdk/releases/download/v0.6.0/operator-sdk-v0.6.0-x86_64-linux-gnu > operator-sdk
-chmod +x operator-sdk
-./operator-sdk build $IMAGE_NAME

@@ -1,0 +1,90 @@
+#
+# This file is part of Astarte.
+#
+# Copyright 2020 Ispirata Srl
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+name: "Old Operator Retrocompatibility test"
+on:
+  pull_request:
+  push:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - uses: actions/setup-go@v1
+      with:
+        # Ensure we're on Go 1.13
+        go-version: '1.13.x'
+    - uses: engineerd/setup-kind@v0.3.0
+      with:
+        version: "v0.7.0"
+        image: "kindest/node:v1.16.4@sha256:b91a2c2317a000f3a783489dfb755064177dbc3a0b2f4147d50f04825d016f55"
+    # Ensure we have jq
+    - name: Install jq
+      run: sudo apt-get update && sudo apt-get install jq -y
+    # Download Operator SDK binary
+    - name: Download Operator SDK
+      run: |
+        curl -L -o operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/v0.14.0/operator-sdk-v0.14.0-x86_64-linux-gnu
+        chmod +x operator-sdk
+    - name: Ensure KinD is up
+      run: |
+        kubectl cluster-info
+        kubectl get pods -n kube-system
+    - name: Download astartectl
+      run: |
+        curl -L -o astartectl https://github.com/astarte-platform/astartectl/releases/download/v0.10.4/astartectl_linux_amd64
+        chmod +x astartectl
+    - name: Install Ansible Operator and setup environment
+      run: |
+        ./astartectl cluster install-operator --version 0.10.2 -y
+        kubectl create namespace astarte-test
+    - name: Install Astarte 0.10.2
+      run: |
+        kubectl apply -f test/oldoperator/data/oldastarte.yaml
+    - name: Wait for Astarte to come up
+      run: ./test/oldoperator/data/wait-for-housekeeping.sh
+    - name: Show pod states
+      run: |
+        kubectl get pods -n astarte-test
+    - name: Bring down old operator
+      run: |
+        kubectl scale -n kube-system deployments/astarte-operator --replicas=0
+    # Note: kubectl apply creates insane annotations which prevent the CRDs from working. We have to use replace.
+    - name: Update Operator resources
+      run: |
+        kubectl apply -f deploy/service_account.yaml
+        kubectl apply -f deploy/role.yaml
+        kubectl apply -f deploy/role_binding.yaml
+        kubectl replace -f deploy/crds/api.astarte-platform.org_astartes_crd.yaml
+        kubectl replace -f deploy/crds/api.astarte-platform.org_astartevoyageringresses_crd.yaml
+    - name: Run Operator Retrocompat test
+      run: ./operator-sdk test local ./test/oldoperator --go-test-flags "-v -timeout 30m" --namespace astarte-test --up-local --no-setup
+    - name: Dump debug info
+      if: failure()
+      run: |
+        kubectl get pods -n astarte-test
+        kubectl get deployment -n astarte-test
+        kubectl get statefulset -n astarte-test
+        kubectl get secrets -n astarte-test
+        kubectl get configmaps -n astarte-test
+        kubectl get pvc -n astarte-test
+        kubectl describe astarte -n astarte-test || echo "Astarte already deleted"
+    - name: Show pod states
+      run: |
+        kubectl get pods -n astarte-test

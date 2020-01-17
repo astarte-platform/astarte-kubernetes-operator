@@ -1,50 +1,50 @@
 apiVersion: api.astarte-platform.org/v1alpha1
 kind: Astarte
 metadata:
-  name: example-minimal
-  namespace: astarte
+  name: example-astarte
+  namespace: astarte-test
 spec:
   # This is the most minimal set of reasonable configuration to spin up an Astarte
   # instance with reasonable defaults and enough control over the deployment.
-  version: 0.11-snapshot
+  version: 0.10.2
   api:
-    host: "api.astarte-example.com" # MANDATORY
+    host: "api.autotest.astarte-platform.org"
   rabbitmq:
     resources:
       requests:
-        cpu: 300m
-        memory: 512M
+        cpu: 200m
+        memory: 256M
       limits:
         cpu: 1
-        memory: 1000M
+        memory: 512M
   cassandra:
-    maxHeapSize: 1024M
+    maxHeapSize: 512M
     heapNewSize: 256M
     storage:
       size: 30Gi
     resources:
       requests:
-        cpu: 1
+        cpu: 500m
         memory: 1024M
       limits:
-        cpu: 2
+        cpu: 1
         memory: 2048M
   vernemq:
-    host: "broker.astarte-example.com"
+    host: "broker.autotest.astarte-platform.org"
     resources:
       requests:
-        cpu: 200m
-        memory: 1024M
+        cpu: 0
+        memory: 256M
       limits:
-        cpu: 1000m
-        memory: 2048M
+        cpu: 0
+        memory: 512M
   cfssl:
     resources:
       requests:
-        cpu: 100m
+        cpu: 0m
         memory: 128M
       limits:
-        cpu: 200m
+        cpu: 0m
         memory: 256M
     storage:
       size: 2Gi
@@ -53,8 +53,8 @@ spec:
     # reasonable way.
     resources:
       requests:
-        cpu: 1200m
-        memory: 3072M
+        cpu: 0m
+        memory: 2048M
       limits:
-        cpu: 3000m
-        memory: 6144M
+        cpu: 0m
+        memory: 3072M

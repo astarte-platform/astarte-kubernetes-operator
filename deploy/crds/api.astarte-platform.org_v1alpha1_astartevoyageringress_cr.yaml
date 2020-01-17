@@ -1,0 +1,7 @@
+apiVersion: api.astarte-platform.org/v1alpha1
+kind: AstarteVoyagerIngress
+metadata:
+  name: example-astartevoyageringress
+spec:
+  # Add fields here
+  size: 3

@@ -1,7 +1,0 @@
-voyager_letsencrypt_acme_email: "{{ vars | json_query('letsencrypt.acme_email') | default('none@example.com', true) }}"
-voyager_letsencrypt_challenge_provider: "{{ vars | json_query('letsencrypt.challenge_provider.dns.provider') | default(None, true) }}"
-voyager_letsencrypt_challenge_credential_secret_name: "{{ vars | json_query('letsencrypt.challenge_provider.dns.credential_secret_name') | default(None, true) }}"
-voyager_letsencrypt_domains: "{{ vars | json_query('letsencrypt.domains') | default(None, true) }}"
-voyager_letsencrypt_staging: "{{ vars | json_query('letsencrypt.staging') | default(false, true) }}"
-
-avi_ingresses_ready: false

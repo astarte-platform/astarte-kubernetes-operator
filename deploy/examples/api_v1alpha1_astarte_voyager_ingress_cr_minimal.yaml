@@ -5,7 +5,7 @@ metadata:
   namespace: astarte
 spec:
   ### Astarte Voyager Ingress CRD
-  astarte: example-minimal
+  astarte: astarte
   api:
     deploy: true
     exposeHousekeeping: true
