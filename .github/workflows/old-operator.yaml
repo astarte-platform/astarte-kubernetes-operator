@@ -34,9 +34,6 @@ jobs:
       with:
         version: "v0.7.0"
         image: "kindest/node:v1.16.4@sha256:b91a2c2317a000f3a783489dfb755064177dbc3a0b2f4147d50f04825d016f55"
-    # Ensure we have jq
-    - name: Install jq
-      run: sudo apt-get update && sudo apt-get install jq -y
     # Download Operator SDK binary
     - name: Download Operator SDK
       run: |
