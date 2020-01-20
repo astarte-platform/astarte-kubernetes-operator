@@ -372,14 +372,16 @@ type AstarteSpec struct {
 	Components AstarteComponentsSpec `json:"components"`
 }
 
+// TODO: Remove all omitempty from AstarteStatus in v1beta1
+
 // AstarteStatus defines the observed state of Astarte
 type AstarteStatus struct {
-	ReconciliationPhase ReconciliationPhase `json:"phase"`
-	AstarteVersion      string              `json:"astarteVersion"`
-	OperatorVersion     string              `json:"operatorVersion"`
-	Health              string              `json:"health"`
-	BaseAPIURL          string              `json:"baseAPIURL"`
-	BrokerURL           string              `json:"brokerURL"`
+	ReconciliationPhase ReconciliationPhase `json:"phase,omitempty"`
+	AstarteVersion      string              `json:"astarteVersion,omitempty"`
+	OperatorVersion     string              `json:"operatorVersion,omitempty"`
+	Health              string              `json:"health,omitempty"`
+	BaseAPIURL          string              `json:"baseAPIURL,omitempty"`
+	BrokerURL           string              `json:"brokerURL,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

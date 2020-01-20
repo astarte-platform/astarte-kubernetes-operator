@@ -10170,8 +10170,8 @@ spec:
                   properties:
                     maxSurge:
                       anyOf:
-                      - type: string
                       - type: integer
+                      - type: string
                       description: 'The maximum number of pods that can be scheduled
                         above the desired number of pods. Value can be an absolute
                         number (ex: 5) or a percentage of desired pods (ex: 10%).
@@ -10184,10 +10184,11 @@ spec:
                         ReplicaSet can be scaled up further, ensuring that total number
                         of pods running at any time during the update is at most 130%
                         of desired pods.'
+                      x-kubernetes-int-or-string: true
                     maxUnavailable:
                       anyOf:
-                      - type: string
                       - type: integer
+                      - type: string
                       description: 'The maximum number of pods that can be unavailable
                         during the update. Value can be an absolute number (ex: 5)
                         or a percentage of desired pods (ex: 10%). Absolute number
@@ -10199,6 +10200,7 @@ spec:
                         further, followed by scaling up the new ReplicaSet, ensuring
                         that the total number of pods available at all times during
                         the update is at least 70% of desired pods.'
+                      x-kubernetes-int-or-string: true
                   type: object
                 type:
                   description: Type of deployment. Can be "Recreate" or "RollingUpdate".
@@ -14045,13 +14047,6 @@ spec:
               description: ReconciliationPhase describes the reconciliation phase
                 the Resource is in
               type: string
-          required:
-          - astarteVersion
-          - baseAPIURL
-          - brokerURL
-          - health
-          - operatorVersion
-          - phase
           type: object
       type: object
   version: v1alpha1
