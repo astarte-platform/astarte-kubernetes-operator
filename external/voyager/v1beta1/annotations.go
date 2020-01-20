@@ -18,12 +18,12 @@ package v1beta1
 
 import (
 	"encoding/json"
+	"fmt"
 	"net"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 	"kmodules.xyz/client-go/meta"
 	wpi "kmodules.xyz/webhook-runtime/apis/workload/v1"
@@ -645,7 +645,7 @@ func getWorkload(m map[string]string, key string) (interface{}, error) {
 		return nil, err
 	}
 	if w != wpi.KindDeployment && w != wpi.KindDaemonSet {
-		return nil, errors.Errorf("%s must be either Deployment or DaemonSet, found %s", WorkloadKind, w)
+		return nil, fmt.Errorf("%s must be either Deployment or DaemonSet, found %s", WorkloadKind, w)
 	}
 	return w, nil
 }
