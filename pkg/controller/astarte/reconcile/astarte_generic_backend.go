@@ -74,7 +74,7 @@ func EnsureAstarteGenericBackend(cr *apiv1alpha1.Astarte, backend apiv1alpha1.As
 		Selector: &metav1.LabelSelector{
 			MatchLabels: matchLabels,
 		},
-		Strategy: cr.Spec.DeploymentStrategy,
+		Strategy: getDeploymentStrategyForClusteredResource(cr, backend),
 		Template: v1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: labels,

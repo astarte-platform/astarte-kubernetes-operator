@@ -6,6 +6,7 @@ package v1alpha1
 
 import (
 	v1beta1 "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -473,6 +474,11 @@ func (in *AstarteGenericClusteredResource) DeepCopyInto(out *AstarteGenericClust
 	if in.CustomAffinity != nil {
 		in, out := &in.CustomAffinity, &out.CustomAffinity
 		*out = new(v1.Affinity)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.DeploymentStrategy != nil {
+		in, out := &in.DeploymentStrategy, &out.DeploymentStrategy
+		*out = new(appsv1.DeploymentStrategy)
 		(*in).DeepCopyInto(*out)
 	}
 	in.Resources.DeepCopyInto(&out.Resources)

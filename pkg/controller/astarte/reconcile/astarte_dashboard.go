@@ -101,7 +101,7 @@ func EnsureAstarteDashboard(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.Astar
 		Selector: &metav1.LabelSelector{
 			MatchLabels: matchLabels,
 		},
-		Strategy: cr.Spec.DeploymentStrategy,
+		Strategy: getDeploymentStrategyForClusteredResource(cr, dashboard.GenericClusteredResource),
 		Template: v1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: labels,

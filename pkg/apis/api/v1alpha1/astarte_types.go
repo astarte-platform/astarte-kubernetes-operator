@@ -120,6 +120,8 @@ type AstarteGenericClusteredResource struct {
 	// +optional
 	CustomAffinity *v1.Affinity `json:"customAffinity,omitempty"`
 	// +optional
+	DeploymentStrategy *appsv1.DeploymentStrategy `json:"deploymentStrategy,omitempty"`
+	// +optional
 	Version string `json:"version,omitempty"`
 	// +optional
 	Image string `json:"image,omitempty"`
