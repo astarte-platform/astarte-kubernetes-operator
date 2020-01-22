@@ -104,7 +104,7 @@ func EnsureAstarteGenericAPI(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGen
 		Selector: &metav1.LabelSelector{
 			MatchLabels: matchLabels,
 		},
-		Strategy: cr.Spec.DeploymentStrategy,
+		Strategy: getDeploymentStrategyForClusteredResource(cr, api.GenericClusteredResource),
 		Template: v1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: labels,

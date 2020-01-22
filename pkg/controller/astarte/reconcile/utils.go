@@ -35,6 +35,7 @@ import (
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
 	"github.com/openlyinc/pointy"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -407,6 +408,13 @@ func getImageForClusteredResource(defaultImageName, defaultImageTag string, reso
 	}
 
 	return image
+}
+
+func getDeploymentStrategyForClusteredResource(cr *apiv1alpha1.Astarte, resource apiv1alpha1.AstarteGenericClusteredResource) appsv1.DeploymentStrategy {
+	if resource.DeploymentStrategy != nil {
+		return *resource.DeploymentStrategy
+	}
+	return cr.Spec.DeploymentStrategy
 }
 
 func getDataQueueCount(cr *apiv1alpha1.Astarte) int {
