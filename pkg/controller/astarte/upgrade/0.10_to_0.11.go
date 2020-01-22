@@ -92,6 +92,8 @@ func upgradeTo011(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sche
 	housekeepingBackend := cr.Spec.Components.Housekeeping.Backend.DeepCopy()
 	housekeepingBackend.Version = landing011Version
 	housekeepingBackend.Replicas = pointy.Int32(1)
+	// Ensure the policy is Replace. We don't want to have old pods hanging around.
+	housekeepingBackend.DeploymentStrategy = &appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
 	if misc.IsResourceRequirementsExplicit(cr.Spec.VerneMQ.GenericClusteredResource.Resources) {
 		resourceRequirements := misc.GetResourcesForAstarteComponent(cr, housekeepingBackend.Resources, apiv1alpha1.Housekeeping)
 		resourceRequirements.Requests.Cpu().Add(*cr.Spec.VerneMQ.GenericClusteredResource.Resources.Requests.Cpu())
@@ -109,6 +111,8 @@ func upgradeTo011(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sche
 	housekeepingAPI := cr.Spec.Components.Housekeeping.API.DeepCopy()
 	housekeepingAPI.GenericClusteredResource.Replicas = pointy.Int32(1)
 	housekeepingAPI.GenericClusteredResource.Version = landing011Version
+	// Ensure the policy is Replace. We don't want to have old pods hanging around.
+	housekeepingAPI.GenericClusteredResource.DeploymentStrategy = &appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
 	if err := reconcile.EnsureAstarteGenericAPI(cr, *housekeepingAPI, apiv1alpha1.HousekeepingAPI, c, scheme); err != nil {
 		return err
 	}
@@ -282,6 +286,8 @@ func upgradeTo011(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sche
 	reqLogger.Info("Ensuring new RabbitMQ Queue Layout through Data Updater Plant...")
 	dataUpdaterPlant := cr.Spec.Components.DataUpdaterPlant.DeepCopy()
 	dataUpdaterPlant.GenericClusteredResource.Version = landing011Version
+	// Ensure the policy is Replace. We don't want to have old pods hanging around.
+	dataUpdaterPlant.GenericClusteredResource.DeploymentStrategy = &appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
 	if err := reconcile.EnsureAstarteGenericBackend(cr, dataUpdaterPlant.GenericClusteredResource, apiv1alpha1.DataUpdaterPlant, c, scheme); err != nil {
 		return err
 	}
