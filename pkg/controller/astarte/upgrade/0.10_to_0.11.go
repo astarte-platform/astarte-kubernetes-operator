@@ -44,7 +44,7 @@ import (
 )
 
 // TODO: Change this to a stable release as soon as it is generally available.
-const landing011Version string = "0.11.0-beta.1"
+const landing011Version string = "0.11.0-beta.2"
 
 // blindly upgrades to 0.11. Invokable only by the upgrade logic
 func upgradeTo011(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
