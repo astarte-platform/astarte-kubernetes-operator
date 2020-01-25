@@ -76,7 +76,7 @@ func ensureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 	if cr.Spec.API.GenericIngressSpec.LoadBalancerIP != "" {
 		annotations[voyager.LoadBalancerIP] = cr.Spec.API.GenericIngressSpec.LoadBalancerIP
 	}
-	if pointy.BoolValue(parent.Spec.API.SSL, true) || pointy.BoolValue(parent.Spec.Components.Dashboard.SSL, true) {
+	if pointy.BoolValue(parent.Spec.API.SSL, true) || pointy.BoolValue(cr.Spec.Dashboard.SSL, true) {
 		// Add safe-SSL options
 		annotations[voyager.EnableHSTS] = "true"
 		annotations[voyager.HSTSPreload] = "true"
@@ -95,7 +95,7 @@ func ensureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 	// Ok - build the Ingress Spec
 	ingressSpec := voyager.IngressSpec{}
 	// TLS first
-	if pointy.BoolValue(parent.Spec.API.SSL, true) || pointy.BoolValue(parent.Spec.Components.Dashboard.SSL, true) {
+	if pointy.BoolValue(parent.Spec.API.SSL, true) || pointy.BoolValue(cr.Spec.Dashboard.SSL, true) {
 		// Ok, we should add TLS.
 		// Priority in options is: Ref - Secret Name - Let's Encrypt
 		ingressTLSs := []voyager.IngressTLS{}

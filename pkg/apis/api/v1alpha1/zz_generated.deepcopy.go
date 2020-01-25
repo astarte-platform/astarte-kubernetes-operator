@@ -390,11 +390,6 @@ func (in *AstarteDashboardConfigSpec) DeepCopy() *AstarteDashboardConfigSpec {
 func (in *AstarteDashboardSpec) DeepCopyInto(out *AstarteDashboardSpec) {
 	*out = *in
 	in.GenericClusteredResource.DeepCopyInto(&out.GenericClusteredResource)
-	if in.SSL != nil {
-		in, out := &in.SSL, &out.SSL
-		*out = new(bool)
-		**out = **in
-	}
 	in.Config.DeepCopyInto(&out.Config)
 	return
 }

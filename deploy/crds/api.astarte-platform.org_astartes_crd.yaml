@@ -4762,8 +4762,6 @@ spec:
                             Default is RollingUpdate.
                           type: string
                       type: object
-                    host:
-                      type: string
                     image:
                       type: string
                     realmManagementApiUrl:
@@ -4790,8 +4788,6 @@ spec:
                             https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                           type: object
                       type: object
-                    ssl:
-                      type: boolean
                     version:
                       type: string
                   type: object

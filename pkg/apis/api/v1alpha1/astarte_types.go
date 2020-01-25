@@ -246,10 +246,6 @@ type AstarteDashboardConfigSpec struct {
 type AstarteDashboardSpec struct {
 	GenericClusteredResource AstarteGenericClusteredResource `json:",inline"`
 	// +optional
-	SSL *bool `json:"ssl,omitempty"`
-	// +optional
-	Host string `json:"host,omitempty"`
-	// +optional
 	Config AstarteDashboardConfigSpec `json:",inline"`
 }
 
