@@ -31,6 +31,7 @@ import (
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/controller/astarte/upgrade"
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
 	"github.com/astarte-platform/astarte-kubernetes-operator/version"
+	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -370,6 +371,36 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 		}
 	} else {
 		reqLogger.Info("Could not list Astarte deployments to compute health.")
+		// Set it high enough to turn red
+		nonReadyDeployments = 5
+	}
+
+	// Now compute readiness for the other two components we want to check: VerneMQ and CFSSL
+	astarteStatefulSet := &appsv1.StatefulSet{}
+	if pointy.BoolValue(instance.Spec.VerneMQ.GenericClusteredResource.Deploy, true) {
+		if err := r.client.Get(context.TODO(), types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name + "-vernemq"},
+			astarteStatefulSet); err == nil {
+			if astarteStatefulSet.Status.ReadyReplicas == 0 {
+				nonReadyDeployments++
+			}
+		} else {
+			// Just increase the count - it might be a temporary error as the StatefulSet is being created.
+			reqLogger.V(1).Info("Could not Get Astarte VerneMQ StatefulSet to compute health.")
+			nonReadyDeployments++
+		}
+	}
+	if pointy.BoolValue(instance.Spec.CFSSL.Deploy, true) {
+		astarteStatefulSet = &appsv1.StatefulSet{}
+		if err := r.client.Get(context.TODO(), types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name + "-cfssl"},
+			astarteStatefulSet); err == nil {
+			if astarteStatefulSet.Status.ReadyReplicas == 0 {
+				nonReadyDeployments++
+			}
+		} else {
+			// Just increase the count - it might be a temporary error as the StatefulSet is being created.
+			reqLogger.V(1).Info("Could not Get Astarte CFSSL StatefulSet to compute health.")
+			nonReadyDeployments++
+		}
 	}
 
 	if nonReadyDeployments == 0 {
