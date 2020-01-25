@@ -72,9 +72,9 @@ func ensureCertificate(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha
 	domains := cr.Spec.Letsencrypt.Domains
 	if len(domains) == 0 {
 		// Compute the domains list based on the parent Astarte resource
-		if pointy.BoolValue(parent.Spec.Components.Dashboard.GenericClusteredResource.Deploy, true) && parent.Spec.Components.Dashboard.Host != "" &&
-			pointy.BoolValue(parent.Spec.Components.Dashboard.SSL, true) {
-			domains = append(domains, parent.Spec.Components.Dashboard.Host)
+		if pointy.BoolValue(parent.Spec.Components.Dashboard.GenericClusteredResource.Deploy, true) && cr.Spec.Dashboard.Host != "" &&
+			pointy.BoolValue(cr.Spec.Dashboard.SSL, true) {
+			domains = append(domains, cr.Spec.Dashboard.Host)
 		}
 		if pointy.BoolValue(parent.Spec.API.SSL, true) {
 			domains = append(domains, parent.Spec.API.Host)

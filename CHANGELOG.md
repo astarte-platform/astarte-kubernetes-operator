@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.11.0-beta.3] - Unreleased
 ### Fixed
 - Ensure that the Astarte CR status takes into account VerneMQ and CFSSL StatefulSets as well.
+- Fixed all omitempty fields for AstarteVoyagerIngress
+- Fixed SSL and Host directives for Dashboard
 
 ### Changed
 - Added new configuration fields to Dashboard to support new 0.11 config format
