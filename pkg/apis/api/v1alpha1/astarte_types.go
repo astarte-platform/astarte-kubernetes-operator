@@ -226,11 +226,15 @@ type AstarteAppengineAPISpec struct {
 
 type AstarteDashboardConfigAuthSpec struct {
 	Type string `json:"type"`
+	// +optional
+	OAuthAPIURL string `json:"oauth_api_url,omitempty"`
 }
 
 type AstarteDashboardConfigSpec struct {
 	// +optional
 	RealmManagementAPIURL string `json:"realmManagementApiUrl,omitempty"`
+	// +optional
+	AppEngineAPIURL string `json:"appEngineApiUrl,omitempty"`
 	// +optional
 	DefaultRealm string `json:"defaultRealm,omitempty"`
 	// +optional
