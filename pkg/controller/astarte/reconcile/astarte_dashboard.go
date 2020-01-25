@@ -163,6 +163,11 @@ func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard apiv1al
 	} else {
 		dashboardConfig["realm_management_api_url"] = dashboard.Config.RealmManagementAPIURL
 	}
+	if dashboard.Config.AppEngineAPIURL != "" {
+		dashboardConfig["appengine_api_url"] = getBaseAstarteAPIURL(cr) + "/appengine/v1/"
+	} else {
+		dashboardConfig["appengine_api_url"] = dashboard.Config.AppEngineAPIURL
+	}
 	if dashboard.Config.DefaultRealm != "" {
 		dashboardConfig["default_realm"] = dashboard.Config.DefaultRealm
 	}
@@ -176,6 +181,7 @@ func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard apiv1al
 	} else {
 		dashboardConfig["auth"] = []apiv1alpha1.AstarteDashboardConfigAuthSpec{apiv1alpha1.AstarteDashboardConfigAuthSpec{Type: "token"}}
 	}
+	dashboardConfig["secure_connection"] = pointy.BoolValue(cr.Spec.API.SSL, true)
 
 	configJSON, _ := json.Marshal(dashboardConfig)
 

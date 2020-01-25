@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - Ensure that the Astarte CR status takes into account VerneMQ and CFSSL StatefulSets as well.
 
+### Changed
+- Added new configuration fields to Dashboard to support new 0.11 config format
+
 ## [0.11.0-beta.2] - 2020-01-25
 ### Added
 - Upgrade support
