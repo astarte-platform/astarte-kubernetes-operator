@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - Added new configuration fields to Dashboard to support new 0.11 config format
+- Use distroless nonroot static image for the Operator container, and ditch ubi as base image
 
 ## [0.11.0-beta.2] - 2020-01-25
 ### Added
