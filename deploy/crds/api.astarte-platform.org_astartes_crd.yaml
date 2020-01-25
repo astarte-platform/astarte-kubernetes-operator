@@ -4064,9 +4064,13 @@ spec:
                     antiAffinity:
                       description: / +kubebuilder:default=true
                       type: boolean
+                    appEngineApiUrl:
+                      type: string
                     auth:
                       items:
                         properties:
+                          oauth_api_url:
+                            type: string
                           type:
                             type: string
                         required:
