@@ -178,7 +178,7 @@ func ensureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 		rules = append(rules, voyager.IngressRule{
 			Host: cr.Spec.Dashboard.Host,
 			IngressRuleValue: voyager.IngressRuleValue{HTTP: &voyager.HTTPIngressRuleValue{
-				Paths: []voyager.HTTPIngressPath{getHTTPIngressPathForAstarteComponent(parent, apiv1alpha1.Dashboard)},
+				Paths: []voyager.HTTPIngressPath{voyager.HTTPIngressPath{Path: "/"}},
 			}},
 		})
 	}
