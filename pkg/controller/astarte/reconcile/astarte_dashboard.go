@@ -158,12 +158,12 @@ func getAstarteDashboardPodSpec(deploymentName string, cr *apiv1alpha1.Astarte, 
 
 func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.AstarteDashboardSpec) map[string]string {
 	dashboardConfig := make(map[string]interface{})
-	if dashboard.Config.RealmManagementAPIURL != "" {
+	if dashboard.Config.RealmManagementAPIURL == "" {
 		dashboardConfig["realm_management_api_url"] = getBaseAstarteAPIURL(cr) + "/realmmanagement/v1/"
 	} else {
 		dashboardConfig["realm_management_api_url"] = dashboard.Config.RealmManagementAPIURL
 	}
-	if dashboard.Config.AppEngineAPIURL != "" {
+	if dashboard.Config.AppEngineAPIURL == "" {
 		dashboardConfig["appengine_api_url"] = getBaseAstarteAPIURL(cr) + "/appengine/v1/"
 	} else {
 		dashboardConfig["appengine_api_url"] = dashboard.Config.AppEngineAPIURL
