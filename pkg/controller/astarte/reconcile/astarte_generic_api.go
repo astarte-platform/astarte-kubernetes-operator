@@ -274,8 +274,8 @@ func getAstarteAPIProbe(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericA
 		return getAstarteAPIGenericProbe("/v1/health")
 	}
 
-	// 0.11 Beta 1 doesn't have Realm Management and Pairing API probes
-	constraint, _ = semver.NewConstraint("<= 0.11.0-beta.1")
+	// 0.11, up to Beta 2, doesn't have Realm Management and Pairing API probes
+	constraint, _ = semver.NewConstraint("<= 0.11.0-beta.2")
 	if constraint.Check(v) {
 		if component == apiv1alpha1.RealmManagementAPI || component == apiv1alpha1.PairingAPI {
 			return nil
