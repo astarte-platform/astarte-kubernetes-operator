@@ -30,80 +30,80 @@ import (
 // AstarteGenericIngressSpec is a common struct for all Ingresses defined by AstarteVoyagerIngress
 type AstarteGenericIngressSpec struct {
 	// +optional
-	Deploy *bool `json:"deploy"`
+	Deploy *bool `json:"deploy,omitempty"`
 	// +optional
-	Replicas *int32 `json:"replicas"`
+	Replicas *int32 `json:"replicas,omitempty"`
 	// +optional
-	Type string `json:"type"`
+	Type string `json:"type,omitempty"`
 	// +optional
-	LoadBalancerIP string `json:"loadBalancerIp"`
+	LoadBalancerIP string `json:"loadBalancerIp,omitempty"`
 	// +optional
-	NodeSelector string `json:"nodeSelector"`
+	NodeSelector string `json:"nodeSelector,omitempty"`
 	// +optional
-	TLSSecret string `json:"tlsSecret"`
+	TLSSecret string `json:"tlsSecret,omitempty"`
 	// +optional
-	TLSRef *voyager.LocalTypedReference `json:"tlsRef"`
+	TLSRef *voyager.LocalTypedReference `json:"tlsRef,omitempty"`
 	// +optional
-	AnnotationsService map[string]string `json:"annotationsService"`
+	AnnotationsService map[string]string `json:"annotationsService,omitempty"`
 }
 
 // AstarteVoyagerIngressAPISpec defines the specification of the APIs
 type AstarteVoyagerIngressAPISpec struct {
 	GenericIngressSpec AstarteGenericIngressSpec `json:",inline"`
 	// +optional
-	Cors *bool `json:"cors"`
+	Cors *bool `json:"cors,omitempty"`
 	// +optional
-	ExposeHousekeeping *bool `json:"exposeHousekeeping"`
+	ExposeHousekeeping *bool `json:"exposeHousekeeping,omitempty"`
 }
 
 // AstarteVoyagerIngressDashboardSpec defines the specification of the Dashboard
 type AstarteVoyagerIngressDashboardSpec struct {
 	// +optional
-	SSL *bool `json:"ssl"`
+	SSL *bool `json:"ssl,omitempty"`
 	// +optional
-	Host string `json:"host"`
+	Host string `json:"host,omitempty"`
 	// +optional
-	TLSSecret string `json:"tlsSecret"`
+	TLSSecret string `json:"tlsSecret,omitempty"`
 	// +optional
-	TLSRef *voyager.LocalTypedReference `json:"tlsRef"`
+	TLSRef *voyager.LocalTypedReference `json:"tlsRef,omitempty"`
 }
 
 // AstarteVoyagerIngressBrokerSpec defines the specification of the Broker
 type AstarteVoyagerIngressBrokerSpec struct {
 	GenericIngressSpec AstarteGenericIngressSpec `json:",inline"`
 	// +optional
-	MaxConnections *int `json:"maxConnections"`
+	MaxConnections *int `json:"maxConnections,omitempty"`
 }
 
 // AstarteVoyagerIngressLetsEncryptSpec defines the specification of the Let's Encrypt Integration
 type AstarteVoyagerIngressLetsEncryptSpec struct {
 	// +optional
-	Use *bool `json:"use"`
+	Use *bool `json:"use,omitempty"`
 	// +optional
-	Staging *bool `json:"staging"`
+	Staging *bool `json:"staging,omitempty"`
 	// +optional
-	AcmeEmail string `json:"acmeEmail"`
+	AcmeEmail string `json:"acmeEmail,omitempty"`
 	// +optional
-	Domains []string `json:"domains"`
+	Domains []string `json:"domains,omitempty"`
 	// +optional
-	AutoHTTPChallenge *bool `json:"autoHTTPChallenge"`
+	AutoHTTPChallenge *bool `json:"autoHTTPChallenge,omitempty"`
 	// +optional
-	ChallengeProvider voyager.ChallengeProvider `json:"challengeProvider"`
+	ChallengeProvider voyager.ChallengeProvider `json:"challengeProvider,omitempty"`
 }
 
 // AstarteVoyagerIngressSpec defines the desired state of AstarteVoyagerIngress
 type AstarteVoyagerIngressSpec struct {
 	// +optional
-	ImagePullPolicy *v1.PullPolicy `json:"imagePullPolicy"`
+	ImagePullPolicy *v1.PullPolicy `json:"imagePullPolicy,omitempty"`
 	Astarte         string         `json:"astarte"`
 	// +optional
-	API AstarteVoyagerIngressAPISpec `json:"api"`
+	API AstarteVoyagerIngressAPISpec `json:"api,omitempty"`
 	// +optional
-	Dashboard AstarteVoyagerIngressDashboardSpec `json:"dashboard"`
+	Dashboard AstarteVoyagerIngressDashboardSpec `json:"dashboard,omitempty"`
 	// +optional
-	Broker AstarteVoyagerIngressBrokerSpec `json:"broker"`
+	Broker AstarteVoyagerIngressBrokerSpec `json:"broker,omitempty"`
 	// +optional
-	Letsencrypt AstarteVoyagerIngressLetsEncryptSpec `json:"letsencrypt"`
+	Letsencrypt AstarteVoyagerIngressLetsEncryptSpec `json:"letsencrypt,omitempty"`
 }
 
 // AstarteVoyagerIngressStatus defines the observed state of AstarteVoyagerIngress

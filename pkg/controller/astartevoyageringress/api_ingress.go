@@ -76,7 +76,7 @@ func ensureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 	if cr.Spec.API.GenericIngressSpec.LoadBalancerIP != "" {
 		annotations[voyager.LoadBalancerIP] = cr.Spec.API.GenericIngressSpec.LoadBalancerIP
 	}
-	if pointy.BoolValue(parent.Spec.API.SSL, true) || pointy.BoolValue(parent.Spec.Components.Dashboard.SSL, true) {
+	if pointy.BoolValue(parent.Spec.API.SSL, true) || pointy.BoolValue(cr.Spec.Dashboard.SSL, true) {
 		// Add safe-SSL options
 		annotations[voyager.EnableHSTS] = "true"
 		annotations[voyager.HSTSPreload] = "true"
@@ -95,7 +95,7 @@ func ensureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 	// Ok - build the Ingress Spec
 	ingressSpec := voyager.IngressSpec{}
 	// TLS first
-	if pointy.BoolValue(parent.Spec.API.SSL, true) || pointy.BoolValue(parent.Spec.Components.Dashboard.SSL, true) {
+	if pointy.BoolValue(parent.Spec.API.SSL, true) || pointy.BoolValue(cr.Spec.Dashboard.SSL, true) {
 		// Ok, we should add TLS.
 		// Priority in options is: Ref - Secret Name - Let's Encrypt
 		ingressTLSs := []voyager.IngressTLS{}
@@ -178,7 +178,7 @@ func ensureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 		rules = append(rules, voyager.IngressRule{
 			Host: cr.Spec.Dashboard.Host,
 			IngressRuleValue: voyager.IngressRuleValue{HTTP: &voyager.HTTPIngressRuleValue{
-				Paths: []voyager.HTTPIngressPath{getHTTPIngressPathForAstarteComponent(parent, apiv1alpha1.Dashboard)},
+				Paths: []voyager.HTTPIngressPath{getHTTPIngressWithPath(parent, "", "dashboard")},
 			}},
 		})
 	}
@@ -205,6 +205,10 @@ func ensureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 }
 
 func getHTTPIngressPathForAstarteComponent(parent *apiv1alpha1.Astarte, component apiv1alpha1.AstarteComponent) voyager.HTTPIngressPath {
+	return getHTTPIngressWithPath(parent, strings.Replace(component.ServiceName(), "-", "", -1), component.ServiceName())
+}
+
+func getHTTPIngressWithPath(parent *apiv1alpha1.Astarte, relativePath, serviceName string) voyager.HTTPIngressPath {
 	// Safe HTTP headers to add in responses.
 	backendSSLRules := []string{
 		"http-response add-header X-Frame-Options SAMEORIGIN",
@@ -212,16 +216,16 @@ func getHTTPIngressPathForAstarteComponent(parent *apiv1alpha1.Astarte, componen
 		"http-response set-header X-Content-Type-Options nosniff",
 		"http-response set-header Referrer-Policy no-referrer-when-downgrade",
 	}
-	ingressPath := strings.Replace(component.ServiceName(), "-", "", -1)
-	backendRules := []string{
-		fmt.Sprintf(`reqrep ^([^\ :]*)\ /%s/(.*$) \1\ /\2`, ingressPath),
+	backendRules := []string{}
+	if relativePath != "" {
+		backendRules = append(backendRules, fmt.Sprintf(`reqrep ^([^\ :]*)\ /%s/(.*$) \1\ /\2`, relativePath))
 	}
 	backendRules = append(backendRules, backendSSLRules...)
 	return voyager.HTTPIngressPath{
-		Path: fmt.Sprintf("/%s", ingressPath),
+		Path: fmt.Sprintf("/%s", relativePath),
 		Backend: voyager.HTTPIngressBackend{
 			IngressBackend: voyager.IngressBackend{
-				ServiceName:  fmt.Sprintf("%s-%s", parent.Name, component.ServiceName()),
+				ServiceName:  fmt.Sprintf("%s-%s", parent.Name, serviceName),
 				ServicePort:  intstr.FromString("http"),
 				BackendRules: backendRules,
 			},
