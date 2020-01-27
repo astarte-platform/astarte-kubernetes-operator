@@ -27,6 +27,7 @@ import (
 	semver "github.com/Masterminds/semver/v3"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
+	"github.com/go-logr/logr"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -58,20 +59,7 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api apiv1al
 	matchLabels := map[string]string{"app": deploymentName}
 
 	// Ok. Shall we deploy?
-	if !pointy.BoolValue(api.Deploy, true) {
-		reqLogger.V(1).Info("Skipping Astarte Component Deployment")
-		// Before returning - check if we shall clean up the Deployment.
-		// It is the only thing actually requiring resources, the rest will be cleaned up eventually when the
-		// Astarte resource is deleted.
-		theDeployment := &appsv1.Deployment{}
-		err := c.Get(context.TODO(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, theDeployment)
-		if err == nil {
-			reqLogger.Info("Deleting previously existing Component Deployment, which is no longer needed")
-			if err = c.Delete(context.TODO(), theDeployment); err != nil {
-				return err
-			}
-		}
-
+	if !checkShouldDeployAPI(reqLogger, deploymentName, cr, api, component, c) {
 		// That would be all for today.
 		return nil
 	}
@@ -105,6 +93,13 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api apiv1al
 		misc.LogCreateOrUpdateOperationResult(log, result, cr, service)
 	} else {
 		return err
+	}
+
+	// Service Account?
+	if component == apiv1alpha1.FlowComponent {
+		if err := reconcileRBACForFlow(cr.Name+"-"+component.ServiceName(), cr, c, scheme); err != nil {
+			return err
+		}
 	}
 
 	deploymentSpec := appsv1.DeploymentSpec{
@@ -142,6 +137,36 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api apiv1al
 	return nil
 }
 
+func checkShouldDeployAPI(reqLogger logr.Logger, deploymentName string, cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec,
+	component apiv1alpha1.AstarteComponent, c client.Client) bool {
+	if !pointy.BoolValue(api.Deploy, true) {
+		reqLogger.V(1).Info("Skipping Astarte Component Deployment")
+		// Before returning - check if we shall clean up the Deployment.
+		// It is the only thing actually requiring resources, the rest will be cleaned up eventually when the
+		// Astarte resource is deleted.
+		theDeployment := &appsv1.Deployment{}
+		if err := c.Get(context.TODO(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, theDeployment); err == nil {
+			reqLogger.Info("Deleting previously existing Component Deployment, which is no longer needed")
+			if err = c.Delete(context.TODO(), theDeployment); err != nil {
+				reqLogger.Error(err, "Could not delete previously existing Component Deployment")
+			}
+		}
+
+		// In any case, we should not deploy
+		return false
+	}
+
+	// If we do need to deploy, check any constraints
+	version := getSemanticVersionForAstarteComponent(cr, api.Version)
+	constraint, _ := semver.NewConstraint(">= 1.0.0")
+	if component == apiv1alpha1.FlowComponent && !constraint.Check(version) {
+		reqLogger.V(1).Info("Skipping Flow Deployment - not supported by this Astarte version")
+		return false
+	}
+
+	return true
+}
+
 func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec,
 	component apiv1alpha1.AstarteComponent, customProbe *v1.Probe) v1.PodSpec {
 	ps := v1.PodSpec{
@@ -164,6 +189,10 @@ func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha1.Astarte,
 			},
 		},
 		Volumes: getAstarteGenericAPIVolumes(cr, component),
+	}
+
+	if component == apiv1alpha1.FlowComponent {
+		ps.ServiceAccountName = cr.Name + "-" + component.ServiceName()
 	}
 
 	return ps
@@ -296,6 +325,73 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte,
 			Name:  "HOUSEKEEPING_API_JWT_PUBLIC_KEY_PATH",
 			Value: "/jwtpubkey/public-key",
 		})
+	case apiv1alpha1.FlowComponent:
+		ret = append(ret, getAstarteFlowEnvVars(cr)...)
+	}
+
+	return ret
+}
+
+func getAstarteFlowEnvVars(cr *apiv1alpha1.Astarte) []v1.EnvVar {
+	// Add Cassandra Nodes, AMQP information and Max results count
+	rabbitMQHost, rabbitMQPort := misc.GetRabbitMQHostnameAndPort(cr)
+	userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetRabbitMQUserCredentialsSecret(cr)
+
+	// TODO: This assumes Flow runs paired with the rest of Astarte. Handle other cases.
+	ret := []v1.EnvVar{
+		{
+			Name:  "FLOW_ASTARTE_INSTANCE",
+			Value: cr.Name,
+		},
+		{
+			Name:  "FLOW_TARGET_NAMESPACE",
+			Value: cr.Namespace,
+		},
+		{
+			Name:  "FLOW_PIPELINES_DIR",
+			Value: "/pipelines",
+		},
+		// We don't have cassandraPrefix as if we're here, we're >= 1.0.0
+		{
+			Name:  "CASSANDRA_NODES",
+			Value: getCassandraNodes(cr),
+		},
+		{
+			Name:  "FLOW_REALM_PUBLIC_KEY_PROVIDER",
+			Value: "astarte",
+		},
+		{
+			Name:  "FLOW_DEFAULT_AMQP_CONNECTION_HOST",
+			Value: rabbitMQHost,
+		},
+		{
+			Name:  "FLOW_DEFAULT_AMQP_CONNECTION_PORT",
+			Value: strconv.Itoa(int(rabbitMQPort)),
+		},
+		{
+			Name: "FLOW_DEFAULT_AMQP_CONNECTION_USERNAME",
+			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
+				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
+				Key:                  userCredentialsSecretUsernameKey,
+			}},
+		},
+		{
+			Name: "FLOW_DEFAULT_AMQP_CONNECTION_PASSWORD",
+			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
+				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
+				Key:                  userCredentialsSecretPasswordKey,
+			}},
+		},
+	}
+
+	if cr.Spec.RabbitMQ.Connection != nil {
+		if cr.Spec.RabbitMQ.Connection.VirtualHost != "" {
+			ret = append(ret,
+				v1.EnvVar{
+					Name:  "FLOW_DEFAULT_AMQP_CONNECTION_VIRTUALHOST",
+					Value: cr.Spec.RabbitMQ.Connection.VirtualHost,
+				})
+		}
 	}
 
 	return ret
@@ -318,6 +414,14 @@ func getAstarteAPIProbe(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericA
 		}
 
 		return getAstarteAPIGenericProbe("/v1/health")
+	}
+
+	constraint, _ = semver.NewConstraint("< 1.0.0")
+
+	if constraint.Check(&checkVersion) {
+		if component == apiv1alpha1.FlowComponent {
+			return nil
+		}
 	}
 
 	// The rest are generic probes on /health

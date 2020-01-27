@@ -43,6 +43,20 @@ const (
 	DefaultCleanupTimeout time.Duration = time.Second * 5
 )
 
+// EnsureAstarteServicesReadinessUpTo10 ensures all existing Astarte components up to 1.0
+func EnsureAstarteServicesReadinessUpTo10(namespace string, f *framework.Framework) error {
+	// The previous stuff
+	if err := EnsureAstarteServicesReadinessUpTo011(namespace, f); err != nil {
+		return err
+	}
+
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-flow", f); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // EnsureAstarteServicesReadinessUpTo011 ensures all existing Astarte components up to 0.11
 func EnsureAstarteServicesReadinessUpTo011(namespace string, f *framework.Framework) error {
 	// Check all the StatefulSets

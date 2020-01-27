@@ -72,6 +72,7 @@ jobs:
         kubectl apply -f deploy/role_binding.yaml
         kubectl replace -f deploy/crds/api.astarte-platform.org_astartes_crd.yaml
         kubectl replace -f deploy/crds/api.astarte-platform.org_astartevoyageringresses_crd.yaml
+        kubectl create -f deploy/crds/api.astarte-platform.org_flows_crd.yaml
     - name: Run Operator Retrocompat test
       run: ./operator-sdk test local ./test/oldoperator --go-test-flags "-v -timeout 30m" --operator-namespace kube-system --watch-namespace astarte-test --up-local --no-setup
     - name: Dump debug info

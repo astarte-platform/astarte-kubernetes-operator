@@ -73,7 +73,7 @@ func astarteUpgradeTo10Test(f *framework.Framework, ctx *framework.Context) erro
 	}
 
 	// Check all the Astarte Services
-	if err := utils.EnsureAstarteServicesReadinessUpTo011(namespace, f); err != nil {
+	if err := utils.EnsureAstarteServicesReadinessUpTo10(namespace, f); err != nil {
 		return err
 	}
 

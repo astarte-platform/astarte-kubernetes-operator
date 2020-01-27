@@ -180,6 +180,70 @@ func reconcileStandardRBACForClusteringForApp(name string, policyRules []rbacv1.
 	return nil
 }
 
+func reconcileRBACForFlow(name string, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+	// Service Account
+	serviceAccount := &v1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: cr.Namespace}}
+	if result, err := controllerutil.CreateOrUpdate(context.TODO(), c, serviceAccount, func() error {
+		if err := controllerutil.SetControllerReference(cr, serviceAccount, scheme); err != nil {
+			return err
+		}
+		// Actually nothing to do here.
+		return nil
+	}); err == nil {
+		misc.LogCreateOrUpdateOperationResult(log, result, cr, serviceAccount)
+	} else {
+		return err
+	}
+
+	// Role
+	role := &rbacv1.Role{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: cr.Namespace}}
+	if result, err := controllerutil.CreateOrUpdate(context.TODO(), c, role, func() error {
+		if err := controllerutil.SetControllerReference(cr, role, scheme); err != nil {
+			return err
+		}
+		// Always impose what we want in terms of policy roles without caring.
+		role.Rules = []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"api.astarte-platform.org"},
+				Resources: []string{"flows"},
+				Verbs:     []string{"create", "delete", "get", "list", "patch", "update", "watch"},
+			},
+		}
+		return nil
+	}); err == nil {
+		misc.LogCreateOrUpdateOperationResult(log, result, cr, serviceAccount)
+	} else {
+		return err
+	}
+
+	// Role Binding
+	roleBinding := &rbacv1.RoleBinding{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: cr.Namespace}}
+	if result, err := controllerutil.CreateOrUpdate(context.TODO(), c, roleBinding, func() error {
+		if err := controllerutil.SetControllerReference(cr, roleBinding, scheme); err != nil {
+			return err
+		}
+		// Always impose what we want in terms of policy roles without caring.
+		roleBinding.Subjects = []rbacv1.Subject{
+			{
+				Kind: "ServiceAccount",
+				Name: name,
+			},
+		}
+		roleBinding.RoleRef = rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     name,
+		}
+		return nil
+	}); err == nil {
+		misc.LogCreateOrUpdateOperationResult(log, result, cr, serviceAccount)
+	} else {
+		return err
+	}
+
+	return nil
+}
+
 func getAstarteImageFromChannel(name, tag string, cr *apiv1alpha1.Astarte) string {
 	distributionChannel := "astarte"
 	if cr.Spec.DistributionChannel != "" {

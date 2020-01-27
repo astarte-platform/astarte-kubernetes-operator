@@ -67,7 +67,7 @@ func ensureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 	// Now start with the paths
 	apiPaths := []voyager.HTTPIngressPath{}
 	// Create rules for all Astarte components
-	astarteComponents := []apiv1alpha1.AstarteComponent{apiv1alpha1.AppEngineAPI, apiv1alpha1.HousekeepingAPI, apiv1alpha1.PairingAPI, apiv1alpha1.RealmManagementAPI}
+	astarteComponents := []apiv1alpha1.AstarteComponent{apiv1alpha1.AppEngineAPI, apiv1alpha1.FlowComponent, apiv1alpha1.HousekeepingAPI, apiv1alpha1.PairingAPI, apiv1alpha1.RealmManagementAPI}
 	// Should we serve /metrics?
 	serveMetrics := pointy.BoolValue(cr.Spec.API.ServeMetrics, false)
 	// Is the Dashboard deployed without a host?

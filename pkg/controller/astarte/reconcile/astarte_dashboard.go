@@ -181,6 +181,11 @@ func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard apiv1al
 	} else {
 		dashboardConfig["appengine_api_url"] = dashboard.Config.AppEngineAPIURL
 	}
+	if dashboard.Config.FlowAPIURL == "" {
+		dashboardConfig["flow_api_url"] = getBaseAstarteAPIURL(cr) + "/flow/"
+	} else {
+		dashboardConfig["flow_api_url"] = dashboard.Config.FlowAPIURL
+	}
 	if dashboard.Config.DefaultRealm != "" {
 		dashboardConfig["default_realm"] = dashboard.Config.DefaultRealm
 	}
