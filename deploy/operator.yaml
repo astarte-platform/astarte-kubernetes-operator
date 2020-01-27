@@ -18,8 +18,6 @@ spec:
         - name: astarte-operator
           # Replace this with the built image name
           image: astarte/astarte-kubernetes-operator:0.11-snapshot
-          command:
-          - astarte-operator
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
