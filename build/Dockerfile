@@ -2,26 +2,18 @@ FROM golang:1.13 as builder
 
 WORKDIR /operator
 
-# Copy stuff
+# copy-in our module info (to ensure layer caching)
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
 COPY . .
 
-# Build the Operator
-RUN go build -o astarte-operator github.com/astarte-platform/astarte-kubernetes-operator/cmd/manager
+# Build the Operator statically
+RUN CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags '-w -s -extldflags "-static"' -o astarte-operator github.com/astarte-platform/astarte-kubernetes-operator/cmd/manager
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+FROM gcr.io/distroless/static:nonroot
 
-ENV OPERATOR=/usr/local/bin/astarte-operator \
-    USER_UID=1001 \
-    USER_NAME=astarte-operator
+COPY --from=builder /operator/astarte-operator /astarte-operator
 
-ARG BUILT_BINARY_NAME=astarte-operator
-
-# install operator binary
-COPY --from=builder /operator/astarte-operator ${OPERATOR}
-
-COPY build/bin /usr/local/bin
-RUN  /usr/local/bin/user_setup
-
-ENTRYPOINT ["/usr/local/bin/entrypoint"]
-
-USER ${USER_UID}
+CMD ["/astarte-operator"]
