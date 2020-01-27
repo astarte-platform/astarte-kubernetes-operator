@@ -24,19 +24,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-      with:
-        path: astarte-operator-test
-    - uses: actions/setup-go@v1
-      with:
-        # Ensure we're on Go 1.13
-        go-version: '1.13.x'
-    # Download Operator SDK binary
-    - name: Download Operator SDK
-      working-directory: ./astarte-operator-test
-      run: |
-        curl -L -o operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/v0.14.0/operator-sdk-v0.14.0-x86_64-linux-gnu
-        chmod +x operator-sdk
     - name: Build test image
-      working-directory: ./astarte-operator-test
       run: |
-        ./operator-sdk build --image-build-args="--build-arg BUILT_BINARY_NAME=astarte-operator-test" astarte-operator-ci:test
+        docker build -t astarte-operator-ci:test -f build/Dockerfile .
