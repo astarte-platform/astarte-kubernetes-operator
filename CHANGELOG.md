@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [0.11.0-beta.3] - Unreleased
+### Added
+- Use health status exposed by backends as readiness probe and liveness probe.
+
 ### Fixed
 - Ensure that the Astarte CR status takes into account VerneMQ and CFSSL StatefulSets as well.
 - Fixed all omitempty fields for AstarteVoyagerIngress

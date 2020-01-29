@@ -31,6 +31,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -118,6 +119,8 @@ func getAstarteGenericBackendPodSpec(deploymentName string, cr *apiv1alpha1.Asta
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Resources:       misc.GetResourcesForAstarteComponent(cr, backend.Resources, component),
 				Env:             getAstarteGenericBackendEnvVars(deploymentName, cr, backend, component),
+				ReadinessProbe:  getAstarteBackendProbe(cr, backend, component),
+				LivenessProbe:   getAstarteBackendProbe(cr, backend, component),
 			},
 		},
 		Volumes: getAstarteGenericBackendVolumes(deploymentName, cr, backend, component),
@@ -266,4 +269,32 @@ func getAstarteGenericBackendEnvVars(deploymentName string, cr *apiv1alpha1.Asta
 	}
 
 	return ret
+}
+
+func getAstarteBackendProbe(cr *apiv1alpha1.Astarte, backend apiv1alpha1.AstarteGenericClusteredResource, component apiv1alpha1.AstarteComponent) *v1.Probe {
+	// Parse the version first
+	v := getSemanticVersionForAstarteComponent(cr, backend.Version)
+	// Everything up to 0.11.0-beta.2 doesn't have backend probes
+	constraint, _ := semver.NewConstraint("<= 0.11.0-beta.2")
+	if constraint.Check(v) {
+		return nil
+	}
+
+	// Following versions have generic probes on /health
+	return getAstarteBackendGenericProbe("/health")
+}
+
+func getAstarteBackendGenericProbe(path string) *v1.Probe {
+	return &v1.Probe{
+		Handler: v1.Handler{
+			HTTPGet: &v1.HTTPGetAction{
+				Path: path,
+				Port: intstr.FromString("http"),
+			},
+		},
+		InitialDelaySeconds: 10,
+		TimeoutSeconds:      5,
+		PeriodSeconds:       30,
+		FailureThreshold:    5,
+	}
 }
