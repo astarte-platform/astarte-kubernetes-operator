@@ -38,8 +38,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-// EnsureAstarteGenericAPI reconciles any component compatible with AstarteGenericAPISpec
-func EnsureAstarteGenericAPI(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec, component apiv1alpha1.AstarteComponent, c client.Client, scheme *runtime.Scheme) error {
+// EnsureAstarteGenericAPI reconciles any component compatible with AstarteGenericAPISpec with a custom Probe
+func EnsureAstarteGenericAPI(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec, component apiv1alpha1.AstarteComponent,
+	c client.Client, scheme *runtime.Scheme) error {
+	return EnsureAstarteGenericAPIWithCustomProbe(cr, api, component, c, scheme, nil)
+}
+
+// EnsureAstarteGenericAPIWithCustomProbe reconciles any component compatible with AstarteGenericAPISpec with a custom Probe
+func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec, component apiv1alpha1.AstarteComponent,
+	c client.Client, scheme *runtime.Scheme, customProbe *v1.Probe) error {
 	reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name, "Astarte.Component", component)
 	deploymentName := cr.Name + "-" + component.DashedString()
 	serviceName := cr.Name + "-" + component.ServiceName()
@@ -109,7 +116,7 @@ func EnsureAstarteGenericAPI(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGen
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: labels,
 			},
-			Spec: getAstarteGenericAPIPodSpec(deploymentName, cr, api, component),
+			Spec: getAstarteGenericAPIPodSpec(deploymentName, cr, api, component, customProbe),
 		},
 	}
 
@@ -135,7 +142,8 @@ func EnsureAstarteGenericAPI(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGen
 	return nil
 }
 
-func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec, component apiv1alpha1.AstarteComponent) v1.PodSpec {
+func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec,
+	component apiv1alpha1.AstarteComponent, customProbe *v1.Probe) v1.PodSpec {
 	ps := v1.PodSpec{
 		TerminationGracePeriodSeconds: pointy.Int64(30),
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
@@ -151,8 +159,8 @@ func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha1.Astarte,
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Resources:       misc.GetResourcesForAstarteComponent(cr, api.GenericClusteredResource.Resources, component),
 				Env:             getAstarteGenericAPIEnvVars(deploymentName, cr, api, component),
-				ReadinessProbe:  getAstarteAPIProbe(cr, api, component),
-				LivenessProbe:   getAstarteAPIProbe(cr, api, component),
+				ReadinessProbe:  getAstarteAPIProbe(cr, api, component, customProbe),
+				LivenessProbe:   getAstarteAPIProbe(cr, api, component, customProbe),
 			},
 		},
 		Volumes: getAstarteGenericAPIVolumes(deploymentName, cr, api, component),
@@ -259,7 +267,11 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte,
 	return ret
 }
 
-func getAstarteAPIProbe(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec, component apiv1alpha1.AstarteComponent) *v1.Probe {
+func getAstarteAPIProbe(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec, component apiv1alpha1.AstarteComponent, customProbe *v1.Probe) *v1.Probe {
+	if customProbe != nil {
+		return customProbe
+	}
+
 	// Parse the version first
 	v := getSemanticVersionForAstarteComponent(cr, api.GenericClusteredResource.Version)
 	checkVersion, _ := v.SetPrerelease("")
@@ -274,7 +286,8 @@ func getAstarteAPIProbe(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericA
 		return getAstarteAPIGenericProbe("/v1/health")
 	}
 
-	// 0.11, up to Beta 2, doesn't have Realm Management and Pairing API probes
+	// TODO: Right before 0.11.0, change this constraint to < 0.11.0. We shouldn't expose such details after
+	// we've gone stable.
 	constraint, _ = semver.NewConstraint("<= 0.11.0-beta.2")
 	if constraint.Check(v) {
 		if component == apiv1alpha1.RealmManagementAPI || component == apiv1alpha1.PairingAPI {

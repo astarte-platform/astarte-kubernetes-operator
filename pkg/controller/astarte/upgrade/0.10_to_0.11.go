@@ -105,6 +105,7 @@ func upgradeTo011(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sche
 		// in the original spec.
 		housekeepingBackend.Resources = resourceRequirements
 	}
+	// TODO: When we move to 0.11.0-beta3 or above, add a Probe
 	if err := reconcile.EnsureAstarteGenericBackend(cr, *housekeepingBackend, apiv1alpha1.Housekeeping, c, scheme); err != nil {
 		return err
 	}
@@ -113,7 +114,8 @@ func upgradeTo011(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sche
 	housekeepingAPI.GenericClusteredResource.Version = landing011Version
 	// Ensure the policy is Replace. We don't want to have old pods hanging around.
 	housekeepingAPI.GenericClusteredResource.DeploymentStrategy = &appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
-	if err := reconcile.EnsureAstarteGenericAPI(cr, *housekeepingAPI, apiv1alpha1.HousekeepingAPI, c, scheme); err != nil {
+	if err := reconcile.EnsureAstarteGenericAPIWithCustomProbe(cr, *housekeepingAPI, apiv1alpha1.HousekeepingAPI, c,
+		scheme, getSpecialHousekeepingMigrationProbe("/health")); err != nil {
 		return err
 	}
 
