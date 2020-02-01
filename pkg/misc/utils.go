@@ -203,23 +203,23 @@ func GetResourcesForAstarteComponent(cr *apiv1alpha1.Astarte, requestedResources
 func IsAstarteComponentDeployed(cr *apiv1alpha1.Astarte, component apiv1alpha1.AstarteComponent) bool {
 	switch component {
 	case apiv1alpha1.AppEngineAPI:
-		return pointy.BoolValue(cr.Spec.Components.AppengineAPI.GenericAPISpec.GenericClusteredResource.Deploy, true)
+		return pointy.BoolValue(cr.Spec.Components.AppengineAPI.Deploy, true)
 	case apiv1alpha1.Dashboard:
-		return pointy.BoolValue(cr.Spec.Components.Dashboard.GenericClusteredResource.Deploy, true)
+		return pointy.BoolValue(cr.Spec.Components.Dashboard.Deploy, true)
 	case apiv1alpha1.DataUpdaterPlant:
-		return pointy.BoolValue(cr.Spec.Components.DataUpdaterPlant.GenericClusteredResource.Deploy, true)
+		return pointy.BoolValue(cr.Spec.Components.DataUpdaterPlant.Deploy, true)
 	case apiv1alpha1.Housekeeping:
 		return pointy.BoolValue(cr.Spec.Components.Housekeeping.Backend.Deploy, true)
 	case apiv1alpha1.HousekeepingAPI:
-		return pointy.BoolValue(cr.Spec.Components.Housekeeping.API.GenericClusteredResource.Deploy, true)
+		return pointy.BoolValue(cr.Spec.Components.Housekeeping.API.Deploy, true)
 	case apiv1alpha1.Pairing:
 		return pointy.BoolValue(cr.Spec.Components.Pairing.Backend.Deploy, true)
 	case apiv1alpha1.PairingAPI:
-		return pointy.BoolValue(cr.Spec.Components.Pairing.API.GenericClusteredResource.Deploy, true)
+		return pointy.BoolValue(cr.Spec.Components.Pairing.API.Deploy, true)
 	case apiv1alpha1.RealmManagement:
 		return pointy.BoolValue(cr.Spec.Components.RealmManagement.Backend.Deploy, true)
 	case apiv1alpha1.RealmManagementAPI:
-		return pointy.BoolValue(cr.Spec.Components.RealmManagement.API.GenericClusteredResource.Deploy, true)
+		return pointy.BoolValue(cr.Spec.Components.RealmManagement.API.Deploy, true)
 	case apiv1alpha1.TriggerEngine:
 		return pointy.BoolValue(cr.Spec.Components.TriggerEngine.Deploy, true)
 	}

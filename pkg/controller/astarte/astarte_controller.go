@@ -340,12 +340,12 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 
 	// Now it's Data Updater plant turn
-	if err = recon.EnsureAstarteGenericBackend(instance, instance.Spec.Components.DataUpdaterPlant.GenericClusteredResource, apiv1alpha1.DataUpdaterPlant, r.client, r.scheme); err != nil {
+	if err = recon.EnsureAstarteGenericBackend(instance, instance.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource, apiv1alpha1.DataUpdaterPlant, r.client, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	// Now it's AppEngine API turn
-	if err = recon.EnsureAstarteGenericAPI(instance, instance.Spec.Components.AppengineAPI.GenericAPISpec, apiv1alpha1.AppEngineAPI, r.client, r.scheme); err != nil {
+	if err = recon.EnsureAstarteGenericAPI(instance, instance.Spec.Components.AppengineAPI.AstarteGenericAPISpec, apiv1alpha1.AppEngineAPI, r.client, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -377,7 +377,7 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 
 	// Now compute readiness for the other two components we want to check: VerneMQ and CFSSL
 	astarteStatefulSet := &appsv1.StatefulSet{}
-	if pointy.BoolValue(instance.Spec.VerneMQ.GenericClusteredResource.Deploy, true) {
+	if pointy.BoolValue(instance.Spec.VerneMQ.Deploy, true) {
 		if err := r.client.Get(context.TODO(), types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name + "-vernemq"},
 			astarteStatefulSet); err == nil {
 			if astarteStatefulSet.Status.ReadyReplicas == 0 {

@@ -58,7 +58,7 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api apiv1al
 	matchLabels := map[string]string{"app": deploymentName}
 
 	// Ok. Shall we deploy?
-	if !pointy.BoolValue(api.GenericClusteredResource.Deploy, true) {
+	if !pointy.BoolValue(api.Deploy, true) {
 		reqLogger.V(1).Info("Skipping Astarte Component Deployment")
 		// Before returning - check if we shall clean up the Deployment.
 		// It is the only thing actually requiring resources, the rest will be cleaned up eventually when the
@@ -111,7 +111,7 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api apiv1al
 		Selector: &metav1.LabelSelector{
 			MatchLabels: matchLabels,
 		},
-		Strategy: getDeploymentStrategyForClusteredResource(cr, api.GenericClusteredResource),
+		Strategy: getDeploymentStrategyForClusteredResource(cr, api.AstarteGenericClusteredResource),
 		Template: v1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: labels,
@@ -130,7 +130,7 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api apiv1al
 		// Assign the Spec.
 		deployment.ObjectMeta.Labels = labels
 		deployment.Spec = deploymentSpec
-		deployment.Spec.Replicas = api.GenericClusteredResource.Replicas
+		deployment.Spec.Replicas = api.Replicas
 
 		return nil
 	})
@@ -147,7 +147,7 @@ func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha1.Astarte,
 	ps := v1.PodSpec{
 		TerminationGracePeriodSeconds: pointy.Int64(30),
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
-		Affinity:                      getAffinityForClusteredResource(deploymentName, api.GenericClusteredResource),
+		Affinity:                      getAffinityForClusteredResource(deploymentName, api.AstarteGenericClusteredResource),
 		Containers: []v1.Container{
 			v1.Container{
 				Name: component.DashedString(),
@@ -155,9 +155,9 @@ func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha1.Astarte,
 					v1.ContainerPort{Name: "http", ContainerPort: 4000},
 				},
 				VolumeMounts:    getAstarteGenericAPIVolumeMounts(deploymentName, cr, api, component),
-				Image:           getAstarteImageForClusteredResource(component.DockerImageName(), api.GenericClusteredResource, cr),
+				Image:           getAstarteImageForClusteredResource(component.DockerImageName(), api.AstarteGenericClusteredResource, cr),
 				ImagePullPolicy: getImagePullPolicy(cr),
-				Resources:       misc.GetResourcesForAstarteComponent(cr, api.GenericClusteredResource.Resources, component),
+				Resources:       misc.GetResourcesForAstarteComponent(cr, api.Resources, component),
 				Env:             getAstarteGenericAPIEnvVars(deploymentName, cr, api, component),
 				ReadinessProbe:  getAstarteAPIProbe(cr, api, component, customProbe),
 				LivenessProbe:   getAstarteAPIProbe(cr, api, component, customProbe),
@@ -273,7 +273,7 @@ func getAstarteAPIProbe(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericA
 	}
 
 	// Parse the version first
-	v := getSemanticVersionForAstarteComponent(cr, api.GenericClusteredResource.Version)
+	v := getSemanticVersionForAstarteComponent(cr, api.Version)
 	checkVersion, _ := v.SetPrerelease("")
 	constraint, _ := semver.NewConstraint("< 0.11.0")
 

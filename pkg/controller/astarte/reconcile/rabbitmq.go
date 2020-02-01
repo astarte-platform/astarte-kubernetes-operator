@@ -104,7 +104,7 @@ func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sc
 	}
 
 	// Ok. Shall we deploy?
-	if !pointy.BoolValue(cr.Spec.RabbitMQ.GenericClusteredResource.Deploy, true) {
+	if !pointy.BoolValue(cr.Spec.RabbitMQ.Deploy, true) {
 		log.Info("Skipping RabbitMQ Deployment")
 		// Before returning - check if we shall clean up the StatefulSet.
 		// It is the only thing actually requiring resources, the rest will be cleaned up eventually when the
@@ -201,7 +201,7 @@ func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sc
 
 		// Assign the Spec.
 		rmqStatefulSet.Spec = statefulSetSpec
-		rmqStatefulSet.Spec.Replicas = cr.Spec.RabbitMQ.GenericClusteredResource.Replicas
+		rmqStatefulSet.Spec.Replicas = cr.Spec.RabbitMQ.Replicas
 
 		return nil
 	})
@@ -214,7 +214,7 @@ func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sc
 }
 
 func validateRabbitMQDefinition(rmq apiv1alpha1.AstarteRabbitMQSpec) error {
-	if !pointy.BoolValue(rmq.GenericClusteredResource.Deploy, true) {
+	if !pointy.BoolValue(rmq.Deploy, true) {
 		// We need to make sure that we have all needed components
 		if rmq.Connection == nil {
 			return errors.New("When not deploying RabbitMQ, the 'connection' section is compulsory")
@@ -336,7 +336,7 @@ func getRabbitMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.
 		ServiceAccountName:            serviceAccountName,
 		InitContainers:                getRabbitMQInitContainers(),
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
-		Affinity:                      getAffinityForClusteredResource(statefulSetName, cr.Spec.RabbitMQ.GenericClusteredResource),
+		Affinity:                      getAffinityForClusteredResource(statefulSetName, cr.Spec.RabbitMQ.AstarteGenericClusteredResource),
 		Containers: []v1.Container{
 			v1.Container{
 				Name: "rabbitmq",
@@ -351,7 +351,7 @@ func getRabbitMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.
 					},
 				},
 				Image: getImageForClusteredResource("rabbitmq", deps.GetDefaultVersionForRabbitMQ(astarteVersion),
-					cr.Spec.RabbitMQ.GenericClusteredResource),
+					cr.Spec.RabbitMQ.AstarteGenericClusteredResource),
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Ports: []v1.ContainerPort{
 					v1.ContainerPort{Name: "amqp", ContainerPort: 5672},
@@ -359,7 +359,7 @@ func getRabbitMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.
 				},
 				LivenessProbe:  getRabbitMQLivenessProbe(),
 				ReadinessProbe: getRabbitMQReadinessProbe(),
-				Resources:      cr.Spec.RabbitMQ.GenericClusteredResource.Resources,
+				Resources:      cr.Spec.RabbitMQ.Resources,
 				Env:            getRabbitMQEnvVars(statefulSetName, cr),
 			},
 		},
