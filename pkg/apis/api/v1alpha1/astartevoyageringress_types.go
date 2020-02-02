@@ -49,7 +49,7 @@ type AstarteGenericIngressSpec struct {
 
 // AstarteVoyagerIngressAPISpec defines the specification of the APIs
 type AstarteVoyagerIngressAPISpec struct {
-	GenericIngressSpec AstarteGenericIngressSpec `json:",inline"`
+	AstarteGenericIngressSpec `json:",inline"`
 	// +optional
 	Cors *bool `json:"cors,omitempty"`
 	// +optional
@@ -70,7 +70,7 @@ type AstarteVoyagerIngressDashboardSpec struct {
 
 // AstarteVoyagerIngressBrokerSpec defines the specification of the Broker
 type AstarteVoyagerIngressBrokerSpec struct {
-	GenericIngressSpec AstarteGenericIngressSpec `json:",inline"`
+	AstarteGenericIngressSpec `json:",inline"`
 	// +optional
 	MaxConnections *int `json:"maxConnections,omitempty"`
 }

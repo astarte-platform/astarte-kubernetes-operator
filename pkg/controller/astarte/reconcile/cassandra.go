@@ -52,7 +52,7 @@ func EnsureCassandra(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.S
 	}
 
 	// Ok. Shall we deploy?
-	if !pointy.BoolValue(cr.Spec.Cassandra.GenericClusteredResource.Deploy, true) {
+	if !pointy.BoolValue(cr.Spec.Cassandra.Deploy, true) {
 		log.Info("Skipping Cassandra Deployment")
 		// Before returning - check if we shall clean up the StatefulSet.
 		// It is the only thing actually requiring resources, the rest will be cleaned up eventually when the
@@ -126,7 +126,7 @@ func EnsureCassandra(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.S
 
 		// Assign the Spec.
 		cassandraStatefulSet.Spec = statefulSetSpec
-		cassandraStatefulSet.Spec.Replicas = cr.Spec.Cassandra.GenericClusteredResource.Replicas
+		cassandraStatefulSet.Spec.Replicas = cr.Spec.Cassandra.Replicas
 
 		return nil
 	})
@@ -139,7 +139,7 @@ func EnsureCassandra(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.S
 }
 
 func validateCassandraDefinition(cassandra apiv1alpha1.AstarteCassandraSpec) error {
-	if !pointy.BoolValue(cassandra.GenericClusteredResource.Deploy, true) && cassandra.Nodes == "" {
+	if !pointy.BoolValue(cassandra.Deploy, true) && cassandra.Nodes == "" {
 		return errors.New("When not deploying Cassandra, the 'nodes' must be specified")
 	}
 
@@ -212,7 +212,7 @@ func getCassandraPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1
 		// Give it a lot of time to terminate to drain the node.
 		TerminationGracePeriodSeconds: pointy.Int64(1800),
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
-		Affinity:                      getAffinityForClusteredResource(statefulSetName, cr.Spec.Cassandra.GenericClusteredResource),
+		Affinity:                      getAffinityForClusteredResource(statefulSetName, cr.Spec.Cassandra.AstarteGenericClusteredResource),
 		Containers: []v1.Container{
 			v1.Container{
 				Name: "cassandra",
@@ -222,7 +222,8 @@ func getCassandraPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1
 						MountPath: "/cassandra_data",
 					},
 				},
-				Image:           getImageForClusteredResource("gcr.io/google-samples/cassandra", deps.GetDefaultVersionForCassandra(astarteVersion), cr.Spec.Cassandra.GenericClusteredResource),
+				Image: getImageForClusteredResource("gcr.io/google-samples/cassandra", deps.GetDefaultVersionForCassandra(astarteVersion),
+					cr.Spec.Cassandra.AstarteGenericClusteredResource),
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Ports: []v1.ContainerPort{
 					v1.ContainerPort{Name: "intra-node", ContainerPort: 7000},
@@ -231,7 +232,7 @@ func getCassandraPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1
 					v1.ContainerPort{Name: "cql", ContainerPort: 9042},
 				},
 				ReadinessProbe: getCassandraProbe(),
-				Resources:      cr.Spec.Cassandra.GenericClusteredResource.Resources,
+				Resources:      cr.Spec.Cassandra.Resources,
 				Env:            getCassandraEnvVars(statefulSetName, cr),
 				SecurityContext: &v1.SecurityContext{
 					Capabilities: &v1.Capabilities{Add: []v1.Capability{"IPC_LOCK"}},
@@ -246,7 +247,7 @@ func getCassandraPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1
 
 // This stuff is useful for other components which need to interact with Cassandra
 func getCassandraNodes(cr *apiv1alpha1.Astarte) string {
-	replicas := cr.Spec.Cassandra.GenericClusteredResource.Replicas
+	replicas := cr.Spec.Cassandra.Replicas
 	if cr.Spec.Cassandra.Nodes != "" {
 		return cr.Spec.Cassandra.Nodes
 	}

@@ -67,17 +67,17 @@ func ToNewCR(cr *v1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) erro
 		return err
 	}
 	// RabbitMQ
-	if cr.Spec.RabbitMQ.GenericClusteredResource.Resources, err = normalizeResourcesFor(cr.Spec.RabbitMQ.GenericClusteredResource.Resources,
+	if cr.Spec.RabbitMQ.Resources, err = normalizeResourcesFor(cr.Spec.RabbitMQ.Resources,
 		"rabbitmq.resources", oldAstarteObjectSpec); err != nil {
 		return err
 	}
 	// Cassandra
-	if cr.Spec.Cassandra.GenericClusteredResource.Resources, err = normalizeResourcesFor(cr.Spec.Cassandra.GenericClusteredResource.Resources,
+	if cr.Spec.Cassandra.Resources, err = normalizeResourcesFor(cr.Spec.Cassandra.Resources,
 		"cassandra.resources", oldAstarteObjectSpec); err != nil {
 		return err
 	}
 	// VerneMQ
-	if cr.Spec.VerneMQ.GenericClusteredResource.Resources, err = normalizeResourcesFor(cr.Spec.VerneMQ.GenericClusteredResource.Resources,
+	if cr.Spec.VerneMQ.Resources, err = normalizeResourcesFor(cr.Spec.VerneMQ.Resources,
 		"vernemq.resources", oldAstarteObjectSpec); err != nil {
 		return err
 	}
@@ -88,13 +88,13 @@ func ToNewCR(cr *v1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) erro
 	}
 
 	// AppEngine API
-	if cr.Spec.Components.AppengineAPI.GenericAPISpec.GenericClusteredResource.Resources, err = normalizeResourcesFor(
-		cr.Spec.Components.AppengineAPI.GenericAPISpec.GenericClusteredResource.Resources, "components.appengineApi.resources", oldAstarteObjectSpec); err != nil {
+	if cr.Spec.Components.AppengineAPI.Resources, err = normalizeResourcesFor(
+		cr.Spec.Components.AppengineAPI.Resources, "components.appengineApi.resources", oldAstarteObjectSpec); err != nil {
 		return err
 	}
 	// Data Updater Plant
-	if cr.Spec.Components.DataUpdaterPlant.GenericClusteredResource.Resources, err = normalizeResourcesFor(
-		cr.Spec.Components.DataUpdaterPlant.GenericClusteredResource.Resources, "components.dataUpdaterPlant.resources", oldAstarteObjectSpec); err != nil {
+	if cr.Spec.Components.DataUpdaterPlant.Resources, err = normalizeResourcesFor(
+		cr.Spec.Components.DataUpdaterPlant.Resources, "components.dataUpdaterPlant.resources", oldAstarteObjectSpec); err != nil {
 		return err
 	}
 	// Housekeeping Backend
@@ -103,8 +103,8 @@ func ToNewCR(cr *v1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) erro
 		return err
 	}
 	// Housekeeping API
-	if cr.Spec.Components.Housekeeping.API.GenericClusteredResource.Resources, err = normalizeResourcesFor(
-		cr.Spec.Components.Housekeeping.API.GenericClusteredResource.Resources, "components.housekeeping.api.resources", oldAstarteObjectSpec); err != nil {
+	if cr.Spec.Components.Housekeeping.API.Resources, err = normalizeResourcesFor(
+		cr.Spec.Components.Housekeeping.API.Resources, "components.housekeeping.api.resources", oldAstarteObjectSpec); err != nil {
 		return err
 	}
 	// Pairing Backend
@@ -113,8 +113,8 @@ func ToNewCR(cr *v1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) erro
 		return err
 	}
 	// Pairing API
-	if cr.Spec.Components.Pairing.API.GenericClusteredResource.Resources, err = normalizeResourcesFor(
-		cr.Spec.Components.Pairing.API.GenericClusteredResource.Resources, "components.pairing.api.resources", oldAstarteObjectSpec); err != nil {
+	if cr.Spec.Components.Pairing.API.Resources, err = normalizeResourcesFor(
+		cr.Spec.Components.Pairing.API.Resources, "components.pairing.api.resources", oldAstarteObjectSpec); err != nil {
 		return err
 	}
 	// Realm Management Backend
@@ -123,8 +123,8 @@ func ToNewCR(cr *v1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) erro
 		return err
 	}
 	// Realm Management API
-	if cr.Spec.Components.RealmManagement.API.GenericClusteredResource.Resources, err = normalizeResourcesFor(
-		cr.Spec.Components.RealmManagement.API.GenericClusteredResource.Resources, "components.realmManagement.api.resources", oldAstarteObjectSpec); err != nil {
+	if cr.Spec.Components.RealmManagement.API.Resources, err = normalizeResourcesFor(
+		cr.Spec.Components.RealmManagement.API.Resources, "components.realmManagement.api.resources", oldAstarteObjectSpec); err != nil {
 		return err
 	}
 	// Trigger Engine
@@ -134,7 +134,7 @@ func ToNewCR(cr *v1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) erro
 	}
 
 	// Dashboard
-	if cr.Spec.Components.Dashboard.GenericClusteredResource.Resources, err = normalizeResourcesFor(cr.Spec.Components.Dashboard.GenericClusteredResource.Resources,
+	if cr.Spec.Components.Dashboard.Resources, err = normalizeResourcesFor(cr.Spec.Components.Dashboard.Resources,
 		"components.dashboard.resources", oldAstarteObjectSpec); err != nil {
 		return err
 	}

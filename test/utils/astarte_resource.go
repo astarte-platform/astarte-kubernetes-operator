@@ -44,7 +44,7 @@ var AstarteTestResource *operator.Astarte = &operator.Astarte{
 		},
 		VerneMQ: operator.AstarteVerneMQSpec{
 			Host: "broker.autotest.astarte-platform.org",
-			GenericClusteredResource: operator.AstarteGenericClusteredResource{
+			AstarteGenericClusteredResource: operator.AstarteGenericClusteredResource{
 				Resources: v1.ResourceRequirements{
 					Limits: v1.ResourceList{
 						v1.ResourceCPU:    *resource.NewScaledQuantity(0, resource.Milli),
@@ -58,7 +58,7 @@ var AstarteTestResource *operator.Astarte = &operator.Astarte{
 			},
 		},
 		RabbitMQ: operator.AstarteRabbitMQSpec{
-			GenericClusteredResource: operator.AstarteGenericClusteredResource{
+			AstarteGenericClusteredResource: operator.AstarteGenericClusteredResource{
 				Resources: v1.ResourceRequirements{
 					Limits: v1.ResourceList{
 						v1.ResourceCPU:    *resource.NewScaledQuantity(1000, resource.Milli),
@@ -77,7 +77,7 @@ var AstarteTestResource *operator.Astarte = &operator.Astarte{
 			Storage: &operator.AstartePersistentStorageSpec{
 				Size: resource.NewScaledQuantity(10, resource.Giga),
 			},
-			GenericClusteredResource: operator.AstarteGenericClusteredResource{
+			AstarteGenericClusteredResource: operator.AstarteGenericClusteredResource{
 				Resources: v1.ResourceRequirements{
 					Limits: v1.ResourceList{
 						v1.ResourceCPU:    *resource.NewScaledQuantity(1000, resource.Milli),

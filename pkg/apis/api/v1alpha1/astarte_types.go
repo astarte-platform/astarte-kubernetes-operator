@@ -132,7 +132,7 @@ type AstarteGenericClusteredResource struct {
 
 // AstarteGenericAPISpec represents a generic Astarte API Component in the Deployment spec
 type AstarteGenericAPISpec struct {
-	GenericClusteredResource AstarteGenericClusteredResource `json:",inline"`
+	AstarteGenericClusteredResource `json:",inline"`
 	// +optional
 	DisableAuthentication *bool `json:"disableAuthentication,omitempty"`
 }
@@ -170,7 +170,7 @@ type AstarteRabbitMQConnectionSpec struct {
 }
 
 type AstarteRabbitMQSpec struct {
-	GenericClusteredResource AstarteGenericClusteredResource `json:",inline"`
+	AstarteGenericClusteredResource `json:",inline"`
 	// +optional
 	Connection *AstarteRabbitMQConnectionSpec `json:"connection,omitempty"`
 	// +optional
@@ -181,7 +181,7 @@ type AstarteRabbitMQSpec struct {
 }
 
 type AstarteCassandraSpec struct {
-	GenericClusteredResource AstarteGenericClusteredResource `json:",inline"`
+	AstarteGenericClusteredResource `json:",inline"`
 	// +optional
 	Nodes string `json:"nodes,omitempty"`
 	// +optional
@@ -193,8 +193,8 @@ type AstarteCassandraSpec struct {
 }
 
 type AstarteVerneMQSpec struct {
-	GenericClusteredResource AstarteGenericClusteredResource `json:",inline"`
-	Host                     string                          `json:"host"`
+	AstarteGenericClusteredResource `json:",inline"`
+	Host                            string `json:"host"`
 	// +optional
 	Port *int16 `json:"port,omitempty"`
 	// +optional
@@ -212,13 +212,13 @@ type AstarteGenericComponentSpec struct {
 }
 
 type AstarteDataUpdaterPlantSpec struct {
-	GenericClusteredResource AstarteGenericClusteredResource `json:",inline"`
+	AstarteGenericClusteredResource `json:",inline"`
 	// +optional
 	DataQueueCount *int `json:"dataQueueCount,omitempty"`
 }
 
 type AstarteAppengineAPISpec struct {
-	GenericAPISpec AstarteGenericAPISpec `json:",inline"`
+	AstarteGenericAPISpec `json:",inline"`
 	// +kubebuilder:validation:Minimum=100
 	// +optional
 	MaxResultsLimit *int `json:"maxResultsLimit,omitempty"`
@@ -244,7 +244,7 @@ type AstarteDashboardConfigSpec struct {
 }
 
 type AstarteDashboardSpec struct {
-	GenericClusteredResource AstarteGenericClusteredResource `json:",inline"`
+	AstarteGenericClusteredResource `json:",inline"`
 	// +optional
 	Config AstarteDashboardConfigSpec `json:",inline"`
 }

@@ -31,12 +31,20 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 // EnsureAstarteGenericBackend reconciles any component compatible with AstarteGenericClusteredResource
-func EnsureAstarteGenericBackend(cr *apiv1alpha1.Astarte, backend apiv1alpha1.AstarteGenericClusteredResource, component apiv1alpha1.AstarteComponent, c client.Client, scheme *runtime.Scheme) error {
+func EnsureAstarteGenericBackend(cr *apiv1alpha1.Astarte, backend apiv1alpha1.AstarteGenericClusteredResource, component apiv1alpha1.AstarteComponent,
+	c client.Client, scheme *runtime.Scheme) error {
+	return EnsureAstarteGenericBackendWithCustomProbe(cr, backend, component, c, scheme, nil)
+}
+
+// EnsureAstarteGenericBackendWithCustomProbe reconciles any component compatible with AstarteGenericClusteredResource adding a custom probe
+func EnsureAstarteGenericBackendWithCustomProbe(cr *apiv1alpha1.Astarte, backend apiv1alpha1.AstarteGenericClusteredResource,
+	component apiv1alpha1.AstarteComponent, c client.Client, scheme *runtime.Scheme, customProbe *v1.Probe) error {
 	reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name, "Astarte.Component", component)
 	deploymentName := cr.Name + "-" + component.DashedString()
 	labels := map[string]string{
@@ -79,7 +87,7 @@ func EnsureAstarteGenericBackend(cr *apiv1alpha1.Astarte, backend apiv1alpha1.As
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: labels,
 			},
-			Spec: getAstarteGenericBackendPodSpec(deploymentName, cr, backend, component),
+			Spec: getAstarteGenericBackendPodSpec(deploymentName, cr, backend, component, customProbe),
 		},
 	}
 
@@ -105,19 +113,26 @@ func EnsureAstarteGenericBackend(cr *apiv1alpha1.Astarte, backend apiv1alpha1.As
 	return nil
 }
 
-func getAstarteGenericBackendPodSpec(deploymentName string, cr *apiv1alpha1.Astarte, backend apiv1alpha1.AstarteGenericClusteredResource, component apiv1alpha1.AstarteComponent) v1.PodSpec {
+func getAstarteGenericBackendPodSpec(deploymentName string, cr *apiv1alpha1.Astarte, backend apiv1alpha1.AstarteGenericClusteredResource,
+	component apiv1alpha1.AstarteComponent, customProbe *v1.Probe) v1.PodSpec {
 	ps := v1.PodSpec{
 		TerminationGracePeriodSeconds: pointy.Int64(30),
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
 		Affinity:                      getAffinityForClusteredResource(deploymentName, backend),
 		Containers: []v1.Container{
 			v1.Container{
-				Name:            component.DashedString(),
+				Name: component.DashedString(),
+				Ports: []v1.ContainerPort{
+					// This port is not exposed through any service - it is just used for health checks and the likes.
+					v1.ContainerPort{Name: "http", ContainerPort: 4000},
+				},
 				VolumeMounts:    getAstarteGenericBackendVolumeMounts(deploymentName, cr, backend, component),
 				Image:           getAstarteImageForClusteredResource(component.DockerImageName(), backend, cr),
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Resources:       misc.GetResourcesForAstarteComponent(cr, backend.Resources, component),
 				Env:             getAstarteGenericBackendEnvVars(deploymentName, cr, backend, component),
+				ReadinessProbe:  getAstarteBackendProbe(cr, backend, component, customProbe),
+				LivenessProbe:   getAstarteBackendProbe(cr, backend, component, customProbe),
 			},
 		},
 		Volumes: getAstarteGenericBackendVolumes(deploymentName, cr, backend, component),
@@ -266,4 +281,46 @@ func getAstarteGenericBackendEnvVars(deploymentName string, cr *apiv1alpha1.Asta
 	}
 
 	return ret
+}
+
+func getAstarteBackendProbe(cr *apiv1alpha1.Astarte, backend apiv1alpha1.AstarteGenericClusteredResource, component apiv1alpha1.AstarteComponent,
+	customProbe *v1.Probe) *v1.Probe {
+	if customProbe != nil {
+		return customProbe
+	}
+
+	// Parse the version first
+	v := getSemanticVersionForAstarteComponent(cr, backend.Version)
+	checkVersion, _ := v.SetPrerelease("")
+	constraint, _ := semver.NewConstraint("< 0.11.0")
+
+	if constraint.Check(&checkVersion) {
+		// 0.10.x has no such thing.
+		return nil
+	}
+
+	// TODO: Remove this check right before 0.11.0. We shouldn't expose such details after we've gone stable.
+	constraint, _ = semver.NewConstraint("<= 0.11.0-beta.2")
+	if constraint.Check(v) {
+		// This was implemented after beta2
+		return nil
+	}
+
+	// The rest are generic probes on /health
+	return getAstarteBackendGenericProbe("/health")
+}
+
+func getAstarteBackendGenericProbe(path string) *v1.Probe {
+	return &v1.Probe{
+		Handler: v1.Handler{
+			HTTPGet: &v1.HTTPGetAction{
+				Path: path,
+				Port: intstr.FromString("http"),
+			},
+		},
+		InitialDelaySeconds: 10,
+		TimeoutSeconds:      5,
+		PeriodSeconds:       30,
+		FailureThreshold:    5,
+	}
 }
