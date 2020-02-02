@@ -19,8 +19,6 @@
 package reconcile
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
@@ -47,19 +45,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func encodePEMBlockToEncodedBytes(block *pem.Block) ([]byte, error) {
-	var keyBuffer bytes.Buffer
-	keyWriter := bufio.NewWriter(&keyBuffer)
-
-	err := pem.Encode(keyWriter, block)
-	if err != nil {
-		return nil, err
-	}
-
-	var keyEncodedData []byte
-	base64.StdEncoding.Encode(keyEncodedData, keyBuffer.Bytes())
-
-	return keyEncodedData, nil
+func encodePEMBlockToEncodedBytes(block *pem.Block) []byte {
+	return []byte(base64.StdEncoding.EncodeToString(pem.EncodeToMemory(block)))
 }
 
 func storePublicKeyInSecret(name string, publicKey *rsa.PublicKey, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
@@ -72,10 +59,7 @@ func storePublicKeyInSecret(name string, publicKey *rsa.PublicKey, cr *apiv1alph
 		Bytes: pkixBytes,
 	}
 
-	publicKeySecretData, err := encodePEMBlockToEncodedBytes(publicKeyPEM)
-	if err != nil {
-		return err
-	}
+	publicKeySecretData := encodePEMBlockToEncodedBytes(publicKeyPEM)
 
 	secretData := map[string][]byte{
 		"public-key": publicKeySecretData,
@@ -92,17 +76,15 @@ func storePrivateKeyInSecret(name string, privateKey *rsa.PrivateKey, cr *apiv1a
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
 	}
 
-	privateKeySecretData, err := encodePEMBlockToEncodedBytes(privateKeyPEM)
-	if err != nil {
-		return err
-	}
+	privateKeySecretData := encodePEMBlockToEncodedBytes(privateKeyPEM)
+	fmt.Printf("aaaaaaa %v\n", privateKeySecretData)
 
 	secretData := map[string][]byte{
 		"private-key": privateKeySecretData,
 	}
 
 	// Set Astarte instance as the owner and controller
-	_, err = reconcileSecret(name, secretData, cr, c, scheme)
+	_, err := reconcileSecret(name, secretData, cr, c, scheme)
 	return err
 }
 
