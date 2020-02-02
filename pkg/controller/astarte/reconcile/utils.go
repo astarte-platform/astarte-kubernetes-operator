@@ -24,7 +24,6 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base32"
-	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"strconv"
@@ -45,8 +44,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func encodePEMBlockToEncodedBytes(block *pem.Block) []byte {
-	return []byte(base64.StdEncoding.EncodeToString(pem.EncodeToMemory(block)))
+func encodePEMBlockToEncodedBytes(block *pem.Block) string {
+	return string(pem.EncodeToMemory(block))
 }
 
 func storePublicKeyInSecret(name string, publicKey *rsa.PublicKey, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
@@ -61,12 +60,12 @@ func storePublicKeyInSecret(name string, publicKey *rsa.PublicKey, cr *apiv1alph
 
 	publicKeySecretData := encodePEMBlockToEncodedBytes(publicKeyPEM)
 
-	secretData := map[string][]byte{
+	secretData := map[string]string{
 		"public-key": publicKeySecretData,
 	}
 
 	// Set Astarte instance as the owner and controller
-	_, err = reconcileSecret(name, secretData, cr, c, scheme)
+	_, err = misc.ReconcileSecretString(name, secretData, cr, c, scheme, log)
 	return err
 }
 
@@ -77,14 +76,13 @@ func storePrivateKeyInSecret(name string, privateKey *rsa.PrivateKey, cr *apiv1a
 	}
 
 	privateKeySecretData := encodePEMBlockToEncodedBytes(privateKeyPEM)
-	fmt.Printf("aaaaaaa %v\n", privateKeySecretData)
 
-	secretData := map[string][]byte{
+	secretData := map[string]string{
 		"private-key": privateKeySecretData,
 	}
 
 	// Set Astarte instance as the owner and controller
-	_, err := reconcileSecret(name, secretData, cr, c, scheme)
+	_, err := misc.ReconcileSecretString(name, secretData, cr, c, scheme, log)
 	return err
 }
 
