@@ -48,7 +48,7 @@ func EnsureAstarteDashboard(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.Astar
 	matchLabels := map[string]string{"app": deploymentName}
 
 	// Ok. Shall we deploy?
-	if !pointy.BoolValue(dashboard.GenericClusteredResource.Deploy, true) {
+	if !pointy.BoolValue(dashboard.Deploy, true) {
 		reqLogger.V(1).Info("Skipping Astarte Dashboard Deployment")
 		// Before returning - check if we shall clean up the Deployment.
 		// It is the only thing actually requiring resources, the rest will be cleaned up eventually when the
@@ -101,7 +101,7 @@ func EnsureAstarteDashboard(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.Astar
 		Selector: &metav1.LabelSelector{
 			MatchLabels: matchLabels,
 		},
-		Strategy: getDeploymentStrategyForClusteredResource(cr, dashboard.GenericClusteredResource),
+		Strategy: getDeploymentStrategyForClusteredResource(cr, dashboard.AstarteGenericClusteredResource),
 		Template: v1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: labels,
@@ -120,7 +120,7 @@ func EnsureAstarteDashboard(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.Astar
 		// Assign the Spec.
 		deployment.ObjectMeta.Labels = labels
 		deployment.Spec = deploymentSpec
-		deployment.Spec.Replicas = dashboard.GenericClusteredResource.Replicas
+		deployment.Spec.Replicas = dashboard.Replicas
 
 		return nil
 	})
@@ -144,9 +144,9 @@ func getAstarteDashboardPodSpec(deploymentName string, cr *apiv1alpha1.Astarte, 
 					v1.ContainerPort{Name: "http", ContainerPort: 80},
 				},
 				VolumeMounts:    getAstarteDashboardVolumeMounts(),
-				Image:           getAstarteImageForClusteredResource(component.DockerImageName(), dashboard.GenericClusteredResource, cr),
+				Image:           getAstarteImageForClusteredResource(component.DockerImageName(), dashboard.AstarteGenericClusteredResource, cr),
 				ImagePullPolicy: getImagePullPolicy(cr),
-				Resources:       misc.GetResourcesForAstarteComponent(cr, dashboard.GenericClusteredResource.Resources, component),
+				Resources:       misc.GetResourcesForAstarteComponent(cr, dashboard.Resources, component),
 				Env:             getAstarteDashboardEnvVars(),
 			},
 		},

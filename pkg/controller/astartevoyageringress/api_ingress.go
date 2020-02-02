@@ -39,7 +39,7 @@ import (
 
 func ensureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	ingressName := getAPIIngressName(cr)
-	if !pointy.BoolValue(cr.Spec.API.GenericIngressSpec.Deploy, true) {
+	if !pointy.BoolValue(cr.Spec.API.Deploy, true) {
 		// We're not deploying the Ingress, so we're stopping here.
 		// However, maybe we have an Ingress to clean up?
 		ingress := &voyager.Ingress{}
@@ -61,20 +61,20 @@ func ensureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 		// Tunnel is for websockets - 10m is more then enough
 		voyager.DefaultsTimeOut: `{"tunnel": "10m"}`,
 	}
-	if cr.Spec.API.GenericIngressSpec.Replicas != nil {
-		annotations[voyager.Replicas] = strconv.Itoa(int(pointy.Int32Value(cr.Spec.API.GenericIngressSpec.Replicas, 1)))
+	if cr.Spec.API.Replicas != nil {
+		annotations[voyager.Replicas] = strconv.Itoa(int(pointy.Int32Value(cr.Spec.API.Replicas, 1)))
 	}
 	if pointy.BoolValue(cr.Spec.API.Cors, false) {
 		annotations[voyager.CORSEnabled] = "true"
 	}
-	if cr.Spec.API.GenericIngressSpec.NodeSelector != "" {
-		annotations[voyager.NodeSelector] = cr.Spec.API.GenericIngressSpec.NodeSelector
+	if cr.Spec.API.NodeSelector != "" {
+		annotations[voyager.NodeSelector] = cr.Spec.API.NodeSelector
 	}
-	if cr.Spec.API.GenericIngressSpec.Type != "" {
-		annotations[voyager.LBType] = cr.Spec.API.GenericIngressSpec.Type
+	if cr.Spec.API.Type != "" {
+		annotations[voyager.LBType] = cr.Spec.API.Type
 	}
-	if cr.Spec.API.GenericIngressSpec.LoadBalancerIP != "" {
-		annotations[voyager.LoadBalancerIP] = cr.Spec.API.GenericIngressSpec.LoadBalancerIP
+	if cr.Spec.API.LoadBalancerIP != "" {
+		annotations[voyager.LoadBalancerIP] = cr.Spec.API.LoadBalancerIP
 	}
 	if pointy.BoolValue(parent.Spec.API.SSL, true) || pointy.BoolValue(cr.Spec.Dashboard.SSL, true) {
 		// Add safe-SSL options
@@ -83,9 +83,9 @@ func ensureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 		annotations[voyager.HSTSIncludeSubDomains] = "true"
 		annotations[voyager.HSTSMaxAge] = "180"
 	}
-	if len(cr.Spec.API.GenericIngressSpec.AnnotationsService) > 0 {
+	if len(cr.Spec.API.AnnotationsService) > 0 {
 		// Marshal into a JSON, and call it a day.
-		aS, err := json.Marshal(cr.Spec.API.GenericIngressSpec.AnnotationsService)
+		aS, err := json.Marshal(cr.Spec.API.AnnotationsService)
 		if err != nil {
 			return err
 		}
@@ -101,11 +101,11 @@ func ensureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 		ingressTLSs := []voyager.IngressTLS{}
 		apiProcessed, dashboardProcessed := false, false
 		// Check API first
-		if cr.Spec.API.GenericIngressSpec.TLSRef != nil {
-			ingressTLSs = append(ingressTLSs, voyager.IngressTLS{Ref: cr.Spec.API.GenericIngressSpec.TLSRef, Hosts: []string{parent.Spec.API.Host}})
+		if cr.Spec.API.TLSRef != nil {
+			ingressTLSs = append(ingressTLSs, voyager.IngressTLS{Ref: cr.Spec.API.TLSRef, Hosts: []string{parent.Spec.API.Host}})
 			apiProcessed = true
-		} else if cr.Spec.API.GenericIngressSpec.TLSSecret != "" {
-			ingressTLSs = append(ingressTLSs, voyager.IngressTLS{SecretName: cr.Spec.API.GenericIngressSpec.TLSSecret, Hosts: []string{parent.Spec.API.Host}})
+		} else if cr.Spec.API.TLSSecret != "" {
+			ingressTLSs = append(ingressTLSs, voyager.IngressTLS{SecretName: cr.Spec.API.TLSSecret, Hosts: []string{parent.Spec.API.Host}})
 			apiProcessed = true
 		}
 		// Then Dashboard - if needed

@@ -94,12 +94,12 @@ func upgradeTo011(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sche
 	housekeepingBackend.Replicas = pointy.Int32(1)
 	// Ensure the policy is Replace. We don't want to have old pods hanging around.
 	housekeepingBackend.DeploymentStrategy = &appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
-	if misc.IsResourceRequirementsExplicit(cr.Spec.VerneMQ.GenericClusteredResource.Resources) {
+	if misc.IsResourceRequirementsExplicit(cr.Spec.VerneMQ.Resources) {
 		resourceRequirements := misc.GetResourcesForAstarteComponent(cr, housekeepingBackend.Resources, apiv1alpha1.Housekeeping)
-		resourceRequirements.Requests.Cpu().Add(*cr.Spec.VerneMQ.GenericClusteredResource.Resources.Requests.Cpu())
-		resourceRequirements.Requests.Memory().Add(*cr.Spec.VerneMQ.GenericClusteredResource.Resources.Requests.Memory())
-		resourceRequirements.Limits.Cpu().Add(*cr.Spec.VerneMQ.GenericClusteredResource.Resources.Limits.Cpu())
-		resourceRequirements.Limits.Memory().Add(*cr.Spec.VerneMQ.GenericClusteredResource.Resources.Limits.Memory())
+		resourceRequirements.Requests.Cpu().Add(*cr.Spec.VerneMQ.Resources.Requests.Cpu())
+		resourceRequirements.Requests.Memory().Add(*cr.Spec.VerneMQ.Resources.Requests.Memory())
+		resourceRequirements.Limits.Cpu().Add(*cr.Spec.VerneMQ.Resources.Limits.Cpu())
+		resourceRequirements.Limits.Memory().Add(*cr.Spec.VerneMQ.Resources.Limits.Memory())
 
 		// This way, on the next call to GetResourcesForAstarteComponent, these resources will be returned as explicitly stated
 		// in the original spec.
@@ -110,10 +110,10 @@ func upgradeTo011(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sche
 		return err
 	}
 	housekeepingAPI := cr.Spec.Components.Housekeeping.API.DeepCopy()
-	housekeepingAPI.GenericClusteredResource.Replicas = pointy.Int32(1)
-	housekeepingAPI.GenericClusteredResource.Version = landing011Version
+	housekeepingAPI.Replicas = pointy.Int32(1)
+	housekeepingAPI.Version = landing011Version
 	// Ensure the policy is Replace. We don't want to have old pods hanging around.
-	housekeepingAPI.GenericClusteredResource.DeploymentStrategy = &appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
+	housekeepingAPI.DeploymentStrategy = &appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
 	if err := reconcile.EnsureAstarteGenericAPIWithCustomProbe(cr, *housekeepingAPI, apiv1alpha1.HousekeepingAPI, c,
 		scheme, getSpecialHousekeepingMigrationProbe("/health")); err != nil {
 		return err
@@ -287,10 +287,10 @@ func upgradeTo011(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sche
 	// resources to DUP as it doesn't need them to perform this operation, and most of all it should have enough sauce already.
 	reqLogger.Info("Ensuring new RabbitMQ Queue Layout through Data Updater Plant...")
 	dataUpdaterPlant := cr.Spec.Components.DataUpdaterPlant.DeepCopy()
-	dataUpdaterPlant.GenericClusteredResource.Version = landing011Version
+	dataUpdaterPlant.Version = landing011Version
 	// Ensure the policy is Replace. We don't want to have old pods hanging around.
-	dataUpdaterPlant.GenericClusteredResource.DeploymentStrategy = &appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
-	if err := reconcile.EnsureAstarteGenericBackend(cr, dataUpdaterPlant.GenericClusteredResource, apiv1alpha1.DataUpdaterPlant, c, scheme); err != nil {
+	dataUpdaterPlant.DeploymentStrategy = &appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
+	if err := reconcile.EnsureAstarteGenericBackend(cr, dataUpdaterPlant.AstarteGenericClusteredResource, apiv1alpha1.DataUpdaterPlant, c, scheme); err != nil {
 		return err
 	}
 	// Again, the operation should be pretty normal. Wait with standard timeouts here

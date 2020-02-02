@@ -51,7 +51,7 @@ func EnsureVerneMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sch
 	}
 
 	// Ok. Shall we deploy?
-	if !pointy.BoolValue(cr.Spec.VerneMQ.GenericClusteredResource.Deploy, true) {
+	if !pointy.BoolValue(cr.Spec.VerneMQ.Deploy, true) {
 		log.Info("Skipping VerneMQ Deployment")
 		// Before returning - check if we shall clean up the StatefulSet.
 		// It is the only thing actually requiring resources, the rest will be cleaned up eventually when the
@@ -144,7 +144,7 @@ func EnsureVerneMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sch
 		// Assign the Spec.
 		vmqStatefulSet.ObjectMeta.Labels = map[string]string{"component": "astarte"}
 		vmqStatefulSet.Spec = statefulSetSpec
-		vmqStatefulSet.Spec.Replicas = cr.Spec.VerneMQ.GenericClusteredResource.Replicas
+		vmqStatefulSet.Spec.Replicas = cr.Spec.VerneMQ.Replicas
 
 		return nil
 	})
@@ -218,7 +218,7 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.Env
 	}
 
 	c, _ := semver.NewConstraint(">= 0.11.0")
-	ver, _ := semver.NewVersion(getVersionForAstarteComponent(cr, cr.Spec.VerneMQ.GenericClusteredResource.Version))
+	ver, _ := semver.NewVersion(getVersionForAstarteComponent(cr, cr.Spec.VerneMQ.Version))
 	checkVersion, _ := ver.SetPrerelease("")
 
 	if c.Check(&checkVersion) {
@@ -242,7 +242,7 @@ func getVerneMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.A
 		TerminationGracePeriodSeconds: pointy.Int64(30),
 		ServiceAccountName:            serviceAccountName,
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
-		Affinity:                      getAffinityForClusteredResource(statefulSetName, cr.Spec.VerneMQ.GenericClusteredResource),
+		Affinity:                      getAffinityForClusteredResource(statefulSetName, cr.Spec.VerneMQ.AstarteGenericClusteredResource),
 		Containers: []v1.Container{
 			v1.Container{
 				Name: "vernemq",
@@ -253,7 +253,7 @@ func getVerneMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.A
 					},
 				},
 				// Defaults to the custom image built in Astarte
-				Image:           getAstarteImageForClusteredResource("vernemq", cr.Spec.VerneMQ.GenericClusteredResource, cr),
+				Image:           getAstarteImageForClusteredResource("vernemq", cr.Spec.VerneMQ.AstarteGenericClusteredResource, cr),
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Ports: []v1.ContainerPort{
 					v1.ContainerPort{Name: "mqtt-ssl", ContainerPort: 8883},
@@ -276,7 +276,7 @@ func getVerneMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.A
 				},
 				LivenessProbe:  getVerneMQProbe(),
 				ReadinessProbe: getVerneMQProbe(),
-				Resources:      cr.Spec.VerneMQ.GenericClusteredResource.Resources,
+				Resources:      cr.Spec.VerneMQ.Resources,
 				Env:            getVerneMQEnvVars(statefulSetName, cr),
 			},
 		},
