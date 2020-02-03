@@ -19,14 +19,11 @@
 package reconcile
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base32"
-	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"strconv"
@@ -47,19 +44,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func encodePEMBlockToEncodedBytes(block *pem.Block) ([]byte, error) {
-	var keyBuffer bytes.Buffer
-	keyWriter := bufio.NewWriter(&keyBuffer)
-
-	err := pem.Encode(keyWriter, block)
-	if err != nil {
-		return nil, err
-	}
-
-	var keyEncodedData []byte
-	base64.StdEncoding.Encode(keyEncodedData, keyBuffer.Bytes())
-
-	return keyEncodedData, nil
+func encodePEMBlockToEncodedBytes(block *pem.Block) string {
+	return string(pem.EncodeToMemory(block))
 }
 
 func storePublicKeyInSecret(name string, publicKey *rsa.PublicKey, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
@@ -72,17 +58,14 @@ func storePublicKeyInSecret(name string, publicKey *rsa.PublicKey, cr *apiv1alph
 		Bytes: pkixBytes,
 	}
 
-	publicKeySecretData, err := encodePEMBlockToEncodedBytes(publicKeyPEM)
-	if err != nil {
-		return err
-	}
+	publicKeySecretData := encodePEMBlockToEncodedBytes(publicKeyPEM)
 
-	secretData := map[string][]byte{
+	secretData := map[string]string{
 		"public-key": publicKeySecretData,
 	}
 
 	// Set Astarte instance as the owner and controller
-	_, err = reconcileSecret(name, secretData, cr, c, scheme)
+	_, err = misc.ReconcileSecretString(name, secretData, cr, c, scheme, log)
 	return err
 }
 
@@ -92,17 +75,14 @@ func storePrivateKeyInSecret(name string, privateKey *rsa.PrivateKey, cr *apiv1a
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
 	}
 
-	privateKeySecretData, err := encodePEMBlockToEncodedBytes(privateKeyPEM)
-	if err != nil {
-		return err
-	}
+	privateKeySecretData := encodePEMBlockToEncodedBytes(privateKeyPEM)
 
-	secretData := map[string][]byte{
+	secretData := map[string]string{
 		"private-key": privateKeySecretData,
 	}
 
 	// Set Astarte instance as the owner and controller
-	_, err = reconcileSecret(name, secretData, cr, c, scheme)
+	_, err := misc.ReconcileSecretString(name, secretData, cr, c, scheme, log)
 	return err
 }
 

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed all omitempty fields for AstarteVoyagerIngress
 - Fixed SSL and Host directives for Dashboard
 - Fixed relative Dashboard path when deploying on a dedicated Host
+- Fixed Housekeeping Key Generation in new clusters
 
 ### Changed
 - Added new configuration fields to Dashboard to support new 0.11 config format
