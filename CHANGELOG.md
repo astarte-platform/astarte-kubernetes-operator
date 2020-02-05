@@ -5,12 +5,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [0.11.0-beta.3] - Unreleased
+### Added
+- Kubernetes Event support
+
 ### Fixed
 - Ensure that the Astarte CR status takes into account VerneMQ and CFSSL StatefulSets as well.
 - Fixed all omitempty fields for AstarteVoyagerIngress
 - Fixed SSL and Host directives for Dashboard
 - Fixed relative Dashboard path when deploying on a dedicated Host
 - Fixed Housekeeping Key Generation in new clusters
+- Fixed potential bug in Upgrade by draining RabbitMQ queues before migrating Cassandra
 
 ### Changed
 - Added new configuration fields to Dashboard to support new 0.11 config format
