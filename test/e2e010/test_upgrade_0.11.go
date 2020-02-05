@@ -108,5 +108,10 @@ func astarteUpgradeTo011Test(t *testing.T, f *framework.Framework, ctx *framewor
 		return err
 	}
 
+	// Print events
+	if err := utils.PrintNamespaceEvents(namespace, f); err != nil {
+		return err
+	}
+
 	return nil
 }

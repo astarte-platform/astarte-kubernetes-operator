@@ -102,5 +102,10 @@ func astarteDeploy011Test(t *testing.T, f *framework.Framework, ctx *framework.T
 		return err
 	}
 
+	// Print events
+	if err := utils.PrintNamespaceEvents(namespace, f); err != nil {
+		return err
+	}
+
 	return nil
 }
