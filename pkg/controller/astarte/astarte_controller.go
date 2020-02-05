@@ -37,11 +37,14 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -56,7 +59,7 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileAstarte{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileAstarte{client: mgr.GetClient(), scheme: mgr.GetScheme(), recorder: mgr.GetEventRecorderFor("astarte-controller")}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -68,7 +71,15 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource Astarte
-	if err := c.Watch(&source.Kind{Type: &apiv1alpha1.Astarte{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	pred := predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool { return true },
+		DeleteFunc: func(e event.DeleteEvent) bool { return true },
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			// Ignore updates to CR status in which case metadata.Generation does not change
+			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
+		},
+	}
+	if err := c.Watch(&source.Kind{Type: &apiv1alpha1.Astarte{}}, &handler.EnqueueRequestForObject{}, pred); err != nil {
 		return err
 	}
 
@@ -104,8 +115,9 @@ var _ reconcile.Reconciler = &ReconcileAstarte{}
 type ReconcileAstarte struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client client.Client
-	scheme *runtime.Scheme
+	client   client.Client
+	scheme   *runtime.Scheme
+	recorder record.EventRecorder
 }
 
 // Reconcile reads that state of the cluster for a Astarte object and makes changes based on the state read
@@ -135,8 +147,10 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 	newAstarteSemVersion, err := semver.NewVersion(instance.Spec.Version)
 	if err != nil {
 		// Reconcile every minute if we're here
+		r.recorder.Eventf(instance, "Warning", apiv1alpha1.AstarteResourceEventInconsistentVersion.String(),
+			"Could not build a valid Astarte Semantic Version out of requested Astarte Version %v", instance.Spec.Version)
 		return reconcile.Result{RequeueAfter: time.Minute},
-			fmt.Errorf("Could not build a valid Astarte Semantic Version out of requested Astarte Version %v. Refusing to proceed", err)
+			fmt.Errorf("Could not build a valid Astarte Semantic Version out of requested Astarte Version %v. Refusing to proceed", instance.Spec.Version)
 	}
 	// Generate another one for checks, as constraints do not work with pre-releases
 	constraintCheckAstarteSemVersion := newAstarteSemVersion
@@ -151,6 +165,9 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{Requeue: false}, err
 	}
 	if !constraint.Check(constraintCheckAstarteSemVersion) {
+		r.recorder.Eventf(instance, "Warning", apiv1alpha1.AstarteResourceEventUnsupportedVersion.String(),
+			"Astarte version %s is not supported by this Operator! This Operator supports versions respecting this constraint: %s. Please migrate to an Operator supporting this version",
+			instance.Spec.Version, version.AstarteVersionConstraintString)
 		return reconcile.Result{Requeue: false},
 			fmt.Errorf("Astarte version %s is not supported by this Operator! This Operator supports versions respecting this constraint: %s. Please migrate to an Operator supporting this version",
 				instance.Spec.Version, version.AstarteVersionConstraintString)
@@ -187,6 +204,8 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 		if err == nil {
 			// In this case, we are in a weird state (e.g.: migrating from the old operator). Let's try and fix this.
 			// First of all, try and migrate it.
+			r.recorder.Event(instance, "Warning", apiv1alpha1.AstarteResourceEventMigration.String(),
+				"Found an invalid status. The resource will be migrated to latest format")
 			reqLogger.Info("Found an invalid status. Attempting to migrate the resource.")
 			if err := migrate.ToNewCR(instance, r.client, r.scheme); err != nil {
 				return reconcile.Result{}, err
@@ -207,6 +226,8 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 			hkImageTokens := strings.Split(hkImage, ":")
 			if len(hkImageTokens) != 2 {
 				// Reconcile every minute if we're here
+				r.recorder.Eventf(instance, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
+					"Could not parse Astarte version from Housekeeping Image tag %s. Please fix your resource definition", hkImage)
 				return reconcile.Result{RequeueAfter: time.Minute},
 					fmt.Errorf("Could not parse Astarte version from Housekeeping Image tag %s. Refusing to proceed", hkImage)
 			}
@@ -214,9 +235,13 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 			instance.Status.AstarteVersion = hkImageTokens[1]
 			// Update the status
 			if err := r.client.Status().Update(context.TODO(), instance); err != nil {
+				r.recorder.Event(instance, "Warning", apiv1alpha1.AstarteResourceEventReconciliationFailed.String(),
+					"Failed to update Astarte status - will retry reconciliation")
 				reqLogger.Error(err, "Failed to update Astarte status.")
 				return reconcile.Result{}, err
 			}
+			r.recorder.Eventf(instance, "Normal", apiv1alpha1.AstarteResourceEventMigration.String(),
+				"Resource version reconciled to %v from Housekeeping", hkImageTokens[1])
 
 			// If we got here, we want to Get the instance again. Given the modifications we made, we want to ensure we're in sync.
 			instance := &apiv1alpha1.Astarte{}
@@ -228,6 +253,8 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 			return reconcile.Result{}, err
 		}
 
+		r.recorder.Event(instance, "Normal", apiv1alpha1.AstarteResourceEventStatus.String(),
+			"Running first resource reconciliation")
 		reqLogger.V(1).Info("Apparently running first reconciliation.")
 	}
 
@@ -241,6 +268,7 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 	// First of all, check the current version, and see if we need to transition to an upgrade.
 	if instance.Status.AstarteVersion == "" {
 		reqLogger.Info("Could not determine an existing Astarte version for this Resource. Assuming this is a new installation.")
+		r.recorder.Event(instance, "Normal", apiv1alpha1.AstarteResourceEventStatus.String(), "Starting a brand new Astarte Cluster setup")
 	} else if instance.Status.AstarteVersion == "snapshot" {
 		reqLogger.Info("You are running an Astarte snapshot. Any upgrade phase will be skipped, you hopefully know what you're doing")
 	} else if instance.Status.AstarteVersion != instance.Spec.Version {
@@ -252,6 +280,8 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 			reqLogger.Error(fmt.Errorf("Astarte Upgrade requested, but the cluster isn't reporting stable Health. Refusing to upgrade"),
 				"Cluster health is unstable, refusing to upgrade. Please revert to the previous version and wait for the cluster to settle.",
 				"Health", instance.Status.Health)
+			r.recorder.Event(instance, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
+				"Cluster health is not green, refusing to upgrade. Please revert to the previous version and wait for the cluster to settle")
 			return reconcile.Result{Requeue: false}, fmt.Errorf("Astarte Upgrade requested, but the cluster isn't reporting stable Health. Refusing to upgrade")
 		}
 		// We need to check for upgrades.
@@ -261,20 +291,26 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 			// We're running on a release snapshot. Assume it's .0
 			versionString = strings.Replace(versionString, "-snapshot", ".0", -1)
 			reqLogger.Info("You are running a Release snapshot. This is generally not a good idea in production. Assuming a Release version", "Version", versionString)
+			r.recorder.Eventf(instance, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
+				"Requested an upgrade from a Release snapshot. Assuming the base Release version is %v", versionString)
 		}
 
 		// Build the semantic version
 		oldAstarteSemVersion, err := semver.NewVersion(versionString)
 		if err != nil {
 			// Reconcile every minute if we're here
+			r.recorder.Eventf(instance, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
+				"Could not build a valid Astarte Semantic Version out of existing Astarte Version %v", versionString)
 			return reconcile.Result{RequeueAfter: time.Minute},
-				fmt.Errorf("Could not build a valid Astarte Semantic Version out of existing Astarte Version %v. Refusing to proceed", err)
+				fmt.Errorf("Could not build a valid Astarte Semantic Version out of existing Astarte Version %v. Refusing to proceed", versionString)
 		}
 
 		// Ok! Let's try and upgrade (if needed)
 		if err := upgrade.EnsureAstarteUpgrade(oldAstarteSemVersion, newAstarteSemVersion, instance, r.client, r.scheme); err != nil {
 			return reconcile.Result{}, err
 		}
+		r.recorder.Eventf(instance, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
+			"Astarte upgraded successfully to version %v", instance.Spec.Version)
 	}
 
 	// Start actual reconciliation.
@@ -403,12 +439,25 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 		}
 	}
 
+	oldAstarteHealth := instance.Status.Health
+
 	if nonReadyDeployments == 0 {
 		instance.Status.Health = "green"
 	} else if nonReadyDeployments == 1 {
 		instance.Status.Health = "yellow"
 	} else {
 		instance.Status.Health = "red"
+	}
+
+	// Cast an event in case the health changed
+	if oldAstarteHealth != instance.Status.Health && oldAstarteHealth != "" {
+		eventtype := "Normal"
+		// Notify as a warning if the health degraded compared to the previous reconciliation.
+		if oldAstarteHealth == "green" {
+			eventtype = "Warning"
+		}
+		r.recorder.Eventf(instance, eventtype, apiv1alpha1.AstarteResourceEventStatus.String(),
+			"Astarte Cluster status changed from %v to %v", oldAstarteHealth, instance.Status.Health)
 	}
 
 	// Update status
