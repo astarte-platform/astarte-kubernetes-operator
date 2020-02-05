@@ -306,11 +306,9 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 		}
 
 		// Ok! Let's try and upgrade (if needed)
-		if err := upgrade.EnsureAstarteUpgrade(oldAstarteSemVersion, newAstarteSemVersion, instance, r.client, r.scheme); err != nil {
+		if err := upgrade.EnsureAstarteUpgrade(oldAstarteSemVersion, newAstarteSemVersion, instance, r.client, r.scheme, r.recorder); err != nil {
 			return reconcile.Result{}, err
 		}
-		r.recorder.Eventf(instance, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
-			"Astarte upgraded successfully to version %v", instance.Spec.Version)
 	}
 
 	// Start actual reconciliation.
