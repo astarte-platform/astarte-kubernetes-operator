@@ -24,9 +24,11 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/util/wait"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -99,4 +101,18 @@ func WaitForStatefulSetReadiness(namespace, name string, f *framework.Framework)
 
 		return true, nil
 	})
+}
+
+// PrintNamespaceEvents prints to fmt all namespace events
+func PrintNamespaceEvents(namespace string, f *framework.Framework) error {
+	events := &v1.EventList{}
+	if err := f.Client.List(goctx.TODO(), events, client.InNamespace(namespace)); err != nil {
+		return err
+	}
+
+	for _, event := range events.Items {
+		fmt.Printf("%s [%s]: %s: %s\n", event.InvolvedObject.Name, event.CreationTimestamp.String(), event.Reason, event.Message)
+	}
+
+	return nil
 }

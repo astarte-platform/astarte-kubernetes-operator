@@ -29,6 +29,33 @@ import (
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// AstarteResourceEvent represents a v1.Event reason for various events. They are all stated
+// in this enum to ease understanding and as a reference to users.
+type AstarteResourceEvent string
+
+const (
+	// AstarteResourceEventInconsistentVersion means the requested Astarte version is inconsistent or unexpected
+	AstarteResourceEventInconsistentVersion AstarteResourceEvent = "ErrInconsistentVersion"
+	// AstarteResourceEventUnsupportedVersion means the requested Astarte version is not supported by the Operator
+	AstarteResourceEventUnsupportedVersion AstarteResourceEvent = "ErrUnsupportedVersion"
+	// AstarteResourceEventMigration means the current Astarte Resource will be migrated from a previous one
+	AstarteResourceEventMigration AstarteResourceEvent = "Migration"
+	// AstarteResourceEventReconciliationFailed means there was a temporary failure in resource Reconciliation
+	AstarteResourceEventReconciliationFailed AstarteResourceEvent = "ErrReconcile"
+	// AstarteResourceEventCriticalError represents an unrecoverable error which requires manual intervention on the cluster
+	AstarteResourceEventCriticalError AstarteResourceEvent = "ErrCritical"
+	// AstarteResourceEventStatus represents a generic Status event - in common situations, this is the most common event type
+	AstarteResourceEventStatus AstarteResourceEvent = "Status"
+	// AstarteResourceEventUpgrade represents an event happening during a Cluster Upgrade
+	AstarteResourceEventUpgrade AstarteResourceEvent = "Upgrade"
+	// AstarteResourceEventUpgradeError represents an error happening during a Cluster Upgrade
+	AstarteResourceEventUpgradeError AstarteResourceEvent = "ErrUpgrade"
+)
+
+func (e AstarteResourceEvent) String() string {
+	return string(e)
+}
+
 // ReconciliationPhase describes the reconciliation phase the Resource is in
 type ReconciliationPhase string
 
