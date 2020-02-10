@@ -24,9 +24,8 @@ import (
 
 	semver "github.com/Masterminds/semver/v3"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -42,7 +41,7 @@ const (
 )
 
 // EnsureAstarteUpgrade ensures that CR with requested newVersion will be upgraded from oldVersion, if needed.
-func EnsureAstarteUpgrade(oldVersion, newVersion *semver.Version, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func EnsureAstarteUpgrade(oldVersion, newVersion *semver.Version, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme, recorder record.EventRecorder) error {
 	// Check 0.10.x -> 0.11.x constraint
 	transitionCheck, err := validateConstraintAndPrepareUpgrade(oldVersion, newVersion, "~0.10.0", ">= 0.11.0", cr, c)
 	if err != nil {
@@ -50,9 +49,14 @@ func EnsureAstarteUpgrade(oldVersion, newVersion *semver.Version, cr *apiv1alpha
 	}
 	if transitionCheck {
 		// Perform upgrade
-		if err := upgradeTo011(cr, c, scheme); err != nil {
+		recorder.Eventf(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
+			"Initiating Astarte 0.11 Upgrade, from version %v to version %v", cr.Status.AstarteVersion, cr.Spec.Version)
+		if err := upgradeTo011(cr, c, scheme, recorder); err != nil {
 			return err
 		}
+	} else {
+		recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
+			"Requested Astarte Upgrade does not require any special action, continuing standard reconciliation")
 	}
 
 	// All good if we're here!
@@ -92,24 +96,4 @@ func validateConstraintAndPrepareUpgrade(oldVersion, newVersion *semver.Version,
 	}
 
 	return oldConstraintValidated && newConstraintValidated, nil
-}
-
-func getSpecialHousekeepingMigrationProbe(path string) *v1.Probe {
-	// This is a special migration probe that handles longer timeouts due to migrations.
-	// Migrations can take an insane amount of time, as such we should take this into account.
-	return &v1.Probe{
-		Handler: v1.Handler{
-			HTTPGet: &v1.HTTPGetAction{
-				Path: path,
-				Port: intstr.FromString("http"),
-			},
-		},
-		// Start checking after 30 seconds.
-		InitialDelaySeconds: 30,
-		TimeoutSeconds:      5,
-		// Check every 30 seconds
-		PeriodSeconds: 30,
-		// Allow up to an hour before failing. That's 120 failures.
-		FailureThreshold: 120,
-	}
 }

@@ -88,5 +88,10 @@ func astarteEnsureRetrocompatTest(t *testing.T, f *framework.Framework, ctx *fra
 		return err
 	}
 
+	// Print events
+	if err := utils.PrintNamespaceEvents(namespace, f); err != nil {
+		return err
+	}
+
 	return nil
 }
