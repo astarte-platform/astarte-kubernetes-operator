@@ -33,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	semver "github.com/Masterminds/semver/v3"
 )
 
 // EnsureAstarteDashboard reconciles Astarte Dashboard
@@ -158,13 +159,27 @@ func getAstarteDashboardPodSpec(deploymentName string, cr *apiv1alpha1.Astarte, 
 
 func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.AstarteDashboardSpec) map[string]string {
 	dashboardConfig := make(map[string]interface{})
+
+	v := getSemanticVersionForAstarteComponent(cr, dashboard.Version)
+	// TODO: Right before 0.11.0, change this constraint to < 0.11.0. We shouldn't expose such details after
+	// we've gone stable.
+	constraint, _ := semver.NewConstraint("< 0.11.0-beta.3")
+
 	if dashboard.Config.RealmManagementAPIURL == "" {
-		dashboardConfig["realm_management_api_url"] = getBaseAstarteAPIURL(cr) + "/realmmanagement/v1/"
+		if constraint.Check(v) {
+			dashboardConfig["realm_management_api_url"] = getBaseAstarteAPIURL(cr) + "/realmmanagement/v1/"
+		} else {
+			dashboardConfig["realm_management_api_url"] = getBaseAstarteAPIURL(cr) + "/realmmanagement/"
+		}
 	} else {
 		dashboardConfig["realm_management_api_url"] = dashboard.Config.RealmManagementAPIURL
 	}
 	if dashboard.Config.AppEngineAPIURL == "" {
-		dashboardConfig["appengine_api_url"] = getBaseAstarteAPIURL(cr) + "/appengine/v1/"
+		if constraint.Check(v) {
+			dashboardConfig["appengine_api_url"] = getBaseAstarteAPIURL(cr) + "/appengine/v1/"
+		} else {
+			dashboardConfig["appengine_api_url"] = getBaseAstarteAPIURL(cr) + "/appengine/"
+		}
 	} else {
 		dashboardConfig["appengine_api_url"] = dashboard.Config.AppEngineAPIURL
 	}
