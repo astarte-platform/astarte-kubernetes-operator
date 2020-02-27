@@ -32,7 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-var target011Version string = "0.11.0-beta.2"
+var target011Version string = "0.11.0-rc.0"
 
 func astarteUpgradeTo011Test(t *testing.T, f *framework.Framework, ctx *framework.TestCtx) error {
 	namespace, err := ctx.GetNamespace()
