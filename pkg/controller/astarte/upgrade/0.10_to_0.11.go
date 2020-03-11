@@ -71,7 +71,7 @@ func upgradeTo011(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sche
 	housekeepingBackend.Replicas = pointy.Int32(1)
 	// Ensure the policy is Replace. We don't want to have old pods hanging around.
 	housekeepingBackend.DeploymentStrategy = &appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
-	if misc.IsResourceRequirementsExplicit(cr.Spec.VerneMQ.Resources) {
+	if cr.Spec.VerneMQ.Resources != nil {
 		resourceRequirements := misc.GetResourcesForAstarteComponent(cr, housekeepingBackend.Resources, apiv1alpha1.Housekeeping)
 		resourceRequirements.Requests.Cpu().Add(*cr.Spec.VerneMQ.Resources.Requests.Cpu())
 		resourceRequirements.Requests.Memory().Add(*cr.Spec.VerneMQ.Resources.Requests.Memory())
@@ -80,7 +80,7 @@ func upgradeTo011(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sche
 
 		// This way, on the next call to GetResourcesForAstarteComponent, these resources will be returned as explicitly stated
 		// in the original spec.
-		housekeepingBackend.Resources = resourceRequirements
+		housekeepingBackend.Resources = &resourceRequirements
 	}
 	// TODO: When we move to 0.11.0-beta3 or above, add a Probe
 	if err := reconcile.EnsureAstarteGenericBackend(cr, *housekeepingBackend, apiv1alpha1.Housekeeping, c, scheme); err != nil {

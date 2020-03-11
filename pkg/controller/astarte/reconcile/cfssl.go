@@ -190,6 +190,11 @@ func getCFSSLPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.Ast
 		cfsslImage = getAstarteImageFromChannel("cfssl", cr.Spec.CFSSL.Version, cr)
 	}
 
+	resources := v1.ResourceRequirements{}
+	if cr.Spec.CFSSL.Resources != nil {
+		resources = *cr.Spec.CFSSL.Resources
+	}
+
 	ps := v1.PodSpec{
 		TerminationGracePeriodSeconds: pointy.Int64(30),
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
@@ -213,7 +218,7 @@ func getCFSSLPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.Ast
 				},
 				ReadinessProbe: getCFSSLProbe(cr),
 				LivenessProbe:  getCFSSLProbe(cr),
-				Resources:      cr.Spec.CFSSL.Resources,
+				Resources:      resources,
 			},
 		},
 		Volumes: []v1.Volume{

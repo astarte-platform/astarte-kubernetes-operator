@@ -331,6 +331,11 @@ func getRabbitMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.
 	}
 	astarteVersion, _ := semver.NewVersion(cr.Spec.Version)
 
+	resources := v1.ResourceRequirements{}
+	if cr.Spec.RabbitMQ.Resources != nil {
+		resources = *cr.Spec.RabbitMQ.Resources
+	}
+
 	ps := v1.PodSpec{
 		TerminationGracePeriodSeconds: pointy.Int64(30),
 		ServiceAccountName:            serviceAccountName,
@@ -359,7 +364,7 @@ func getRabbitMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.
 				},
 				LivenessProbe:  getRabbitMQLivenessProbe(),
 				ReadinessProbe: getRabbitMQReadinessProbe(),
-				Resources:      cr.Spec.RabbitMQ.Resources,
+				Resources:      resources,
 				Env:            getRabbitMQEnvVars(statefulSetName, cr),
 			},
 		},
