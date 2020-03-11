@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.11.0-rc.1] - Unreleased
 ### Fixed
 - Allocate resources correctly in Components when non-explicit per-component requirements are given
+- tests: Fix Limits/Requests for the installed Astarte resource
 
 ## [0.11.0-rc.0] - 2020-02-26
 ### Added

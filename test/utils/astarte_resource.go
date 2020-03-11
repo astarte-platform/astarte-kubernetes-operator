@@ -109,11 +109,11 @@ var AstarteTestResource *operator.Astarte = &operator.Astarte{
 			Resources: &v1.ResourceRequirements{
 				Limits: v1.ResourceList{
 					v1.ResourceCPU:    *resource.NewScaledQuantity(0, resource.Milli),
-					v1.ResourceMemory: *resource.NewScaledQuantity(2, resource.Giga),
+					v1.ResourceMemory: *resource.NewScaledQuantity(3, resource.Giga),
 				},
 				Requests: v1.ResourceList{
 					v1.ResourceCPU:    *resource.NewScaledQuantity(0, resource.Milli),
-					v1.ResourceMemory: *resource.NewScaledQuantity(3, resource.Giga),
+					v1.ResourceMemory: *resource.NewScaledQuantity(2, resource.Giga),
 				},
 			},
 		},
