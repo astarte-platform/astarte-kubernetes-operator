@@ -174,13 +174,13 @@ func deleteStatefulsetWithoutCascading(name, namespace string, c client.Client) 
 	return c.Delete(context.TODO(), oldStatefulSet, client.PropagationPolicy(metav1.DeletePropagationOrphan))
 }
 
-func normalizeResourcesFor(parsedRequirements v1.ResourceRequirements, resourceField string, objectSpec map[string]interface{}) (v1.ResourceRequirements, error) {
+func normalizeResourcesFor(parsedRequirements *v1.ResourceRequirements, resourceField string, objectSpec map[string]interface{}) (*v1.ResourceRequirements, error) {
 	oldResources := getFromMapRecursively(objectSpec, strings.Split(resourceField, "."))
 	if len(oldResources) == 0 {
 		return parsedRequirements, nil
 	}
 
-	newRequirements := v1.ResourceRequirements{}
+	newRequirements := &v1.ResourceRequirements{}
 
 	// Inspect all fields from the resources/limits and whatnots.
 	if oldRequests, ok := oldResources["requests"]; ok {
@@ -189,14 +189,14 @@ func normalizeResourcesFor(parsedRequirements v1.ResourceRequirements, resourceF
 			if q, err := parseFlakyQuantity(oldRequestsCPU); err == nil {
 				newRequirements.Requests[v1.ResourceCPU] = q
 			} else {
-				return v1.ResourceRequirements{}, err
+				return nil, err
 			}
 		}
 		if oldRequestsMemory, ok := oldRequests.(map[string]interface{})["memory"]; ok {
 			if q, err := parseFlakyQuantity(oldRequestsMemory); err == nil {
 				newRequirements.Requests[v1.ResourceMemory] = q
 			} else {
-				return v1.ResourceRequirements{}, err
+				return nil, err
 			}
 		}
 	}
@@ -206,14 +206,14 @@ func normalizeResourcesFor(parsedRequirements v1.ResourceRequirements, resourceF
 			if q, err := parseFlakyQuantity(oldLimitsCPU); err == nil {
 				newRequirements.Limits[v1.ResourceCPU] = q
 			} else {
-				return v1.ResourceRequirements{}, err
+				return nil, err
 			}
 		}
 		if oldLimitsMemory, ok := oldLimits.(map[string]interface{})["memory"]; ok {
 			if q, err := parseFlakyQuantity(oldLimitsMemory); err == nil {
 				newRequirements.Limits[v1.ResourceMemory] = q
 			} else {
-				return v1.ResourceRequirements{}, err
+				return nil, err
 			}
 		}
 	}

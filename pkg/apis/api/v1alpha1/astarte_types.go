@@ -154,7 +154,7 @@ type AstarteGenericClusteredResource struct {
 	Image string `json:"image,omitempty"`
 	// Compute Resources for this Component.
 	// +optional
-	Resources v1.ResourceRequirements `json:"resources,omitempty"`
+	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // AstarteGenericAPISpec represents a generic Astarte API Component in the Deployment spec
@@ -279,7 +279,7 @@ type AstarteDashboardSpec struct {
 type AstarteComponentsSpec struct {
 	// Compute Resources for this Component.
 	// +optional
-	Resources v1.ResourceRequirements `json:"resources,omitempty"`
+	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// +optional
 	Housekeeping AstarteGenericComponentSpec `json:"housekeeping,omitempty"`
 	// +optional
@@ -358,7 +358,7 @@ type AstarteCFSSLSpec struct {
 	DBConfig *AstarteCFSSLDBConfigSpec `json:"dbConfig,omitempty"`
 	// Compute Resources for this Component.
 	// +optional
-	Resources v1.ResourceRequirements `json:"resources,omitempty"`
+	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// +optional
 	Version string `json:"version,omitempty"`
 	// +optional

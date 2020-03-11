@@ -45,7 +45,7 @@ var AstarteTestResource *operator.Astarte = &operator.Astarte{
 		VerneMQ: operator.AstarteVerneMQSpec{
 			Host: "broker.autotest.astarte-platform.org",
 			AstarteGenericClusteredResource: operator.AstarteGenericClusteredResource{
-				Resources: v1.ResourceRequirements{
+				Resources: &v1.ResourceRequirements{
 					Limits: v1.ResourceList{
 						v1.ResourceCPU:    *resource.NewScaledQuantity(0, resource.Milli),
 						v1.ResourceMemory: *resource.NewScaledQuantity(512, resource.Mega),
@@ -59,7 +59,7 @@ var AstarteTestResource *operator.Astarte = &operator.Astarte{
 		},
 		RabbitMQ: operator.AstarteRabbitMQSpec{
 			AstarteGenericClusteredResource: operator.AstarteGenericClusteredResource{
-				Resources: v1.ResourceRequirements{
+				Resources: &v1.ResourceRequirements{
 					Limits: v1.ResourceList{
 						v1.ResourceCPU:    *resource.NewScaledQuantity(1000, resource.Milli),
 						v1.ResourceMemory: *resource.NewScaledQuantity(512, resource.Mega),
@@ -78,7 +78,7 @@ var AstarteTestResource *operator.Astarte = &operator.Astarte{
 				Size: resource.NewScaledQuantity(10, resource.Giga),
 			},
 			AstarteGenericClusteredResource: operator.AstarteGenericClusteredResource{
-				Resources: v1.ResourceRequirements{
+				Resources: &v1.ResourceRequirements{
 					Limits: v1.ResourceList{
 						v1.ResourceCPU:    *resource.NewScaledQuantity(1000, resource.Milli),
 						v1.ResourceMemory: *resource.NewScaledQuantity(2048, resource.Mega),
@@ -91,7 +91,7 @@ var AstarteTestResource *operator.Astarte = &operator.Astarte{
 			},
 		},
 		CFSSL: operator.AstarteCFSSLSpec{
-			Resources: v1.ResourceRequirements{
+			Resources: &v1.ResourceRequirements{
 				Limits: v1.ResourceList{
 					v1.ResourceCPU:    *resource.NewScaledQuantity(0, resource.Milli),
 					v1.ResourceMemory: *resource.NewScaledQuantity(128, resource.Mega),
@@ -106,7 +106,7 @@ var AstarteTestResource *operator.Astarte = &operator.Astarte{
 			},
 		},
 		Components: operator.AstarteComponentsSpec{
-			Resources: v1.ResourceRequirements{
+			Resources: &v1.ResourceRequirements{
 				Limits: v1.ResourceList{
 					v1.ResourceCPU:    *resource.NewScaledQuantity(0, resource.Milli),
 					v1.ResourceMemory: *resource.NewScaledQuantity(2, resource.Giga),

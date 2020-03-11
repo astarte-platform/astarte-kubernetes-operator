@@ -122,29 +122,23 @@ func GetVerneMQBrokerURL(cr *apiv1alpha1.Astarte) string {
 	return fmt.Sprintf("mqtts://%s:%d", cr.Spec.VerneMQ.Host, pointy.Int16Value(cr.Spec.VerneMQ.Port, 8883))
 }
 
-// IsResourceRequirementsExplicit returns whether the ResourceRequirements object has any explicit indication in it
-func IsResourceRequirementsExplicit(r v1.ResourceRequirements) bool {
-	return r.Requests.Cpu() != nil || r.Requests.Memory() != nil || r.Limits.Cpu() != nil || r.Limits.Memory() != nil
-}
-
 // GetResourcesForAstarteComponent returns the allocated resources for a given Astarte component, taking into account both the
 // directive from Components, and the directive from the individual component (if any).
 // It will compute a ResourceRequirements for the component based on said values and internal logic.
-func GetResourcesForAstarteComponent(cr *apiv1alpha1.Astarte, requestedResources v1.ResourceRequirements, component apiv1alpha1.AstarteComponent) v1.ResourceRequirements {
-	if IsResourceRequirementsExplicit(requestedResources) {
+func GetResourcesForAstarteComponent(cr *apiv1alpha1.Astarte, requestedResources *v1.ResourceRequirements, component apiv1alpha1.AstarteComponent) v1.ResourceRequirements {
+	if requestedResources != nil {
 		// There has been an explicit allocation, so return that
-		return requestedResources
+		return *requestedResources
 	}
 
 	// Do we have any resources set?
-	if !IsResourceRequirementsExplicit(cr.Spec.Components.Resources) {
+	if cr.Spec.Components.Resources == nil {
 		// All burst. If you say so...
 		return v1.ResourceRequirements{}
 	}
 
 	// Ok, let's do the distribution dance.
-	var memoryCoefficient float64
-	var cpuCoefficient float64
+	var cpuCoefficient, memoryCoefficient float64
 	switch component {
 	case apiv1alpha1.AppEngineAPI:
 		cpuCoefficient = 0.19
