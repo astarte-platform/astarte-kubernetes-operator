@@ -208,6 +208,12 @@ func getCassandraEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.E
 
 func getCassandraPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.Astarte) v1.PodSpec {
 	astarteVersion, _ := semver.NewVersion(cr.Spec.Version)
+
+	resources := v1.ResourceRequirements{}
+	if cr.Spec.Cassandra.Resources != nil {
+		resources = *cr.Spec.Cassandra.Resources
+	}
+
 	ps := v1.PodSpec{
 		// Give it a lot of time to terminate to drain the node.
 		TerminationGracePeriodSeconds: pointy.Int64(1800),
@@ -232,7 +238,7 @@ func getCassandraPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1
 					v1.ContainerPort{Name: "cql", ContainerPort: 9042},
 				},
 				ReadinessProbe: getCassandraProbe(),
-				Resources:      cr.Spec.Cassandra.Resources,
+				Resources:      resources,
 				Env:            getCassandraEnvVars(statefulSetName, cr),
 				SecurityContext: &v1.SecurityContext{
 					Capabilities: &v1.Capabilities{Add: []v1.Capability{"IPC_LOCK"}},

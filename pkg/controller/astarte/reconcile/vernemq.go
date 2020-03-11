@@ -238,6 +238,11 @@ func getVerneMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.A
 		serviceAccountName = ""
 	}
 
+	resources := v1.ResourceRequirements{}
+	if cr.Spec.VerneMQ.Resources != nil {
+		resources = *cr.Spec.VerneMQ.Resources
+	}
+
 	ps := v1.PodSpec{
 		TerminationGracePeriodSeconds: pointy.Int64(30),
 		ServiceAccountName:            serviceAccountName,
@@ -276,7 +281,7 @@ func getVerneMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.A
 				},
 				LivenessProbe:  getVerneMQProbe(),
 				ReadinessProbe: getVerneMQProbe(),
-				Resources:      cr.Spec.VerneMQ.Resources,
+				Resources:      resources,
 				Env:            getVerneMQEnvVars(statefulSetName, cr),
 			},
 		},
