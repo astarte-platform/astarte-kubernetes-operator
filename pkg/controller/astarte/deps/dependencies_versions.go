@@ -40,10 +40,15 @@ func GetDefaultVersionForCassandra(astarteVersion *semver.Version) string {
 // GetDefaultVersionForRabbitMQ returns the default RabbitMQ version based on the Astarte version requested
 func GetDefaultVersionForRabbitMQ(astarteVersion *semver.Version) string {
 	checkVersion, _ := astarteVersion.SetPrerelease("")
-	c, _ := semver.NewConstraint("< 0.11.0")
-	if c.Check(&checkVersion) {
+	beforeZeroEleven, _ := semver.NewConstraint("< 0.11.0")
+	if beforeZeroEleven.Check(&checkVersion) {
 		return "3.7.15"
 	}
 
-	return "3.7.21"
+	beforeOne, _ := semver.NewConstraint("< 1.0.0")
+	if beforeOne.Check(&checkVersion) {
+		return "3.7.21"
+	}
+
+	return "3.8"
 }
