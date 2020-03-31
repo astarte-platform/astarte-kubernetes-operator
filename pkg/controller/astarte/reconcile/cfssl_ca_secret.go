@@ -78,8 +78,6 @@ func EnsureCFSSLCASecret(cr *apiv1alpha1.Astarte, c client.Client, scheme *runti
 		job := &batchv1.Job{
 			ObjectMeta: metav1.ObjectMeta{Name: jobName, Namespace: cr.Namespace},
 			Spec: batchv1.JobSpec{
-				// Should be high enough - we might be waiting for CFSSL to come up
-				BackoffLimit: pointy.Int32(20),
 				Template: v1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{Name: jobName},
 					Spec: v1.PodSpec{
@@ -110,6 +108,18 @@ func EnsureCFSSLCASecret(cr *apiv1alpha1.Astarte, c client.Client, scheme *runti
 		}
 		if err := c.Create(context.TODO(), job); err != nil {
 			return err
+		}
+	case !secretThere && jobThere:
+		// If the job failed, take action. Otherwise, just skip this.
+		for _, condition := range theJob.Status.Conditions {
+			if condition.Type == batchv1.JobFailed && condition.Status == v1.ConditionTrue {
+				// The Job has failed, but no secret is available. Let's delete the job and wait
+				// for the next reconciliation.
+				reqLogger.Info("CFSSL CA Job failed. Deleting it, and waiting for next reconciliation to recreate it")
+				if err := c.Delete(context.TODO(), theJob); err != nil {
+					return err
+				}
+			}
 		}
 	}
 
