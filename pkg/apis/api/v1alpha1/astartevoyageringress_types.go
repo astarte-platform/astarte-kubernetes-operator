@@ -54,6 +54,16 @@ type AstarteVoyagerIngressAPISpec struct {
 	Cors *bool `json:"cors,omitempty"`
 	// +optional
 	ExposeHousekeeping *bool `json:"exposeHousekeeping,omitempty"`
+	// When true, all /metrics endpoints for Astarte services will be served by the Ingress.
+	// Beware this might be a security hole. You can control which IPs can access /metrics
+	// with serveMetricsToSubnet
+	// +optional
+	ServeMetrics *bool `json:"serveMetrics,omitempty"`
+	// When specified and when serveMetrics is true, /metrics endpoints will be served only to IPs
+	// in the provided subnet range. The subnet has to be compatible with the HAProxy
+	// ACL src syntax (e.g.: 10.0.0.0/16)
+	// +optional
+	ServeMetricsToSubnet string `json:"serveMetricsToSubnet,omitempty"`
 }
 
 // AstarteVoyagerIngressDashboardSpec defines the specification of the Dashboard

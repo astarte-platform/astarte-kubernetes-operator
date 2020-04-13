@@ -814,6 +814,11 @@ func (in *AstarteVoyagerIngressAPISpec) DeepCopyInto(out *AstarteVoyagerIngressA
 		*out = new(bool)
 		**out = **in
 	}
+	if in.ServeMetrics != nil {
+		in, out := &in.ServeMetrics, &out.ServeMetrics
+		*out = new(bool)
+		**out = **in
+	}
 	return
 }
 

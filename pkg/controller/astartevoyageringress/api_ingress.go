@@ -157,13 +157,15 @@ func ensureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 	apiPaths := []voyager.HTTPIngressPath{}
 	// Create rules for all Astarte components
 	astarteComponents := []apiv1alpha1.AstarteComponent{apiv1alpha1.AppEngineAPI, apiv1alpha1.HousekeepingAPI, apiv1alpha1.PairingAPI, apiv1alpha1.RealmManagementAPI}
+	// Should we serve /metrics?
+	serveMetrics := pointy.BoolValue(cr.Spec.API.ServeMetrics, false)
 	// Is the Dashboard deployed without a host?
 	if misc.IsAstarteComponentDeployed(parent, apiv1alpha1.Dashboard) && cr.Spec.Dashboard.Host == "" {
 		astarteComponents = append(astarteComponents, apiv1alpha1.Dashboard)
 	}
 	for _, component := range astarteComponents {
 		if misc.IsAstarteComponentDeployed(parent, component) {
-			apiPaths = append(apiPaths, getHTTPIngressPathForAstarteComponent(parent, component))
+			apiPaths = append(apiPaths, getHTTPIngressPathForAstarteComponent(parent, component, serveMetrics, cr.Spec.API.ServeMetricsToSubnet))
 		}
 	}
 
@@ -178,7 +180,8 @@ func ensureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 		rules = append(rules, voyager.IngressRule{
 			Host: cr.Spec.Dashboard.Host,
 			IngressRuleValue: voyager.IngressRuleValue{HTTP: &voyager.HTTPIngressRuleValue{
-				Paths: []voyager.HTTPIngressPath{getHTTPIngressWithPath(parent, "", "dashboard")},
+				// Dashboard has no metrics and the /metrics name might be used in the future, so allow it
+				Paths: []voyager.HTTPIngressPath{getHTTPIngressWithPath(parent, "", "dashboard", true, "")},
 			}},
 		})
 	}
@@ -204,11 +207,12 @@ func ensureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 	return err
 }
 
-func getHTTPIngressPathForAstarteComponent(parent *apiv1alpha1.Astarte, component apiv1alpha1.AstarteComponent) voyager.HTTPIngressPath {
-	return getHTTPIngressWithPath(parent, strings.Replace(component.ServiceName(), "-", "", -1), component.ServiceName())
+func getHTTPIngressPathForAstarteComponent(parent *apiv1alpha1.Astarte, component apiv1alpha1.AstarteComponent,
+	serveMetrics bool, serveMetricsToSubnet string) voyager.HTTPIngressPath {
+	return getHTTPIngressWithPath(parent, strings.Replace(component.ServiceName(), "-", "", -1), component.ServiceName(), serveMetrics, serveMetricsToSubnet)
 }
 
-func getHTTPIngressWithPath(parent *apiv1alpha1.Astarte, relativePath, serviceName string) voyager.HTTPIngressPath {
+func getHTTPIngressWithPath(parent *apiv1alpha1.Astarte, relativePath, serviceName string, serveMetrics bool, serveMetricsToSubnet string) voyager.HTTPIngressPath {
 	// Safe HTTP headers to add in responses.
 	backendSSLRules := []string{
 		"http-response add-header X-Frame-Options SAMEORIGIN",
@@ -217,9 +221,21 @@ func getHTTPIngressWithPath(parent *apiv1alpha1.Astarte, relativePath, serviceNa
 		"http-response set-header Referrer-Policy no-referrer-when-downgrade",
 	}
 	backendRules := []string{}
+	metricsPath := "/metrics"
+
 	if relativePath != "" {
 		backendRules = append(backendRules, fmt.Sprintf(`reqrep ^([^\ :]*)\ /%s/(.*$) \1\ /\2`, relativePath))
+		metricsPath = fmt.Sprintf("/%s/metrics", relativePath)
 	}
+
+	// Should we serve the metrics endpoint?
+	switch {
+	case !serveMetrics:
+		backendRules = append(backendRules, fmt.Sprintf(`http-request deny if { path -i -m beg %s }`, metricsPath))
+	case serveMetricsToSubnet != "":
+		backendRules = append(backendRules, fmt.Sprintf(`http-request deny if { path -i -m beg %s } !{ src %s }`, metricsPath, serveMetricsToSubnet))
+	}
+
 	backendRules = append(backendRules, backendSSLRules...)
 	return voyager.HTTPIngressPath{
 		Path: fmt.Sprintf("/%s", relativePath),
