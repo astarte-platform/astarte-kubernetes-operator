@@ -55,6 +55,17 @@ spec:
                 replicas:
                   format: int32
                   type: integer
+                serveMetrics:
+                  description: When true, all /metrics endpoints for Astarte services
+                    will be served by the Ingress. Beware this might be a security
+                    hole. You can control which IPs can access /metrics with serveMetricsToSubnet
+                  type: boolean
+                serveMetricsToSubnet:
+                  description: 'When specified and when serveMetrics is true, /metrics
+                    endpoints will be served only to IPs in the provided subnet range.
+                    The subnet has to be compatible with the HAProxy ACL src syntax
+                    (e.g.: 10.0.0.0/16)'
+                  type: string
                 tlsRef:
                   description: LocalTypedReference contains enough information to
                     let you inspect or modify the referred object.
