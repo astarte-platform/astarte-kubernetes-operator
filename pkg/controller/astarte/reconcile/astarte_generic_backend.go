@@ -171,6 +171,14 @@ func getAstarteGenericBackendEnvVars(deploymentName string, cr *apiv1alpha1.Asta
 
 	// Depending on the component, we might need to add some more stuff.
 	switch component {
+	case apiv1alpha1.Housekeeping:
+		if cr.Spec.AstarteSystemKeyspace.ReplicationFactor > 1 {
+			ret = append(ret,
+				v1.EnvVar{
+					Name:  "HOUSEKEEPING_ASTARTE_KEYSPACE_REPLICATION_FACTOR",
+					Value: strconv.Itoa(cr.Spec.AstarteSystemKeyspace.ReplicationFactor),
+				})
+		}
 	case apiv1alpha1.Pairing:
 		ret = append(ret,
 			v1.EnvVar{
