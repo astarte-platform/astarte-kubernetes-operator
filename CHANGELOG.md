@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - AstarteVoyagerIngress now has two more options in `api`: `serveMetrics` and `serveMetricsToSubnet`, to
   give fine-grained control on who has access to `/metrics`
+- Astarte has a new option `astarteSystemKeyspace`, which allows to specify the replication factor for the
+  main `astarte` keyspace upon cluster initialization (#83)
 
 ### Fixed
 - When checking whether an upgrade can be performed, do not deadlock in case the cluster wasn't green
