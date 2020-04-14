@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - AstarteVoyagerIngress now has two more options in `api`: `serveMetrics` and `serveMetricsToSubnet`, to
   give fine-grained control on who has access to `/metrics`
 
+### Fixed
+- When checking whether an upgrade can be performed, do not deadlock in case the cluster wasn't green
+  when performing the request
+
 ### Changed
 - All `/metrics` endpoints are no longer exposed by default
 
