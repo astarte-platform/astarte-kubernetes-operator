@@ -36,8 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// TODO: Change this to a stable release as soon as it is generally available.
-const landing011Version string = "0.11.0-rc.1"
+const landing011Version string = "0.11.0"
 
 // blindly upgrades to 0.11. Invokable only by the upgrade logic
 func upgradeTo011(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme, recorder record.EventRecorder) error {
@@ -57,7 +56,7 @@ func upgradeTo011(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sche
 	}
 
 	// Step 3: Migrate the Database
-	// It is now time to reconcile selectively Housekeeping and Housekeeping API to a safe landing (0.11.0-rc.1 now).
+	// It is now time to reconcile selectively Housekeeping and Housekeeping API to a safe landing (0.11.0).
 	// Also, we want to bring up exactly one Replica of each at this time.
 	// By doing so, Cassandra will be migrated and the cluster will be ready to be reconciled entirely.
 	// Version enforcement is done to ensure that jump upgrades will be performed sequentially.
@@ -82,8 +81,10 @@ func upgradeTo011(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sche
 		// in the original spec.
 		housekeepingBackend.Resources = &resourceRequirements
 	}
-	// TODO: When we move to 0.11.0-beta3 or above, add a Probe
-	if err := reconcile.EnsureAstarteGenericBackend(cr, *housekeepingBackend, apiv1alpha1.Housekeeping, c, scheme); err != nil {
+
+	// Add a custom, more permissive probe to the Backend
+	if err := reconcile.EnsureAstarteGenericBackendWithCustomProbe(cr, *housekeepingBackend, apiv1alpha1.Housekeeping,
+		c, scheme, getSpecialHousekeepingMigrationProbe("/health")); err != nil {
 		recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventUpgradeError.String(),
 			"Could not initiate Database Migration. Upgrade will be retried")
 		return err

@@ -14,6 +14,8 @@ spec:
   distributionChannel: astarte
   rbac: true
   storageClassName:
+  astarteSystemKeyspace:
+    replicationFactor: 1
   api:
     ssl: true
     host: "api.astarte-example.com" # MANDATORY

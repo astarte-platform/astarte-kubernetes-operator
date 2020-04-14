@@ -22,6 +22,7 @@ import (
 	"context"
 	"encoding/json"
 
+	semver "github.com/Masterminds/semver/v3"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
 	"github.com/openlyinc/pointy"
@@ -33,7 +34,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	semver "github.com/Masterminds/semver/v3"
 )
 
 // EnsureAstarteDashboard reconciles Astarte Dashboard
@@ -161,9 +161,7 @@ func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard apiv1al
 	dashboardConfig := make(map[string]interface{})
 
 	v := getSemanticVersionForAstarteComponent(cr, dashboard.Version)
-	// TODO: Right before 0.11.0, change this constraint to < 0.11.0. We shouldn't expose such details after
-	// we've gone stable.
-	constraint, _ := semver.NewConstraint("< 0.11.0-beta.3")
+	constraint, _ := semver.NewConstraint("< 0.11.0")
 
 	if dashboard.Config.RealmManagementAPIURL == "" {
 		if constraint.Check(v) {
@@ -194,7 +192,7 @@ func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard apiv1al
 	if len(dashboard.Config.Auth) > 0 {
 		dashboardConfig["auth"] = dashboard.Config.Auth
 	} else {
-		dashboardConfig["auth"] = []apiv1alpha1.AstarteDashboardConfigAuthSpec{apiv1alpha1.AstarteDashboardConfigAuthSpec{Type: "token"}}
+		dashboardConfig["auth"] = []apiv1alpha1.AstarteDashboardConfigAuthSpec{{Type: "token"}}
 	}
 	dashboardConfig["secure_connection"] = pointy.BoolValue(cr.Spec.API.SSL, true)
 

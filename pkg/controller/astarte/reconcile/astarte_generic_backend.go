@@ -120,11 +120,11 @@ func getAstarteGenericBackendPodSpec(deploymentName string, cr *apiv1alpha1.Asta
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
 		Affinity:                      getAffinityForClusteredResource(deploymentName, backend),
 		Containers: []v1.Container{
-			v1.Container{
+			{
 				Name: component.DashedString(),
 				Ports: []v1.ContainerPort{
 					// This port is not exposed through any service - it is just used for health checks and the likes.
-					v1.ContainerPort{Name: "http", ContainerPort: 4000},
+					{Name: "http", ContainerPort: 4000},
 				},
 				VolumeMounts:    getAstarteGenericBackendVolumeMounts(deploymentName, cr, backend, component),
 				Image:           getAstarteImageForClusteredResource(component.DockerImageName(), backend, cr),
@@ -171,6 +171,14 @@ func getAstarteGenericBackendEnvVars(deploymentName string, cr *apiv1alpha1.Asta
 
 	// Depending on the component, we might need to add some more stuff.
 	switch component {
+	case apiv1alpha1.Housekeeping:
+		if cr.Spec.AstarteSystemKeyspace.ReplicationFactor > 1 {
+			ret = append(ret,
+				v1.EnvVar{
+					Name:  "HOUSEKEEPING_ASTARTE_KEYSPACE_REPLICATION_FACTOR",
+					Value: strconv.Itoa(cr.Spec.AstarteSystemKeyspace.ReplicationFactor),
+				})
+		}
 	case apiv1alpha1.Pairing:
 		ret = append(ret,
 			v1.EnvVar{
@@ -296,13 +304,6 @@ func getAstarteBackendProbe(cr *apiv1alpha1.Astarte, backend apiv1alpha1.Astarte
 
 	if constraint.Check(&checkVersion) {
 		// 0.10.x has no such thing.
-		return nil
-	}
-
-	// TODO: Remove this check right before 0.11.0. We shouldn't expose such details after we've gone stable.
-	constraint, _ = semver.NewConstraint("<= 0.11.0-beta.2")
-	if constraint.Check(v) {
-		// This was implemented after beta2
 		return nil
 	}
 

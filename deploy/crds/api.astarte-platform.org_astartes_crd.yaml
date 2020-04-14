@@ -40,6 +40,15 @@ spec:
               required:
               - host
               type: object
+            astarteSystemKeyspace:
+              description: astarteSystemKeyspace configures the main system keyspace
+                for Astarte. As of now, these settings have effect only upon cluster
+                initialization, and will be ignored otherwise.
+              properties:
+                replicationFactor:
+                  description: The Replication Factor for the keyspace
+                  type: integer
+              type: object
             cassandra:
               properties:
                 antiAffinity:

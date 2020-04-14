@@ -286,15 +286,6 @@ func getAstarteAPIProbe(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericA
 		return getAstarteAPIGenericProbe("/v1/health")
 	}
 
-	// TODO: Right before 0.11.0, change this constraint to < 0.11.0. We shouldn't expose such details after
-	// we've gone stable.
-	constraint, _ = semver.NewConstraint("<= 0.11.0-beta.2")
-	if constraint.Check(v) {
-		if component == apiv1alpha1.RealmManagementAPI || component == apiv1alpha1.PairingAPI {
-			return nil
-		}
-	}
-
 	// The rest are generic probes on /health
 	return getAstarteAPIGenericProbe("/health")
 }

@@ -371,6 +371,14 @@ type AstarteCFSSLSpec struct {
 	CARootConfig *AstarteCFSSLCARootConfigSpec `json:"caRootConfig,omitempty"`
 }
 
+// astarteSystemKeyspace configures the main system keyspace for Astarte. As of now, these settings
+// have effect only upon cluster initialization, and will be ignored otherwise.
+type AstarteSystemKeyspaceSpec struct {
+	// The Replication Factor for the keyspace
+	// +optional
+	ReplicationFactor int `json:"replicationFactor,omitempty"`
+}
+
 // AstarteSpec defines the desired state of Astarte
 type AstarteSpec struct {
 	// The Astarte Version for this Resource
@@ -399,6 +407,8 @@ type AstarteSpec struct {
 	CFSSL AstarteCFSSLSpec `json:"cfssl"`
 	// +optional
 	Components AstarteComponentsSpec `json:"components"`
+	// +optional
+	AstarteSystemKeyspace AstarteSystemKeyspaceSpec `json:"astarteSystemKeyspace,omitempty"`
 }
 
 // TODO: Remove all omitempty from AstarteStatus in v1beta1

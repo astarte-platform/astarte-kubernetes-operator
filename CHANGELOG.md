@@ -8,10 +8,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Update RabbitMQ version to 3.8.x for 1.0.x releases
 
-## [0.11.0] - Unreleased
+## [0.11.0] - 2020-04-14
 ### Added
 - AstarteVoyagerIngress now has two more options in `api`: `serveMetrics` and `serveMetricsToSubnet`, to
   give fine-grained control on who has access to `/metrics`
+- Astarte has a new option `astarteSystemKeyspace`, which allows to specify the replication factor for the
+  main `astarte` keyspace upon cluster initialization (#83)
+
+### Fixed
+- When checking whether an upgrade can be performed, do not deadlock in case the cluster wasn't green
+  when performing the request
 
 ### Changed
 - All `/metrics` endpoints are no longer exposed by default
