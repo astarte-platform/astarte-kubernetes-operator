@@ -31,6 +31,7 @@ import (
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/controller/astarte/upgrade"
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
 	"github.com/astarte-platform/astarte-kubernetes-operator/version"
+	"github.com/go-logr/logr"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -275,13 +276,18 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 		reqLogger.Info("Requested Version and Status Version are different, checking for upgrades...",
 			"Version.Old", instance.Status.AstarteVersion, "Version.New", instance.Spec.Version)
 
-		// TODO: This should probably be put in the Admission Webhook too, going forward
-		if instance.Status.Health != "green" {
+		// TODO: This should go in the Admission Webhook too, going forward, to prevent deadlocks.
+		// Given we're at a high chance of deadlocking here, we want to compute the status again and don't trust what
+		// was reported in a previous reconciliation exclusively. On the other hand, in some scenarios (e.g.: failed upgrade
+		// due to a temporary issue) we don't want to trust the computed health exclusively if the upgrade started at a time
+		// when the cluster was healthy. As such, proceed if one among the computed health and the reported health are green.
+		computedClusterHealth := r.computeClusterHealth(request, reqLogger, instance)
+		if computedClusterHealth != "green" && instance.Status.Health != "green" {
 			reqLogger.Error(fmt.Errorf("Astarte Upgrade requested, but the cluster isn't reporting stable Health. Refusing to upgrade"),
 				"Cluster health is unstable, refusing to upgrade. Please revert to the previous version and wait for the cluster to settle.",
-				"Health", instance.Status.Health)
+				"Reported Health", instance.Status.Health, "Computed Health", computedClusterHealth)
 			r.recorder.Event(instance, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
-				"Cluster health is not green, refusing to upgrade. Please revert to the previous version and wait for the cluster to settle")
+				fmt.Sprintf("Cluster health is %s, refusing to upgrade. Please revert to the previous version and wait for the cluster to settle", computedClusterHealth))
 			return reconcile.Result{Requeue: false}, fmt.Errorf("Astarte Upgrade requested, but the cluster isn't reporting stable Health. Refusing to upgrade")
 		}
 		// We need to check for upgrades.
@@ -393,6 +399,37 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, err
 	}
 
+	oldAstarteHealth := instance.Status.Health
+	instance.Status.Health = r.computeClusterHealth(request, reqLogger, instance)
+
+	// Cast an event in case the health changed
+	if oldAstarteHealth != instance.Status.Health && oldAstarteHealth != "" {
+		eventtype := "Normal"
+		// Notify as a warning if the health degraded compared to the previous reconciliation.
+		if oldAstarteHealth == "green" {
+			eventtype = "Warning"
+		}
+		r.recorder.Eventf(instance, eventtype, apiv1alpha1.AstarteResourceEventStatus.String(),
+			"Astarte Cluster status changed from %v to %v", oldAstarteHealth, instance.Status.Health)
+	}
+
+	// Update status
+	instance.Status.AstarteVersion = instance.Spec.Version
+	instance.Status.OperatorVersion = version.Version
+	instance.Status.ReconciliationPhase = apiv1alpha1.ReconciliationPhaseReconciled
+	instance.Status.BaseAPIURL = "https://" + instance.Spec.API.Host
+	instance.Status.BrokerURL = misc.GetVerneMQBrokerURL(instance)
+
+	if err := r.client.Status().Update(context.TODO(), instance); err != nil {
+		reqLogger.Error(err, "Failed to update Astarte status.")
+		return reconcile.Result{}, err
+	}
+
+	reqLogger.Info("Astarte Reconciled successfully")
+	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileAstarte) computeClusterHealth(request reconcile.Request, reqLogger logr.Logger, instance *apiv1alpha1.Astarte) string {
 	// Compute overall Readiness for Astarte deployments
 	astarteDeployments := &appsv1.DeploymentList{}
 	nonReadyDeployments := 0
@@ -437,41 +474,12 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 		}
 	}
 
-	oldAstarteHealth := instance.Status.Health
-
 	if nonReadyDeployments == 0 {
-		instance.Status.Health = "green"
+		return "green"
 	} else if nonReadyDeployments == 1 {
-		instance.Status.Health = "yellow"
-	} else {
-		instance.Status.Health = "red"
+		return "yellow"
 	}
-
-	// Cast an event in case the health changed
-	if oldAstarteHealth != instance.Status.Health && oldAstarteHealth != "" {
-		eventtype := "Normal"
-		// Notify as a warning if the health degraded compared to the previous reconciliation.
-		if oldAstarteHealth == "green" {
-			eventtype = "Warning"
-		}
-		r.recorder.Eventf(instance, eventtype, apiv1alpha1.AstarteResourceEventStatus.String(),
-			"Astarte Cluster status changed from %v to %v", oldAstarteHealth, instance.Status.Health)
-	}
-
-	// Update status
-	instance.Status.AstarteVersion = instance.Spec.Version
-	instance.Status.OperatorVersion = version.Version
-	instance.Status.ReconciliationPhase = apiv1alpha1.ReconciliationPhaseReconciled
-	instance.Status.BaseAPIURL = "https://" + instance.Spec.API.Host
-	instance.Status.BrokerURL = misc.GetVerneMQBrokerURL(instance)
-
-	if err := r.client.Status().Update(context.TODO(), instance); err != nil {
-		reqLogger.Error(err, "Failed to update Astarte status.")
-		return reconcile.Result{}, err
-	}
-
-	reqLogger.Info("Astarte Reconciled successfully")
-	return reconcile.Result{}, nil
+	return "red"
 }
 
 func contains(list []string, s string) bool {
