@@ -52,7 +52,7 @@ func astarteUpgradeTo011Test(t *testing.T, f *framework.Framework, ctx *framewor
 	}
 
 	// Wait until Astarte reaches green state and the new version. It might take a while.
-	if err := wait.Poll(retryInterval, 10*time.Minute, func() (done bool, err error) {
+	if err := wait.Poll(utils.DefaultRetryInterval, 10*time.Minute, func() (done bool, err error) {
 		astarteObj := &operator.Astarte{}
 		if err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: namespace, Name: utils.AstarteTestResource.GetName()}, astarteObj); err != nil {
 			return false, nil
