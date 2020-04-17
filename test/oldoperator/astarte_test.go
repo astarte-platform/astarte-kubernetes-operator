@@ -20,20 +20,13 @@ package oldoperator
 
 import (
 	"testing"
-	"time"
 
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis"
 	operator "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/test/utils"
 
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	"github.com/operator-framework/operator-sdk/pkg/test/e2eutil"
-)
-
-var (
-	retryInterval        = time.Second * 10
-	timeout              = time.Second * 420
-	cleanupRetryInterval = time.Second * 1
-	cleanupTimeout       = time.Second * 5
 )
 
 func TestAstarte(t *testing.T) {
@@ -51,19 +44,23 @@ func TestAstarte(t *testing.T) {
 func AstarteCluster(t *testing.T) {
 	ctx := framework.NewTestCtx(t)
 	defer ctx.Cleanup()
-	err := ctx.InitializeClusterResources(&framework.CleanupOptions{TestContext: ctx, Timeout: cleanupTimeout, RetryInterval: cleanupRetryInterval})
+	err := ctx.InitializeClusterResources(&framework.CleanupOptions{
+		TestContext:   ctx,
+		Timeout:       utils.DefaultCleanupTimeout,
+		RetryInterval: utils.DefaultCleanupRetryInterval,
+	})
 	if err != nil {
 		t.Fatalf("failed to initialize cluster resources: %v", err)
 	}
 	t.Log("Initialized cluster resources")
-	namespace, err := ctx.GetNamespace()
+	namespace, err := ctx.GetOperatorNamespace()
 	if err != nil {
 		t.Fatal(err)
 	}
 	// get global framework variables
 	f := framework.Global
 	// wait for astarte-operator to be ready
-	err = e2eutil.WaitForOperatorDeployment(t, f.KubeClient, namespace, "astarte-operator", 1, retryInterval, timeout)
+	err = e2eutil.WaitForOperatorDeployment(t, f.KubeClient, namespace, "astarte-operator", 1, utils.DefaultRetryInterval, utils.DefaultTimeout)
 	if err != nil {
 		t.Fatal(err)
 	}

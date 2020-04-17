@@ -35,7 +35,7 @@ import (
 var target011Version string = "0.11.0"
 
 func astarteDeploy011Test(t *testing.T, f *framework.Framework, ctx *framework.TestCtx) error {
-	namespace, err := ctx.GetNamespace()
+	namespace, err := ctx.GetWatchNamespace()
 	if err != nil {
 		return fmt.Errorf("could not get namespace: %v", err)
 	}
@@ -48,11 +48,11 @@ func astarteDeploy011Test(t *testing.T, f *framework.Framework, ctx *framework.T
 		return err
 	}
 	// wait for example-astarte-housekeeping-api to reach 1 replica
-	if err := e2eutil.WaitForDeployment(t, f.KubeClient, namespace, "example-astarte-housekeeping-api", 1, retryInterval, timeout); err != nil {
+	if err := e2eutil.WaitForDeployment(t, f.KubeClient, namespace, "example-astarte-housekeeping-api", 1, utils.DefaultRetryInterval, utils.DefaultTimeout); err != nil {
 		return err
 	}
 
-	if err := wait.Poll(retryInterval, timeout, func() (done bool, err error) {
+	if err := wait.Poll(utils.DefaultRetryInterval, utils.DefaultTimeout, func() (done bool, err error) {
 		astarteObj := &operator.Astarte{}
 		err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: namespace, Name: utils.AstarteTestResource.GetName()}, astarteObj)
 		if err != nil {

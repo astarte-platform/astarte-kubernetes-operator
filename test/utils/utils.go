@@ -32,11 +32,15 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-var (
-	retryInterval        = time.Second * 10
-	timeout              = time.Second * 420
-	cleanupRetryInterval = time.Second * 1
-	cleanupTimeout       = time.Second * 5
+const (
+	// DefaultRetryInterval applied to all tests
+	DefaultRetryInterval time.Duration = time.Second * 10
+	// DefaultTimeout applied to all tests
+	DefaultTimeout time.Duration = time.Second * 420
+	// DefaultCleanupRetryInterval applied to all tests
+	DefaultCleanupRetryInterval time.Duration = time.Second * 1
+	// DefaultCleanupTimeout applied to all tests
+	DefaultCleanupTimeout time.Duration = time.Second * 5
 )
 
 // EnsureDeploymentReadiness ensures a Deployment is ready by the time the function is called
@@ -56,7 +60,7 @@ func EnsureDeploymentReadiness(namespace, name string, f *framework.Framework) e
 
 // WaitForDeploymentReadiness waits until a Deployment is ready with a reasonable timeout
 func WaitForDeploymentReadiness(namespace, name string, f *framework.Framework) error {
-	return wait.Poll(retryInterval, timeout, func() (done bool, err error) {
+	return wait.Poll(DefaultRetryInterval, DefaultTimeout, func() (done bool, err error) {
 		deployment := &appsv1.Deployment{}
 		err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, deployment)
 		if err != nil {
@@ -88,7 +92,7 @@ func EnsureStatefulSetReadiness(namespace, name string, f *framework.Framework) 
 
 // WaitForStatefulSetReadiness waits until a StatefulSet is ready with a reasonable timeout
 func WaitForStatefulSetReadiness(namespace, name string, f *framework.Framework) error {
-	return wait.Poll(retryInterval, timeout, func() (done bool, err error) {
+	return wait.Poll(DefaultRetryInterval, DefaultTimeout, func() (done bool, err error) {
 		statefulSet := &appsv1.StatefulSet{}
 		err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, statefulSet)
 		if err != nil {

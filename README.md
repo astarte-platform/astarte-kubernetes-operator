@@ -46,4 +46,4 @@ Key:
 ## Development
 
 Astarte's Operator is written in Go and built upon [Operator SDK](https://github.com/operator-framework/operator-sdk).
-It requires Go 1.13.x, and requires Go Modules.
+It depends on Go 1.14.x, and requires Go Modules.

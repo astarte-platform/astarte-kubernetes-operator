@@ -32,13 +32,13 @@ import (
 )
 
 func astarteEnsureRetrocompatTest(t *testing.T, f *framework.Framework, ctx *framework.TestCtx) error {
-	namespace, err := ctx.GetNamespace()
+	namespace, err := ctx.GetWatchNamespace()
 	if err != nil {
 		return fmt.Errorf("could not get namespace: %v", err)
 	}
 
 	// Wait until the Deployment turns green.
-	if err := wait.Poll(retryInterval, timeout, func() (done bool, err error) {
+	if err := wait.Poll(utils.DefaultRetryInterval, utils.DefaultTimeout, func() (done bool, err error) {
 		astarteObj := &operator.Astarte{}
 		err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: namespace, Name: utils.AstarteTestResource.GetName()}, astarteObj)
 		if err != nil {

@@ -35,7 +35,7 @@ import (
 )
 
 func astarteDeleteTest(t *testing.T, f *framework.Framework, ctx *framework.TestCtx) error {
-	namespace, err := ctx.GetNamespace()
+	namespace, err := ctx.GetWatchNamespace()
 	if err != nil {
 		return fmt.Errorf("could not get namespace: %v", err)
 	}
@@ -51,7 +51,7 @@ func astarteDeleteTest(t *testing.T, f *framework.Framework, ctx *framework.Test
 	}
 
 	// Wait until everything in the namespace is erased. Finalizers should do the job.
-	if err := wait.Poll(retryInterval, timeout, func() (done bool, err error) {
+	if err := wait.Poll(utils.DefaultRetryInterval, utils.DefaultTimeout, func() (done bool, err error) {
 		deployments := &appsv1.DeploymentList{}
 		if err = f.Client.List(goctx.TODO(), deployments, client.InNamespace(namespace)); err != nil {
 			return false, err
