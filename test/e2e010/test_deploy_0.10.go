@@ -35,7 +35,7 @@ import (
 var target010Version string = "0.10.2"
 
 func astarteDeploy010Test(t *testing.T, f *framework.Framework, ctx *framework.TestCtx) error {
-	namespace, err := ctx.GetNamespace()
+	namespace, err := ctx.GetWatchNamespace()
 	if err != nil {
 		return fmt.Errorf("could not get namespace: %v", err)
 	}
