@@ -24,5 +24,5 @@ const (
 
 	// AstarteVersionConstraintString represents the range of supported Astarte versions for this Operator.
 	// If the Astarte version falls out of this range, reconciliation will be immediately aborted.
-	AstarteVersionConstraintString = ">= 0.10.0, < 0.12.0"
+	AstarteVersionConstraintString = ">= 0.10.0, < 1.1.0"
 )
