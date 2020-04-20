@@ -218,10 +218,9 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.Env
 	}
 
 	c, _ := semver.NewConstraint(">= 0.11.0")
-	ver, _ := semver.NewVersion(getVersionForAstarteComponent(cr, cr.Spec.VerneMQ.Version))
-	checkVersion, _ := ver.SetPrerelease("")
+	checkVersion := getSemanticVersionForAstarteComponent(cr, cr.Spec.VerneMQ.Version)
 
-	if c.Check(&checkVersion) {
+	if c.Check(checkVersion) {
 		// When installing Astarte >= 0.11, add the data queue count
 		envVars = append(envVars, v1.EnvVar{
 			Name:  "DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__DATA_QUEUE_COUNT",

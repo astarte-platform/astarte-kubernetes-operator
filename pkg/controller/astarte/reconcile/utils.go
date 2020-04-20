@@ -347,7 +347,12 @@ func getVersionForAstarteComponent(cr *apiv1alpha1.Astarte, componentVersion str
 }
 
 func getSemanticVersionForAstarteComponent(cr *apiv1alpha1.Astarte, componentVersion string) *semver.Version {
-	semVer, _ := semver.NewVersion(getVersionForAstarteComponent(cr, componentVersion))
+	versionString := getVersionForAstarteComponent(cr, componentVersion)
+	semVer, err := semver.NewVersion(versionString)
+	if err != nil && versionString == "snapshot" {
+		// Return a version which represents a high enough release
+		semVer, _ = semver.NewVersion("999.99.9")
+	}
 	return semVer
 }
 

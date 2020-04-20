@@ -243,10 +243,9 @@ func getAstarteGenericBackendEnvVars(deploymentName string, cr *apiv1alpha1.Asta
 			})
 
 		c, _ := semver.NewConstraint(">= 0.11.0")
-		ver, _ := semver.NewVersion(getVersionForAstarteComponent(cr, backend.Version))
-		checkVersion, _ := ver.SetPrerelease("")
+		checkVersion := getSemanticVersionForAstarteComponent(cr, backend.Version)
 
-		if c.Check(&checkVersion) {
+		if c.Check(checkVersion) {
 			// When installing Astarte >= 0.11, add the data queue count
 			ret = append(ret,
 				v1.EnvVar{
