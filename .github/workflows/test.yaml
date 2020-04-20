@@ -29,6 +29,7 @@ jobs:
         testSuite:
         - "010"
         - "011"
+        - "10"
         kubernetesNodeImage:
         - "kindest/node:v1.16.4@sha256:b91a2c2317a000f3a783489dfb755064177dbc3a0b2f4147d50f04825d016f55"
         - "kindest/node:v1.17.0@sha256:9512edae126da271b66b990b6fff768fbb7cd786c7d39e86bdf55906352fdf62"
