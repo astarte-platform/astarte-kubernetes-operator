@@ -386,7 +386,7 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 
 	// Trigger Engine right before DUP
-	if err = recon.EnsureAstarteGenericBackend(instance, instance.Spec.Components.TriggerEngine, apiv1alpha1.TriggerEngine, r.client, r.scheme); err != nil {
+	if err = recon.EnsureAstarteGenericBackend(instance, instance.Spec.Components.TriggerEngine.AstarteGenericClusteredResource, apiv1alpha1.TriggerEngine, r.client, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 

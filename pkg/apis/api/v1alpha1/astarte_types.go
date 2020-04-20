@@ -193,6 +193,8 @@ type AstarteRabbitMQConnectionSpec struct {
 	// +optional
 	Password string `json:"password"`
 	// +optional
+	VirtualHost string `json:"virtualHost"`
+	// +optional
 	Secret *AstarteRabbitMQConnectionSecretSpec `json:"secret"`
 }
 
@@ -205,6 +207,14 @@ type AstarteRabbitMQSpec struct {
 	Storage *AstartePersistentStorageSpec `json:"storage,omitempty"`
 	// +optional
 	AdditionalPlugins []string `json:"additionalPlugins,omitempty"`
+	// Configures the data queues prefix on RabbitMQ. You should change this setting only
+	// in custom RabbitMQ installations.
+	// +optional
+	DataQueuesPrefix string `json:"dataQueuesPrefix,omitempty"`
+	// Configures the events exchange name on RabbitMQ. You should change this setting only
+	// in custom RabbitMQ installations.
+	// +optional
+	EventsExchangeName string `json:"eventsExchangeName,omitempty"`
 }
 
 type AstarteCassandraSpec struct {
@@ -229,6 +239,13 @@ type AstarteVerneMQSpec struct {
 	CaSecret string `json:"caSecret,omitempty"`
 	// +optional
 	Storage *AstartePersistentStorageSpec `json:"storage,omitempty"`
+	// Controls the device heartbeat from the broker to Astarte. The heartbeat is sent periodically
+	// to prevent Astarte from keeping up stale connections from Devices in case the broker misbehaves
+	// and does not send disconnection events. You should usually not tweak this value. Moreover, keep
+	// in mind that when a lot of devices are connected simultaneously, having a short heartbeat time
+	// might cause performance issues. Defaults to an hour.
+	// +optional
+	DeviceHeartbeatSeconds int `json:"deviceHeartbeatSeconds,omitempty"`
 }
 
 type AstarteGenericComponentSpec struct {
@@ -242,6 +259,27 @@ type AstarteDataUpdaterPlantSpec struct {
 	AstarteGenericClusteredResource `json:",inline"`
 	// +optional
 	DataQueueCount *int `json:"dataQueueCount,omitempty"`
+	// Controls the prefetch count for Data Updater Plant. When fine-tuning Astarte, this parameter
+	// can make a difference for what concerns Data Updater Plant ingestion performance. However,
+	// it can also degrade performance significantly and/or increase risk of data loss when misconfigured.
+	// Configure this value only if you know what you're doing and you have experience with RabbitMQ.
+	// Defaults to 300
+	// +optional
+	PrefetchCount *int `json:"prefetchCount,omitempty"`
+}
+
+type AstarteTriggerEngineSpec struct {
+	AstarteGenericClusteredResource `json:",inline"`
+	// Configures the name of the Events queue. Should be configured only in installations with a highly
+	// customized RabbitMQ. It is advised to leave empty unless you know exactly what you're doing.
+	// +optional
+	EventsQueueName string `json:"eventsQueueName,omitempty"`
+	// Configures the routing key for Trigger Events. Should be configured only in installations
+	// with a highly customized RabbitMQ and a custom Trigger Engine setup. It is advised to leave
+	// empty unless you know exactly what you're doing, misconfiguring this value can cause heavy
+	// breakage within Trigger Engine.
+	// +optional
+	EventsRoutingKey string `json:"eventsRoutingKey,omitempty"`
 }
 
 type AstarteAppengineAPISpec struct {
@@ -249,6 +287,14 @@ type AstarteAppengineAPISpec struct {
 	// +kubebuilder:validation:Minimum=100
 	// +optional
 	MaxResultsLimit *int `json:"maxResultsLimit,omitempty"`
+	// Configures the name of the Room Events queue. Should be configured only in installations with a highly
+	// customized RabbitMQ. It is advised to leave empty unless you know exactly what you're doing.
+	// +optional
+	RoomEventsQueueName string `json:"roomEventsQueueName,omitempty"`
+	// Configures the name of the Room Events exchange. Should be configured only in installations with a highly
+	// customized RabbitMQ. It is advised to leave empty unless you know exactly what you're doing.
+	// +optional
+	RoomEventsExchangeName string `json:"roomEventsExchangeName,omitempty"`
 }
 
 type AstarteDashboardConfigAuthSpec struct {
@@ -291,7 +337,7 @@ type AstarteComponentsSpec struct {
 	// +optional
 	AppengineAPI AstarteAppengineAPISpec `json:"appengineApi,omitempty"`
 	// +optional
-	TriggerEngine AstarteGenericClusteredResource `json:"triggerEngine,omitempty"`
+	TriggerEngine AstarteTriggerEngineSpec `json:"triggerEngine,omitempty"`
 	// +optional
 	Dashboard AstarteDashboardSpec `json:"dashboard,omitempty"`
 }

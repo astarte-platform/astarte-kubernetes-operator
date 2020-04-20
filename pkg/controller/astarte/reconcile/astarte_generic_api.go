@@ -94,7 +94,7 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api apiv1al
 		service.Spec.Ports = []v1.ServicePort{
 			v1.ServicePort{
 				Name:       "http",
-				Port:       4000,
+				Port:       astarteServicesPort,
 				TargetPort: intstr.FromString("http"),
 				Protocol:   v1.ProtocolTCP,
 			},
@@ -152,7 +152,7 @@ func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha1.Astarte,
 			v1.Container{
 				Name: component.DashedString(),
 				Ports: []v1.ContainerPort{
-					v1.ContainerPort{Name: "http", ContainerPort: 4000},
+					v1.ContainerPort{Name: "http", ContainerPort: astarteServicesPort},
 				},
 				VolumeMounts:    getAstarteGenericAPIVolumeMounts(deploymentName, cr, api, component),
 				Image:           getAstarteImageForClusteredResource(component.DockerImageName(), api.AstarteGenericClusteredResource, cr),
@@ -203,12 +203,7 @@ func getAstarteGenericAPIVolumeMounts(deploymentName string, cr *apiv1alpha1.Ast
 }
 
 func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec, component apiv1alpha1.AstarteComponent) []v1.EnvVar {
-	ret := getAstarteCommonEnvVars(deploymentName, cr, component)
-	// Add Port
-	ret = append(ret, v1.EnvVar{
-		Name:  strings.ToUpper(component.String()) + "_PORT",
-		Value: "4000",
-	})
+	ret := getAstarteCommonEnvVars(deploymentName, cr, api.AstarteGenericClusteredResource, component)
 
 	// Should we disable authentication?
 	if pointy.BoolValue(api.DisableAuthentication, false) {
@@ -224,9 +219,24 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte,
 		// Add Cassandra Nodes, AMQP information and Max results count
 		rabbitMQHost, rabbitMQPort := misc.GetRabbitMQHostnameAndPort(cr)
 		userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetRabbitMQUserCredentialsSecret(cr)
+
+		cassandraPrefix := ""
+		v := getSemanticVersionForAstarteComponent(cr, cr.Spec.Components.AppengineAPI.Version)
+		checkVersion, _ := v.SetPrerelease("")
+		constraint, _ := semver.NewConstraint("< 1.0.0")
+		if constraint.Check(&checkVersion) {
+			cassandraPrefix = "ASTARTE_"
+		}
+
+		// Add Cassandra Nodes
+		ret = append(ret, v1.EnvVar{
+			Name:  cassandraPrefix + "CASSANDRA_NODES",
+			Value: getCassandraNodes(cr),
+		})
+
 		ret = append(ret,
 			v1.EnvVar{
-				Name:  "ASTARTE_CASSANDRA_NODES",
+				Name:  cassandraPrefix + "CASSANDRA_NODES",
 				Value: getCassandraNodes(cr),
 			},
 			v1.EnvVar{
@@ -256,6 +266,32 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte,
 				}},
 			},
 		)
+
+		if cr.Spec.RabbitMQ.Connection != nil {
+			if cr.Spec.RabbitMQ.Connection.VirtualHost != "" {
+				ret = append(ret,
+					v1.EnvVar{
+						Name:  "APPENGINE_API_ROOMS_AMQP_CLIENT_VIRTUAL_HOST",
+						Value: cr.Spec.RabbitMQ.Connection.VirtualHost,
+					})
+			}
+		}
+
+		if cr.Spec.Components.AppengineAPI.RoomEventsQueueName != "" {
+			ret = append(ret,
+				v1.EnvVar{
+					Name:  "APPENGINE_API_ROOMS_EVENTS_QUEUE_NAME",
+					Value: cr.Spec.Components.AppengineAPI.RoomEventsQueueName,
+				})
+		}
+
+		if cr.Spec.Components.AppengineAPI.RoomEventsExchangeName != "" {
+			ret = append(ret,
+				v1.EnvVar{
+					Name:  "APPENGINE_API_ROOMS_EVENTS_EXCHANGE_NAME",
+					Value: cr.Spec.Components.AppengineAPI.RoomEventsExchangeName,
+				})
+		}
 	case apiv1alpha1.HousekeepingAPI:
 		// Add Public Key Information
 		ret = append(ret, v1.EnvVar{
