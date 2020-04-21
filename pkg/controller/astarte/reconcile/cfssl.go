@@ -156,11 +156,10 @@ func validateCFSSLDefinition(cfssl apiv1alpha1.AstarteCFSSLSpec) error {
 
 func getCFSSLProbe(cr *apiv1alpha1.Astarte) *v1.Probe {
 	c, _ := semver.NewConstraint("< 0.11.0")
-	ver, _ := semver.NewVersion(getVersionForAstarteComponent(cr, cr.Spec.CFSSL.Version))
-	checkVersion, _ := ver.SetPrerelease("")
+	checkVersion := getSemanticVersionForAstarteComponent(cr, cr.Spec.CFSSL.Version)
 
 	// HTTP Health is supported only from 0.11 on
-	if c.Check(&checkVersion) {
+	if c.Check(checkVersion) {
 		return &v1.Probe{
 			Handler:             v1.Handler{TCPSocket: &v1.TCPSocketAction{Port: intstr.FromString("http")}},
 			InitialDelaySeconds: 10,

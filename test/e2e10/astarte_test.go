@@ -16,7 +16,7 @@
   limitations under the License.
 */
 
-package e2e011
+package e2e10
 
 import (
 	"testing"
@@ -67,11 +67,6 @@ func AstarteCluster(t *testing.T) {
 
 	t.Log("Starting Deployment Test")
 	if err = astarteDeploy011Test(t, f, ctx); err != nil {
-		t.Fatal(err)
-	}
-
-	t.Log("Starting Upgrade Test")
-	if err = astarteUpgradeTo10Test(t, f, ctx); err != nil {
 		t.Fatal(err)
 	}
 

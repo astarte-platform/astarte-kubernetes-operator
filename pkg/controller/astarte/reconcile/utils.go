@@ -27,6 +27,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"strconv"
+	"strings"
 
 	semver "github.com/Masterminds/semver/v3"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
@@ -42,6 +43,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+)
+
+const (
+	astarteServicesPort int32 = 4000
 )
 
 func encodePEMBlockToEncodedBytes(block *pem.Block) string {
@@ -271,55 +276,79 @@ func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quan
 	}
 }
 
-func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, component apiv1alpha1.AstarteComponent) []v1.EnvVar {
+func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, backend apiv1alpha1.AstarteGenericClusteredResource, component apiv1alpha1.AstarteComponent) []v1.EnvVar {
 	rabbitMQHost, rabbitMQPort := misc.GetRabbitMQHostnameAndPort(cr)
 	userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetRabbitMQUserCredentialsSecret(cr)
+
+	rpcPrefix := ""
+	v := getSemanticVersionForAstarteComponent(cr, backend.Version)
+	checkVersion, _ := v.SetPrerelease("")
+	constraint, _ := semver.NewConstraint("< 1.0.0")
+	if constraint.Check(&checkVersion) {
+		rpcPrefix = "ASTARTE_"
+	}
+
 	ret := []v1.EnvVar{
-		v1.EnvVar{
+		{
 			Name:  "RELEASE_CONFIG_DIR",
 			Value: "/beamconfig",
 		},
-		v1.EnvVar{
+		{
 			Name:  "REPLACE_OS_VARS",
 			Value: "true",
 		},
-		v1.EnvVar{
+		{
 			Name:      "MY_POD_IP",
 			ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "status.podIP"}},
 		},
-		v1.EnvVar{
+		{
 			Name:  "RELEASE_NAME",
 			Value: component.DockerImageName(),
 		},
-		v1.EnvVar{
+		{
 			Name: "ERLANG_COOKIE",
 			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
 				LocalObjectReference: v1.LocalObjectReference{Name: deploymentName + "-cookie"},
 				Key:                  "erlang-cookie",
 			}},
 		},
-		v1.EnvVar{
-			Name:  "ASTARTE_RPC_AMQP_CONNECTION_HOST",
+		{
+			Name:  rpcPrefix + "RPC_AMQP_CONNECTION_HOST",
 			Value: rabbitMQHost,
 		},
-		v1.EnvVar{
-			Name:  "ASTARTE_RPC_AMQP_CONNECTION_PORT",
+		{
+			Name:  rpcPrefix + "RPC_AMQP_CONNECTION_PORT",
 			Value: strconv.Itoa(int(rabbitMQPort)),
 		},
-		v1.EnvVar{
-			Name: "ASTARTE_RPC_AMQP_CONNECTION_USERNAME",
+		{
+			Name: rpcPrefix + "RPC_AMQP_CONNECTION_USERNAME",
 			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
 				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
 				Key:                  userCredentialsSecretUsernameKey,
 			}},
 		},
-		v1.EnvVar{
-			Name: "ASTARTE_RPC_AMQP_CONNECTION_PASSWORD",
+		{
+			Name: rpcPrefix + "RPC_AMQP_CONNECTION_PASSWORD",
 			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
 				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
 				Key:                  userCredentialsSecretPasswordKey,
 			}},
 		},
+	}
+
+	// Add Port (needed for all components, since we also have metrics)
+	ret = append(ret, v1.EnvVar{
+		Name:  strings.ToUpper(component.String()) + "_PORT",
+		Value: strconv.Itoa(int(astarteServicesPort)),
+	})
+
+	if cr.Spec.RabbitMQ.Connection != nil {
+		if cr.Spec.RabbitMQ.Connection.VirtualHost != "" {
+			ret = append(ret, v1.EnvVar{
+				Name:  rpcPrefix + "RPC_AMQP_CONNECTION_VIRTUAL_HOST",
+				Value: cr.Spec.RabbitMQ.Connection.VirtualHost,
+			})
+		}
 	}
 
 	return ret
@@ -347,7 +376,19 @@ func getVersionForAstarteComponent(cr *apiv1alpha1.Astarte, componentVersion str
 }
 
 func getSemanticVersionForAstarteComponent(cr *apiv1alpha1.Astarte, componentVersion string) *semver.Version {
-	semVer, _ := semver.NewVersion(getVersionForAstarteComponent(cr, componentVersion))
+	versionString := getVersionForAstarteComponent(cr, componentVersion)
+	semVer, err := semver.NewVersion(versionString)
+
+	// Ensure coherency
+	switch {
+	case err == nil:
+		// Always strip prereleases
+		semVer.SetPrerelease("")
+	case versionString == "snapshot":
+		// Return a version which represents a high enough release
+		semVer, _ = semver.NewVersion("999.99.9")
+	}
+
 	return semVer
 }
 

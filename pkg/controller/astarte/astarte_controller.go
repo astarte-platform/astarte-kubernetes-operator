@@ -147,11 +147,17 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 	// Build a SemVer out of the requested Astarte Version in the Spec.
 	newAstarteSemVersion, err := semver.NewVersion(instance.Spec.Version)
 	if err != nil {
-		// Reconcile every minute if we're here
-		r.recorder.Eventf(instance, "Warning", apiv1alpha1.AstarteResourceEventInconsistentVersion.String(),
-			"Could not build a valid Astarte Semantic Version out of requested Astarte Version %v", instance.Spec.Version)
-		return reconcile.Result{RequeueAfter: time.Minute},
-			fmt.Errorf("Could not build a valid Astarte Semantic Version out of requested Astarte Version %v. Refusing to proceed", instance.Spec.Version)
+		if instance.Spec.Version == "snapshot" {
+			// This is a very special case. We allow the Operator to reconcile with an arbitrary "high enough" version, and we spit a warning
+			reqLogger.Info("Reconciling a snapshot version. Make sure you know what you're doing!")
+			newAstarteSemVersion, _ = semver.NewVersion("999.99.9")
+		} else {
+			// Reconcile every minute if we're here
+			r.recorder.Eventf(instance, "Warning", apiv1alpha1.AstarteResourceEventInconsistentVersion.String(),
+				"Could not build a valid Astarte Semantic Version out of requested Astarte Version %v", instance.Spec.Version)
+			return reconcile.Result{RequeueAfter: time.Minute},
+				fmt.Errorf("Could not build a valid Astarte Semantic Version out of requested Astarte Version %v. Refusing to proceed", instance.Spec.Version)
+		}
 	}
 	// Generate another one for checks, as constraints do not work with pre-releases
 	constraintCheckAstarteSemVersion := newAstarteSemVersion
@@ -165,7 +171,7 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 		// Don't reconcile, this is a development failure.
 		return reconcile.Result{Requeue: false}, err
 	}
-	if !constraint.Check(constraintCheckAstarteSemVersion) {
+	if !constraint.Check(constraintCheckAstarteSemVersion) && instance.Spec.Version != "snapshot" {
 		r.recorder.Eventf(instance, "Warning", apiv1alpha1.AstarteResourceEventUnsupportedVersion.String(),
 			"Astarte version %s is not supported by this Operator! This Operator supports versions respecting this constraint: %s. Please migrate to an Operator supporting this version",
 			instance.Spec.Version, version.AstarteVersionConstraintString)
@@ -304,11 +310,16 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 		// Build the semantic version
 		oldAstarteSemVersion, err := semver.NewVersion(versionString)
 		if err != nil {
-			// Reconcile every minute if we're here
-			r.recorder.Eventf(instance, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
-				"Could not build a valid Astarte Semantic Version out of existing Astarte Version %v", versionString)
-			return reconcile.Result{RequeueAfter: time.Minute},
-				fmt.Errorf("Could not build a valid Astarte Semantic Version out of existing Astarte Version %v. Refusing to proceed", versionString)
+			if versionString == "snapshot" {
+				// This is a very special case. We allow the Operator to reconcile with an arbitrary "high enough" version
+				newAstarteSemVersion, _ = semver.NewVersion("999.99.9")
+			} else {
+				// Reconcile every minute if we're here
+				r.recorder.Eventf(instance, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
+					"Could not build a valid Astarte Semantic Version out of existing Astarte Version %v", versionString)
+				return reconcile.Result{RequeueAfter: time.Minute},
+					fmt.Errorf("Could not build a valid Astarte Semantic Version out of existing Astarte Version %v. Refusing to proceed", versionString)
+			}
 		}
 
 		// Ok! Let's try and upgrade (if needed)
@@ -375,7 +386,7 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 
 	// Trigger Engine right before DUP
-	if err = recon.EnsureAstarteGenericBackend(instance, instance.Spec.Components.TriggerEngine, apiv1alpha1.TriggerEngine, r.client, r.scheme); err != nil {
+	if err = recon.EnsureAstarteGenericBackend(instance, instance.Spec.Components.TriggerEngine.AstarteGenericClusteredResource, apiv1alpha1.TriggerEngine, r.client, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 

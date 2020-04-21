@@ -22,13 +22,19 @@ import semver "github.com/Masterminds/semver/v3"
 
 // GetDefaultVersionForCFSSL returns the default CFSSL version based on the Astarte version requested
 func GetDefaultVersionForCFSSL(astarteVersion *semver.Version) string {
+	latestVersion := "1.4.1-astarte.0"
+	if astarteVersion == nil {
+		// We're on snapshot, return latest
+		return latestVersion
+	}
+
 	checkVersion, _ := astarteVersion.SetPrerelease("")
 	c, _ := semver.NewConstraint("< 0.11.0")
 	if c.Check(&checkVersion) {
 		return "1.0.0-astarte.0"
 	}
 
-	return "1.4.1-astarte.0"
+	return latestVersion
 }
 
 // GetDefaultVersionForCassandra returns the default Cassandra version based on the Astarte version requested
@@ -39,6 +45,12 @@ func GetDefaultVersionForCassandra(astarteVersion *semver.Version) string {
 
 // GetDefaultVersionForRabbitMQ returns the default RabbitMQ version based on the Astarte version requested
 func GetDefaultVersionForRabbitMQ(astarteVersion *semver.Version) string {
+	latestVersion := "3.8"
+	if astarteVersion == nil {
+		// We're on snapshot, return latest
+		return latestVersion
+	}
+
 	checkVersion, _ := astarteVersion.SetPrerelease("")
 	beforeZeroEleven, _ := semver.NewConstraint("< 0.11.0")
 	if beforeZeroEleven.Check(&checkVersion) {
@@ -50,5 +62,5 @@ func GetDefaultVersionForRabbitMQ(astarteVersion *semver.Version) string {
 		return "3.7.21"
 	}
 
-	return "3.8"
+	return latestVersion
 }

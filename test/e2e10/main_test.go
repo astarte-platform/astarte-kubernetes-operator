@@ -16,13 +16,14 @@
   limitations under the License.
 */
 
-package version
+package e2e10
 
-const (
-	// Version is the Operator's version
-	Version = "0.11.0"
+import (
+	"testing"
 
-	// AstarteVersionConstraintString represents the range of supported Astarte versions for this Operator.
-	// If the Astarte version falls out of this range, reconciliation will be immediately aborted.
-	AstarteVersionConstraintString = ">= 0.10.0, < 1.1.0"
+	f "github.com/operator-framework/operator-sdk/pkg/test"
 )
+
+func TestMain(m *testing.M) {
+	f.MainEntry(m)
+}
