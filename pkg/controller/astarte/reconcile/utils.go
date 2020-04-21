@@ -32,6 +32,7 @@ import (
 	semver "github.com/Masterminds/semver/v3"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
+	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -46,7 +47,9 @@ import (
 )
 
 const (
-	astarteServicesPort int32 = 4000
+	astarteServicesPort int32  = 4000
+	oldAstartePrefix    string = "ASTARTE_"
+	noneClusterIP       string = "None"
 )
 
 func encodePEMBlockToEncodedBytes(block *pem.Block) string {
@@ -102,10 +105,10 @@ func getStandardAntiAffinityForAppLabel(app string) *v1.Affinity {
 	return &v1.Affinity{
 		PodAntiAffinity: &v1.PodAntiAffinity{
 			RequiredDuringSchedulingIgnoredDuringExecution: []v1.PodAffinityTerm{
-				v1.PodAffinityTerm{
+				{
 					LabelSelector: &metav1.LabelSelector{
 						MatchExpressions: []metav1.LabelSelectorRequirement{
-							metav1.LabelSelectorRequirement{
+							{
 								Key:      "app",
 								Operator: metav1.LabelSelectorOpIn,
 								Values:   []string{app},
@@ -119,14 +122,6 @@ func getStandardAntiAffinityForAppLabel(app string) *v1.Affinity {
 	}
 }
 
-func reconcileConfigMap(objName string, data map[string]string, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) (controllerutil.OperationResult, error) {
-	return misc.ReconcileConfigMap(objName, data, cr, c, scheme, log)
-}
-
-func reconcileSecret(objName string, data map[string][]byte, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) (controllerutil.OperationResult, error) {
-	return misc.ReconcileSecret(objName, data, cr, c, scheme, log)
-}
-
 func reconcileStandardRBACForClusteringForApp(name string, policyRules []rbacv1.PolicyRule, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	// Service Account
 	serviceAccount := &v1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: cr.Namespace}}
@@ -137,7 +132,7 @@ func reconcileStandardRBACForClusteringForApp(name string, policyRules []rbacv1.
 		// Actually nothing to do here.
 		return nil
 	}); err == nil {
-		logCreateOrUpdateOperationResult(result, cr, serviceAccount)
+		misc.LogCreateOrUpdateOperationResult(log, result, cr, serviceAccount)
 	} else {
 		return err
 	}
@@ -152,7 +147,7 @@ func reconcileStandardRBACForClusteringForApp(name string, policyRules []rbacv1.
 		role.Rules = policyRules
 		return nil
 	}); err == nil {
-		logCreateOrUpdateOperationResult(result, cr, serviceAccount)
+		misc.LogCreateOrUpdateOperationResult(log, result, cr, serviceAccount)
 	} else {
 		return err
 	}
@@ -165,7 +160,7 @@ func reconcileStandardRBACForClusteringForApp(name string, policyRules []rbacv1.
 		}
 		// Always impose what we want in terms of policy roles without caring.
 		roleBinding.Subjects = []rbacv1.Subject{
-			rbacv1.Subject{
+			{
 				Kind: "ServiceAccount",
 				Name: name,
 			},
@@ -177,16 +172,12 @@ func reconcileStandardRBACForClusteringForApp(name string, policyRules []rbacv1.
 		}
 		return nil
 	}); err == nil {
-		logCreateOrUpdateOperationResult(result, cr, serviceAccount)
+		misc.LogCreateOrUpdateOperationResult(log, result, cr, serviceAccount)
 	} else {
 		return err
 	}
 
 	return nil
-}
-
-func logCreateOrUpdateOperationResult(result controllerutil.OperationResult, cr *apiv1alpha1.Astarte, obj metav1.Object) {
-	misc.LogCreateOrUpdateOperationResult(log, result, cr, obj)
 }
 
 func getAstarteImageFromChannel(name, tag string, cr *apiv1alpha1.Astarte) string {
@@ -215,7 +206,9 @@ func ensureErlangCookieSecret(secretName string, cr *apiv1alpha1.Astarte, c clie
 			// TODO: Throw a reconcile error and/or delete the persistent volume if we are in that situation.
 			reqLogger.Info("Creating new Cookie", "cookie-name", secretName)
 			cookie := make([]byte, 32)
-			rand.Read(cookie)
+			if _, e := rand.Read(cookie); e != nil {
+				return e
+			}
 
 			cookieSecret := v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
@@ -224,12 +217,12 @@ func ensureErlangCookieSecret(secretName string, cr *apiv1alpha1.Astarte, c clie
 				},
 				StringData: map[string]string{"erlang-cookie": base32.StdEncoding.EncodeToString(cookie)},
 			}
-			if err := controllerutil.SetControllerReference(cr, &cookieSecret, scheme); err != nil {
-				return err
+			if e := controllerutil.SetControllerReference(cr, &cookieSecret, scheme); e != nil {
+				return e
 			}
 			// We force creation as for no reason in the world we want to even think about updating this.
-			if err = c.Create(context.TODO(), &cookieSecret); err != nil {
-				return err
+			if e := c.Create(context.TODO(), &cookieSecret); e != nil {
+				return e
 			}
 		} else {
 			// Return here
@@ -285,7 +278,7 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, bac
 	checkVersion, _ := v.SetPrerelease("")
 	constraint, _ := semver.NewConstraint("< 1.0.0")
 	if constraint.Check(&checkVersion) {
-		rpcPrefix = "ASTARTE_"
+		rpcPrefix = oldAstartePrefix
 	}
 
 	ret := []v1.EnvVar{
@@ -295,7 +288,7 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, bac
 		},
 		{
 			Name:  "REPLACE_OS_VARS",
-			Value: "true",
+			Value: strconv.FormatBool(true),
 		},
 		{
 			Name:      "MY_POD_IP",
@@ -356,11 +349,11 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, bac
 
 func getAstarteCommonVolumes(cr *apiv1alpha1.Astarte) []v1.Volume {
 	ret := []v1.Volume{
-		v1.Volume{
+		{
 			Name: "beam-config",
 			VolumeSource: v1.VolumeSource{ConfigMap: &v1.ConfigMapVolumeSource{
 				LocalObjectReference: v1.LocalObjectReference{Name: fmt.Sprintf("%s-generic-erlang-configuration", cr.Name)},
-				Items:                []v1.KeyToPath{v1.KeyToPath{Key: "vm.args", Path: "vm.args"}},
+				Items:                []v1.KeyToPath{{Key: "vm.args", Path: "vm.args"}},
 			}},
 		},
 	}
@@ -377,16 +370,10 @@ func getVersionForAstarteComponent(cr *apiv1alpha1.Astarte, componentVersion str
 
 func getSemanticVersionForAstarteComponent(cr *apiv1alpha1.Astarte, componentVersion string) *semver.Version {
 	versionString := getVersionForAstarteComponent(cr, componentVersion)
-	semVer, err := semver.NewVersion(versionString)
+	semVer, err := version.GetAstarteSemanticVersionFrom(versionString)
 
-	// Ensure coherency
-	switch {
-	case err == nil:
-		// Always strip prereleases
+	if err == nil {
 		semVer.SetPrerelease("")
-	case versionString == "snapshot":
-		// Return a version which represents a high enough release
-		semVer, _ = semver.NewVersion("999.99.9")
 	}
 
 	return semVer
@@ -394,7 +381,7 @@ func getSemanticVersionForAstarteComponent(cr *apiv1alpha1.Astarte, componentVer
 
 func getAstarteCommonVolumeMounts() []v1.VolumeMount {
 	ret := []v1.VolumeMount{
-		v1.VolumeMount{
+		{
 			Name:      "beam-config",
 			MountPath: "/beamconfig",
 			ReadOnly:  true,

@@ -37,14 +37,13 @@ import (
 func EnsureCFSSLCASecret(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	jobName := cr.Name + "-cfssl-ca-secret-job"
 	secretName := cr.Name + "-cfssl-ca"
+	serviceAccountName := jobName
 	// First of all, ensure we have the right roles.
 	if pointy.BoolValue(cr.Spec.RBAC, true) {
 		if err := reconcileStandardRBACForClusteringForApp(jobName, getCFSSLCAJobPolicyRules(), cr, c, scheme); err != nil {
 			return err
 		}
-	}
-	serviceAccountName := jobName
-	if pointy.BoolValue(cr.Spec.RBAC, false) {
+	} else {
 		serviceAccountName = ""
 	}
 
@@ -69,9 +68,7 @@ func EnsureCFSSLCASecret(cr *apiv1alpha1.Astarte, c client.Client, scheme *runti
 	case secretThere && jobThere:
 		// Delete the Job.
 		reqLogger.Info("Deleting stale CFSSL CA Job")
-		if err := c.Delete(context.TODO(), theJob); err != nil {
-			return err
-		}
+		return c.Delete(context.TODO(), theJob)
 	case !secretThere && !jobThere:
 		// Create the Job
 		reqLogger.Info("Creating CFSSL CA Job")
@@ -84,16 +81,16 @@ func EnsureCFSSLCASecret(cr *apiv1alpha1.Astarte, c client.Client, scheme *runti
 						ServiceAccountName: serviceAccountName,
 						ImagePullSecrets:   cr.Spec.ImagePullSecrets,
 						RestartPolicy:      v1.RestartPolicyNever,
-						Containers: []v1.Container{v1.Container{
+						Containers: []v1.Container{{
 							Name:            jobName,
 							Image:           getAstarteImageFromChannel("cfssl-kubernetes-secret", "latest", cr),
 							ImagePullPolicy: getImagePullPolicy(cr),
 							Env: []v1.EnvVar{
-								v1.EnvVar{
+								{
 									Name:  "CFSSL_URL",
 									Value: getCFSSLURL(cr),
 								},
-								v1.EnvVar{
+								{
 									Name:  "SECRET_NAME",
 									Value: secretName,
 								},
@@ -106,9 +103,8 @@ func EnsureCFSSLCASecret(cr *apiv1alpha1.Astarte, c client.Client, scheme *runti
 		if err := controllerutil.SetControllerReference(cr, job, scheme); err != nil {
 			return err
 		}
-		if err := c.Create(context.TODO(), job); err != nil {
-			return err
-		}
+
+		return c.Create(context.TODO(), job)
 	case !secretThere && jobThere:
 		// If the job failed, take action. Otherwise, just skip this.
 		for _, condition := range theJob.Status.Conditions {
@@ -116,24 +112,23 @@ func EnsureCFSSLCASecret(cr *apiv1alpha1.Astarte, c client.Client, scheme *runti
 				// The Job has failed, but no secret is available. Let's delete the job and wait
 				// for the next reconciliation.
 				reqLogger.Info("CFSSL CA Job failed. Deleting it, and waiting for next reconciliation to recreate it")
-				if err := c.Delete(context.TODO(), theJob); err != nil {
-					return err
-				}
+				return c.Delete(context.TODO(), theJob)
 			}
 		}
 	}
 
+	// We should not be here ever. But just in case.
 	return nil
 }
 
 func getCFSSLCAJobPolicyRules() []rbacv1.PolicyRule {
 	return []rbacv1.PolicyRule{
-		rbacv1.PolicyRule{
+		{
 			APIGroups: []string{""},
 			Resources: []string{"secrets"},
 			Verbs:     []string{"create"},
 		},
-		rbacv1.PolicyRule{
+		{
 			APIGroups: []string{""},
 			Resources: []string{"pods"},
 			Verbs:     []string{"list"},

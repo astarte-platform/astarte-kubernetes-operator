@@ -109,7 +109,7 @@ func EnsureAstarteGenericBackendWithCustomProbe(cr *apiv1alpha1.Astarte, backend
 		return err
 	}
 
-	logCreateOrUpdateOperationResult(result, cr, deployment)
+	misc.LogCreateOrUpdateOperationResult(log, result, cr, deployment)
 	return nil
 }
 
@@ -126,37 +126,29 @@ func getAstarteGenericBackendPodSpec(deploymentName string, cr *apiv1alpha1.Asta
 					// This port is not exposed through any service - it is just used for health checks and the likes.
 					{Name: "http", ContainerPort: astarteServicesPort},
 				},
-				VolumeMounts:    getAstarteGenericBackendVolumeMounts(deploymentName, cr, backend, component),
+				VolumeMounts:    getAstarteGenericBackendVolumeMounts(),
 				Image:           getAstarteImageForClusteredResource(component.DockerImageName(), backend, cr),
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Resources:       misc.GetResourcesForAstarteComponent(cr, backend.Resources, component),
 				Env:             getAstarteGenericBackendEnvVars(deploymentName, cr, backend, component),
-				ReadinessProbe:  getAstarteBackendProbe(cr, backend, component, customProbe),
-				LivenessProbe:   getAstarteBackendProbe(cr, backend, component, customProbe),
+				ReadinessProbe:  getAstarteBackendProbe(cr, backend, customProbe),
+				LivenessProbe:   getAstarteBackendProbe(cr, backend, customProbe),
 			},
 		},
-		Volumes: getAstarteGenericBackendVolumes(deploymentName, cr, backend, component),
+		Volumes: getAstarteGenericBackendVolumes(cr),
 	}
 
 	return ps
 }
 
-func getAstarteGenericBackendVolumes(deploymentName string, cr *apiv1alpha1.Astarte, backend apiv1alpha1.AstarteGenericClusteredResource, component apiv1alpha1.AstarteComponent) []v1.Volume {
+func getAstarteGenericBackendVolumes(cr *apiv1alpha1.Astarte) []v1.Volume {
 	ret := getAstarteCommonVolumes(cr)
-
-	// Depending on the component, we might need to add some more stuff.
-	switch component {
-	}
 
 	return ret
 }
 
-func getAstarteGenericBackendVolumeMounts(deploymentName string, cr *apiv1alpha1.Astarte, backend apiv1alpha1.AstarteGenericClusteredResource, component apiv1alpha1.AstarteComponent) []v1.VolumeMount {
+func getAstarteGenericBackendVolumeMounts() []v1.VolumeMount {
 	ret := getAstarteCommonVolumeMounts()
-
-	// Depending on the component, we might need to add some more stuff.
-	switch component {
-	}
 
 	return ret
 }
@@ -169,7 +161,7 @@ func getAstarteGenericBackendEnvVars(deploymentName string, cr *apiv1alpha1.Asta
 	checkVersion, _ := v.SetPrerelease("")
 	constraint, _ := semver.NewConstraint("< 1.0.0")
 	if constraint.Check(&checkVersion) {
-		cassandraPrefix = "ASTARTE_"
+		cassandraPrefix = oldAstartePrefix
 	}
 
 	// Add Cassandra Nodes
@@ -201,125 +193,7 @@ func getAstarteGenericBackendEnvVars(deploymentName string, cr *apiv1alpha1.Asta
 				Value: misc.GetVerneMQBrokerURL(cr),
 			})
 	case apiv1alpha1.DataUpdaterPlant:
-		rabbitMQHost, rabbitMQPort := misc.GetRabbitMQHostnameAndPort(cr)
-		userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetRabbitMQUserCredentialsSecret(cr)
-
-		rabbitMQVirtualHost := "/"
-		if cr.Spec.RabbitMQ.Connection != nil {
-			if cr.Spec.RabbitMQ.Connection.VirtualHost != "" {
-				rabbitMQVirtualHost = cr.Spec.RabbitMQ.Connection.VirtualHost
-			}
-		}
-
-		ret = append(ret,
-			v1.EnvVar{
-				Name:  "DATA_UPDATER_PLANT_AMQP_CONSUMER_HOST",
-				Value: rabbitMQHost,
-			},
-			v1.EnvVar{
-				Name:  "DATA_UPDATER_PLANT_AMQP_CONSUMER_PORT",
-				Value: strconv.Itoa(int(rabbitMQPort)),
-			},
-			v1.EnvVar{
-				Name:  "DATA_UPDATER_PLANT_AMQP_CONSUMER_VIRTUAL_HOST",
-				Value: rabbitMQVirtualHost,
-			},
-			v1.EnvVar{
-				Name: "DATA_UPDATER_PLANT_AMQP_CONSUMER_USERNAME",
-				ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-					LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-					Key:                  userCredentialsSecretUsernameKey,
-				}},
-			},
-			v1.EnvVar{
-				Name: "DATA_UPDATER_PLANT_AMQP_CONSUMER_PASSWORD",
-				ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-					LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-					Key:                  userCredentialsSecretPasswordKey,
-				}},
-			},
-			v1.EnvVar{
-				Name:  "DATA_UPDATER_PLANT_AMQP_PRODUCER_HOST",
-				Value: rabbitMQHost,
-			},
-			v1.EnvVar{
-				Name:  "DATA_UPDATER_PLANT_AMQP_PRODUCER_PORT",
-				Value: strconv.Itoa(int(rabbitMQPort)),
-			},
-			v1.EnvVar{
-				Name:  "DATA_UPDATER_PLANT_AMQP_PRODUCER_VIRTUAL_HOST",
-				Value: rabbitMQVirtualHost,
-			},
-			v1.EnvVar{
-				Name: "DATA_UPDATER_PLANT_AMQP_PRODUCER_USERNAME",
-				ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-					LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-					Key:                  userCredentialsSecretUsernameKey,
-				}},
-			},
-			v1.EnvVar{
-				Name: "DATA_UPDATER_PLANT_AMQP_PRODUCER_PASSWORD",
-				ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-					LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-					Key:                  userCredentialsSecretPasswordKey,
-				}},
-			})
-
-		if eventsExchangeName != "" {
-			ret = append(ret,
-				v1.EnvVar{
-					Name:  "DATA_UPDATER_PLANT_AMQP_EVENTS_EXCHANGE_NAME",
-					Value: eventsExchangeName,
-				})
-		}
-
-		if cr.Spec.Components.DataUpdaterPlant.PrefetchCount != nil {
-			ret = append(ret,
-				v1.EnvVar{
-					Name:  "DATA_UPDATER_PLANT_AMQP_CONSUMER_PREFETCH_COUNT",
-					Value: strconv.Itoa(pointy.IntValue(cr.Spec.Components.DataUpdaterPlant.PrefetchCount, 300)),
-				})
-		}
-
-		checkVersion := getSemanticVersionForAstarteComponent(cr, backend.Version)
-		// 0.11+ variables
-		c, _ := semver.NewConstraint(">= 0.11.0")
-
-		if c.Check(checkVersion) {
-			// When installing Astarte >= 0.11, add the data queue count
-			ret = append(ret,
-				v1.EnvVar{
-					Name: "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_RANGE_START",
-					// TODO: This actually binds DUP to be Replicated by 1. This will change in the future after 0.11, most likely.
-					Value: "0",
-				},
-				v1.EnvVar{
-					Name: "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_RANGE_END",
-					// same as above, but fixed at queue count. Subtract 1 since the range ends at count - 1
-					Value: strconv.Itoa(getDataQueueCount(cr) - 1),
-				})
-
-			if cr.Spec.RabbitMQ.DataQueuesPrefix != "" {
-				ret = append(ret,
-					v1.EnvVar{
-						Name:  "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_PREFIX",
-						Value: cr.Spec.RabbitMQ.DataQueuesPrefix,
-					})
-			}
-		}
-
-		// 1.0+ variables
-		c, _ = semver.NewConstraint(">= 1.0.0")
-
-		if c.Check(checkVersion) {
-			if cr.Spec.VerneMQ.DeviceHeartbeatSeconds > 0 {
-				ret = append(ret,
-					v1.EnvVar{
-						Name:  "DATA_UPDATER_PLANT_DEVICE_HEARTBEAT_INTERVAL_MS",
-						Value: strconv.Itoa(cr.Spec.VerneMQ.DeviceHeartbeatSeconds * 1000),
-					})
-			}
-		}
+		ret = append(ret, getAstarteDataUpdaterPlantBackendEnvVars(eventsExchangeName, cr, backend)...)
 	case apiv1alpha1.TriggerEngine:
 		rabbitMQHost, rabbitMQPort := misc.GetRabbitMQHostnameAndPort(cr)
 		userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetRabbitMQUserCredentialsSecret(cr)
@@ -385,8 +259,130 @@ func getAstarteGenericBackendEnvVars(deploymentName string, cr *apiv1alpha1.Asta
 	return ret
 }
 
-func getAstarteBackendProbe(cr *apiv1alpha1.Astarte, backend apiv1alpha1.AstarteGenericClusteredResource, component apiv1alpha1.AstarteComponent,
-	customProbe *v1.Probe) *v1.Probe {
+func getAstarteDataUpdaterPlantBackendEnvVars(eventsExchangeName string, cr *apiv1alpha1.Astarte, backend apiv1alpha1.AstarteGenericClusteredResource) []v1.EnvVar {
+	rabbitMQHost, rabbitMQPort := misc.GetRabbitMQHostnameAndPort(cr)
+	userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetRabbitMQUserCredentialsSecret(cr)
+
+	rabbitMQVirtualHost := "/"
+	if cr.Spec.RabbitMQ.Connection != nil {
+		if cr.Spec.RabbitMQ.Connection.VirtualHost != "" {
+			rabbitMQVirtualHost = cr.Spec.RabbitMQ.Connection.VirtualHost
+		}
+	}
+
+	ret := []v1.EnvVar{
+		{
+			Name:  "DATA_UPDATER_PLANT_AMQP_CONSUMER_HOST",
+			Value: rabbitMQHost,
+		},
+		{
+			Name:  "DATA_UPDATER_PLANT_AMQP_CONSUMER_PORT",
+			Value: strconv.Itoa(int(rabbitMQPort)),
+		},
+		{
+			Name:  "DATA_UPDATER_PLANT_AMQP_CONSUMER_VIRTUAL_HOST",
+			Value: rabbitMQVirtualHost,
+		},
+		{
+			Name: "DATA_UPDATER_PLANT_AMQP_CONSUMER_USERNAME",
+			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
+				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
+				Key:                  userCredentialsSecretUsernameKey,
+			}},
+		},
+		{
+			Name: "DATA_UPDATER_PLANT_AMQP_CONSUMER_PASSWORD",
+			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
+				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
+				Key:                  userCredentialsSecretPasswordKey,
+			}},
+		},
+		{
+			Name:  "DATA_UPDATER_PLANT_AMQP_PRODUCER_HOST",
+			Value: rabbitMQHost,
+		},
+		{
+			Name:  "DATA_UPDATER_PLANT_AMQP_PRODUCER_PORT",
+			Value: strconv.Itoa(int(rabbitMQPort)),
+		},
+		{
+			Name:  "DATA_UPDATER_PLANT_AMQP_PRODUCER_VIRTUAL_HOST",
+			Value: rabbitMQVirtualHost,
+		},
+		{
+			Name: "DATA_UPDATER_PLANT_AMQP_PRODUCER_USERNAME",
+			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
+				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
+				Key:                  userCredentialsSecretUsernameKey,
+			}},
+		},
+		{
+			Name: "DATA_UPDATER_PLANT_AMQP_PRODUCER_PASSWORD",
+			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
+				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
+				Key:                  userCredentialsSecretPasswordKey,
+			}},
+		}}
+
+	if eventsExchangeName != "" {
+		ret = append(ret,
+			v1.EnvVar{
+				Name:  "DATA_UPDATER_PLANT_AMQP_EVENTS_EXCHANGE_NAME",
+				Value: eventsExchangeName,
+			})
+	}
+
+	if cr.Spec.Components.DataUpdaterPlant.PrefetchCount != nil {
+		ret = append(ret,
+			v1.EnvVar{
+				Name:  "DATA_UPDATER_PLANT_AMQP_CONSUMER_PREFETCH_COUNT",
+				Value: strconv.Itoa(pointy.IntValue(cr.Spec.Components.DataUpdaterPlant.PrefetchCount, 300)),
+			})
+	}
+
+	checkVersion := getSemanticVersionForAstarteComponent(cr, backend.Version)
+	// 0.11+ variables
+	c, _ := semver.NewConstraint(">= 0.11.0")
+
+	if c.Check(checkVersion) {
+		// When installing Astarte >= 0.11, add the data queue count
+		ret = append(ret,
+			v1.EnvVar{
+				Name: "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_RANGE_START",
+				// TODO: This actually binds DUP to be Replicated by 1. This will change in the future after 0.11, most likely.
+				Value: "0",
+			},
+			v1.EnvVar{
+				Name: "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_RANGE_END",
+				// same as above, but fixed at queue count. Subtract 1 since the range ends at count - 1
+				Value: strconv.Itoa(getDataQueueCount(cr) - 1),
+			})
+
+		if cr.Spec.RabbitMQ.DataQueuesPrefix != "" {
+			ret = append(ret,
+				v1.EnvVar{
+					Name:  "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_PREFIX",
+					Value: cr.Spec.RabbitMQ.DataQueuesPrefix,
+				})
+		}
+	}
+
+	// 1.0+ variables
+	c, _ = semver.NewConstraint(">= 1.0.0")
+	if c.Check(checkVersion) {
+		if cr.Spec.VerneMQ.DeviceHeartbeatSeconds > 0 {
+			ret = append(ret,
+				v1.EnvVar{
+					Name:  "DATA_UPDATER_PLANT_DEVICE_HEARTBEAT_INTERVAL_MS",
+					Value: strconv.Itoa(cr.Spec.VerneMQ.DeviceHeartbeatSeconds * 1000),
+				})
+		}
+	}
+
+	return ret
+}
+
+func getAstarteBackendProbe(cr *apiv1alpha1.Astarte, backend apiv1alpha1.AstarteGenericClusteredResource, customProbe *v1.Probe) *v1.Probe {
 	if customProbe != nil {
 		return customProbe
 	}

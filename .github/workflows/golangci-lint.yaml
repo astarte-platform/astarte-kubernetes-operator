@@ -16,14 +16,22 @@
 # limitations under the License.
 #
 
-name: "Docker Image build test"
-on: [pull_request, push]
+name: "Static code checking"
+on:
+  pull_request:
+  push:
 
 jobs:
-  test:
+  golangci-lint:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Build test image
+    - uses: actions/setup-go@v2
+      with:
+        # Ensure we're on Go 1.14
+        go-version: '1.14.x'
+    # Run golint-ci
+    - name: Run golangci-lint
       run: |
-        docker build -t astarte-operator-ci:test -f build/Dockerfile .
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.24.0
+        ./bin/golangci-lint run

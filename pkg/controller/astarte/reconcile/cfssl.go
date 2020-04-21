@@ -27,6 +27,7 @@ import (
 	semver "github.com/Masterminds/semver/v3"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/controller/astarte/deps"
+	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -78,7 +79,7 @@ func EnsureCFSSL(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Schem
 		// Always set everything to what we require.
 		service.Spec.Type = v1.ServiceTypeClusterIP
 		service.Spec.Ports = []v1.ServicePort{
-			v1.ServicePort{
+			{
 				Name:       "http",
 				Port:       80,
 				TargetPort: intstr.FromString("http"),
@@ -88,18 +89,18 @@ func EnsureCFSSL(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Schem
 		service.Spec.Selector = labels
 		return nil
 	}); err == nil {
-		logCreateOrUpdateOperationResult(result, cr, service)
+		misc.LogCreateOrUpdateOperationResult(log, result, cr, service)
 	} else {
 		return err
 	}
 
 	// Reconcile the ConfigMap
-	configMap, err := getCFSSLConfigMapData(statefulSetName, cr)
+	configMap, err := getCFSSLConfigMapData(cr)
 	if err != nil {
 		return err
 	}
-	if _, err := reconcileConfigMap(statefulSetName+"-config", configMap, cr, c, scheme); err != nil {
-		return err
+	if _, e := misc.ReconcileConfigMap(statefulSetName+"-config", configMap, cr, c, scheme, log); e != nil {
+		return e
 	}
 
 	// Let's check upon Storage now.
@@ -127,8 +128,8 @@ func EnsureCFSSL(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Schem
 	// Build the StatefulSet
 	cfsslStatefulSet := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: statefulSetName, Namespace: cr.Namespace}}
 	result, err := controllerutil.CreateOrUpdate(context.TODO(), c, cfsslStatefulSet, func() error {
-		if err := controllerutil.SetControllerReference(cr, cfsslStatefulSet, scheme); err != nil {
-			return err
+		if e := controllerutil.SetControllerReference(cr, cfsslStatefulSet, scheme); e != nil {
+			return e
 		}
 
 		// Assign the Spec.
@@ -141,7 +142,7 @@ func EnsureCFSSL(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Schem
 		return err
 	}
 
-	logCreateOrUpdateOperationResult(result, cr, service)
+	misc.LogCreateOrUpdateOperationResult(log, result, cr, service)
 	return nil
 }
 
@@ -198,14 +199,14 @@ func getCFSSLPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.Ast
 		TerminationGracePeriodSeconds: pointy.Int64(30),
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
 		Containers: []v1.Container{
-			v1.Container{
+			{
 				Name: "cfssl",
 				VolumeMounts: []v1.VolumeMount{
-					v1.VolumeMount{
+					{
 						Name:      "config",
 						MountPath: "/etc/cfssl",
 					},
-					v1.VolumeMount{
+					{
 						Name:      dataVolumeName,
 						MountPath: "/data",
 					},
@@ -213,7 +214,7 @@ func getCFSSLPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.Ast
 				Image:           cfsslImage,
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Ports: []v1.ContainerPort{
-					v1.ContainerPort{Name: "http", ContainerPort: 8080},
+					{Name: "http", ContainerPort: 8080},
 				},
 				ReadinessProbe: getCFSSLProbe(cr),
 				LivenessProbe:  getCFSSLProbe(cr),
@@ -221,7 +222,7 @@ func getCFSSLPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.Ast
 			},
 		},
 		Volumes: []v1.Volume{
-			v1.Volume{
+			{
 				Name: "config",
 				VolumeSource: v1.VolumeSource{
 					ConfigMap: &v1.ConfigMapVolumeSource{
@@ -235,21 +236,11 @@ func getCFSSLPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.Ast
 	return ps
 }
 
-func getCFSSLConfigMapData(statefulSetName string, cr *apiv1alpha1.Astarte) (map[string]string, error) {
+func getCFSSLConfigMapData(cr *apiv1alpha1.Astarte) (map[string]string, error) {
 	// First of all, build the default maps.
-	dbConfigDefaultJSON := `{"data_source": "/data/certs.db", "driver": "sqlite3"}`
-	caRootConfigDefaultJSON := `{"signing": {"default": {"usages": ["digital signature", "cert sign", "crl sign", "signing"], "ca_constraint": {"max_path_len_zero": true, "max_path_len": 0, "is_ca": true}, "expiry": "2190h"}}}`
-	csrRootCaDefaultJSON := `{"ca": {"expiry": "262800h"}, "CN": "Astarte Root CA", "key": {"algo": "rsa", "size": 2048}, "names": [{"C": "IT", "ST": "Lombardia", "L": "Milan", "O": "Astarte User", "OU": "IoT Division"}]}`
-	var dbConfig, caRootConfig, csrRootCa map[string]interface{}
-
-	if err := json.Unmarshal([]byte(dbConfigDefaultJSON), &dbConfig); err != nil {
-		return nil, err
-	}
-	if err := json.Unmarshal([]byte(caRootConfigDefaultJSON), &caRootConfig); err != nil {
-		return nil, err
-	}
-	if err := json.Unmarshal([]byte(csrRootCaDefaultJSON), &csrRootCa); err != nil {
-		return nil, err
+	dbConfig, caRootConfig, csrRootCa, e := getCFSSLConfigMapDataDefaults()
+	if e != nil {
+		return nil, e
 	}
 
 	// Now. Do we have any overrides?
@@ -263,50 +254,30 @@ func getCFSSLConfigMapData(statefulSetName string, cr *apiv1alpha1.Astarte) (map
 	}
 
 	// Are there any full overrides?
-	if cr.Spec.CFSSL.DBConfig != nil {
-		overriddenDBConfig, err := json.Marshal(cr.Spec.CFSSL.DBConfig)
-		if err != nil {
-			return nil, err
-		}
-		dbConfig = make(map[string]interface{})
-		if err := json.Unmarshal([]byte(overriddenDBConfig), &dbConfig); err != nil {
-			return nil, err
-		}
+	// DB Configuration
+	if overriddenDBConfig, err := getCFSSLFullOverride(cr.Spec.CFSSL.DBConfig); err == nil && overriddenDBConfig != nil {
+		dbConfig = overriddenDBConfig
 		// Switch in for retrocompatibility
 		dbConfig["data_source"] = dbConfig["dataSource"]
 		delete(dbConfig, "dataSource")
+	} else if err != nil {
+		return nil, err
 	}
-	if cr.Spec.CFSSL.CSRRootCa != nil {
-		overriddenCSRRootCa, err := json.Marshal(cr.Spec.CFSSL.CSRRootCa)
-		if err != nil {
-			return nil, err
-		}
-		csrRootCa = make(map[string]interface{})
-		if err := json.Unmarshal([]byte(overriddenCSRRootCa), &csrRootCa); err != nil {
-			return nil, err
-		}
+	// CSR Root CA
+	if overriddenCSRRootCa, err := getCFSSLFullOverride(cr.Spec.CFSSL.CSRRootCa); err == nil && overriddenCSRRootCa != nil {
+		csrRootCa = overriddenCSRRootCa
+	} else if err != nil {
+		return nil, err
 	}
-	if cr.Spec.CFSSL.CARootConfig != nil {
-		overriddenCARootConfig, err := json.Marshal(cr.Spec.CFSSL.CARootConfig)
-		if err != nil {
-			return nil, err
-		}
-		caRootConfig = make(map[string]interface{})
-		if err := json.Unmarshal([]byte(overriddenCARootConfig), &caRootConfig); err != nil {
-			return nil, err
-		}
+	// Root CA Configuration
+	if overriddenCARootConfig, err := getCFSSLFullOverride(cr.Spec.CFSSL.CARootConfig); err == nil && overriddenCARootConfig != nil {
+		caRootConfig = overriddenCARootConfig
+	} else if err != nil {
+		return nil, err
 	}
 
 	// All good. Now, let's convert them to JSON and set the ConfigMap data.
-	dbConfigJSON, err := json.Marshal(dbConfig)
-	if err != nil {
-		return nil, err
-	}
-	csrRootCaJSON, err := json.Marshal(csrRootCa)
-	if err != nil {
-		return nil, err
-	}
-	caRootConfigJSON, err := json.Marshal(caRootConfig)
+	dbConfigJSON, csrRootCaJSON, caRootConfigJSON, err := getCFSSLJSONFormattedConfigMapData(dbConfig, csrRootCa, caRootConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -316,6 +287,58 @@ func getCFSSLConfigMapData(statefulSetName string, cr *apiv1alpha1.Astarte) (map
 		"csr_root_ca.json":    string(csrRootCaJSON),
 		"db_config.json":      string(dbConfigJSON),
 	}, nil
+}
+
+func getCFSSLJSONFormattedConfigMapData(dbConfig, csrRootCa, caRootConfig map[string]interface{}) ([]byte, []byte, []byte, error) {
+	dbConfigJSON, err := json.Marshal(dbConfig)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	csrRootCaJSON, err := json.Marshal(csrRootCa)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	caRootConfigJSON, err := json.Marshal(caRootConfig)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return dbConfigJSON, csrRootCaJSON, caRootConfigJSON, nil
+}
+
+func getCFSSLFullOverride(field interface{}) (map[string]interface{}, error) {
+	if field != nil {
+		overriddenPayload, err := json.Marshal(field)
+		if err != nil {
+			return nil, err
+		}
+		newMap := make(map[string]interface{})
+		if err := json.Unmarshal(overriddenPayload, &newMap); err != nil {
+			return nil, err
+		}
+		return newMap, nil
+	}
+
+	return nil, nil
+}
+
+func getCFSSLConfigMapDataDefaults() (map[string]interface{}, map[string]interface{}, map[string]interface{}, error) {
+	dbConfigDefaultJSON := `{"data_source": "/data/certs.db", "driver": "sqlite3"}`
+	caRootConfigDefaultJSON := `{"signing": {"default": {"usages": ["digital signature", "cert sign", "crl sign", "signing"], "ca_constraint": {"max_path_len_zero": true, "max_path_len": 0, "is_ca": true}, "expiry": "2190h"}}}`
+	csrRootCaDefaultJSON := `{"ca": {"expiry": "262800h"}, "CN": "Astarte Root CA", "key": {"algo": "rsa", "size": 2048}, "names": [{"C": "IT", "ST": "Lombardia", "L": "Milan", "O": "Astarte User", "OU": "IoT Division"}]}`
+	var dbConfig, caRootConfig, csrRootCa map[string]interface{}
+
+	if err := json.Unmarshal([]byte(dbConfigDefaultJSON), &dbConfig); err != nil {
+		return nil, nil, nil, err
+	}
+	if err := json.Unmarshal([]byte(caRootConfigDefaultJSON), &caRootConfig); err != nil {
+		return nil, nil, nil, err
+	}
+	if err := json.Unmarshal([]byte(csrRootCaDefaultJSON), &csrRootCa); err != nil {
+		return nil, nil, nil, err
+	}
+
+	return dbConfig, caRootConfig, csrRootCa, nil
 }
 
 // This stuff is useful for other components which need to interact with CFSSL

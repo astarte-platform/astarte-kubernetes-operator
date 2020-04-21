@@ -42,7 +42,7 @@ func TestAstarte(t *testing.T) {
 }
 
 func AstarteCluster(t *testing.T) {
-	ctx := framework.NewTestCtx(t)
+	ctx := framework.NewContext(t)
 	defer ctx.Cleanup()
 	err := ctx.InitializeClusterResources(&framework.CleanupOptions{
 		TestContext:   ctx,
@@ -71,12 +71,12 @@ func AstarteCluster(t *testing.T) {
 	}
 
 	t.Log("Starting Upgrade Test")
-	if err = astarteUpgradeTo10Test(t, f, ctx); err != nil {
+	if err = astarteUpgradeTo10Test(f, ctx); err != nil {
 		t.Fatal(err)
 	}
 
 	t.Log("Starting Deletion Test")
-	if err = astarteDeleteTest(t, f, ctx); err != nil {
+	if err = utils.AstarteDeleteTest(f, ctx); err != nil {
 		t.Fatal(err)
 	}
 }

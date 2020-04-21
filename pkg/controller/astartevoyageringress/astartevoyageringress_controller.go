@@ -69,11 +69,17 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// The Manager Client is not yet available here, we have to resort to a custom Client for now.
 	scheme := runtime.NewScheme()
 	// Setup Scheme for API Extensions v1beta1
-	if err := apiextensionsv1beta1.AddToScheme(scheme); err != nil {
-		return err
+	if e := apiextensionsv1beta1.AddToScheme(scheme); e != nil {
+		return e
 	}
 	cfg, err := config.GetConfig()
+	if err != nil {
+		return err
+	}
 	client, err := client.New(cfg, client.Options{Scheme: scheme})
+	if err != nil {
+		return err
+	}
 
 	realReconciler := r.(*ReconcileAstarteVoyagerIngress)
 	voyagerCRD := &apiextensionsv1beta1.CustomResourceDefinition{}

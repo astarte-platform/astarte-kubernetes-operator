@@ -25,6 +25,7 @@ import (
 
 	voyager "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
 	"github.com/openlyinc/pointy"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -50,65 +51,16 @@ func ensureBrokerIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alp
 	}
 
 	// Start with the Ingress Annotations
-	annotations := map[string]string{
-		// Always use this so Astarte can behave correctly
-		voyager.KeepSourceIP:        "true",
-		voyager.AuthTLSVerifyClient: "required",
-		voyager.AuthTLSSecret:       parent.Name + "-cfssl-ca",
-		// Soft-cap this to a meaningful value
-		voyager.MaxConnections: strconv.Itoa(pointy.IntValue(cr.Spec.Broker.MaxConnections, 10000)),
-		// Meaningful options for MQTT
-		voyager.DefaultsOption: `{"tcplog": "true", "dontlognull": "true", "clitcpka": "true"}`,
-		// Reasonable timeouts for long PINGREQs
-		voyager.DefaultsTimeOut: `{"connect": "30s", "server": "1h", "client": "1h", "tunnel": "1h"}`,
-	}
-	if cr.Spec.Broker.Replicas != nil {
-		annotations[voyager.Replicas] = strconv.Itoa(int(pointy.Int32Value(cr.Spec.Broker.Replicas, 1)))
-	}
-	if cr.Spec.Broker.NodeSelector != "" {
-		annotations[voyager.NodeSelector] = cr.Spec.Broker.NodeSelector
-	}
-	if cr.Spec.Broker.Type != "" {
-		annotations[voyager.LBType] = cr.Spec.Broker.Type
-	}
-	if cr.Spec.Broker.LoadBalancerIP != "" {
-		annotations[voyager.LoadBalancerIP] = cr.Spec.Broker.LoadBalancerIP
-	}
-	if len(cr.Spec.Broker.AnnotationsService) > 0 {
-		// Marshal into a JSON, and call it a day.
-		aS, err := json.Marshal(cr.Spec.Broker.AnnotationsService)
-		if err != nil {
-			return err
-		}
-		annotations[voyager.ServiceAnnotations] = string(aS)
+	annotations, err := getBrokerIngressAnnotations(cr, parent)
+	if err != nil {
+		return err
 	}
 
-	// Ok - build the Ingress Spec
-	ingressSpec := voyager.IngressSpec{}
-	var ingressTLS *voyager.IngressTLS
+	// Now get the Ingress Spec
 
-	// TLS first
-	// Priority in options is: Ref - Secret Name - Let's Encrypt
-	if cr.Spec.Broker.TLSRef != nil {
-		ingressTLS = &voyager.IngressTLS{Ref: cr.Spec.Broker.TLSRef, Hosts: []string{parent.Spec.VerneMQ.Host}}
-	} else if cr.Spec.Broker.TLSSecret != "" {
-		ingressTLS = &voyager.IngressTLS{SecretName: cr.Spec.Broker.TLSSecret, Hosts: []string{parent.Spec.VerneMQ.Host}}
-	} else if pointy.BoolValue(cr.Spec.Letsencrypt.Use, true) {
-		// Are we bootstrapping?
-		bootstrappingLE, err := isBootstrappingLEChallenge(cr, parent, c)
-		if err != nil {
-			return err
-		}
-		if !bootstrappingLE {
-			ingressTLS = &voyager.IngressTLS{
-				Ref:   &voyager.LocalTypedReference{Kind: "Certificate", Name: getCertificateName(cr)},
-				Hosts: []string{parent.Spec.VerneMQ.Host},
-			}
-		}
-	}
-
-	if ingressTLS != nil {
-		ingressSpec.TLS = []voyager.IngressTLS{*ingressTLS}
+	ingressSpec, err := getBrokerIngressSpec(cr, parent, c)
+	if err != nil {
+		return err
 	}
 
 	// Create rule for the Broker
@@ -138,7 +90,7 @@ func ensureBrokerIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alp
 				HTTP: &voyager.HTTPIngressRuleValue{
 					NoTLS: true,
 					Paths: []voyager.HTTPIngressPath{
-						voyager.HTTPIngressPath{
+						{
 							Path: "/.well-known/acme-challenge/",
 							Backend: voyager.HTTPIngressBackend{
 								IngressBackend: voyager.IngressBackend{
@@ -158,8 +110,8 @@ func ensureBrokerIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alp
 	// Reconcile the Ingress
 	ingress := &voyager.Ingress{ObjectMeta: metav1.ObjectMeta{Name: ingressName, Namespace: cr.Namespace}}
 	result, err := controllerutil.CreateOrUpdate(context.TODO(), c, ingress, func() error {
-		if err := controllerutil.SetControllerReference(cr, ingress, scheme); err != nil {
-			return err
+		if e := controllerutil.SetControllerReference(cr, ingress, scheme); e != nil {
+			return e
 		}
 
 		// Reconcile the Spec
@@ -168,10 +120,78 @@ func ensureBrokerIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alp
 		return nil
 	})
 	if err == nil {
-		logCreateOrUpdateOperationResult(result, cr, ingress)
+		misc.LogCreateOrUpdateOperationResult(log, result, cr, ingress)
 	}
 
-	return nil
+	return err
+}
+
+func getBrokerIngressAnnotations(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte) (map[string]string, error) {
+	annotations := map[string]string{
+		// Always use this so Astarte can behave correctly
+		voyager.KeepSourceIP:        strconv.FormatBool(true),
+		voyager.AuthTLSVerifyClient: "required",
+		voyager.AuthTLSSecret:       parent.Name + "-cfssl-ca",
+		// Soft-cap this to a meaningful value
+		voyager.MaxConnections: strconv.Itoa(pointy.IntValue(cr.Spec.Broker.MaxConnections, 10000)),
+		// Meaningful options for MQTT
+		voyager.DefaultsOption: `{"tcplog": "true", "dontlognull": "true", "clitcpka": "true"}`,
+		// Reasonable timeouts for long PINGREQs
+		voyager.DefaultsTimeOut: `{"connect": "30s", "server": "1h", "client": "1h", "tunnel": "1h"}`,
+	}
+	if cr.Spec.Broker.Replicas != nil {
+		annotations[voyager.Replicas] = strconv.Itoa(int(pointy.Int32Value(cr.Spec.Broker.Replicas, 1)))
+	}
+	if cr.Spec.Broker.NodeSelector != "" {
+		annotations[voyager.NodeSelector] = cr.Spec.Broker.NodeSelector
+	}
+	if cr.Spec.Broker.Type != "" {
+		annotations[voyager.LBType] = cr.Spec.Broker.Type
+	}
+	if cr.Spec.Broker.LoadBalancerIP != "" {
+		annotations[voyager.LoadBalancerIP] = cr.Spec.Broker.LoadBalancerIP
+	}
+	if len(cr.Spec.Broker.AnnotationsService) > 0 {
+		// Marshal into a JSON, and call it a day.
+		aS, err := json.Marshal(cr.Spec.Broker.AnnotationsService)
+		if err != nil {
+			return nil, err
+		}
+		annotations[voyager.ServiceAnnotations] = string(aS)
+	}
+
+	return annotations, nil
+}
+
+func getBrokerIngressSpec(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte, c client.Client) (voyager.IngressSpec, error) {
+	// Build the Ingress Spec
+	ingressSpec := voyager.IngressSpec{}
+	var ingressTLS *voyager.IngressTLS
+
+	// TLS first
+	// Priority in options is: Ref - Secret Name - Let's Encrypt
+	switch {
+	case cr.Spec.Broker.TLSRef != nil:
+		ingressTLS = &voyager.IngressTLS{Ref: cr.Spec.Broker.TLSRef, Hosts: []string{parent.Spec.VerneMQ.Host}}
+	case cr.Spec.Broker.TLSSecret != "":
+		ingressTLS = &voyager.IngressTLS{SecretName: cr.Spec.Broker.TLSSecret, Hosts: []string{parent.Spec.VerneMQ.Host}}
+	case pointy.BoolValue(cr.Spec.Letsencrypt.Use, true):
+		// Are we bootstrapping?
+		if bootstrappingLE, e := isBootstrappingLEChallenge(cr, c); e != nil {
+			return ingressSpec, e
+		} else if !bootstrappingLE {
+			ingressTLS = &voyager.IngressTLS{
+				Ref:   &voyager.LocalTypedReference{Kind: "Certificate", Name: getCertificateName(cr)},
+				Hosts: []string{parent.Spec.VerneMQ.Host},
+			}
+		}
+	}
+
+	if ingressTLS != nil {
+		ingressSpec.TLS = []voyager.IngressTLS{*ingressTLS}
+	}
+
+	return ingressSpec, nil
 }
 
 func getBrokerIngressName(cr *apiv1alpha1.AstarteVoyagerIngress) string {

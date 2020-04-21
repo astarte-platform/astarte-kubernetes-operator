@@ -44,25 +44,15 @@ import (
 // ToNewCR takes a flaky, existing Astarte instance already on the Kubernetes Cluster and reconciles it with
 // the new format and right specifications without losing data.
 func ToNewCR(cr *v1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
-	// Given we know that inconsistencies are around, we want to Get from the client an unstructured Object to make sure
-	// we can inspect individual fields in the Spec map.
-	oldAstarteObject := &unstructured.Unstructured{}
-	oldAstarteObject.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "api.astarte-platform.org",
-		Kind:    "Astarte",
-		Version: "v1alpha1",
-	})
-	if err := c.Get(context.TODO(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, oldAstarteObject); err != nil {
+	oldAstarteObjectSpec, err := getOldSpec(cr, c)
+	if err != nil {
 		return err
 	}
-
-	oldAstarteObjectSpec := oldAstarteObject.Object["spec"].(map[string]interface{})
 
 	// Ok, so: basically *all* resources objects have been interpreted as either a valid string OR integer. As such, we need to run through
 	// all them to make sure they're consistent. Let's go.
 
 	// CFSSL
-	var err error
 	if cr.Spec.CFSSL.Resources, err = normalizeResourcesFor(cr.Spec.CFSSL.Resources, "cfssl.resources", oldAstarteObjectSpec); err != nil {
 		return err
 	}
@@ -83,59 +73,7 @@ func ToNewCR(cr *v1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) erro
 	}
 
 	// All Components
-	if cr.Spec.Components.Resources, err = normalizeResourcesFor(cr.Spec.Components.Resources, "components.resources", oldAstarteObjectSpec); err != nil {
-		return err
-	}
-
-	// AppEngine API
-	if cr.Spec.Components.AppengineAPI.Resources, err = normalizeResourcesFor(
-		cr.Spec.Components.AppengineAPI.Resources, "components.appengineApi.resources", oldAstarteObjectSpec); err != nil {
-		return err
-	}
-	// Data Updater Plant
-	if cr.Spec.Components.DataUpdaterPlant.Resources, err = normalizeResourcesFor(
-		cr.Spec.Components.DataUpdaterPlant.Resources, "components.dataUpdaterPlant.resources", oldAstarteObjectSpec); err != nil {
-		return err
-	}
-	// Housekeeping Backend
-	if cr.Spec.Components.Housekeeping.Backend.Resources, err = normalizeResourcesFor(cr.Spec.Components.Housekeeping.Backend.Resources,
-		"components.housekeeping.backend.resources", oldAstarteObjectSpec); err != nil {
-		return err
-	}
-	// Housekeeping API
-	if cr.Spec.Components.Housekeeping.API.Resources, err = normalizeResourcesFor(
-		cr.Spec.Components.Housekeeping.API.Resources, "components.housekeeping.api.resources", oldAstarteObjectSpec); err != nil {
-		return err
-	}
-	// Pairing Backend
-	if cr.Spec.Components.RealmManagement.Backend.Resources, err = normalizeResourcesFor(cr.Spec.Components.RealmManagement.Backend.Resources,
-		"components.pairing.backend.resources", oldAstarteObjectSpec); err != nil {
-		return err
-	}
-	// Pairing API
-	if cr.Spec.Components.Pairing.API.Resources, err = normalizeResourcesFor(
-		cr.Spec.Components.Pairing.API.Resources, "components.pairing.api.resources", oldAstarteObjectSpec); err != nil {
-		return err
-	}
-	// Realm Management Backend
-	if cr.Spec.Components.RealmManagement.Backend.Resources, err = normalizeResourcesFor(cr.Spec.Components.RealmManagement.Backend.Resources,
-		"components.realmManagement.backend.resources", oldAstarteObjectSpec); err != nil {
-		return err
-	}
-	// Realm Management API
-	if cr.Spec.Components.RealmManagement.API.Resources, err = normalizeResourcesFor(
-		cr.Spec.Components.RealmManagement.API.Resources, "components.realmManagement.api.resources", oldAstarteObjectSpec); err != nil {
-		return err
-	}
-	// Trigger Engine
-	if cr.Spec.Components.TriggerEngine.Resources, err = normalizeResourcesFor(cr.Spec.Components.TriggerEngine.Resources,
-		"components.triggerEngine.resources", oldAstarteObjectSpec); err != nil {
-		return err
-	}
-
-	// Dashboard
-	if cr.Spec.Components.Dashboard.Resources, err = normalizeResourcesFor(cr.Spec.Components.Dashboard.Resources,
-		"components.dashboard.resources", oldAstarteObjectSpec); err != nil {
+	if cr, err = normalizeResourcesForAstarteComponents(cr, oldAstarteObjectSpec); err != nil {
 		return err
 	}
 
@@ -160,6 +98,85 @@ func ToNewCR(cr *v1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) erro
 
 	// All good.
 	return nil
+}
+
+func normalizeResourcesForAstarteComponents(cr *v1alpha1.Astarte, oldAstarteObjectSpec map[string]interface{}) (*v1alpha1.Astarte, error) {
+	var err error
+
+	// All Components
+	if cr.Spec.Components.Resources, err = normalizeResourcesFor(cr.Spec.Components.Resources, "components.resources", oldAstarteObjectSpec); err != nil {
+		return nil, err
+	}
+
+	// AppEngine API
+	if cr.Spec.Components.AppengineAPI.Resources, err = normalizeResourcesFor(
+		cr.Spec.Components.AppengineAPI.Resources, "components.appengineApi.resources", oldAstarteObjectSpec); err != nil {
+		return nil, err
+	}
+	// Data Updater Plant
+	if cr.Spec.Components.DataUpdaterPlant.Resources, err = normalizeResourcesFor(
+		cr.Spec.Components.DataUpdaterPlant.Resources, "components.dataUpdaterPlant.resources", oldAstarteObjectSpec); err != nil {
+		return nil, err
+	}
+	// Housekeeping Backend
+	if cr.Spec.Components.Housekeeping.Backend.Resources, err = normalizeResourcesFor(cr.Spec.Components.Housekeeping.Backend.Resources,
+		"components.housekeeping.backend.resources", oldAstarteObjectSpec); err != nil {
+		return nil, err
+	}
+	// Housekeeping API
+	if cr.Spec.Components.Housekeeping.API.Resources, err = normalizeResourcesFor(
+		cr.Spec.Components.Housekeeping.API.Resources, "components.housekeeping.api.resources", oldAstarteObjectSpec); err != nil {
+		return nil, err
+	}
+	// Pairing Backend
+	if cr.Spec.Components.RealmManagement.Backend.Resources, err = normalizeResourcesFor(cr.Spec.Components.RealmManagement.Backend.Resources,
+		"components.pairing.backend.resources", oldAstarteObjectSpec); err != nil {
+		return nil, err
+	}
+	// Pairing API
+	if cr.Spec.Components.Pairing.API.Resources, err = normalizeResourcesFor(
+		cr.Spec.Components.Pairing.API.Resources, "components.pairing.api.resources", oldAstarteObjectSpec); err != nil {
+		return nil, err
+	}
+	// Realm Management Backend
+	if cr.Spec.Components.RealmManagement.Backend.Resources, err = normalizeResourcesFor(cr.Spec.Components.RealmManagement.Backend.Resources,
+		"components.realmManagement.backend.resources", oldAstarteObjectSpec); err != nil {
+		return nil, err
+	}
+	// Realm Management API
+	if cr.Spec.Components.RealmManagement.API.Resources, err = normalizeResourcesFor(
+		cr.Spec.Components.RealmManagement.API.Resources, "components.realmManagement.api.resources", oldAstarteObjectSpec); err != nil {
+		return nil, err
+	}
+	// Trigger Engine
+	if cr.Spec.Components.TriggerEngine.Resources, err = normalizeResourcesFor(cr.Spec.Components.TriggerEngine.Resources,
+		"components.triggerEngine.resources", oldAstarteObjectSpec); err != nil {
+		return nil, err
+	}
+
+	// Dashboard
+	if cr.Spec.Components.Dashboard.Resources, err = normalizeResourcesFor(cr.Spec.Components.Dashboard.Resources,
+		"components.dashboard.resources", oldAstarteObjectSpec); err != nil {
+		return nil, err
+	}
+
+	return cr, nil
+}
+
+func getOldSpec(cr *v1alpha1.Astarte, c client.Client) (map[string]interface{}, error) {
+	// Given we know that inconsistencies are around, we want to Get from the client an unstructured Object to make sure
+	// we can inspect individual fields in the Spec map.
+	oldAstarteObject := &unstructured.Unstructured{}
+	oldAstarteObject.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "api.astarte-platform.org",
+		Kind:    "Astarte",
+		Version: "v1alpha1",
+	})
+	if err := c.Get(context.TODO(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, oldAstarteObject); err != nil {
+		return nil, err
+	}
+
+	return oldAstarteObject.Object["spec"].(map[string]interface{}), nil
 }
 
 func deleteStatefulsetWithoutCascading(name, namespace string, c client.Client) error {
@@ -240,18 +257,19 @@ func parseFlakyQuantity(flakyQuantity interface{}) (resource.Quantity, error) {
 func getFromMapRecursively(aMap map[string]interface{}, tokens []string) map[string]interface{} {
 	// Pop first element
 	var token string
-	if len(tokens) == 0 {
+	switch {
+	case len(tokens) == 0:
 		return aMap
-	} else if len(tokens) > 1 {
+	case len(tokens) > 1:
 		token, tokens = tokens[0], tokens[1:]
-	} else {
+	default:
 		token, tokens = tokens[0], []string{}
 	}
 
 	if _, ok := aMap[token]; ok {
-		switch aMap[token].(type) {
+		switch v := aMap[token].(type) {
 		case map[string]interface{}:
-			return getFromMapRecursively(aMap[token].(map[string]interface{}), tokens)
+			return getFromMapRecursively(v, tokens)
 		default:
 			// Pass - we'll return a not found.
 		}

@@ -23,12 +23,8 @@ import (
 
 	voyager "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func isIngressReady(ingressName string, cr *apiv1alpha1.AstarteVoyagerIngress, c client.Client) bool {
@@ -58,20 +54,4 @@ func isIngressReady(ingressName string, cr *apiv1alpha1.AstarteVoyagerIngress, c
 	}
 
 	return false
-}
-
-func reconcileConfigMap(objName string, data map[string]string, cr *apiv1alpha1.AstarteVoyagerIngress, c client.Client, scheme *runtime.Scheme) (controllerutil.OperationResult, error) {
-	return misc.ReconcileConfigMap(objName, data, cr, c, scheme, log)
-}
-
-func reconcileSecret(objName string, data map[string][]byte, cr *apiv1alpha1.AstarteVoyagerIngress, c client.Client, scheme *runtime.Scheme) (controllerutil.OperationResult, error) {
-	return misc.ReconcileSecret(objName, data, cr, c, scheme, log)
-}
-
-func reconcileSecretString(objName string, data map[string]string, cr *apiv1alpha1.AstarteVoyagerIngress, c client.Client, scheme *runtime.Scheme) (controllerutil.OperationResult, error) {
-	return misc.ReconcileSecretString(objName, data, cr, c, scheme, log)
-}
-
-func logCreateOrUpdateOperationResult(result controllerutil.OperationResult, cr *apiv1alpha1.AstarteVoyagerIngress, obj metav1.Object) {
-	misc.LogCreateOrUpdateOperationResult(log, result, cr, obj)
 }

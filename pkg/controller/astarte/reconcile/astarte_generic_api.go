@@ -90,9 +90,9 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api apiv1al
 		// Always set everything to what we require.
 		service.ObjectMeta.Labels = labels
 		service.Spec.Type = v1.ServiceTypeClusterIP
-		service.Spec.ClusterIP = "None"
+		service.Spec.ClusterIP = noneClusterIP
 		service.Spec.Ports = []v1.ServicePort{
-			v1.ServicePort{
+			{
 				Name:       "http",
 				Port:       astarteServicesPort,
 				TargetPort: intstr.FromString("http"),
@@ -102,7 +102,7 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api apiv1al
 		service.Spec.Selector = matchLabels
 		return nil
 	}); err == nil {
-		logCreateOrUpdateOperationResult(result, cr, service)
+		misc.LogCreateOrUpdateOperationResult(log, result, cr, service)
 	} else {
 		return err
 	}
@@ -138,7 +138,7 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api apiv1al
 		return err
 	}
 
-	logCreateOrUpdateOperationResult(result, cr, deployment)
+	misc.LogCreateOrUpdateOperationResult(log, result, cr, deployment)
 	return nil
 }
 
@@ -149,12 +149,12 @@ func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha1.Astarte,
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
 		Affinity:                      getAffinityForClusteredResource(deploymentName, api.AstarteGenericClusteredResource),
 		Containers: []v1.Container{
-			v1.Container{
+			{
 				Name: component.DashedString(),
 				Ports: []v1.ContainerPort{
-					v1.ContainerPort{Name: "http", ContainerPort: astarteServicesPort},
+					{Name: "http", ContainerPort: astarteServicesPort},
 				},
-				VolumeMounts:    getAstarteGenericAPIVolumeMounts(deploymentName, cr, api, component),
+				VolumeMounts:    getAstarteGenericAPIVolumeMounts(component),
 				Image:           getAstarteImageForClusteredResource(component.DockerImageName(), api.AstarteGenericClusteredResource, cr),
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Resources:       misc.GetResourcesForAstarteComponent(cr, api.Resources, component),
@@ -163,18 +163,17 @@ func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha1.Astarte,
 				LivenessProbe:   getAstarteAPIProbe(cr, api, component, customProbe),
 			},
 		},
-		Volumes: getAstarteGenericAPIVolumes(deploymentName, cr, api, component),
+		Volumes: getAstarteGenericAPIVolumes(cr, component),
 	}
 
 	return ps
 }
 
-func getAstarteGenericAPIVolumes(deploymentName string, cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec, component apiv1alpha1.AstarteComponent) []v1.Volume {
+func getAstarteGenericAPIVolumes(cr *apiv1alpha1.Astarte, component apiv1alpha1.AstarteComponent) []v1.Volume {
 	ret := getAstarteCommonVolumes(cr)
 
 	// Depending on the component, we might need to add some more stuff.
-	switch component {
-	case apiv1alpha1.HousekeepingAPI:
+	if component == apiv1alpha1.HousekeepingAPI {
 		ret = append(ret, v1.Volume{
 			Name: "jwtpubkey",
 			VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{
@@ -186,12 +185,11 @@ func getAstarteGenericAPIVolumes(deploymentName string, cr *apiv1alpha1.Astarte,
 	return ret
 }
 
-func getAstarteGenericAPIVolumeMounts(deploymentName string, cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec, component apiv1alpha1.AstarteComponent) []v1.VolumeMount {
+func getAstarteGenericAPIVolumeMounts(component apiv1alpha1.AstarteComponent) []v1.VolumeMount {
 	ret := getAstarteCommonVolumeMounts()
 
 	// Depending on the component, we might need to add some more stuff.
-	switch component {
-	case apiv1alpha1.HousekeepingAPI:
+	if component == apiv1alpha1.HousekeepingAPI {
 		ret = append(ret, v1.VolumeMount{
 			Name:      "jwtpubkey",
 			MountPath: "/jwtpubkey",
@@ -209,7 +207,7 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte,
 	if pointy.BoolValue(api.DisableAuthentication, false) {
 		ret = append(ret, v1.EnvVar{
 			Name:  strings.ToUpper(component.String()) + "_DISABLE_AUTHENTICATION",
-			Value: "true",
+			Value: strconv.FormatBool(true),
 		})
 	}
 
@@ -225,7 +223,7 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte,
 		checkVersion, _ := v.SetPrerelease("")
 		constraint, _ := semver.NewConstraint("< 1.0.0")
 		if constraint.Check(&checkVersion) {
-			cassandraPrefix = "ASTARTE_"
+			cassandraPrefix = oldAstartePrefix
 		}
 
 		// Add Cassandra Nodes
