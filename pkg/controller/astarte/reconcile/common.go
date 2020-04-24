@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -50,7 +51,7 @@ func EnsureHousekeepingKey(cr *apiv1alpha1.Astarte, c client.Client, scheme *run
 				reqLogger.Error(err, "Could not delete the previous Housekeeping Private key!")
 				return err
 			}
-		} else if err != nil && !errors.IsNotFound(err) {
+		} else if !errors.IsNotFound(err) {
 			return err
 		}
 
@@ -106,6 +107,6 @@ func EnsureGenericErlangConfiguration(cr *apiv1alpha1.Astarte, c client.Client, 
 `,
 	}
 
-	_, err := reconcileConfigMap(genericErlangConfigurationMapName, genericErlangConfigurationMapData, cr, c, scheme)
+	_, err := misc.ReconcileConfigMap(genericErlangConfigurationMapName, genericErlangConfigurationMapData, cr, c, scheme, log)
 	return err
 }

@@ -43,6 +43,57 @@ const (
 	DefaultCleanupTimeout time.Duration = time.Second * 5
 )
 
+// EnsureAstarteServicesReadinessUpTo011 ensures all existing Astarte components up to 0.11
+func EnsureAstarteServicesReadinessUpTo011(namespace string, f *framework.Framework) error {
+	// Check all the StatefulSets
+	if err := EnsureStatefulSetReadiness(namespace, "example-astarte-cfssl", f); err != nil {
+		return err
+	}
+	if err := EnsureStatefulSetReadiness(namespace, "example-astarte-cassandra", f); err != nil {
+		return err
+	}
+	if err := EnsureStatefulSetReadiness(namespace, "example-astarte-rabbitmq", f); err != nil {
+		return err
+	}
+
+	// Check if API deployments + DUP are ready. If they are, we're done.
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-appengine-api", f); err != nil {
+		return err
+	}
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-housekeeping", f); err != nil {
+		return err
+	}
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-housekeeping-api", f); err != nil {
+		return err
+	}
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-pairing", f); err != nil {
+		return err
+	}
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-pairing-api", f); err != nil {
+		return err
+	}
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-realm-management", f); err != nil {
+		return err
+	}
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-realm-management-api", f); err != nil {
+		return err
+	}
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-trigger-engine", f); err != nil {
+		return err
+	}
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-data-updater-plant", f); err != nil {
+		return err
+	}
+
+	// Check VerneMQ last thing
+	if err := EnsureStatefulSetReadiness(namespace, "example-astarte-vernemq", f); err != nil {
+		return err
+	}
+
+	// Done
+	return nil
+}
+
 // EnsureDeploymentReadiness ensures a Deployment is ready by the time the function is called
 func EnsureDeploymentReadiness(namespace, name string, f *framework.Framework) error {
 	deployment := &appsv1.Deployment{}

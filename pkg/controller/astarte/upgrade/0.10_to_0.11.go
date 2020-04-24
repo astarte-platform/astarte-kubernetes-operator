@@ -46,12 +46,12 @@ func upgradeTo011(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sche
 	reqLogger.Info("The broker will be brought down during reconciliation. Over the upgrade process, Devices won't be able to connect")
 
 	// Step 1: Stop the Broker
-	if err := shutdownVerneMQ(cr, c, scheme, recorder); err != nil {
+	if err := shutdownVerneMQ(cr, c, recorder); err != nil {
 		return err
 	}
 
 	// Step 2: Drain RabbitMQ Queues
-	if err := drainRabbitMQQueues(cr, c, scheme, recorder); err != nil {
+	if err := drainRabbitMQQueues(cr, c, recorder); err != nil {
 		return err
 	}
 
@@ -65,47 +65,107 @@ func upgradeTo011(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sche
 	recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
 		"Starting Database Migration")
 	reqLogger.Info("Upgrading Housekeeping and migrating the Database...")
-	housekeepingBackend := cr.Spec.Components.Housekeeping.Backend.DeepCopy()
-	housekeepingBackend.Version = landing011Version
-	housekeepingBackend.Replicas = pointy.Int32(1)
-	// Ensure the policy is Replace. We don't want to have old pods hanging around.
-	housekeepingBackend.DeploymentStrategy = &appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
-	if cr.Spec.VerneMQ.Resources != nil {
-		resourceRequirements := misc.GetResourcesForAstarteComponent(cr, housekeepingBackend.Resources, apiv1alpha1.Housekeeping)
-		resourceRequirements.Requests.Cpu().Add(*cr.Spec.VerneMQ.Resources.Requests.Cpu())
-		resourceRequirements.Requests.Memory().Add(*cr.Spec.VerneMQ.Resources.Requests.Memory())
-		resourceRequirements.Limits.Cpu().Add(*cr.Spec.VerneMQ.Resources.Limits.Cpu())
-		resourceRequirements.Limits.Memory().Add(*cr.Spec.VerneMQ.Resources.Limits.Memory())
-
-		// This way, on the next call to GetResourcesForAstarteComponent, these resources will be returned as explicitly stated
-		// in the original spec.
-		housekeepingBackend.Resources = &resourceRequirements
-	}
-
-	// Add a custom, more permissive probe to the Backend
-	if err := reconcile.EnsureAstarteGenericBackendWithCustomProbe(cr, *housekeepingBackend, apiv1alpha1.Housekeeping,
-		c, scheme, getSpecialHousekeepingMigrationProbe("/health")); err != nil {
-		recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventUpgradeError.String(),
-			"Could not initiate Database Migration. Upgrade will be retried")
-		return err
-	}
-	housekeepingAPI := cr.Spec.Components.Housekeeping.API.DeepCopy()
-	housekeepingAPI.Replicas = pointy.Int32(1)
-	housekeepingAPI.Version = landing011Version
-	// Ensure the policy is Replace. We don't want to have old pods hanging around.
-	housekeepingAPI.DeploymentStrategy = &appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
-	if err := reconcile.EnsureAstarteGenericAPIWithCustomProbe(cr, *housekeepingAPI, apiv1alpha1.HousekeepingAPI, c,
-		scheme, getSpecialHousekeepingMigrationProbe("/health")); err != nil {
-		recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventUpgradeError.String(),
-			"Could not initiate Database Migration. Upgrade will be retried")
+	housekeepingBackend, err := upgradeHousekeeping(cr, c, scheme, recorder)
+	if err != nil {
 		return err
 	}
 
 	// Now we wait indefinitely until this is done. Upgrading the Database might take *a lot* of time, so unless we enter in
 	// weird states such as CrashLoopBackoff, we wait almost forever
+	if err := waitForHousekeepingUpgrade(cr, c, recorder); err != nil {
+		recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
+			"Timed out waiting for Database Migration. Upgrade will be retried, but manual intervention is likely required")
+		return fmt.Errorf("Failed in waiting for Housekeeping deployment and migrations to go up: %v", err)
+	}
+	recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
+		"Database migrated successfully")
+	reqLogger.Info("Database successfully migrated!")
+
+	// Step 4: Migrate the Queue Layout
+	// If we got here, we're almost there. Now we need to bring up Data Updater Plant and wait for it to become ready
+	// to ensure the consistency of RabbitMQ queues.
+	// Again, same thing as before: hook to a known version. There's no need to add more
+	// resources to DUP as it doesn't need them to perform this operation, and most of all it should have enough sauce already.
+	reqLogger.Info("Ensuring new RabbitMQ Queue Layout through Data Updater Plant...")
+	recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
+		"Starting Queue layout migration")
+	if err := waitForQueueLayoutMigration(cr, c, scheme); err != nil {
+		recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
+			"Could not migrate data queues. Upgrade will be retried, but manual intervention is likely required")
+		return fmt.Errorf("Failed in waiting for Data Updater Plant to come up: %v", err)
+	}
+	reqLogger.Info("RabbitMQ queues layout upgrade successful!")
+	reqLogger.Info("Your Astarte cluster has been successfully upgraded to the 0.11.x series!")
+
+	recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
+		"Queues migrated successfully")
+
+	// This is it. Do not bring up VerneMQ or anything: the reconciliation will now do the right thing with the right versions.
+	// On the other hand, as the update successfully completed, increase the Astarte version in the status to ensure we don't
+	// go through this twice.
+	cr.Status.AstarteVersion = landing011Version
+	if err := c.Status().Update(context.TODO(), cr); err != nil {
+		reqLogger.Error(err, "Failed to update Astarte status. The Operator might misbehave")
+		return err
+	}
+
+	// Just to be sure, scale down Housekeeping to 0 replicas. If we're *really* tight on resources, it might be that
+	// the additional pool prevents other pods from coming up.
+	reqLogger.Info("Restoring original environment and waiting for cluster to settle...")
+	housekeepingBackend.Replicas = pointy.Int32(0)
+	if err := reconcile.EnsureAstarteGenericBackend(cr, *housekeepingBackend, apiv1alpha1.Housekeeping, c, scheme); err != nil {
+		return err
+	}
+	// Wait for it to go down, then we should be good to go.
+	if err := wait.Poll(retryInterval, timeout, func() (done bool, err error) {
+		deployment := &appsv1.Deployment{}
+		if err = c.Get(context.TODO(), types.NamespacedName{Name: cr.Name + "-housekeeping", Namespace: cr.Namespace}, deployment); err != nil {
+			return false, err
+		}
+
+		if deployment.Status.ReadyReplicas > 0 {
+			return false, nil
+		}
+
+		return true, nil
+	}); err != nil {
+		reqLogger.Error(err, "Failed in waiting for Housekeeping to go down. Continuing anyway.")
+	}
+
+	// All done! Upgraded successfully. Now let the standard reconciliation workflow do the rest.
+	recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
+		"Astarte upgraded successfully to the 0.11.x series")
+	return nil
+}
+
+func waitForQueueLayoutMigration(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+	dataUpdaterPlant := cr.Spec.Components.DataUpdaterPlant.DeepCopy()
+	dataUpdaterPlant.Version = landing011Version
+	// Ensure the policy is Replace. We don't want to have old pods hanging around.
+	dataUpdaterPlant.DeploymentStrategy = &appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
+	if err := reconcile.EnsureAstarteGenericBackend(cr, dataUpdaterPlant.AstarteGenericClusteredResource, apiv1alpha1.DataUpdaterPlant, c, scheme); err != nil {
+		return err
+	}
+	// The operation should be pretty normal and quick enough. Wait with standard timeouts here
+	return wait.Poll(retryInterval, timeout, func() (done bool, err error) {
+		deployment := &appsv1.Deployment{}
+		if err = c.Get(context.TODO(), types.NamespacedName{Name: cr.Name + "-data-updater-plant", Namespace: cr.Namespace}, deployment); err != nil {
+			return false, err
+		}
+
+		if deployment.Status.ReadyReplicas > 0 {
+			return true, nil
+		}
+
+		return false, nil
+	})
+}
+
+func waitForHousekeepingUpgrade(cr *apiv1alpha1.Astarte, c client.Client, recorder record.EventRecorder) error {
 	weirdFailuresCount := 0
 	weirdFailuresThreshold := 10
-	if err := wait.Poll(retryInterval, time.Hour, func() (done bool, err error) {
+
+	return wait.Poll(retryInterval, time.Hour, func() (done bool, err error) {
 		deployment := &appsv1.Deployment{}
 		if err = c.Get(context.TODO(), types.NamespacedName{Name: cr.Name + "-housekeeping-api", Namespace: cr.Namespace}, deployment); err != nil {
 			weirdFailuresCount++
@@ -178,87 +238,46 @@ func upgradeTo011(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sche
 		}
 
 		return false, nil
-	}); err != nil {
-		recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
-			"Timed out waiting for Database Migration. Upgrade will be retried, but manual intervention is likely required")
-		return fmt.Errorf("Failed in waiting for Housekeeping deployment and migrations to go up: %v", err)
-	}
-	recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
-		"Database migrated successfully")
-	reqLogger.Info("Database successfully migrated!")
+	})
+}
 
-	// Step 4: Migrate the Queue Layout
-	// If we got here, we're almost there. Now we need to bring up Data Updater Plant and wait for it to become ready
-	// to ensure the consistency of RabbitMQ queues.
-	// Again, same thing as before: hook to a known version. There's no need to add more
-	// resources to DUP as it doesn't need them to perform this operation, and most of all it should have enough sauce already.
-	reqLogger.Info("Ensuring new RabbitMQ Queue Layout through Data Updater Plant...")
-	recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
-		"Starting Queue layout migration")
-	dataUpdaterPlant := cr.Spec.Components.DataUpdaterPlant.DeepCopy()
-	dataUpdaterPlant.Version = landing011Version
+func upgradeHousekeeping(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme,
+	recorder record.EventRecorder) (*apiv1alpha1.AstarteGenericClusteredResource, error) {
+	housekeepingBackend := cr.Spec.Components.Housekeeping.Backend.DeepCopy()
+	housekeepingBackend.Version = landing011Version
+	housekeepingBackend.Replicas = pointy.Int32(1)
 	// Ensure the policy is Replace. We don't want to have old pods hanging around.
-	dataUpdaterPlant.DeploymentStrategy = &appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
-	if err := reconcile.EnsureAstarteGenericBackend(cr, dataUpdaterPlant.AstarteGenericClusteredResource, apiv1alpha1.DataUpdaterPlant, c, scheme); err != nil {
-		return err
-	}
-	// Again, the operation should be pretty normal. Wait with standard timeouts here
-	if err := wait.Poll(retryInterval, timeout, func() (done bool, err error) {
-		deployment := &appsv1.Deployment{}
-		if err = c.Get(context.TODO(), types.NamespacedName{Name: cr.Name + "-data-updater-plant", Namespace: cr.Namespace}, deployment); err != nil {
-			return false, err
-		}
+	housekeepingBackend.DeploymentStrategy = &appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
+	if cr.Spec.VerneMQ.Resources != nil {
+		resourceRequirements := misc.GetResourcesForAstarteComponent(cr, housekeepingBackend.Resources, apiv1alpha1.Housekeeping)
+		resourceRequirements.Requests.Cpu().Add(*cr.Spec.VerneMQ.Resources.Requests.Cpu())
+		resourceRequirements.Requests.Memory().Add(*cr.Spec.VerneMQ.Resources.Requests.Memory())
+		resourceRequirements.Limits.Cpu().Add(*cr.Spec.VerneMQ.Resources.Limits.Cpu())
+		resourceRequirements.Limits.Memory().Add(*cr.Spec.VerneMQ.Resources.Limits.Memory())
 
-		if deployment.Status.ReadyReplicas > 0 {
-			return true, nil
-		}
-
-		return false, nil
-	}); err != nil {
-		recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
-			"Timed out while waiting for queues to be migrated. Upgrade will be retried, but manual intervention is likely required")
-		return fmt.Errorf("Failed in waiting for Data Updater Plant to come up: %v", err)
-	}
-	reqLogger.Info("RabbitMQ queues layout upgrade successful!")
-	reqLogger.Info("Your Astarte cluster has been successfully upgraded to the 0.11.x series!")
-
-	recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
-		"Queues migrated successfully")
-
-	// This is it. Do not bring up VerneMQ or anything: the reconciliation will now do the right thing with the right versions.
-	// On the other hand, as the update successfully completed, increase the Astarte version in the status to ensure we don't
-	// go through this twice.
-	cr.Status.AstarteVersion = landing011Version
-	if err := c.Status().Update(context.TODO(), cr); err != nil {
-		reqLogger.Error(err, "Failed to update Astarte status. The Operator might misbehave")
-		return err
+		// This way, on the next call to GetResourcesForAstarteComponent, these resources will be returned as explicitly stated
+		// in the original spec.
+		housekeepingBackend.Resources = &resourceRequirements
 	}
 
-	// Just to be sure, scale down Housekeeping to 0 replicas. If we're *really* tight on resources, it might be that
-	// the additional pool prevents other pods from coming up.
-	reqLogger.Info("Restoring original environment and waiting for cluster to settle...")
-	housekeepingBackend.Replicas = pointy.Int32(0)
-	if err := reconcile.EnsureAstarteGenericBackend(cr, *housekeepingBackend, apiv1alpha1.Housekeeping, c, scheme); err != nil {
-		return err
+	// Add a custom, more permissive probe to the Backend
+	if err := reconcile.EnsureAstarteGenericBackendWithCustomProbe(cr, *housekeepingBackend, apiv1alpha1.Housekeeping,
+		c, scheme, getSpecialHousekeepingMigrationProbe("/health")); err != nil {
+		recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventUpgradeError.String(),
+			"Could not initiate Database Migration. Upgrade will be retried")
+		return nil, err
 	}
-	// Wait for it to go down, then we should be good to go.
-	if err := wait.Poll(retryInterval, timeout, func() (done bool, err error) {
-		deployment := &appsv1.Deployment{}
-		if err = c.Get(context.TODO(), types.NamespacedName{Name: cr.Name + "-housekeeping", Namespace: cr.Namespace}, deployment); err != nil {
-			return false, err
-		}
-
-		if deployment.Status.ReadyReplicas > 0 {
-			return false, nil
-		}
-
-		return true, nil
-	}); err != nil {
-		reqLogger.Error(err, "Failed in waiting for Housekeeping to go down. Continuing anyway.")
+	housekeepingAPI := cr.Spec.Components.Housekeeping.API.DeepCopy()
+	housekeepingAPI.Replicas = pointy.Int32(1)
+	housekeepingAPI.Version = landing011Version
+	// Ensure the policy is Replace. We don't want to have old pods hanging around.
+	housekeepingAPI.DeploymentStrategy = &appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
+	if err := reconcile.EnsureAstarteGenericAPIWithCustomProbe(cr, *housekeepingAPI, apiv1alpha1.HousekeepingAPI, c,
+		scheme, getSpecialHousekeepingMigrationProbe("/health")); err != nil {
+		recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventUpgradeError.String(),
+			"Could not initiate Database Migration. Upgrade will be retried")
+		return nil, err
 	}
 
-	// All done! Upgraded successfully. Now let the standard reconciliation workflow do the rest.
-	recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
-		"Astarte upgraded successfully to the 0.11.x series")
-	return nil
+	return housekeepingBackend, nil
 }

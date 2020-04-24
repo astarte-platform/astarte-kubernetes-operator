@@ -41,6 +41,24 @@ const (
 	RabbitMQDefaultUserCredentialsPasswordKey = "admin-password"
 )
 
+type allocationCoefficients struct {
+	CPUCoefficient    float64
+	MemoryCoefficient float64
+}
+
+var defaultComponentAllocations = map[apiv1alpha1.AstarteComponent]allocationCoefficients{
+	apiv1alpha1.AppEngineAPI:       {CPUCoefficient: 0.19, MemoryCoefficient: 0.19},
+	apiv1alpha1.DataUpdaterPlant:   {CPUCoefficient: 0.22, MemoryCoefficient: 0.22},
+	apiv1alpha1.Housekeeping:       {CPUCoefficient: 0.05, MemoryCoefficient: 0.05},
+	apiv1alpha1.HousekeepingAPI:    {CPUCoefficient: 0.05, MemoryCoefficient: 0.05},
+	apiv1alpha1.Pairing:            {CPUCoefficient: 0.07, MemoryCoefficient: 0.07},
+	apiv1alpha1.PairingAPI:         {CPUCoefficient: 0.14, MemoryCoefficient: 0.14},
+	apiv1alpha1.RealmManagement:    {CPUCoefficient: 0.07, MemoryCoefficient: 0.07},
+	apiv1alpha1.RealmManagementAPI: {CPUCoefficient: 0.07, MemoryCoefficient: 0.07},
+	apiv1alpha1.TriggerEngine:      {CPUCoefficient: 0.08, MemoryCoefficient: 0.08},
+	apiv1alpha1.Dashboard:          {CPUCoefficient: 0.06, MemoryCoefficient: 0.06},
+}
+
 // ReconcileConfigMap creates or updates a ConfigMap through controllerutil through its data map
 func ReconcileConfigMap(objName string, data map[string]string, cr metav1.Object, c client.Client, scheme *runtime.Scheme, log logr.Logger) (controllerutil.OperationResult, error) {
 	configMap := &v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: objName, Namespace: cr.GetNamespace()}}
@@ -138,39 +156,8 @@ func GetResourcesForAstarteComponent(cr *apiv1alpha1.Astarte, requestedResources
 	}
 
 	// Ok, let's do the distribution dance.
-	var cpuCoefficient, memoryCoefficient float64
-	switch component {
-	case apiv1alpha1.AppEngineAPI:
-		cpuCoefficient = 0.19
-		memoryCoefficient = 0.19
-	case apiv1alpha1.DataUpdaterPlant:
-		cpuCoefficient = 0.22
-		memoryCoefficient = 0.22
-	case apiv1alpha1.Housekeeping:
-		cpuCoefficient = 0.05
-		memoryCoefficient = 0.05
-	case apiv1alpha1.HousekeepingAPI:
-		cpuCoefficient = 0.05
-		memoryCoefficient = 0.05
-	case apiv1alpha1.Pairing:
-		cpuCoefficient = 0.07
-		memoryCoefficient = 0.07
-	case apiv1alpha1.PairingAPI:
-		cpuCoefficient = 0.14
-		memoryCoefficient = 0.14
-	case apiv1alpha1.RealmManagement:
-		cpuCoefficient = 0.07
-		memoryCoefficient = 0.07
-	case apiv1alpha1.RealmManagementAPI:
-		cpuCoefficient = 0.07
-		memoryCoefficient = 0.07
-	case apiv1alpha1.TriggerEngine:
-		cpuCoefficient = 0.08
-		memoryCoefficient = 0.08
-	case apiv1alpha1.Dashboard:
-		cpuCoefficient = 0.06
-		memoryCoefficient = 0.06
-	}
+	cpuCoefficient := defaultComponentAllocations[component].CPUCoefficient
+	memoryCoefficient := defaultComponentAllocations[component].MemoryCoefficient
 
 	if memoryCoefficient == 0 || cpuCoefficient == 0 {
 		return v1.ResourceRequirements{}
@@ -249,15 +236,15 @@ func GetRabbitMQUserCredentialsSecret(cr *apiv1alpha1.Astarte) (string, string, 
 // GetRabbitMQCredentialsFor returns the RabbitMQ host, username and password for a given CR. This information
 // can be used for connecting to RabbitMQ from the Operator or an external agent, and it should not be used for
 // any other purpose.
-func GetRabbitMQCredentialsFor(cr *apiv1alpha1.Astarte, c client.Client) (string, string, string, error) {
-	host, _ := GetRabbitMQHostnameAndPort(cr)
+func GetRabbitMQCredentialsFor(cr *apiv1alpha1.Astarte, c client.Client) (string, int16, string, string, error) {
+	host, port := GetRabbitMQHostnameAndPort(cr)
 	secretName, usernameKey, passwordKey := GetRabbitMQUserCredentialsSecret(cr)
 
 	// Fetch the Secret
 	secret := &v1.Secret{}
 	if err := c.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: cr.Namespace}, secret); err != nil {
-		return "", "", "", err
+		return "", 0, "", "", err
 	}
 
-	return host, string(secret.Data[usernameKey]), string(secret.Data[passwordKey]), nil
+	return host, port, string(secret.Data[usernameKey]), string(secret.Data[passwordKey]), nil
 }

@@ -27,9 +27,29 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const astarteFinalizer = "finalizer.astarte.astarte-platform.org"
+
+func (r *ReconcileAstarte) handleFinalization(instance *v1alpha1.Astarte) (reconcile.Result, error) {
+	if contains(instance.GetFinalizers(), astarteFinalizer) {
+		// Run finalization logic for astarteFinalizer. If the
+		// finalization logic fails, don't remove the finalizer so
+		// that we can retry during the next reconciliation.
+		if e := r.finalizeAstarte(instance); e != nil {
+			return reconcile.Result{}, e
+		}
+
+		// Remove astarteFinalizer. Once all finalizers have been
+		// removed, the object will be deleted.
+		instance.SetFinalizers(remove(instance.GetFinalizers(), astarteFinalizer))
+		if e := r.client.Update(context.TODO(), instance); e != nil {
+			return reconcile.Result{}, e
+		}
+	}
+	return reconcile.Result{}, nil
+}
 
 func (r *ReconcileAstarte) finalizeAstarte(cr *v1alpha1.Astarte) error {
 	reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name)
@@ -61,8 +81,8 @@ func (r *ReconcileAstarte) finalizeAstarte(cr *v1alpha1.Astarte) error {
 			for _, prefix := range erasePVCPrefixes {
 				if strings.HasPrefix(pvc.GetName(), prefix) {
 					// Delete.
-					if err := r.client.Delete(context.TODO(), &pvc); err != nil {
-						reqLogger.Error(err, "Error while finalizing Astarte. A PersistentVolumeClaim will need to be manually removed.", "PVC", pvc)
+					if e := r.client.Delete(context.TODO(), &pvc); e != nil {
+						reqLogger.Error(e, "Error while finalizing Astarte. A PersistentVolumeClaim will need to be manually removed.", "PVC", pvc)
 					}
 					break
 				}

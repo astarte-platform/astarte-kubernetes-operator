@@ -23,6 +23,7 @@ import (
 
 	voyager "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
 	"github.com/openlyinc/pointy"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,10 +43,10 @@ func ensureCertificate(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha
 		certificate := &voyager.Certificate{}
 		if err := c.Get(context.TODO(), types.NamespacedName{Name: certificateName, Namespace: cr.Namespace}, certificate); err == nil {
 			// Delete the certificate
-			if err := c.Delete(context.TODO(), certificate); err != nil {
-				return err
-			}
+			return c.Delete(context.TODO(), certificate)
 		}
+
+		// If nothing was found or there was an error, we don't really care.
 		return nil
 	}
 
@@ -54,7 +55,7 @@ func ensureCertificate(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha
 	if pointy.BoolValue(cr.Spec.Letsencrypt.Staging, false) {
 		data["ACME_SERVER_URL"] = "https://acme-staging-v02.api.letsencrypt.org/directory"
 	}
-	if _, err := reconcileSecretString(acmeSecretName, data, cr, c, scheme); err != nil {
+	if _, err := misc.ReconcileSecretString(acmeSecretName, data, cr, c, scheme, log); err != nil {
 		return err
 	}
 
@@ -69,18 +70,7 @@ func ensureCertificate(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha
 	}
 
 	// All clear. Let's build the Certificate
-	domains := cr.Spec.Letsencrypt.Domains
-	if len(domains) == 0 {
-		// Compute the domains list based on the parent Astarte resource
-		if pointy.BoolValue(parent.Spec.Components.Dashboard.Deploy, true) && cr.Spec.Dashboard.Host != "" &&
-			pointy.BoolValue(cr.Spec.Dashboard.SSL, true) {
-			domains = append(domains, cr.Spec.Dashboard.Host)
-		}
-		if pointy.BoolValue(parent.Spec.API.SSL, true) {
-			domains = append(domains, parent.Spec.API.Host)
-		}
-		domains = append(domains, parent.Spec.VerneMQ.Host)
-	}
+	domains := getCertificateDomains(cr, parent)
 
 	certificate := &voyager.Certificate{ObjectMeta: metav1.ObjectMeta{Name: certificateName, Namespace: cr.Namespace}}
 	result, err := controllerutil.CreateOrUpdate(context.TODO(), c, certificate, func() error {
@@ -108,17 +98,34 @@ func ensureCertificate(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha
 		return nil
 	})
 	if err == nil {
-		logCreateOrUpdateOperationResult(result, cr, certificate)
+		misc.LogCreateOrUpdateOperationResult(log, result, cr, certificate)
 	}
 
 	return err
+}
+
+func getCertificateDomains(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte) []string {
+	domains := cr.Spec.Letsencrypt.Domains
+	if len(domains) == 0 {
+		// Compute the domains list based on the parent Astarte resource
+		if pointy.BoolValue(parent.Spec.Components.Dashboard.Deploy, true) && cr.Spec.Dashboard.Host != "" &&
+			pointy.BoolValue(cr.Spec.Dashboard.SSL, true) {
+			domains = append(domains, cr.Spec.Dashboard.Host)
+		}
+		if pointy.BoolValue(parent.Spec.API.SSL, true) {
+			domains = append(domains, parent.Spec.API.Host)
+		}
+		domains = append(domains, parent.Spec.VerneMQ.Host)
+	}
+
+	return domains
 }
 
 func getCertificateName(cr *apiv1alpha1.AstarteVoyagerIngress) string {
 	return cr.Name + "-ingress-certificate"
 }
 
-func isBootstrappingLEChallenge(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte, c client.Client) (bool, error) {
+func isBootstrappingLEChallenge(cr *apiv1alpha1.AstarteVoyagerIngress, c client.Client) (bool, error) {
 	// If we're not using Let's Encrypt, that's pretty easy
 	if !pointy.BoolValue(cr.Spec.Letsencrypt.Use, true) {
 		return false, nil

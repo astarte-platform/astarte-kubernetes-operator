@@ -21,7 +21,6 @@ package oldoperator
 import (
 	goctx "context"
 	"fmt"
-	"testing"
 
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 
@@ -31,7 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-func astarteEnsureRetrocompatTest(t *testing.T, f *framework.Framework, ctx *framework.TestCtx) error {
+func astarteEnsureRetrocompatTest(f *framework.Framework, ctx *framework.Context) error {
 	namespace, err := ctx.GetWatchNamespace()
 	if err != nil {
 		return fmt.Errorf("could not get namespace: %v", err)
@@ -44,7 +43,7 @@ func astarteEnsureRetrocompatTest(t *testing.T, f *framework.Framework, ctx *fra
 		if err != nil {
 			return false, err
 		}
-		if astarteObj.Status.Health != "green" {
+		if astarteObj.Status.Health != operator.AstarteClusterHealthGreen {
 			return false, nil
 		}
 		return true, nil
@@ -52,39 +51,8 @@ func astarteEnsureRetrocompatTest(t *testing.T, f *framework.Framework, ctx *fra
 		return err
 	}
 
-	// Check all the StatefulSets
-	if err := utils.EnsureStatefulSetReadiness(namespace, "example-astarte-cfssl", f); err != nil {
-		return err
-	}
-	if err := utils.EnsureStatefulSetReadiness(namespace, "example-astarte-cassandra", f); err != nil {
-		return err
-	}
-	if err := utils.EnsureStatefulSetReadiness(namespace, "example-astarte-rabbitmq", f); err != nil {
-		return err
-	}
-
-	// Check if API deployments + DUP are ready. If they are, we're done.
-	if err := utils.EnsureDeploymentReadiness(namespace, "example-astarte-appengine-api", f); err != nil {
-		return err
-	}
-	if err := utils.EnsureDeploymentReadiness(namespace, "example-astarte-housekeeping-api", f); err != nil {
-		return err
-	}
-	if err := utils.EnsureDeploymentReadiness(namespace, "example-astarte-pairing-api", f); err != nil {
-		return err
-	}
-	if err := utils.EnsureDeploymentReadiness(namespace, "example-astarte-realm-management-api", f); err != nil {
-		return err
-	}
-	if err := utils.EnsureDeploymentReadiness(namespace, "example-astarte-trigger-engine", f); err != nil {
-		return err
-	}
-	if err := utils.EnsureDeploymentReadiness(namespace, "example-astarte-data-updater-plant", f); err != nil {
-		return err
-	}
-
-	// Check VerneMQ last thing
-	if err := utils.EnsureStatefulSetReadiness(namespace, "example-astarte-vernemq", f); err != nil {
+	// Check all the Astarte Services
+	if err := utils.EnsureAstarteServicesReadinessUpTo011(namespace, f); err != nil {
 		return err
 	}
 

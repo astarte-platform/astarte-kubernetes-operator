@@ -68,7 +68,7 @@ func EnsureAstarteDashboard(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.Astar
 	}
 
 	// Good. Reconcile the ConfigMap.
-	if _, err := reconcileConfigMap(deploymentName+"-config", getAstarteDashboardConfigMapData(cr, dashboard), cr, c, scheme); err != nil {
+	if _, err := misc.ReconcileConfigMap(deploymentName+"-config", getAstarteDashboardConfigMapData(cr, dashboard), cr, c, scheme, log); err != nil {
 		return err
 	}
 
@@ -81,9 +81,9 @@ func EnsureAstarteDashboard(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.Astar
 		// Always set everything to what we require.
 		service.ObjectMeta.Labels = labels
 		service.Spec.Type = v1.ServiceTypeClusterIP
-		service.Spec.ClusterIP = "None"
+		service.Spec.ClusterIP = noneClusterIP
 		service.Spec.Ports = []v1.ServicePort{
-			v1.ServicePort{
+			{
 				Name:       "http",
 				Port:       80,
 				TargetPort: intstr.FromString("http"),
@@ -93,7 +93,7 @@ func EnsureAstarteDashboard(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.Astar
 		service.Spec.Selector = matchLabels
 		return nil
 	}); err == nil {
-		logCreateOrUpdateOperationResult(result, cr, service)
+		misc.LogCreateOrUpdateOperationResult(log, result, cr, service)
 	} else {
 		return err
 	}
@@ -107,7 +107,7 @@ func EnsureAstarteDashboard(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.Astar
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: labels,
 			},
-			Spec: getAstarteDashboardPodSpec(deploymentName, cr, dashboard),
+			Spec: getAstarteDashboardPodSpec(cr, dashboard),
 		},
 	}
 
@@ -129,20 +129,20 @@ func EnsureAstarteDashboard(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.Astar
 		return err
 	}
 
-	logCreateOrUpdateOperationResult(result, cr, deployment)
+	misc.LogCreateOrUpdateOperationResult(log, result, cr, deployment)
 	return nil
 }
 
-func getAstarteDashboardPodSpec(deploymentName string, cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.AstarteDashboardSpec) v1.PodSpec {
+func getAstarteDashboardPodSpec(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.AstarteDashboardSpec) v1.PodSpec {
 	component := apiv1alpha1.Dashboard
 	ps := v1.PodSpec{
 		TerminationGracePeriodSeconds: pointy.Int64(30),
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
 		Containers: []v1.Container{
-			v1.Container{
+			{
 				Name: "dashboard",
 				Ports: []v1.ContainerPort{
-					v1.ContainerPort{Name: "http", ContainerPort: 80},
+					{Name: "http", ContainerPort: 80},
 				},
 				VolumeMounts:    getAstarteDashboardVolumeMounts(),
 				Image:           getAstarteImageForClusteredResource(component.DockerImageName(), dashboard.AstarteGenericClusteredResource, cr),
@@ -205,12 +205,12 @@ func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard apiv1al
 
 func getAstarteDashboardVolumes(cr *apiv1alpha1.Astarte) []v1.Volume {
 	return []v1.Volume{
-		v1.Volume{
+		{
 			Name: "config",
 			VolumeSource: v1.VolumeSource{ConfigMap: &v1.ConfigMapVolumeSource{
 				LocalObjectReference: v1.LocalObjectReference{Name: cr.Name + "-dashboard-config"},
 				Items: []v1.KeyToPath{
-					v1.KeyToPath{
+					{
 						Key:  "config.json",
 						Path: "config.json",
 					},
@@ -222,7 +222,7 @@ func getAstarteDashboardVolumes(cr *apiv1alpha1.Astarte) []v1.Volume {
 
 func getAstarteDashboardVolumeMounts() []v1.VolumeMount {
 	ret := []v1.VolumeMount{
-		v1.VolumeMount{
+		{
 			Name:      "config",
 			MountPath: "/usr/share/nginx/html/user-config",
 			ReadOnly:  true,
@@ -234,7 +234,7 @@ func getAstarteDashboardVolumeMounts() []v1.VolumeMount {
 
 func getAstarteDashboardEnvVars() []v1.EnvVar {
 	ret := []v1.EnvVar{
-		v1.EnvVar{
+		{
 			Name:      "MY_POD_IP",
 			ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "status.podIP"}},
 		},

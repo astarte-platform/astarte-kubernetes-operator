@@ -121,20 +121,11 @@ func main() {
 	log.Info("Registering Components.")
 
 	// Setup Scheme for all resources
-	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Error(err, "")
-		os.Exit(1)
-	}
-
-	// Setup Scheme for other CRDs
-	if err := voyager.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Error(err, "")
-		os.Exit(1)
-	}
+	addSchemes(mgr)
 
 	// Setup all Controllers
-	if err := controller.AddToManager(mgr); err != nil {
-		log.Error(err, "")
+	if e := controller.AddToManager(mgr); e != nil {
+		log.Error(e, "")
 		os.Exit(1)
 	}
 
@@ -153,11 +144,23 @@ func main() {
 		log.Info("Could not create metrics Service", "error", err.Error())
 	}
 
+	// Invoke CreateServiceMonitors
+	createServiceMonitors(service, cfg, namespace)
+
+	log.Info("Starting the Cmd.")
+
+	// Start the Cmd
+	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
+		log.Error(err, "Manager exited non-zero")
+		os.Exit(1)
+	}
+}
+
+func createServiceMonitors(service *v1.Service, cfg *rest.Config, namespace string) {
 	// CreateServiceMonitors will automatically create the prometheus-operator ServiceMonitor resources
 	// necessary to configure Prometheus to scrape metrics from this operator.
 	services := []*v1.Service{service}
-	_, err = metrics.CreateServiceMonitors(cfg, namespace, services)
-	if err != nil {
+	if _, err := metrics.CreateServiceMonitors(cfg, namespace, services); err != nil {
 		log.Info("Could not create ServiceMonitor object", "error", err.Error())
 		// If this operator is deployed to a cluster without the prometheus-operator running, it will return
 		// ErrServiceMonitorNotPresent, which can be used to safely skip ServiceMonitor creation.
@@ -165,12 +168,18 @@ func main() {
 			log.Info("Install prometheus-operator in your cluster to create ServiceMonitor objects", "error", err.Error())
 		}
 	}
+}
 
-	log.Info("Starting the Cmd.")
+func addSchemes(mgr manager.Manager) {
+	// Setup Scheme for all resources
+	if e := apis.AddToScheme(mgr.GetScheme()); e != nil {
+		log.Error(e, "")
+		os.Exit(1)
+	}
 
-	// Start the Cmd
-	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
-		log.Error(err, "Manager exited non-zero")
+	// Setup Scheme for other CRDs
+	if e := voyager.AddToScheme(mgr.GetScheme()); e != nil {
+		log.Error(e, "")
 		os.Exit(1)
 	}
 }

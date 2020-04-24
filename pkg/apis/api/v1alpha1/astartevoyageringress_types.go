@@ -129,11 +129,11 @@ type AstarteVoyagerIngressStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=astartevoyageringresses,scope=Namespaced,shortName=avi
 type AstarteVoyagerIngress struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   AstarteVoyagerIngressSpec   `json:"spec,omitempty"`
 	Status AstarteVoyagerIngressStatus `json:"status,omitempty"`
+	Spec   AstarteVoyagerIngressSpec   `json:"spec,omitempty"`
+
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta   `json:",inline"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

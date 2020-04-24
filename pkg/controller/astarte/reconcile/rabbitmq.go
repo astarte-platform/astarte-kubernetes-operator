@@ -24,6 +24,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -55,52 +56,8 @@ func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sc
 	}
 
 	// Depending on the situation, we need to take action on the credentials.
-	createUserCredentialsSecret := true
-	createUserCredentialsSecretFromCredentials := false
-	if cr.Spec.RabbitMQ.Connection != nil {
-		if cr.Spec.RabbitMQ.Connection.Secret != nil {
-			createUserCredentialsSecret = false
-		} else if cr.Spec.RabbitMQ.Connection.Username != "" {
-			createUserCredentialsSecretFromCredentials = true
-		}
-	}
-
-	if createUserCredentialsSecret {
-		userCredentialsSecret := &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: statefulSetName + "-user-credentials", Namespace: cr.Namespace}}
-		if result, err := controllerutil.CreateOrUpdate(context.TODO(), c, userCredentialsSecret, func() error {
-			if err := controllerutil.SetControllerReference(cr, userCredentialsSecret, scheme); err != nil {
-				return err
-			}
-			if createUserCredentialsSecretFromCredentials {
-				// Ensure the Data field matches
-				userCredentialsSecret.StringData[misc.RabbitMQDefaultUserCredentialsUsernameKey] = cr.Spec.RabbitMQ.Connection.Username
-				userCredentialsSecret.StringData[misc.RabbitMQDefaultUserCredentialsPasswordKey] = cr.Spec.RabbitMQ.Connection.Password
-			} else {
-				// In this case, see if we need to generate new secrets. Otherwise just skip.
-				if _, ok := userCredentialsSecret.Data[misc.RabbitMQDefaultUserCredentialsUsernameKey]; !ok {
-					// Create a new, random password out of 16 bytes of entropy
-					password := make([]byte, 16)
-					rand.Read(password)
-					userCredentialsSecret.StringData = map[string]string{
-						misc.RabbitMQDefaultUserCredentialsUsernameKey: "astarte-admin",
-						misc.RabbitMQDefaultUserCredentialsPasswordKey: base64.URLEncoding.EncodeToString(password),
-					}
-				}
-			}
-			return nil
-		}); err == nil {
-			logCreateOrUpdateOperationResult(result, cr, userCredentialsSecret)
-		} else {
-			return err
-		}
-	} else {
-		// Maybe delete it, if we created it already?
-		theSecret := &v1.Secret{}
-		if err := c.Get(context.TODO(), types.NamespacedName{Name: statefulSetName + "-user-credentials", Namespace: cr.Namespace}, theSecret); err == nil {
-			if err := c.Delete(context.TODO(), theSecret); err != nil {
-				return err
-			}
-		}
+	if err := handleRabbitMQUserCredentialsSecret(statefulSetName, cr, c, scheme); err != nil {
+		return err
 	}
 
 	// Ok. Shall we deploy?
@@ -117,7 +74,6 @@ func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sc
 				return err
 			}
 		}
-
 		// That would be all for today.
 		return nil
 	}
@@ -142,15 +98,15 @@ func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sc
 		}
 		// Always set everything to what we require.
 		service.Spec.Type = v1.ServiceTypeClusterIP
-		service.Spec.ClusterIP = "None"
+		service.Spec.ClusterIP = noneClusterIP
 		service.Spec.Ports = []v1.ServicePort{
-			v1.ServicePort{
+			{
 				Name:       "amqp",
 				Port:       5672,
 				TargetPort: intstr.FromString("amqp"),
 				Protocol:   v1.ProtocolTCP,
 			},
-			v1.ServicePort{
+			{
 				Name:       "management",
 				Port:       15672,
 				TargetPort: intstr.FromString("management"),
@@ -160,13 +116,13 @@ func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sc
 		service.Spec.Selector = labels
 		return nil
 	}); err == nil {
-		logCreateOrUpdateOperationResult(result, cr, service)
+		misc.LogCreateOrUpdateOperationResult(log, result, cr, service)
 	} else {
 		return err
 	}
 
 	// Good. Reconcile the ConfigMap.
-	if _, err := reconcileConfigMap(statefulSetName+"-config", getRabbitMQConfigMapData(statefulSetName, cr), cr, c, scheme); err != nil {
+	if _, err := misc.ReconcileConfigMap(statefulSetName+"-config", getRabbitMQConfigMapData(statefulSetName, cr), cr, c, scheme, log); err != nil {
 		return err
 	}
 
@@ -209,7 +165,58 @@ func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sc
 		return err
 	}
 
-	logCreateOrUpdateOperationResult(result, cr, service)
+	misc.LogCreateOrUpdateOperationResult(log, result, cr, service)
+	return nil
+}
+
+func handleRabbitMQUserCredentialsSecret(statefulSetName string, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+	// Depending on the situation, we need to take action on the credentials.
+	createUserCredentialsSecret := true
+	createUserCredentialsSecretFromCredentials := false
+	if cr.Spec.RabbitMQ.Connection != nil {
+		if cr.Spec.RabbitMQ.Connection.Secret != nil {
+			createUserCredentialsSecret = false
+		} else if cr.Spec.RabbitMQ.Connection.Username != "" {
+			createUserCredentialsSecretFromCredentials = true
+		}
+	}
+
+	if createUserCredentialsSecret {
+		userCredentialsSecret := &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: statefulSetName + "-user-credentials", Namespace: cr.Namespace}}
+		if result, err := controllerutil.CreateOrUpdate(context.TODO(), c, userCredentialsSecret, func() error {
+			if err := controllerutil.SetControllerReference(cr, userCredentialsSecret, scheme); err != nil {
+				return err
+			}
+			if createUserCredentialsSecretFromCredentials {
+				// Ensure the Data field matches
+				userCredentialsSecret.StringData[misc.RabbitMQDefaultUserCredentialsUsernameKey] = cr.Spec.RabbitMQ.Connection.Username
+				userCredentialsSecret.StringData[misc.RabbitMQDefaultUserCredentialsPasswordKey] = cr.Spec.RabbitMQ.Connection.Password
+				// In this case, see if we need to generate new secrets. Otherwise just skip.
+			} else if _, ok := userCredentialsSecret.Data[misc.RabbitMQDefaultUserCredentialsUsernameKey]; !ok {
+				// Create a new, random password out of 16 bytes of entropy
+				password := make([]byte, 16)
+				if _, err := rand.Read(password); err != nil {
+					return err
+				}
+				userCredentialsSecret.StringData = map[string]string{
+					misc.RabbitMQDefaultUserCredentialsUsernameKey: "astarte-admin",
+					misc.RabbitMQDefaultUserCredentialsPasswordKey: base64.URLEncoding.EncodeToString(password),
+				}
+			}
+			return nil
+		}); err == nil {
+			misc.LogCreateOrUpdateOperationResult(log, result, cr, userCredentialsSecret)
+		} else {
+			return err
+		}
+	} else {
+		// Maybe delete it, if we created it already?
+		theSecret := &v1.Secret{}
+		if err := c.Get(context.TODO(), types.NamespacedName{Name: statefulSetName + "-user-credentials", Namespace: cr.Namespace}, theSecret); err == nil {
+			return c.Delete(context.TODO(), theSecret)
+		}
+	}
+
 	return nil
 }
 
@@ -232,7 +239,7 @@ func validateRabbitMQDefinition(rmq apiv1alpha1.AstarteRabbitMQSpec) error {
 
 func getRabbitMQInitContainers() []v1.Container {
 	return []v1.Container{
-		v1.Container{
+		{
 			Name:  "copy-rabbitmq-config",
 			Image: "busybox",
 			Command: []string{
@@ -241,11 +248,11 @@ func getRabbitMQInitContainers() []v1.Container {
 				"cp /configmap/* /etc/rabbitmq",
 			},
 			VolumeMounts: []v1.VolumeMount{
-				v1.VolumeMount{
+				{
 					Name:      "config-volume",
 					MountPath: "/configmap",
 				},
-				v1.VolumeMount{
+				{
 					Name:      "config",
 					MountPath: "/etc/rabbitmq",
 				},
@@ -284,37 +291,37 @@ func getRabbitMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.En
 	userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetRabbitMQUserCredentialsSecret(cr)
 
 	return []v1.EnvVar{
-		v1.EnvVar{
+		{
 			Name:  "RABBITMQ_USE_LONGNAME",
-			Value: "true",
+			Value: strconv.FormatBool(true),
 		},
-		v1.EnvVar{
+		{
 			Name:      "MY_POD_NAME",
 			ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.name"}},
 		},
-		v1.EnvVar{
+		{
 			Name:  "RABBITMQ_NODENAME",
 			Value: fmt.Sprintf("rabbit@$(MY_POD_NAME).%s.%s.svc.cluster.local", statefulSetName, cr.Namespace),
 		},
-		v1.EnvVar{
+		{
 			Name:  "K8S_SERVICE_NAME",
 			Value: statefulSetName,
 		},
-		v1.EnvVar{
+		{
 			Name: "RABBITMQ_DEFAULT_USER",
 			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
 				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
 				Key:                  userCredentialsSecretUsernameKey,
 			}},
 		},
-		v1.EnvVar{
+		{
 			Name: "RABBITMQ_DEFAULT_PASS",
 			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
 				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
 				Key:                  userCredentialsSecretPasswordKey,
 			}},
 		},
-		v1.EnvVar{
+		{
 			Name: "RABBITMQ_ERLANG_COOKIE",
 			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
 				LocalObjectReference: v1.LocalObjectReference{Name: statefulSetName + "-cookie"},
@@ -343,14 +350,14 @@ func getRabbitMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
 		Affinity:                      getAffinityForClusteredResource(statefulSetName, cr.Spec.RabbitMQ.AstarteGenericClusteredResource),
 		Containers: []v1.Container{
-			v1.Container{
+			{
 				Name: "rabbitmq",
 				VolumeMounts: []v1.VolumeMount{
-					v1.VolumeMount{
+					{
 						Name:      "config",
 						MountPath: "/etc/rabbitmq",
 					},
-					v1.VolumeMount{
+					{
 						Name:      dataVolumeName,
 						MountPath: "/var/lib/rabbitmq",
 					},
@@ -359,8 +366,8 @@ func getRabbitMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.
 					cr.Spec.RabbitMQ.AstarteGenericClusteredResource),
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Ports: []v1.ContainerPort{
-					v1.ContainerPort{Name: "amqp", ContainerPort: 5672},
-					v1.ContainerPort{Name: "management", ContainerPort: 15672},
+					{Name: "amqp", ContainerPort: 5672},
+					{Name: "management", ContainerPort: 15672},
 				},
 				LivenessProbe:  getRabbitMQLivenessProbe(),
 				ReadinessProbe: getRabbitMQReadinessProbe(),
@@ -369,21 +376,21 @@ func getRabbitMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.
 			},
 		},
 		Volumes: []v1.Volume{
-			v1.Volume{
+			{
 				Name:         "config",
 				VolumeSource: v1.VolumeSource{EmptyDir: &v1.EmptyDirVolumeSource{}},
 			},
-			v1.Volume{
+			{
 				Name: "config-volume",
 				VolumeSource: v1.VolumeSource{
 					ConfigMap: &v1.ConfigMapVolumeSource{
 						LocalObjectReference: v1.LocalObjectReference{Name: statefulSetName + "-config"},
 						Items: []v1.KeyToPath{
-							v1.KeyToPath{
+							{
 								Key:  "rabbitmq.conf",
 								Path: "rabbitmq.conf",
 							},
-							v1.KeyToPath{
+							{
 								Key:  "enabled_plugins",
 								Path: "enabled_plugins",
 							},
@@ -426,7 +433,7 @@ loopback_users.guest = false
 
 func getRabbitMQPolicyRules() []rbacv1.PolicyRule {
 	return []rbacv1.PolicyRule{
-		rbacv1.PolicyRule{
+		{
 			APIGroups: []string{""},
 			Resources: []string{"endpoints"},
 			Verbs:     []string{"get"},

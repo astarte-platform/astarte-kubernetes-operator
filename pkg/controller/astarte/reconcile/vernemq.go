@@ -84,15 +84,15 @@ func EnsureVerneMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sch
 		}
 		// Always set everything to what we require.
 		service.Spec.Type = v1.ServiceTypeClusterIP
-		service.Spec.ClusterIP = "None"
+		service.Spec.ClusterIP = noneClusterIP
 		service.Spec.Ports = []v1.ServicePort{
-			v1.ServicePort{
+			{
 				Name:       "mqtt",
 				Port:       1883,
 				TargetPort: intstr.FromString("mqtt"),
 				Protocol:   v1.ProtocolTCP,
 			},
-			v1.ServicePort{
+			{
 				Name:       "mqtt-reverse",
 				Port:       1885,
 				TargetPort: intstr.FromString("mqtt-reverse"),
@@ -103,11 +103,11 @@ func EnsureVerneMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sch
 		// Add Annotations for Voyager (when deployed)
 		service.Annotations = map[string]string{
 			"ingress.appscode.com/send-proxy": "v2-ssl-cn",
-			"ingress.appscode.com/check":      "true",
+			"ingress.appscode.com/check":      strconv.FormatBool(true),
 		}
 		return nil
 	}); err == nil {
-		logCreateOrUpdateOperationResult(result, cr, service)
+		misc.LogCreateOrUpdateOperationResult(log, result, cr, service)
 	} else {
 		return err
 	}
@@ -152,7 +152,7 @@ func EnsureVerneMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sch
 		return err
 	}
 
-	logCreateOrUpdateOperationResult(result, cr, service)
+	misc.LogCreateOrUpdateOperationResult(log, result, cr, service)
 	return nil
 }
 
@@ -181,34 +181,34 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.Env
 	dataQueueCount := getDataQueueCount(cr)
 
 	envVars := []v1.EnvVar{
-		v1.EnvVar{
+		{
 			Name:      "MY_POD_NAME",
 			ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.name"}},
 		},
-		v1.EnvVar{
+		{
 			Name:      "MY_POD_IP",
 			ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "status.podIP"}},
 		},
-		v1.EnvVar{
+		{
 			Name:  "DOCKER_VERNEMQ_DISCOVERY_KUBERNETES",
 			Value: "1",
 		},
-		v1.EnvVar{
+		{
 			Name:  "DOCKER_VERNEMQ_KUBERNETES_LABEL_SELECTOR",
 			Value: "app=" + statefulSetName,
 		},
-		v1.EnvVar{
+		{
 			Name:  "DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__HOST",
 			Value: rabbitMQHost,
 		},
-		v1.EnvVar{
+		{
 			Name: "DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__USERNAME",
 			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
 				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
 				Key:                  userCredentialsSecretUsernameKey,
 			}},
 		},
-		v1.EnvVar{
+		{
 			Name: "DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__PASSWORD",
 			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
 				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
@@ -262,10 +262,10 @@ func getVerneMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.A
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
 		Affinity:                      getAffinityForClusteredResource(statefulSetName, cr.Spec.VerneMQ.AstarteGenericClusteredResource),
 		Containers: []v1.Container{
-			v1.Container{
+			{
 				Name: "vernemq",
 				VolumeMounts: []v1.VolumeMount{
-					v1.VolumeMount{
+					{
 						Name:      dataVolumeName,
 						MountPath: "/opt/vernemq/data",
 					},
@@ -274,23 +274,23 @@ func getVerneMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.A
 				Image:           getAstarteImageForClusteredResource("vernemq", cr.Spec.VerneMQ.AstarteGenericClusteredResource, cr),
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Ports: []v1.ContainerPort{
-					v1.ContainerPort{Name: "mqtt-ssl", ContainerPort: 8883},
-					v1.ContainerPort{Name: "acme-verify", ContainerPort: 80},
-					v1.ContainerPort{Name: "mqtt", ContainerPort: 1883},
-					v1.ContainerPort{Name: "mqtt-reverse", ContainerPort: 1885},
-					v1.ContainerPort{Name: "vmq-msg-dist", ContainerPort: 44053},
-					v1.ContainerPort{Name: "epmd", ContainerPort: 4369},
-					v1.ContainerPort{Name: "metrics", ContainerPort: 8888},
-					v1.ContainerPort{ContainerPort: 9100},
-					v1.ContainerPort{ContainerPort: 9101},
-					v1.ContainerPort{ContainerPort: 9102},
-					v1.ContainerPort{ContainerPort: 9103},
-					v1.ContainerPort{ContainerPort: 9104},
-					v1.ContainerPort{ContainerPort: 9105},
-					v1.ContainerPort{ContainerPort: 9106},
-					v1.ContainerPort{ContainerPort: 9107},
-					v1.ContainerPort{ContainerPort: 9108},
-					v1.ContainerPort{ContainerPort: 9109},
+					{Name: "mqtt-ssl", ContainerPort: 8883},
+					{Name: "acme-verify", ContainerPort: 80},
+					{Name: "mqtt", ContainerPort: 1883},
+					{Name: "mqtt-reverse", ContainerPort: 1885},
+					{Name: "vmq-msg-dist", ContainerPort: 44053},
+					{Name: "epmd", ContainerPort: 4369},
+					{Name: "metrics", ContainerPort: 8888},
+					{ContainerPort: 9100},
+					{ContainerPort: 9101},
+					{ContainerPort: 9102},
+					{ContainerPort: 9103},
+					{ContainerPort: 9104},
+					{ContainerPort: 9105},
+					{ContainerPort: 9106},
+					{ContainerPort: 9107},
+					{ContainerPort: 9108},
+					{ContainerPort: 9109},
 				},
 				LivenessProbe:  getVerneMQProbe(),
 				ReadinessProbe: getVerneMQProbe(),
@@ -305,7 +305,7 @@ func getVerneMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.A
 
 func getVerneMQPolicyRules() []rbacv1.PolicyRule {
 	return []rbacv1.PolicyRule{
-		rbacv1.PolicyRule{
+		{
 			APIGroups: []string{""},
 			Resources: []string{"pods", "services"},
 			Verbs:     []string{"list", "get"},

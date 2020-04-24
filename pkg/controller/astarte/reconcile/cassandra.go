@@ -30,6 +30,7 @@ import (
 	semver "github.com/Masterminds/semver/v3"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/controller/astarte/deps"
+	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -78,9 +79,9 @@ func EnsureCassandra(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.S
 		}
 		// Always set everything to what we require.
 		service.Spec.Type = v1.ServiceTypeClusterIP
-		service.Spec.ClusterIP = "None"
+		service.Spec.ClusterIP = noneClusterIP
 		service.Spec.Ports = []v1.ServicePort{
-			v1.ServicePort{
+			{
 				Name:       "cql",
 				Port:       9042,
 				TargetPort: intstr.FromString("cql"),
@@ -90,7 +91,7 @@ func EnsureCassandra(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.S
 		service.Spec.Selector = labels
 		return nil
 	}); err == nil {
-		logCreateOrUpdateOperationResult(result, cr, service)
+		misc.LogCreateOrUpdateOperationResult(log, result, cr, service)
 	} else {
 		return err
 	}
@@ -134,7 +135,7 @@ func EnsureCassandra(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.S
 		return err
 	}
 
-	logCreateOrUpdateOperationResult(result, cr, service)
+	misc.LogCreateOrUpdateOperationResult(log, result, cr, service)
 	return nil
 }
 
@@ -169,35 +170,35 @@ func getCassandraEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.E
 	}
 
 	envVars := []v1.EnvVar{
-		v1.EnvVar{
+		{
 			Name:      "POD_NAME",
 			ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.name"}},
 		},
-		v1.EnvVar{
+		{
 			Name:      "POD_IP",
 			ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "status.podIP"}},
 		},
-		v1.EnvVar{
+		{
 			Name:  "CASSANDRA_SEEDS",
 			Value: fmt.Sprintf("%s-0.%s.%s.svc.cluster.local", statefulSetName, statefulSetName, cr.Namespace),
 		},
-		v1.EnvVar{
+		{
 			Name:  "CASSANDRA_CLUSTER_NAME",
 			Value: "AstarteCassandra",
 		},
-		v1.EnvVar{
+		{
 			Name:  "CASSANDRA_DC",
 			Value: "DC1-AstarteCassandra",
 		},
-		v1.EnvVar{
+		{
 			Name:  "CASSANDRA_RACK",
 			Value: "Rack1-AstarteCassandra",
 		},
-		v1.EnvVar{
+		{
 			Name:  "MAX_HEAP_SIZE",
 			Value: maxHeapSize,
 		},
-		v1.EnvVar{
+		{
 			Name:  "HEAP_NEWSIZE",
 			Value: heapNewSize,
 		},
@@ -220,10 +221,10 @@ func getCassandraPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
 		Affinity:                      getAffinityForClusteredResource(statefulSetName, cr.Spec.Cassandra.AstarteGenericClusteredResource),
 		Containers: []v1.Container{
-			v1.Container{
+			{
 				Name: "cassandra",
 				VolumeMounts: []v1.VolumeMount{
-					v1.VolumeMount{
+					{
 						Name:      dataVolumeName,
 						MountPath: "/cassandra_data",
 					},
@@ -232,10 +233,10 @@ func getCassandraPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1
 					cr.Spec.Cassandra.AstarteGenericClusteredResource),
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Ports: []v1.ContainerPort{
-					v1.ContainerPort{Name: "intra-node", ContainerPort: 7000},
-					v1.ContainerPort{Name: "tls-intra-node", ContainerPort: 7001},
-					v1.ContainerPort{Name: "jmx", ContainerPort: 7199},
-					v1.ContainerPort{Name: "cql", ContainerPort: 9042},
+					{Name: "intra-node", ContainerPort: 7000},
+					{Name: "tls-intra-node", ContainerPort: 7001},
+					{Name: "jmx", ContainerPort: 7199},
+					{Name: "cql", ContainerPort: 9042},
 				},
 				ReadinessProbe: getCassandraProbe(),
 				Resources:      resources,

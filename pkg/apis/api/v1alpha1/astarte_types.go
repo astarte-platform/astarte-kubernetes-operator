@@ -29,6 +29,18 @@ import (
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// AstarteClusterHealth represents the overall health of the cluster
+type AstarteClusterHealth string
+
+const (
+	// AstarteClusterHealthRed means the cluster is experiencing serious malfunctions or is down
+	AstarteClusterHealthRed AstarteClusterHealth = "red"
+	// AstarteClusterHealthYellow means the cluster is experiencing downtimes related to a single service
+	AstarteClusterHealthYellow AstarteClusterHealth = "yellow"
+	// AstarteClusterHealthGreen means the cluster is healthy, up and running
+	AstarteClusterHealthGreen AstarteClusterHealth = "green"
+)
+
 // AstarteResourceEvent represents a v1.Event reason for various events. They are all stated
 // in this enum to ease understanding and as a reference to users.
 type AstarteResourceEvent string
@@ -118,8 +130,7 @@ func (a *AstarteComponent) DashedString() string {
 
 // DockerImageName returns the Docker Image name for this Astarte Component
 func (a *AstarteComponent) DockerImageName() string {
-	switch *a {
-	case Dashboard:
+	if *a == Dashboard {
 		return "astarte-dashboard"
 	}
 	return "astarte_" + a.String()
@@ -372,8 +383,8 @@ type AstarteCFSSLCSRRootCASpec struct {
 }
 
 type AstarteCFSSLCARootConfigSigningCAConstraintSpec struct {
-	IsCA           bool `json:"is_ca"`
 	MaxPathLen     int  `json:"max_path_len"`
+	IsCA           bool `json:"is_ca"`
 	MaxPathLenZero bool `json:"max_path_len_zero"`
 }
 
@@ -461,12 +472,12 @@ type AstarteSpec struct {
 
 // AstarteStatus defines the observed state of Astarte
 type AstarteStatus struct {
-	ReconciliationPhase ReconciliationPhase `json:"phase,omitempty"`
-	AstarteVersion      string              `json:"astarteVersion,omitempty"`
-	OperatorVersion     string              `json:"operatorVersion,omitempty"`
-	Health              string              `json:"health,omitempty"`
-	BaseAPIURL          string              `json:"baseAPIURL,omitempty"`
-	BrokerURL           string              `json:"brokerURL,omitempty"`
+	ReconciliationPhase ReconciliationPhase  `json:"phase,omitempty"`
+	AstarteVersion      string               `json:"astarteVersion,omitempty"`
+	OperatorVersion     string               `json:"operatorVersion,omitempty"`
+	Health              AstarteClusterHealth `json:"health,omitempty"`
+	BaseAPIURL          string               `json:"baseAPIURL,omitempty"`
+	BrokerURL           string               `json:"brokerURL,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
