@@ -131,8 +131,8 @@ func getAstarteGenericBackendPodSpec(deploymentName string, cr *apiv1alpha1.Asta
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Resources:       misc.GetResourcesForAstarteComponent(cr, backend.Resources, component),
 				Env:             getAstarteGenericBackendEnvVars(deploymentName, cr, backend, component),
-				ReadinessProbe:  getAstarteBackendProbe(cr, backend, customProbe),
-				LivenessProbe:   getAstarteBackendProbe(cr, backend, customProbe),
+				ReadinessProbe:  getAstarteBackendProbe(cr, backend, component, customProbe),
+				LivenessProbe:   getAstarteBackendProbe(cr, backend, component, customProbe),
 			},
 		},
 		Volumes: getAstarteGenericBackendVolumes(cr),
@@ -382,7 +382,8 @@ func getAstarteDataUpdaterPlantBackendEnvVars(eventsExchangeName string, cr *api
 	return ret
 }
 
-func getAstarteBackendProbe(cr *apiv1alpha1.Astarte, backend apiv1alpha1.AstarteGenericClusteredResource, customProbe *v1.Probe) *v1.Probe {
+func getAstarteBackendProbe(cr *apiv1alpha1.Astarte, backend apiv1alpha1.AstarteGenericClusteredResource,
+	component apiv1alpha1.AstarteComponent, customProbe *v1.Probe) *v1.Probe {
 	if customProbe != nil {
 		return customProbe
 	}
@@ -397,11 +398,21 @@ func getAstarteBackendProbe(cr *apiv1alpha1.Astarte, backend apiv1alpha1.Astarte
 		return nil
 	}
 
+	// Custom components
+	if component == apiv1alpha1.Housekeeping {
+		// We need a much longer timeout, as we have an initialization which happens 3 times
+		return getAstarteBackendGenericProbeWithThreshold("/health", 15)
+	}
+
 	// The rest are generic probes on /health
 	return getAstarteBackendGenericProbe("/health")
 }
 
 func getAstarteBackendGenericProbe(path string) *v1.Probe {
+	return getAstarteBackendGenericProbeWithThreshold(path, 5)
+}
+
+func getAstarteBackendGenericProbeWithThreshold(path string, threshold int32) *v1.Probe {
 	return &v1.Probe{
 		Handler: v1.Handler{
 			HTTPGet: &v1.HTTPGetAction{
@@ -412,6 +423,6 @@ func getAstarteBackendGenericProbe(path string) *v1.Probe {
 		InitialDelaySeconds: 10,
 		TimeoutSeconds:      5,
 		PeriodSeconds:       30,
-		FailureThreshold:    5,
+		FailureThreshold:    threshold,
 	}
 }
