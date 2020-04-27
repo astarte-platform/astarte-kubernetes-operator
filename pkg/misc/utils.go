@@ -156,28 +156,128 @@ func GetResourcesForAstarteComponent(cr *apiv1alpha1.Astarte, requestedResources
 	}
 
 	// Ok, let's do the distribution dance.
-	cpuCoefficient := defaultComponentAllocations[component].CPUCoefficient
-	memoryCoefficient := defaultComponentAllocations[component].MemoryCoefficient
+	a := getWeightedDefaultAllocationFor(cr, component)
 
-	if memoryCoefficient == 0 || cpuCoefficient == 0 {
+	if a.MemoryCoefficient == 0 || a.CPUCoefficient == 0 {
 		return v1.ResourceRequirements{}
 	}
 
-	cpuLimits := resource.NewScaledQuantity(int64(float64(cr.Spec.Components.Resources.Limits.Cpu().ScaledValue(resource.Milli))*cpuCoefficient), resource.Milli)
-	cpuRequests := resource.NewScaledQuantity(int64(float64(cr.Spec.Components.Resources.Requests.Cpu().ScaledValue(resource.Milli))*cpuCoefficient), resource.Milli)
-	memoryLimits := resource.NewScaledQuantity(int64(float64(cr.Spec.Components.Resources.Limits.Memory().ScaledValue(resource.Mega))*memoryCoefficient), resource.Mega)
-	memoryRequests := resource.NewScaledQuantity(int64(float64(cr.Spec.Components.Resources.Requests.Memory().ScaledValue(resource.Mega))*memoryCoefficient), resource.Mega)
+	cpuLimits := getAllocationScaledQuantity(cr.Spec.Components.Resources.Limits.Cpu(), resource.Milli, a.CPUCoefficient)
+	cpuRequests := getAllocationScaledQuantity(cr.Spec.Components.Resources.Requests.Cpu(), resource.Milli, a.CPUCoefficient)
+	memoryLimits := getAllocationScaledQuantity(cr.Spec.Components.Resources.Limits.Memory(), resource.Mega, a.MemoryCoefficient)
+	memoryRequests := getAllocationScaledQuantity(cr.Spec.Components.Resources.Requests.Memory(), resource.Mega, a.MemoryCoefficient)
+
+	realRequests := v1.ResourceList{}
+
+	// Adjust the requests to ensure we don't starve our services.
+	// If the CPU is <150m, we're better off bursting the component. Otherwise, add it to requests.
+	if cpuRequests.MilliValue() >= 150 {
+		cpuRequests = resource.NewScaledQuantity(0, resource.Milli)
+	}
+	realRequests[v1.ResourceCPU] = *cpuRequests
+	// If the RAM is less than 128M, increase it even though we're getting out of boundaries.
+	// We can't really afford to trigger the OOM killer in the cluster, better making some components unschedulable.
+	if memoryRequests.ScaledValue(resource.Mega) < 128 {
+		memoryRequests = resource.NewScaledQuantity(128, resource.Mega)
+	}
+	realRequests[v1.ResourceMemory] = *memoryRequests
+
+	// Same goes for limits (for CPU). Instead, though, set a higher value. That would be 300m.
+	// For memory, we have to trust the user here.
+	if cpuLimits.MilliValue() < 300 {
+		cpuLimits = resource.NewScaledQuantity(300, resource.Milli)
+	}
 
 	return v1.ResourceRequirements{
 		Limits: v1.ResourceList{
 			v1.ResourceCPU:    cpuLimits.DeepCopy(),
 			v1.ResourceMemory: memoryLimits.DeepCopy(),
 		},
-		Requests: v1.ResourceList{
-			v1.ResourceCPU:    cpuRequests.DeepCopy(),
-			v1.ResourceMemory: memoryRequests.DeepCopy(),
-		},
+		Requests: realRequests,
 	}
+}
+
+func getAllocationScaledQuantity(qty *resource.Quantity, scale resource.Scale, coefficient float64) *resource.Quantity {
+	return resource.NewScaledQuantity(int64(float64(qty.ScaledValue(scale))*coefficient), scale)
+}
+
+func getNumberOfDeployedAstarteComponentsAsFloat(cr *apiv1alpha1.Astarte) float64 {
+	var deployedComponents int
+
+	if pointy.BoolValue(cr.Spec.Components.AppengineAPI.Deploy, true) {
+		deployedComponents++
+	}
+	if pointy.BoolValue(cr.Spec.Components.Dashboard.Deploy, true) {
+		deployedComponents++
+	}
+	if pointy.BoolValue(cr.Spec.Components.DataUpdaterPlant.Deploy, true) {
+		deployedComponents++
+	}
+	if pointy.BoolValue(cr.Spec.Components.Housekeeping.Backend.Deploy, true) {
+		deployedComponents++
+	}
+	if pointy.BoolValue(cr.Spec.Components.Housekeeping.API.Deploy, true) {
+		deployedComponents++
+	}
+	if pointy.BoolValue(cr.Spec.Components.Pairing.Backend.Deploy, true) {
+		deployedComponents++
+	}
+	if pointy.BoolValue(cr.Spec.Components.Pairing.API.Deploy, true) {
+		deployedComponents++
+	}
+	if pointy.BoolValue(cr.Spec.Components.RealmManagement.Backend.Deploy, true) {
+		deployedComponents++
+	}
+	if pointy.BoolValue(cr.Spec.Components.RealmManagement.API.Deploy, true) {
+		deployedComponents++
+	}
+	if pointy.BoolValue(cr.Spec.Components.TriggerEngine.Deploy, true) {
+		deployedComponents++
+	}
+
+	return float64(deployedComponents)
+}
+
+func getLeftoverCoefficients(cr *apiv1alpha1.Astarte) allocationCoefficients {
+	aC := allocationCoefficients{}
+
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.AppengineAPI.AstarteGenericClusteredResource, apiv1alpha1.AppEngineAPI, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Dashboard.AstarteGenericClusteredResource, apiv1alpha1.Dashboard, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource, apiv1alpha1.DataUpdaterPlant, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Housekeeping.Backend, apiv1alpha1.Housekeeping, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Housekeeping.API.AstarteGenericClusteredResource, apiv1alpha1.HousekeepingAPI, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Pairing.Backend, apiv1alpha1.Pairing, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Pairing.API.AstarteGenericClusteredResource, apiv1alpha1.PairingAPI, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.RealmManagement.Backend, apiv1alpha1.RealmManagement, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.RealmManagement.API.AstarteGenericClusteredResource, apiv1alpha1.RealmManagementAPI, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.TriggerEngine.AstarteGenericClusteredResource, apiv1alpha1.TriggerEngine, aC)
+
+	return aC
+}
+
+func checkComponentForLeftoverAllocations(clusteredResource apiv1alpha1.AstarteGenericClusteredResource,
+	component apiv1alpha1.AstarteComponent, aC allocationCoefficients) allocationCoefficients {
+	if !pointy.BoolValue(clusteredResource.Deploy, true) {
+		aC.CPUCoefficient += defaultComponentAllocations[component].CPUCoefficient
+		aC.MemoryCoefficient += defaultComponentAllocations[component].MemoryCoefficient
+	}
+
+	return aC
+}
+
+func getWeightedDefaultAllocationFor(cr *apiv1alpha1.Astarte, component apiv1alpha1.AstarteComponent) allocationCoefficients {
+	// Add other percentages proportionally
+	leftovers := getLeftoverCoefficients(cr)
+	defaultAllocation := defaultComponentAllocations[component]
+
+	if leftovers.CPUCoefficient > 0 {
+		defaultAllocation.CPUCoefficient += (leftovers.CPUCoefficient / getNumberOfDeployedAstarteComponentsAsFloat(cr))
+	}
+	if leftovers.MemoryCoefficient > 0 {
+		defaultAllocation.MemoryCoefficient += (leftovers.MemoryCoefficient / getNumberOfDeployedAstarteComponentsAsFloat(cr))
+	}
+
+	return defaultAllocation
 }
 
 // IsAstarteComponentDeployed returns whether an Astarte component is deployed by cr
