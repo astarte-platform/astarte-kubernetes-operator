@@ -100,6 +100,8 @@ const (
 	AppEngineAPI AstarteComponent = "appengine_api"
 	// DataUpdaterPlant represents Astarte Data Updater Plant
 	DataUpdaterPlant AstarteComponent = "data_updater_plant"
+	// FlowComponent represents Astarte Flow
+	FlowComponent AstarteComponent = "flow"
 	// Housekeeping represents Astarte Housekeeping
 	Housekeeping AstarteComponent = "housekeeping"
 	// HousekeepingAPI represents Astarte Housekeeping API
@@ -140,7 +142,7 @@ func (a *AstarteComponent) DockerImageName() string {
 // if any, otherwise returns an empty string.
 // This will return a meaningful value only for API components or the Dashboard.
 func (a *AstarteComponent) ServiceName() string {
-	if !strings.Contains(a.String(), "api") && a.String() != "dashboard" {
+	if !strings.Contains(a.String(), "api") && a.String() != "dashboard" && a.String() != "flow" {
 		return ""
 	}
 	return strings.Replace(a.DashedString(), "-api", "", -1)
@@ -320,6 +322,8 @@ type AstarteDashboardConfigSpec struct {
 	// +optional
 	AppEngineAPIURL string `json:"appEngineApiUrl,omitempty"`
 	// +optional
+	FlowAPIURL string `json:"flowApiUrl,omitempty"`
+	// +optional
 	DefaultRealm string `json:"defaultRealm,omitempty"`
 	// +optional
 	DefaultAuth string `json:"defaultAuth,omitempty"`
@@ -337,6 +341,8 @@ type AstarteComponentsSpec struct {
 	// Compute Resources for this Component.
 	// +optional
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
+	// +optional
+	Flow AstarteGenericAPISpec `json:"flow,omitempty"`
 	// +optional
 	Housekeeping AstarteGenericComponentSpec `json:"housekeeping,omitempty"`
 	// +optional

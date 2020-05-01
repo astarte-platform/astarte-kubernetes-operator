@@ -102,7 +102,12 @@ func ReconcileSecret(objName string, data map[string][]byte, cr metav1.Object, c
 
 // ReconcileSecretString creates or updates a Secret through controllerutil by using StringData
 func ReconcileSecretString(objName string, data map[string]string, cr metav1.Object, c client.Client, scheme *runtime.Scheme, log logr.Logger) (controllerutil.OperationResult, error) {
-	secret := &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: objName, Namespace: cr.GetNamespace()}}
+	return ReconcileSecretStringWithLabels(objName, data, map[string]string{}, cr, c, scheme, log)
+}
+
+// ReconcileSecretStringWithLabels creates or updates a Secret through controllerutil by using StringData, and adding a set of Labels
+func ReconcileSecretStringWithLabels(objName string, data, labels map[string]string, cr metav1.Object, c client.Client, scheme *runtime.Scheme, log logr.Logger) (controllerutil.OperationResult, error) {
+	secret := &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: objName, Namespace: cr.GetNamespace(), Labels: labels}}
 	result, err := controllerutil.CreateOrUpdate(context.TODO(), c, secret, func() error {
 		if err := controllerutil.SetControllerReference(cr, secret, scheme); err != nil {
 			return err
@@ -153,6 +158,20 @@ func GetResourcesForAstarteComponent(cr *apiv1alpha1.Astarte, requestedResources
 	if cr.Spec.Components.Resources == nil {
 		// All burst. If you say so...
 		return v1.ResourceRequirements{}
+	}
+
+	// TODO: Kill this and integrate it into the whole shenanigan
+	if component == apiv1alpha1.FlowComponent {
+		return v1.ResourceRequirements{
+			Limits: v1.ResourceList{
+				v1.ResourceCPU:    resource.NewScaledQuantity(1000, resource.Milli).DeepCopy(),
+				v1.ResourceMemory: resource.NewScaledQuantity(512, resource.Mega).DeepCopy(),
+			},
+			Requests: v1.ResourceList{
+				v1.ResourceCPU:    resource.NewScaledQuantity(500, resource.Milli).DeepCopy(),
+				v1.ResourceMemory: resource.NewScaledQuantity(256, resource.Mega).DeepCopy(),
+			},
+		}
 	}
 
 	// Ok, let's do the distribution dance.
@@ -289,6 +308,9 @@ func IsAstarteComponentDeployed(cr *apiv1alpha1.Astarte, component apiv1alpha1.A
 		return pointy.BoolValue(cr.Spec.Components.Dashboard.Deploy, true)
 	case apiv1alpha1.DataUpdaterPlant:
 		return pointy.BoolValue(cr.Spec.Components.DataUpdaterPlant.Deploy, true)
+	case apiv1alpha1.FlowComponent:
+		// TODO: Make it true when more stable
+		return pointy.BoolValue(cr.Spec.Components.Flow.Deploy, false)
 	case apiv1alpha1.Housekeeping:
 		return pointy.BoolValue(cr.Spec.Components.Housekeeping.Backend.Deploy, true)
 	case apiv1alpha1.HousekeepingAPI:

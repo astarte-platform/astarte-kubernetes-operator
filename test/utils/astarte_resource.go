@@ -116,6 +116,22 @@ var AstarteTestResource *operator.Astarte = &operator.Astarte{
 					v1.ResourceMemory: *resource.NewScaledQuantity(2, resource.Giga),
 				},
 			},
+			// TODO: We need to add this here to ensure we don't starve the CI. Remove when it is taken into account
+			// in global resource allocation.
+			Flow: operator.AstarteGenericAPISpec{
+				AstarteGenericClusteredResource: operator.AstarteGenericClusteredResource{
+					Resources: &v1.ResourceRequirements{
+						Limits: v1.ResourceList{
+							v1.ResourceCPU:    *resource.NewScaledQuantity(0, resource.Milli),
+							v1.ResourceMemory: *resource.NewScaledQuantity(256, resource.Mega),
+						},
+						Requests: v1.ResourceList{
+							v1.ResourceCPU:    *resource.NewScaledQuantity(0, resource.Milli),
+							v1.ResourceMemory: *resource.NewScaledQuantity(256, resource.Mega),
+						},
+					},
+				},
+			},
 		},
 	},
 }

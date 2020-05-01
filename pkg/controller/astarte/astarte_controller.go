@@ -399,6 +399,26 @@ func (r *ReconcileAstarte) reconcileAstarteResources(instance *apiv1alpha1.Astar
 		return err
 	}
 
+	// OK! Now it's time to reconcile all of Astarte Services
+	if err := r.ensureAstarteMicroservices(instance); err != nil {
+		return err
+	}
+
+	// Last but not least, VerneMQ
+	if err := recon.EnsureVerneMQ(instance, r.client, r.scheme); err != nil {
+		return err
+	}
+
+	// And Dashboard to close it down.
+	if err := recon.EnsureAstarteDashboard(instance, instance.Spec.Components.Dashboard, r.client, r.scheme); err != nil {
+		return err
+	}
+
+	// All good!
+	return nil
+}
+
+func (r *ReconcileAstarte) ensureAstarteMicroservices(instance *apiv1alpha1.Astarte) error {
 	// OK! Now it's time to reconcile all of Astarte Services, in a specific order.
 	// Housekeeping first - it creates/migrates the Database
 	if err := r.ensureAstarteGenericComponent(instance, instance.Spec.Components.Housekeeping, apiv1alpha1.Housekeeping, apiv1alpha1.HousekeepingAPI); err != nil {
@@ -415,6 +435,11 @@ func (r *ReconcileAstarte) reconcileAstarteResources(instance *apiv1alpha1.Astar
 		return err
 	}
 
+	// Then, Flow
+	if err := recon.EnsureAstarteGenericAPI(instance, instance.Spec.Components.Flow, apiv1alpha1.FlowComponent, r.client, r.scheme); err != nil {
+		return err
+	}
+
 	// Trigger Engine right before DUP
 	if err := recon.EnsureAstarteGenericBackend(instance, instance.Spec.Components.TriggerEngine.AstarteGenericClusteredResource, apiv1alpha1.TriggerEngine, r.client, r.scheme); err != nil {
 		return err
@@ -427,16 +452,6 @@ func (r *ReconcileAstarte) reconcileAstarteResources(instance *apiv1alpha1.Astar
 
 	// Now it's AppEngine API turn
 	if err := recon.EnsureAstarteGenericAPI(instance, instance.Spec.Components.AppengineAPI.AstarteGenericAPISpec, apiv1alpha1.AppEngineAPI, r.client, r.scheme); err != nil {
-		return err
-	}
-
-	// Last but not least, VerneMQ
-	if err := recon.EnsureVerneMQ(instance, r.client, r.scheme); err != nil {
-		return err
-	}
-
-	// And Dashboard to close it down.
-	if err := recon.EnsureAstarteDashboard(instance, instance.Spec.Components.Dashboard, r.client, r.scheme); err != nil {
 		return err
 	}
 
