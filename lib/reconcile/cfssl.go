@@ -25,8 +25,8 @@ import (
 	"fmt"
 
 	semver "github.com/Masterminds/semver/v3"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/deps"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/controller/astarte/deps"
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"

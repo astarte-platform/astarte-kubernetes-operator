@@ -23,8 +23,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/reconcile"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/controller/astarte/reconcile"
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"

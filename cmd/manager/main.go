@@ -65,6 +65,40 @@ func printVersion() {
 }
 
 func main() {
+	namespace, err := k8sutil.GetWatchNamespace()
+	if err != nil {
+		log.Error(err, "Failed to get watch namespace")
+		os.Exit(1)
+	}
+
+	ctx, cfg, mgr := setupOperator(namespace)
+
+	// Setup Scheme for all resources
+	addSchemes(mgr)
+
+	// Setup all Controllers
+	if e := controller.AddToManager(mgr); e != nil {
+		log.Error(e, "")
+		os.Exit(1)
+	}
+
+	if err := serveCRMetrics(cfg); err != nil {
+		log.Info("Could not generate and serve custom resource metrics", "error", err.Error())
+	}
+
+	// Invoke CreateServiceMonitors
+	createServiceMonitors(ctx, cfg, namespace)
+
+	log.Info("Starting the Cmd.")
+
+	// Start the Cmd
+	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
+		log.Error(err, "Manager exited non-zero")
+		os.Exit(1)
+	}
+}
+
+func setupOperator(namespace string) (context.Context, *rest.Config, manager.Manager) {
 	// Add the zap logger flag set to the CLI. The flag set must
 	// be added before calling pflag.Parse().
 	pflag.CommandLine.AddFlagSet(zap.FlagSet())
@@ -86,12 +120,6 @@ func main() {
 	logf.SetLogger(zap.Logger())
 
 	printVersion()
-
-	namespace, err := k8sutil.GetWatchNamespace()
-	if err != nil {
-		log.Error(err, "Failed to get watch namespace")
-		os.Exit(1)
-	}
 
 	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
@@ -118,21 +146,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Info("Registering Components.")
+	return ctx, cfg, mgr
+}
 
-	// Setup Scheme for all resources
-	addSchemes(mgr)
-
-	// Setup all Controllers
-	if e := controller.AddToManager(mgr); e != nil {
-		log.Error(e, "")
-		os.Exit(1)
-	}
-
-	if err = serveCRMetrics(cfg); err != nil {
-		log.Info("Could not generate and serve custom resource metrics", "error", err.Error())
-	}
-
+func createServiceMonitors(ctx context.Context, cfg *rest.Config, namespace string) {
 	// Add to the below struct any other metrics ports you want to expose.
 	servicePorts := []v1.ServicePort{
 		{Port: metricsPort, Name: metrics.OperatorPortName, Protocol: v1.ProtocolTCP, TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: metricsPort}},
@@ -144,19 +161,6 @@ func main() {
 		log.Info("Could not create metrics Service", "error", err.Error())
 	}
 
-	// Invoke CreateServiceMonitors
-	createServiceMonitors(service, cfg, namespace)
-
-	log.Info("Starting the Cmd.")
-
-	// Start the Cmd
-	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
-		log.Error(err, "Manager exited non-zero")
-		os.Exit(1)
-	}
-}
-
-func createServiceMonitors(service *v1.Service, cfg *rest.Config, namespace string) {
 	// CreateServiceMonitors will automatically create the prometheus-operator ServiceMonitor resources
 	// necessary to configure Prometheus to scrape metrics from this operator.
 	services := []*v1.Service{service}
@@ -171,6 +175,8 @@ func createServiceMonitors(service *v1.Service, cfg *rest.Config, namespace stri
 }
 
 func addSchemes(mgr manager.Manager) {
+	log.Info("Setting up Operator API Schemes.")
+
 	// Setup Scheme for all resources
 	if e := apis.AddToScheme(mgr.GetScheme()); e != nil {
 		log.Error(e, "")
