@@ -38,12 +38,13 @@ in Astarte's Documentation.
 | v1.15.x  | :white_check_mark: | :x: |
 | v1.16.x  | :white_check_mark: | :white_check_mark: |
 | v1.17.x  | :white_check_mark: | :white_check_mark: |
+| v1.18.x  | :white_check_mark: | :white_check_mark: |
 
 Key:
 
- * :white_check_mark: : Supported and stable
- * :large_orange_diamond: : Partially supported / known to run in production, but not being targeted by the release.
- * :x: : Not supported. Run at your own risk
+* :white_check_mark: : Supported and stable
+* :large_orange_diamond: : Partially supported / known to run in production, but not being targeted by the release.
+* :x: : Not supported. Run at your own risk
 
 ## Development
 
