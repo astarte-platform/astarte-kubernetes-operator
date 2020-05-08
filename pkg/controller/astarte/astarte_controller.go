@@ -20,25 +20,15 @@ package astarte
 
 import (
 	"context"
-	"fmt"
-	"strings"
 	"time"
 
-	semver "github.com/Masterminds/semver/v3"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/migrate"
-	recon "github.com/astarte-platform/astarte-kubernetes-operator/lib/reconcile"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/upgrade"
-	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/controllerutils"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
 	"github.com/astarte-platform/astarte-kubernetes-operator/version"
-	"github.com/go-logr/logr"
-	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -129,7 +119,6 @@ type ReconcileAstarte struct {
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling Astarte")
 
 	// Fetch the Astarte instance
 	instance := &apiv1alpha1.Astarte{}
@@ -142,6 +131,13 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 		}
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
+	}
+	reqLogger.Info("Reconciling Astarte")
+
+	reconciler := controllerutils.ReconcileHelper{
+		Client:   r.client,
+		Recorder: r.recorder,
+		Scheme:   r.scheme,
 	}
 
 	// Are we capable of handling the requested version?
@@ -160,7 +156,7 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 
 	// Ensure status is coeherent
-	if result, err := r.ensureStatusCoherency(reqLogger, instance, request); err != nil {
+	if result, err := reconciler.EnsureStatusCoherency(reqLogger, instance, request); err != nil {
 		return result, err
 	}
 
@@ -181,18 +177,19 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 	case instance.Status.AstarteVersion != instance.Spec.Version:
 		reqLogger.Info("Requested Version and Status Version are different, checking for upgrades...",
 			"Version.Old", instance.Status.AstarteVersion, "Version.New", instance.Spec.Version)
-		if result, e := r.checkAndPerformUpgrade(reqLogger, instance, newAstarteSemVersion); e != nil {
+		if result, e := reconciler.CheckAndPerformUpgrade(reqLogger, instance, newAstarteSemVersion); e != nil {
 			return result, e
 		}
 	}
 
 	// Run actual reconciliation.
-	if err := r.reconcileAstarteResources(instance); err != nil {
+	if err := reconciler.ReconcileAstarteResources(instance); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	// Update the status
-	if err := r.updateAstarteStatus(reqLogger, instance); err != nil {
+	instance.Status = reconciler.ComputeAstarteStatusResource(reqLogger, instance)
+	if err := r.client.Status().Update(context.TODO(), instance); err != nil {
 		reqLogger.Error(err, "Failed to update Astarte status.")
 		return reconcile.Result{}, err
 	}
@@ -200,297 +197,6 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 	// Reconciliation was successful. Log a message and return
 	reqLogger.Info("Astarte Reconciled successfully")
 	return reconcile.Result{}, nil
-}
-
-func (r *ReconcileAstarte) checkAndPerformUpgrade(reqLogger logr.Logger, instance *apiv1alpha1.Astarte, newAstarteSemVersion *semver.Version) (reconcile.Result, error) {
-	// TODO: This should go in the Admission Webhook too, going forward, to prevent deadlocks.
-	// Given we're at a high chance of deadlocking here, we want to compute the status again and don't trust what
-	// was reported in a previous reconciliation exclusively. On the other hand, in some scenarios (e.g.: failed upgrade
-	// due to a temporary issue) we don't want to trust the computed health exclusively if the upgrade started at a time
-	// when the cluster was healthy. As such, proceed if one among the computed health and the reported health are green.
-	computedClusterHealth := r.computeClusterHealth(reqLogger, instance)
-	if computedClusterHealth != apiv1alpha1.AstarteClusterHealthGreen && instance.Status.Health != apiv1alpha1.AstarteClusterHealthGreen {
-		reqLogger.Error(fmt.Errorf("Astarte Upgrade requested, but the cluster isn't reporting stable Health. Refusing to upgrade"),
-			"Cluster health is unstable, refusing to upgrade. Please revert to the previous version and wait for the cluster to settle.",
-			"Reported Health", instance.Status.Health, "Computed Health", computedClusterHealth)
-		r.recorder.Event(instance, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
-			fmt.Sprintf("Cluster health is %s, refusing to upgrade. Please revert to the previous version and wait for the cluster to settle", computedClusterHealth))
-		return reconcile.Result{Requeue: false}, fmt.Errorf("Astarte Upgrade requested, but the cluster isn't reporting stable Health. Refusing to upgrade")
-	}
-	// We need to check for upgrades.
-	versionString := instance.Status.AstarteVersion
-	// Are we on a release snapshot?
-	if strings.Contains(instance.Status.AstarteVersion, "-snapshot") {
-		// We're running on a release snapshot. Assume it's .0
-		versionString = strings.Replace(versionString, "-snapshot", ".0", -1)
-		reqLogger.Info("You are running a Release snapshot. This is generally not a good idea in production. Assuming a Release version", "Version", versionString)
-		r.recorder.Eventf(instance, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
-			"Requested an upgrade from a Release snapshot. Assuming the base Release version is %v", versionString)
-	}
-
-	// Build the semantic version
-	oldAstarteSemVersion, err := version.GetAstarteSemanticVersionFrom(versionString)
-	if err != nil {
-		// Reconcile every minute if we're here
-		r.recorder.Eventf(instance, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
-			err.Error(), versionString)
-		return reconcile.Result{RequeueAfter: time.Minute}, err
-	}
-
-	// Ok! Let's try and upgrade (if needed)
-	if e := upgrade.EnsureAstarteUpgrade(oldAstarteSemVersion, newAstarteSemVersion, instance, r.client, r.scheme, r.recorder); e != nil {
-		return reconcile.Result{}, e
-	}
-
-	// All good!
-	return reconcile.Result{}, nil
-}
-
-func (r *ReconcileAstarte) computeClusterHealth(reqLogger logr.Logger, instance *apiv1alpha1.Astarte) apiv1alpha1.AstarteClusterHealth {
-	// Compute overall Readiness for Astarte deployments
-	astarteDeployments := &appsv1.DeploymentList{}
-	nonReadyDeployments := 0
-	if err := r.client.List(context.TODO(), astarteDeployments, client.InNamespace(instance.Namespace),
-		client.MatchingLabels{"component": "astarte"}); err == nil {
-		for _, deployment := range astarteDeployments.Items {
-			if deployment.Status.ReadyReplicas == 0 {
-				nonReadyDeployments++
-			}
-		}
-	} else {
-		reqLogger.Info("Could not list Astarte deployments to compute health.")
-		// Set it high enough to turn red
-		nonReadyDeployments = 5
-	}
-
-	// Now compute readiness for the other two components we want to check: VerneMQ and CFSSL
-	astarteStatefulSet := &appsv1.StatefulSet{}
-	if pointy.BoolValue(instance.Spec.VerneMQ.Deploy, true) {
-		if err := r.client.Get(context.TODO(), types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name + "-vernemq"},
-			astarteStatefulSet); err == nil {
-			if astarteStatefulSet.Status.ReadyReplicas == 0 {
-				nonReadyDeployments++
-			}
-		} else {
-			// Just increase the count - it might be a temporary error as the StatefulSet is being created.
-			reqLogger.V(1).Info("Could not Get Astarte VerneMQ StatefulSet to compute health.")
-			nonReadyDeployments++
-		}
-	}
-	if pointy.BoolValue(instance.Spec.CFSSL.Deploy, true) {
-		astarteStatefulSet = &appsv1.StatefulSet{}
-		if err := r.client.Get(context.TODO(), types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name + "-cfssl"},
-			astarteStatefulSet); err == nil {
-			if astarteStatefulSet.Status.ReadyReplicas == 0 {
-				nonReadyDeployments++
-			}
-		} else {
-			// Just increase the count - it might be a temporary error as the StatefulSet is being created.
-			reqLogger.V(1).Info("Could not Get Astarte CFSSL StatefulSet to compute health.")
-			nonReadyDeployments++
-		}
-	}
-
-	if nonReadyDeployments == 0 {
-		return apiv1alpha1.AstarteClusterHealthGreen
-	} else if nonReadyDeployments == 1 {
-		return apiv1alpha1.AstarteClusterHealthYellow
-	}
-	return apiv1alpha1.AstarteClusterHealthRed
-}
-
-func (r *ReconcileAstarte) ensureStatusCoherency(reqLogger logr.Logger, instance *apiv1alpha1.Astarte, request reconcile.Request) (reconcile.Result, error) {
-	if instance.Status.AstarteVersion != "" {
-		// It's simply ok.
-		return reconcile.Result{}, nil
-	}
-
-	// Ok, in this case there's two potential situations: we're on our first reconcile, or the status is
-	// messed up. Let's see if we can find the Housekeeping Deployment.
-	hkDeployment := &appsv1.Deployment{}
-	if err := r.client.Get(context.TODO(),
-		types.NamespacedName{Name: instance.Name + "-housekeeping", Namespace: instance.Namespace}, hkDeployment); err == nil {
-		// In this case, we are in a weird state (e.g.: migrating from the old operator). Let's try and fix this.
-		// First of all, try and migrate it.
-		r.recorder.Event(instance, "Warning", apiv1alpha1.AstarteResourceEventMigration.String(),
-			"Found an invalid status. The resource will be migrated to latest format")
-		reqLogger.Info("Found an invalid status. Attempting to migrate the resource.")
-		if e := migrate.ToNewCR(instance, r.client, r.scheme); e != nil {
-			return reconcile.Result{}, e
-		}
-
-		// Second of all, we want to ensure we have a clean start without losing anything. To do so, we need to bring it to a state
-		// where it can always be reconciled.
-		// Let's just ensure the Status struct is meaningful: reconstruct it from what we know/can access.
-		instance.Status.ReconciliationPhase = apiv1alpha1.ReconciliationPhaseReconciling
-		instance.Status.OperatorVersion = version.Version
-		// red before anything else happens
-		instance.Status.Health = apiv1alpha1.AstarteClusterHealthRed
-		instance.Status.BaseAPIURL = instance.Spec.API.Host
-		instance.Status.BrokerURL = instance.Spec.VerneMQ.Host
-
-		reqLogger.Info("Reconciling Astarte Version from Housekeeping's image tag")
-		hkImage := hkDeployment.Spec.Template.Spec.Containers[0].Image
-		hkImageTokens := strings.Split(hkImage, ":")
-		if len(hkImageTokens) != 2 {
-			// Reconcile every minute if we're here
-			r.recorder.Eventf(instance, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
-				"Could not parse Astarte version from Housekeeping Image tag %s. Please fix your resource definition", hkImage)
-			return reconcile.Result{RequeueAfter: time.Minute},
-				fmt.Errorf("Could not parse Astarte version from Housekeeping Image tag %s. Refusing to proceed", hkImage)
-		}
-
-		instance.Status.AstarteVersion = hkImageTokens[1]
-		// Update the status
-		if e := r.client.Status().Update(context.TODO(), instance); e != nil {
-			r.recorder.Event(instance, "Warning", apiv1alpha1.AstarteResourceEventReconciliationFailed.String(),
-				"Failed to update Astarte status - will retry reconciliation")
-			reqLogger.Error(e, "Failed to update Astarte status.")
-			return reconcile.Result{}, e
-		}
-		r.recorder.Eventf(instance, "Normal", apiv1alpha1.AstarteResourceEventMigration.String(),
-			"Resource version reconciled to %v from Housekeeping", hkImageTokens[1])
-
-		// If we got here, we want to Get the instance again. Given the modifications we made, we want to ensure we're in sync.
-		instance = &apiv1alpha1.Astarte{}
-		if e := r.client.Get(context.TODO(), request.NamespacedName, instance); e != nil {
-			return reconcile.Result{}, e
-		}
-	} else if !errors.IsNotFound(err) {
-		// There was some issue in reading the Object - requeue
-		return reconcile.Result{}, err
-	}
-
-	r.recorder.Event(instance, "Normal", apiv1alpha1.AstarteResourceEventStatus.String(),
-		"Running first resource reconciliation")
-	reqLogger.V(1).Info("Apparently running first reconciliation.")
-
-	return reconcile.Result{}, nil
-}
-
-func (r *ReconcileAstarte) reconcileAstarteResources(instance *apiv1alpha1.Astarte) error {
-	// Start by ensuring the housekeeping key
-	if err := recon.EnsureHousekeepingKey(instance, r.client, r.scheme); err != nil {
-		return err
-	}
-	// Then, make sure we have an up to date Erlang Configuration for our Pods
-	if err := recon.EnsureGenericErlangConfiguration(instance, r.client, r.scheme); err != nil {
-		return err
-	}
-
-	// Dependencies Dance!
-	// RabbitMQ, first and foremost
-	if err := recon.EnsureRabbitMQ(instance, r.client, r.scheme); err != nil {
-		return err
-	}
-
-	// Cassandra
-	if err := recon.EnsureCassandra(instance, r.client, r.scheme); err != nil {
-		return err
-	}
-
-	// CFSSL
-	if err := recon.EnsureCFSSL(instance, r.client, r.scheme); err != nil {
-		return err
-	}
-
-	// CFSSL CA Secret
-	if err := recon.EnsureCFSSLCASecret(instance, r.client, r.scheme); err != nil {
-		return err
-	}
-
-	// OK! Now it's time to reconcile all of Astarte Services
-	if err := r.ensureAstarteMicroservices(instance); err != nil {
-		return err
-	}
-
-	// Last but not least, VerneMQ
-	if err := recon.EnsureVerneMQ(instance, r.client, r.scheme); err != nil {
-		return err
-	}
-
-	// And Dashboard to close it down.
-	if err := recon.EnsureAstarteDashboard(instance, instance.Spec.Components.Dashboard, r.client, r.scheme); err != nil {
-		return err
-	}
-
-	// All good!
-	return nil
-}
-
-func (r *ReconcileAstarte) ensureAstarteMicroservices(instance *apiv1alpha1.Astarte) error {
-	// OK! Now it's time to reconcile all of Astarte Services, in a specific order.
-	// Housekeeping first - it creates/migrates the Database
-	if err := r.ensureAstarteGenericComponent(instance, instance.Spec.Components.Housekeeping, apiv1alpha1.Housekeeping, apiv1alpha1.HousekeepingAPI); err != nil {
-		return err
-	}
-
-	// Then, Realm Management
-	if err := r.ensureAstarteGenericComponent(instance, instance.Spec.Components.RealmManagement, apiv1alpha1.RealmManagement, apiv1alpha1.RealmManagementAPI); err != nil {
-		return err
-	}
-
-	// Then, Pairing
-	if err := r.ensureAstarteGenericComponent(instance, instance.Spec.Components.Pairing, apiv1alpha1.Pairing, apiv1alpha1.PairingAPI); err != nil {
-		return err
-	}
-
-	// Then, Flow
-	if err := recon.EnsureAstarteGenericAPI(instance, instance.Spec.Components.Flow, apiv1alpha1.FlowComponent, r.client, r.scheme); err != nil {
-		return err
-	}
-
-	// Trigger Engine right before DUP
-	if err := recon.EnsureAstarteGenericBackend(instance, instance.Spec.Components.TriggerEngine.AstarteGenericClusteredResource, apiv1alpha1.TriggerEngine, r.client, r.scheme); err != nil {
-		return err
-	}
-
-	// Now it's Data Updater plant turn
-	if err := recon.EnsureAstarteGenericBackend(instance, instance.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource, apiv1alpha1.DataUpdaterPlant, r.client, r.scheme); err != nil {
-		return err
-	}
-
-	// Now it's AppEngine API turn
-	if err := recon.EnsureAstarteGenericAPI(instance, instance.Spec.Components.AppengineAPI.AstarteGenericAPISpec, apiv1alpha1.AppEngineAPI, r.client, r.scheme); err != nil {
-		return err
-	}
-
-	// All good!
-	return nil
-}
-
-func (r *ReconcileAstarte) ensureAstarteGenericComponent(instance *apiv1alpha1.Astarte, genericComponentSpec v1alpha1.AstarteGenericComponentSpec,
-	backendComponent, apiComponent v1alpha1.AstarteComponent) error {
-	if err := recon.EnsureAstarteGenericBackend(instance, genericComponentSpec.Backend, backendComponent, r.client, r.scheme); err != nil {
-		return err
-	}
-	return recon.EnsureAstarteGenericAPI(instance, genericComponentSpec.API, apiComponent, r.client, r.scheme)
-}
-
-func (r *ReconcileAstarte) updateAstarteStatus(reqLogger logr.Logger, instance *apiv1alpha1.Astarte) error {
-	oldAstarteHealth := instance.Status.Health
-	instance.Status.Health = r.computeClusterHealth(reqLogger, instance)
-
-	// Cast an event in case the health changed
-	if oldAstarteHealth != instance.Status.Health && oldAstarteHealth != "" {
-		eventtype := "Normal"
-		// Notify as a warning if the health degraded compared to the previous reconciliation.
-		if oldAstarteHealth == apiv1alpha1.AstarteClusterHealthGreen {
-			eventtype = "Warning"
-		}
-		r.recorder.Eventf(instance, eventtype, apiv1alpha1.AstarteResourceEventStatus.String(),
-			"Astarte Cluster status changed from %v to %v", oldAstarteHealth, instance.Status.Health)
-	}
-
-	// Update status
-	instance.Status.AstarteVersion = instance.Spec.Version
-	instance.Status.OperatorVersion = version.Version
-	instance.Status.ReconciliationPhase = apiv1alpha1.ReconciliationPhaseReconciled
-	instance.Status.BaseAPIURL = "https://" + instance.Spec.API.Host
-	instance.Status.BrokerURL = misc.GetVerneMQBrokerURL(instance)
-
-	// Return the request result
-	return r.client.Status().Update(context.TODO(), instance)
 }
 
 func contains(list []string, s string) bool {
