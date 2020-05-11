@@ -5,6 +5,7 @@
 [![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 ![Docker Pulls](https://img.shields.io/docker/pulls/astarte/astarte-kubernetes-operator)
 
+<img src="mascotte.svg" align="right" width="160px" />
 Astarte Kubernetes Operator runs and manages an Astarte Cluster in a Kubernetes Cluster. It is meant to
 work on any Managed Kubernetes installation, and leverages a number of Kubernetes features to ensure
 Astarte runs as smooth as possible. It also handles upgrades, monitoring, and more.
