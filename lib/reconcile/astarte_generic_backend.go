@@ -195,31 +195,8 @@ func getAstarteGenericBackendEnvVars(deploymentName string, cr *apiv1alpha1.Asta
 	case apiv1alpha1.DataUpdaterPlant:
 		ret = append(ret, getAstarteDataUpdaterPlantBackendEnvVars(eventsExchangeName, cr, backend)...)
 	case apiv1alpha1.TriggerEngine:
-		rabbitMQHost, rabbitMQPort := misc.GetRabbitMQHostnameAndPort(cr)
-		userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetRabbitMQUserCredentialsSecret(cr)
-		ret = append(ret,
-			v1.EnvVar{
-				Name:  "TRIGGER_ENGINE_AMQP_CONSUMER_HOST",
-				Value: rabbitMQHost,
-			},
-			v1.EnvVar{
-				Name:  "TRIGGER_ENGINE_AMQP_CONSUMER_PORT",
-				Value: strconv.Itoa(int(rabbitMQPort)),
-			},
-			v1.EnvVar{
-				Name: "TRIGGER_ENGINE_AMQP_CONSUMER_USERNAME",
-				ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-					LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-					Key:                  userCredentialsSecretUsernameKey,
-				}},
-			},
-			v1.EnvVar{
-				Name: "TRIGGER_ENGINE_AMQP_CONSUMER_PASSWORD",
-				ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-					LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-					Key:                  userCredentialsSecretPasswordKey,
-				}},
-			})
+		// Add RabbitMQ variables
+		ret = appendRabbitMQConnectionEnvVars(ret, "TRIGGER_ENGINE_AMQP_CONSUMER", cr)
 
 		if eventsExchangeName != "" {
 			ret = append(ret,
@@ -227,16 +204,6 @@ func getAstarteGenericBackendEnvVars(deploymentName string, cr *apiv1alpha1.Asta
 					Name:  "TRIGGER_ENGINE_AMQP_EVENTS_EXCHANGE_NAME",
 					Value: eventsExchangeName,
 				})
-		}
-
-		if cr.Spec.RabbitMQ.Connection != nil {
-			if cr.Spec.RabbitMQ.Connection.VirtualHost != "" {
-				ret = append(ret,
-					v1.EnvVar{
-						Name:  "TRIGGER_ENGINE_AMQP_CONSUMER_VIRTUAL_HOST",
-						Value: cr.Spec.RabbitMQ.Connection.VirtualHost,
-					})
-			}
 		}
 
 		if cr.Spec.Components.AppengineAPI.RoomEventsQueueName != "" {
@@ -260,69 +227,11 @@ func getAstarteGenericBackendEnvVars(deploymentName string, cr *apiv1alpha1.Asta
 }
 
 func getAstarteDataUpdaterPlantBackendEnvVars(eventsExchangeName string, cr *apiv1alpha1.Astarte, backend apiv1alpha1.AstarteGenericClusteredResource) []v1.EnvVar {
-	rabbitMQHost, rabbitMQPort := misc.GetRabbitMQHostnameAndPort(cr)
-	userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetRabbitMQUserCredentialsSecret(cr)
+	ret := []v1.EnvVar{}
 
-	rabbitMQVirtualHost := "/"
-	if cr.Spec.RabbitMQ.Connection != nil {
-		if cr.Spec.RabbitMQ.Connection.VirtualHost != "" {
-			rabbitMQVirtualHost = cr.Spec.RabbitMQ.Connection.VirtualHost
-		}
-	}
-
-	ret := []v1.EnvVar{
-		{
-			Name:  "DATA_UPDATER_PLANT_AMQP_CONSUMER_HOST",
-			Value: rabbitMQHost,
-		},
-		{
-			Name:  "DATA_UPDATER_PLANT_AMQP_CONSUMER_PORT",
-			Value: strconv.Itoa(int(rabbitMQPort)),
-		},
-		{
-			Name:  "DATA_UPDATER_PLANT_AMQP_CONSUMER_VIRTUAL_HOST",
-			Value: rabbitMQVirtualHost,
-		},
-		{
-			Name: "DATA_UPDATER_PLANT_AMQP_CONSUMER_USERNAME",
-			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-				Key:                  userCredentialsSecretUsernameKey,
-			}},
-		},
-		{
-			Name: "DATA_UPDATER_PLANT_AMQP_CONSUMER_PASSWORD",
-			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-				Key:                  userCredentialsSecretPasswordKey,
-			}},
-		},
-		{
-			Name:  "DATA_UPDATER_PLANT_AMQP_PRODUCER_HOST",
-			Value: rabbitMQHost,
-		},
-		{
-			Name:  "DATA_UPDATER_PLANT_AMQP_PRODUCER_PORT",
-			Value: strconv.Itoa(int(rabbitMQPort)),
-		},
-		{
-			Name:  "DATA_UPDATER_PLANT_AMQP_PRODUCER_VIRTUAL_HOST",
-			Value: rabbitMQVirtualHost,
-		},
-		{
-			Name: "DATA_UPDATER_PLANT_AMQP_PRODUCER_USERNAME",
-			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-				Key:                  userCredentialsSecretUsernameKey,
-			}},
-		},
-		{
-			Name: "DATA_UPDATER_PLANT_AMQP_PRODUCER_PASSWORD",
-			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-				Key:                  userCredentialsSecretPasswordKey,
-			}},
-		}}
+	// Append RabbitMQ variables for both Consumer and Producer
+	ret = appendRabbitMQConnectionEnvVars(ret, "DATA_UPDATER_PLANT_AMQP_CONSUMER", cr)
+	ret = appendRabbitMQConnectionEnvVars(ret, "DATA_UPDATER_PLANT_AMQP_PRODUCER", cr)
 
 	if eventsExchangeName != "" {
 		ret = append(ret,
