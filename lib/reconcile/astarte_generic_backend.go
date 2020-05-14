@@ -126,7 +126,7 @@ func getAstarteGenericBackendPodSpec(deploymentName string, cr *apiv1alpha1.Asta
 					// This port is not exposed through any service - it is just used for health checks and the likes.
 					{Name: "http", ContainerPort: astarteServicesPort},
 				},
-				VolumeMounts:    getAstarteGenericBackendVolumeMounts(),
+				VolumeMounts:    getAstarteGenericBackendVolumeMounts(cr),
 				Image:           getAstarteImageForClusteredResource(component.DockerImageName(), backend, cr),
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Resources:       misc.GetResourcesForAstarteComponent(cr, backend.Resources, component),
@@ -147,8 +147,8 @@ func getAstarteGenericBackendVolumes(cr *apiv1alpha1.Astarte) []v1.Volume {
 	return ret
 }
 
-func getAstarteGenericBackendVolumeMounts() []v1.VolumeMount {
-	ret := getAstarteCommonVolumeMounts()
+func getAstarteGenericBackendVolumeMounts(cr *apiv1alpha1.Astarte) []v1.VolumeMount {
+	ret := getAstarteCommonVolumeMounts(cr)
 
 	return ret
 }

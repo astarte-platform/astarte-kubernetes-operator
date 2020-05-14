@@ -179,7 +179,7 @@ func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha1.Astarte,
 				Ports: []v1.ContainerPort{
 					{Name: "http", ContainerPort: astarteServicesPort},
 				},
-				VolumeMounts:    getAstarteGenericAPIVolumeMounts(component),
+				VolumeMounts:    getAstarteGenericAPIVolumeMounts(cr, component),
 				Image:           getAstarteImageForClusteredResource(component.DockerImageName(), api.AstarteGenericClusteredResource, cr),
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Resources:       misc.GetResourcesForAstarteComponent(cr, api.Resources, component),
@@ -214,8 +214,8 @@ func getAstarteGenericAPIVolumes(cr *apiv1alpha1.Astarte, component apiv1alpha1.
 	return ret
 }
 
-func getAstarteGenericAPIVolumeMounts(component apiv1alpha1.AstarteComponent) []v1.VolumeMount {
-	ret := getAstarteCommonVolumeMounts()
+func getAstarteGenericAPIVolumeMounts(cr *apiv1alpha1.Astarte, component apiv1alpha1.AstarteComponent) []v1.VolumeMount {
+	ret := getAstarteCommonVolumeMounts(cr)
 
 	// Depending on the component, we might need to add some more stuff.
 	if component == apiv1alpha1.HousekeepingAPI {
