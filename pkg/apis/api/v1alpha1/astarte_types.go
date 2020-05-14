@@ -192,6 +192,16 @@ type AstarteAPISpec struct {
 	Host string `json:"host"`
 }
 
+type AstarteRabbitMQSSLConfigurationSpec struct {
+	Enabled bool `json:"enabled"`
+	// +optional
+	CustomCASecret v1.LocalObjectReference `json:"customCASecret,omitempty"`
+	// +optional
+	SNI *bool `json:"sni,omitempty"`
+	// +optional
+	CustomSNI string `json:"customSNI,omitempty"`
+}
+
 type AstarteRabbitMQConnectionSecretSpec struct {
 	Name        string `json:"name"`
 	UsernameKey string `json:"usernameKey"`
@@ -202,13 +212,15 @@ type AstarteRabbitMQConnectionSpec struct {
 	Host string `json:"host"`
 	Port *int16 `json:"port"`
 	// +optional
-	Username string `json:"username"`
+	Username string `json:"username,omitempty"`
 	// +optional
-	Password string `json:"password"`
+	Password string `json:"password,omitempty"`
 	// +optional
-	VirtualHost string `json:"virtualHost"`
+	VirtualHost string `json:"virtualHost,omitempty"`
 	// +optional
-	Secret *AstarteRabbitMQConnectionSecretSpec `json:"secret"`
+	SSLConfiguration AstarteRabbitMQSSLConfigurationSpec `json:"sslConfiguration,omitempty"`
+	// +optional
+	Secret *AstarteRabbitMQConnectionSecretSpec `json:"secret,omitempty"`
 }
 
 type AstarteRabbitMQSpec struct {
