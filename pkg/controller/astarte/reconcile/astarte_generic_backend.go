@@ -245,6 +245,7 @@ func getAstarteGenericBackendEnvVars(deploymentName string, cr *apiv1alpha1.Asta
 		c, _ := semver.NewConstraint(">= 0.11.0")
 		ver, _ := semver.NewVersion(getVersionForAstarteComponent(cr, backend.Version))
 		checkVersion, _ := ver.SetPrerelease("")
+		dataQueueCount := getDataQueueCount(cr)
 
 		if c.Check(&checkVersion) {
 			// When installing Astarte >= 0.11, add the data queue count
@@ -257,7 +258,19 @@ func getAstarteGenericBackendEnvVars(deploymentName string, cr *apiv1alpha1.Asta
 				v1.EnvVar{
 					Name: "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_RANGE_END",
 					// same as above, but fixed at queue count. Subtract 1 since the range ends at count - 1
-					Value: strconv.Itoa(getDataQueueCount(cr) - 1),
+					Value: strconv.Itoa(dataQueueCount - 1),
+				})
+		}
+
+		c, _ = semver.NewConstraint(">= 0.11.1")
+
+		if c.Check(&checkVersion) {
+			// When installing Astarte >= 0.11.1, add the total data queue count
+			ret = append(ret,
+				v1.EnvVar{
+					Name: "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_TOTAL_COUNT",
+					// This must always hold the total data queue count, not just the one this specific replicat of DUP is using
+					Value: strconv.Itoa(dataQueueCount),
 				})
 		}
 	case apiv1alpha1.TriggerEngine:
