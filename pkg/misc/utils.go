@@ -309,8 +309,7 @@ func IsAstarteComponentDeployed(cr *apiv1alpha1.Astarte, component apiv1alpha1.A
 	case apiv1alpha1.DataUpdaterPlant:
 		return pointy.BoolValue(cr.Spec.Components.DataUpdaterPlant.Deploy, true)
 	case apiv1alpha1.FlowComponent:
-		// TODO: Make it true when more stable
-		return pointy.BoolValue(cr.Spec.Components.Flow.Deploy, false)
+		return pointy.BoolValue(cr.Spec.Components.Flow.Deploy, true)
 	case apiv1alpha1.Housekeeping:
 		return pointy.BoolValue(cr.Spec.Components.Housekeeping.Backend.Deploy, true)
 	case apiv1alpha1.HousekeepingAPI:
