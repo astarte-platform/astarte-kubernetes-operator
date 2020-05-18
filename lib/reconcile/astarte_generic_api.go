@@ -179,7 +179,7 @@ func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha1.Astarte,
 				Ports: []v1.ContainerPort{
 					{Name: "http", ContainerPort: astarteServicesPort},
 				},
-				VolumeMounts:    getAstarteGenericAPIVolumeMounts(component),
+				VolumeMounts:    getAstarteGenericAPIVolumeMounts(cr, component),
 				Image:           getAstarteImageForClusteredResource(component.DockerImageName(), api.AstarteGenericClusteredResource, cr),
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Resources:       misc.GetResourcesForAstarteComponent(cr, api.Resources, component),
@@ -214,8 +214,8 @@ func getAstarteGenericAPIVolumes(cr *apiv1alpha1.Astarte, component apiv1alpha1.
 	return ret
 }
 
-func getAstarteGenericAPIVolumeMounts(component apiv1alpha1.AstarteComponent) []v1.VolumeMount {
-	ret := getAstarteCommonVolumeMounts()
+func getAstarteGenericAPIVolumeMounts(cr *apiv1alpha1.Astarte, component apiv1alpha1.AstarteComponent) []v1.VolumeMount {
+	ret := getAstarteCommonVolumeMounts(cr)
 
 	// Depending on the component, we might need to add some more stuff.
 	if component == apiv1alpha1.HousekeepingAPI {
@@ -243,10 +243,6 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte,
 	// Depending on the component, we might need to add some more stuff.
 	switch component {
 	case apiv1alpha1.AppEngineAPI:
-		// Add Cassandra Nodes, AMQP information and Max results count
-		rabbitMQHost, rabbitMQPort := misc.GetRabbitMQHostnameAndPort(cr)
-		userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetRabbitMQUserCredentialsSecret(cr)
-
 		cassandraPrefix := ""
 		v := getSemanticVersionForAstarteComponent(cr, cr.Spec.Components.AppengineAPI.Version)
 		checkVersion, _ := v.SetPrerelease("")
@@ -270,39 +266,10 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte,
 				Name:  "APPENGINE_API_MAX_RESULTS_LIMIT",
 				Value: strconv.Itoa(getAppEngineAPIMaxResultslimit(cr)),
 			},
-			v1.EnvVar{
-				Name:  "APPENGINE_API_ROOMS_AMQP_CLIENT_HOST",
-				Value: rabbitMQHost,
-			},
-			v1.EnvVar{
-				Name:  "APPENGINE_API_ROOMS_AMQP_CLIENT_PORT",
-				Value: strconv.Itoa(int(rabbitMQPort)),
-			},
-			v1.EnvVar{
-				Name: "APPENGINE_API_ROOMS_AMQP_CLIENT_USERNAME",
-				ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-					LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-					Key:                  userCredentialsSecretUsernameKey,
-				}},
-			},
-			v1.EnvVar{
-				Name: "APPENGINE_API_ROOMS_AMQP_CLIENT_PASSWORD",
-				ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-					LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-					Key:                  userCredentialsSecretPasswordKey,
-				}},
-			},
 		)
 
-		if cr.Spec.RabbitMQ.Connection != nil {
-			if cr.Spec.RabbitMQ.Connection.VirtualHost != "" {
-				ret = append(ret,
-					v1.EnvVar{
-						Name:  "APPENGINE_API_ROOMS_AMQP_CLIENT_VIRTUAL_HOST",
-						Value: cr.Spec.RabbitMQ.Connection.VirtualHost,
-					})
-			}
-		}
+		// Append RabbitMQ variables
+		ret = appendRabbitMQConnectionEnvVars(ret, "APPENGINE_API_ROOMS_AMQP_CLIENT", cr)
 
 		if cr.Spec.Components.AppengineAPI.RoomEventsQueueName != "" {
 			ret = append(ret,
@@ -333,10 +300,6 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte,
 }
 
 func getAstarteFlowEnvVars(cr *apiv1alpha1.Astarte) []v1.EnvVar {
-	// Add Cassandra Nodes, AMQP information and Max results count
-	rabbitMQHost, rabbitMQPort := misc.GetRabbitMQHostnameAndPort(cr)
-	userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetRabbitMQUserCredentialsSecret(cr)
-
 	// TODO: This assumes Flow runs paired with the rest of Astarte. Handle other cases.
 	ret := []v1.EnvVar{
 		{
@@ -360,41 +323,10 @@ func getAstarteFlowEnvVars(cr *apiv1alpha1.Astarte) []v1.EnvVar {
 			Name:  "FLOW_REALM_PUBLIC_KEY_PROVIDER",
 			Value: "astarte",
 		},
-		{
-			Name:  "FLOW_DEFAULT_AMQP_CONNECTION_HOST",
-			Value: rabbitMQHost,
-		},
-		{
-			Name:  "FLOW_DEFAULT_AMQP_CONNECTION_PORT",
-			Value: strconv.Itoa(int(rabbitMQPort)),
-		},
-		{
-			Name: "FLOW_DEFAULT_AMQP_CONNECTION_USERNAME",
-			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-				Key:                  userCredentialsSecretUsernameKey,
-			}},
-		},
-		{
-			Name: "FLOW_DEFAULT_AMQP_CONNECTION_PASSWORD",
-			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-				Key:                  userCredentialsSecretPasswordKey,
-			}},
-		},
 	}
 
-	if cr.Spec.RabbitMQ.Connection != nil {
-		if cr.Spec.RabbitMQ.Connection.VirtualHost != "" {
-			ret = append(ret,
-				v1.EnvVar{
-					Name:  "FLOW_DEFAULT_AMQP_CONNECTION_VIRTUALHOST",
-					Value: cr.Spec.RabbitMQ.Connection.VirtualHost,
-				})
-		}
-	}
-
-	return ret
+	// Append RabbitMQ variables
+	return appendRabbitMQConnectionEnvVars(ret, "FLOW_DEFAULT_AMQP_CONNECTION", cr)
 }
 
 func getAstarteAPIProbe(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec, component apiv1alpha1.AstarteComponent, customProbe *v1.Probe) *v1.Probe {

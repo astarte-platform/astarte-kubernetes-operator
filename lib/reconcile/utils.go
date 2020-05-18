@@ -334,9 +334,6 @@ func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quan
 }
 
 func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, backend apiv1alpha1.AstarteGenericClusteredResource, component apiv1alpha1.AstarteComponent) []v1.EnvVar {
-	rabbitMQHost, rabbitMQPort := misc.GetRabbitMQHostnameAndPort(cr)
-	userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetRabbitMQUserCredentialsSecret(cr)
-
 	rpcPrefix := ""
 	v := getSemanticVersionForAstarteComponent(cr, backend.Version)
 	checkVersion, _ := v.SetPrerelease("")
@@ -369,28 +366,6 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, bac
 				Key:                  "erlang-cookie",
 			}},
 		},
-		{
-			Name:  rpcPrefix + "RPC_AMQP_CONNECTION_HOST",
-			Value: rabbitMQHost,
-		},
-		{
-			Name:  rpcPrefix + "RPC_AMQP_CONNECTION_PORT",
-			Value: strconv.Itoa(int(rabbitMQPort)),
-		},
-		{
-			Name: rpcPrefix + "RPC_AMQP_CONNECTION_USERNAME",
-			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-				Key:                  userCredentialsSecretUsernameKey,
-			}},
-		},
-		{
-			Name: rpcPrefix + "RPC_AMQP_CONNECTION_PASSWORD",
-			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-				Key:                  userCredentialsSecretPasswordKey,
-			}},
-		},
 	}
 
 	// Add Port (needed for all components, since we also have metrics)
@@ -399,15 +374,91 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, bac
 		Value: strconv.Itoa(int(astarteServicesPort)),
 	})
 
-	if cr.Spec.RabbitMQ.Connection != nil {
-		if cr.Spec.RabbitMQ.Connection.VirtualHost != "" {
+	// Return with the RabbitMQ variables appended
+	return appendRabbitMQConnectionEnvVars(ret, rpcPrefix+"RPC_AMQP_CONNECTION", cr)
+}
+
+func appendRabbitMQConnectionEnvVars(ret []v1.EnvVar, prefix string, cr *apiv1alpha1.Astarte) []v1.EnvVar {
+	spec := cr.Spec.RabbitMQ.Connection
+
+	// Let's verify Virtualhost and default to "/" where needed. Al
+	virtualHost := "/"
+	if spec != nil {
+		if spec.VirtualHost != "" {
+			virtualHost = spec.VirtualHost
 			ret = append(ret, v1.EnvVar{
-				Name:  rpcPrefix + "RPC_AMQP_CONNECTION_VIRTUAL_HOST",
-				Value: cr.Spec.RabbitMQ.Connection.VirtualHost,
+				Name:  prefix + "_VIRTUAL_HOST",
+				Value: spec.VirtualHost,
 			})
+		}
+
+		// SSL
+		if spec.SSLConfiguration.Enabled {
+			ret = append(ret, v1.EnvVar{
+				Name:  prefix + "_SSL_ENABLED",
+				Value: "true",
+			})
+
+			// CA configuration
+			if spec.SSLConfiguration.CustomCASecret.Name != "" {
+				// getAstarteCommonVolumes will mount the volume for us, if we're here. So trust the rest of our code.
+				ret = append(ret, v1.EnvVar{
+					Name:  prefix + "_SSL_CA_FILE",
+					Value: "/rabbitmq-ssl/ca.crt",
+				})
+			}
+
+			// SNI configuration
+			switch {
+			case spec.SSLConfiguration.CustomSNI != "":
+				ret = append(ret, v1.EnvVar{
+					Name:  prefix + "_SSL_CUSTOM_SNI",
+					Value: spec.SSLConfiguration.CustomSNI,
+				})
+			case !pointy.BoolValue(spec.SSLConfiguration.SNI, true):
+				ret = append(ret, v1.EnvVar{
+					Name:  prefix + "_SSL_DISABLE_SNI",
+					Value: "true",
+				})
+			}
 		}
 	}
 
+	// Fetch our Credentials for RabbitMQ
+	rabbitMQHost, rabbitMQPort := misc.GetRabbitMQHostnameAndPort(cr)
+	userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetRabbitMQUserCredentialsSecret(cr)
+
+	// Standard RMQ env vars that, like it or not, we need to plug in everywhere.
+	ret = append(ret,
+		v1.EnvVar{
+			Name:  prefix + "_HOST",
+			Value: rabbitMQHost,
+		},
+		v1.EnvVar{
+			Name:  prefix + "_PORT",
+			Value: strconv.Itoa(int(rabbitMQPort)),
+		},
+		v1.EnvVar{
+			Name:  prefix + "_VIRTUAL_HOST",
+			Value: virtualHost,
+		},
+		v1.EnvVar{
+			Name: prefix + "_USERNAME",
+			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
+				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
+				Key:                  userCredentialsSecretUsernameKey,
+			}},
+		},
+		v1.EnvVar{
+			Name: prefix + "_PASSWORD",
+			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
+				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
+				Key:                  userCredentialsSecretPasswordKey,
+			}},
+		},
+	)
+
+	// Here we go
 	return ret
 }
 
@@ -420,6 +471,19 @@ func getAstarteCommonVolumes(cr *apiv1alpha1.Astarte) []v1.Volume {
 				Items:                []v1.KeyToPath{{Key: "vm.args", Path: "vm.args"}},
 			}},
 		},
+	}
+
+	if cr.Spec.RabbitMQ.Connection != nil {
+		if cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name != "" {
+			// Mount the secret!
+			ret = append(ret, v1.Volume{
+				Name: "rabbitmq-ssl-ca",
+				VolumeSource: v1.VolumeSource{ConfigMap: &v1.ConfigMapVolumeSource{
+					LocalObjectReference: cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret,
+					Items:                []v1.KeyToPath{{Key: "ca.crt", Path: "ca.crt"}},
+				}},
+			})
+		}
 	}
 
 	return ret
@@ -443,13 +507,24 @@ func getSemanticVersionForAstarteComponent(cr *apiv1alpha1.Astarte, componentVer
 	return semVer
 }
 
-func getAstarteCommonVolumeMounts() []v1.VolumeMount {
+func getAstarteCommonVolumeMounts(cr *apiv1alpha1.Astarte) []v1.VolumeMount {
 	ret := []v1.VolumeMount{
 		{
 			Name:      "beam-config",
 			MountPath: "/beamconfig",
 			ReadOnly:  true,
 		},
+	}
+
+	if cr.Spec.RabbitMQ.Connection != nil {
+		if cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name != "" {
+			// Mount the secret!
+			ret = append(ret, v1.VolumeMount{
+				Name:      "rabbitmq-ssl-ca",
+				MountPath: "/rabbitmq-ssl",
+				ReadOnly:  true,
+			})
+		}
 	}
 
 	return ret

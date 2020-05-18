@@ -176,8 +176,6 @@ func getVerneMQProbe() *v1.Probe {
 }
 
 func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.EnvVar {
-	userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetRabbitMQUserCredentialsSecret(cr)
-	rabbitMQHost, _ := misc.GetRabbitMQHostnameAndPort(cr)
 	dataQueueCount := getDataQueueCount(cr)
 
 	envVars := []v1.EnvVar{
@@ -197,25 +195,10 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.Env
 			Name:  "DOCKER_VERNEMQ_KUBERNETES_LABEL_SELECTOR",
 			Value: "app=" + statefulSetName,
 		},
-		{
-			Name:  "DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__HOST",
-			Value: rabbitMQHost,
-		},
-		{
-			Name: "DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__USERNAME",
-			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-				Key:                  userCredentialsSecretUsernameKey,
-			}},
-		},
-		{
-			Name: "DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__PASSWORD",
-			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-				LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-				Key:                  userCredentialsSecretPasswordKey,
-			}},
-		},
 	}
+
+	// Append RabbitMQ variables (trailing _, as we need two)
+	envVars = appendRabbitMQConnectionEnvVars(envVars, "DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP_", cr)
 
 	checkVersion := getSemanticVersionForAstarteComponent(cr, cr.Spec.VerneMQ.Version)
 	// 0.11+ variables
