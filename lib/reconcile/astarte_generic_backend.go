@@ -254,6 +254,8 @@ func getAstarteDataUpdaterPlantBackendEnvVars(eventsExchangeName string, cr *api
 	c, _ := semver.NewConstraint(">= 0.11.0")
 
 	if c.Check(checkVersion) {
+		dataQueueCount := getDataQueueCount(cr)
+
 		// When installing Astarte >= 0.11, add the data queue count
 		ret = append(ret,
 			v1.EnvVar{
@@ -264,8 +266,19 @@ func getAstarteDataUpdaterPlantBackendEnvVars(eventsExchangeName string, cr *api
 			v1.EnvVar{
 				Name: "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_RANGE_END",
 				// same as above, but fixed at queue count. Subtract 1 since the range ends at count - 1
-				Value: strconv.Itoa(getDataQueueCount(cr) - 1),
+				Value: strconv.Itoa(dataQueueCount - 1),
 			})
+
+		// 0.11.1+ variables
+		c2, _ := semver.NewConstraint(">= 0.11.1")
+		if c2.Check(checkVersion) {
+			ret = append(ret,
+				v1.EnvVar{
+					Name: "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_TOTAL_COUNT",
+					// This must always hold the total data queue count, not just the one this specific replica of DUP is using
+					Value: strconv.Itoa(dataQueueCount),
+				})
+		}
 
 		if cr.Spec.RabbitMQ.DataQueuesPrefix != "" {
 			ret = append(ret,

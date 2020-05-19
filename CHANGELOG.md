@@ -8,7 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Update RabbitMQ version to 3.8.x for 1.0.x releases
 
-## [0.11.1] - Unreleased
+## [0.11.1] - 2020-05-18
+### Added
+- Add the `DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_TOTAL_COUNT` variable to support Astarte >= 0.11.1
+
 ### Fixed
 - Fixed a situation where Housekeeping might never enter in ready state with low CPU allocations
 

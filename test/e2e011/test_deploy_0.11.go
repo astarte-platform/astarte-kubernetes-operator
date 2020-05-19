@@ -32,7 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-var target011Version string = "0.11.0"
+var target011Version string = "0.11.1"
 
 func astarteDeploy011Test(t *testing.T, f *framework.Framework, ctx *framework.Context) error {
 	namespace, err := ctx.GetWatchNamespace()
