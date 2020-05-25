@@ -114,7 +114,7 @@ func (r *ReconcileFlow) Reconcile(request reconcile.Request) (reconcile.Result, 
 	}
 
 	// Reconcile all Blocks
-	for _, block := range instance.Spec.Blocks {
+	for _, block := range instance.Spec.ContainerBlocks {
 		if e := ensureBlock(instance, block, astarte, r.client, r.scheme); e != nil {
 			return reconcile.Result{}, e
 		}
@@ -135,12 +135,13 @@ func (r *ReconcileFlow) Reconcile(request reconcile.Request) (reconcile.Result, 
 		return reconcile.Result{}, err
 	}
 
-	totalBlocks, readyBlocks, failingBlocks, unrecoverableFailures := r.computeBlocksState(reqLogger, blockList, instance)
+	totalBlocks, readyBlocks, failingBlocks, resList, unrecoverableFailures := r.computeBlocksState(reqLogger, blockList, instance)
 
 	// Set status defaults
 	instance.Status.TotalBlocks = totalBlocks
 	instance.Status.ReadyBlocks = readyBlocks
 	instance.Status.FailingBlocks = failingBlocks
+	instance.Status.Resources = resList
 	instance.Status.UnrecoverableFailures = unrecoverableFailures
 
 	switch {
@@ -212,11 +213,21 @@ func (r *ReconcileFlow) getAllBlocksDeploymentsForFlow(instance *apiv1alpha1.Flo
 	return blockList, err
 }
 
-func (r *ReconcileFlow) computeBlocksState(reqLogger logr.Logger, blockList appsv1.DeploymentList, instance *apiv1alpha1.Flow) (int, int, int, []v1.ContainerState) {
+func (r *ReconcileFlow) computeBlocksState(reqLogger logr.Logger, blockList appsv1.DeploymentList, instance *apiv1alpha1.Flow) (int, int, int, v1.ResourceList, []v1.ContainerState) {
 	var totalBlocks, readyBlocks, failingBlocks int
+	cpuResources := instance.Spec.NativeBlocksResources.Cpu().DeepCopy()
+	memoryResources := instance.Spec.NativeBlocksResources.Memory().DeepCopy()
 	unrecoverableFailures := []v1.ContainerState{}
 	for _, b := range blockList.Items {
 		totalBlocks++
+		for _, c := range b.Spec.Template.Spec.Containers {
+			if c.Resources.Requests.Cpu() != nil {
+				cpuResources.Add(*c.Resources.Requests.Cpu())
+			}
+			if c.Resources.Requests.Memory() != nil {
+				memoryResources.Add(*c.Resources.Requests.Memory())
+			}
+		}
 		if b.Status.ReadyReplicas == b.Status.Replicas {
 			readyBlocks++
 		} else {
@@ -227,29 +238,43 @@ func (r *ReconcileFlow) computeBlocksState(reqLogger logr.Logger, blockList apps
 				continue
 			}
 
-			// Inspect the list!
-			for _, pod := range podList.Items {
-				if pod.Status.Phase == v1.PodRunning {
-					// If the pod is running, we're not in a scenario where we're facing a persistent failure.
-					continue
-				}
-				for _, cS := range pod.Status.ContainerStatuses {
-					switch {
-					case cS.State.Terminated != nil:
-						failingBlocks++
-						unrecoverableFailures = append(unrecoverableFailures, cS.State)
-					case cS.State.Waiting != nil:
-						if strings.HasPrefix(cS.State.Waiting.Reason, "Err") {
-							// Assume this is a unrecoverable error and the Waiting state is just there not to
-							// overload the scheduler with unsatisfiable requests.
-							failingBlocks++
-							unrecoverableFailures = append(unrecoverableFailures, cS.State)
-						}
-					}
+			// Grab failures and the likes
+			podsFailure, unrecoverablePodsFailures := computePodsFailureForBlock(podList)
+			if podsFailure {
+				failingBlocks++
+				unrecoverableFailures = append(unrecoverableFailures, unrecoverablePodsFailures...)
+			}
+		}
+	}
+
+	return totalBlocks, readyBlocks, failingBlocks, v1.ResourceList{v1.ResourceCPU: cpuResources, v1.ResourceMemory: cpuResources}, unrecoverableFailures
+}
+
+func computePodsFailureForBlock(podList *v1.PodList) (bool, []v1.ContainerState) {
+	var podsFailure bool
+	unrecoverableFailures := []v1.ContainerState{}
+
+	// Inspect the list!
+	for _, pod := range podList.Items {
+		if pod.Status.Phase == v1.PodRunning {
+			// If the pod is running, we're not in a scenario where we're facing a persistent failure.
+			continue
+		}
+		for _, cS := range pod.Status.ContainerStatuses {
+			switch {
+			case cS.State.Terminated != nil:
+				podsFailure = true
+				unrecoverableFailures = append(unrecoverableFailures, cS.State)
+			case cS.State.Waiting != nil:
+				if strings.HasPrefix(cS.State.Waiting.Reason, "Err") {
+					// Assume this is a unrecoverable error and the Waiting state is just there not to
+					// overload the scheduler with unsatisfiable requests.
+					podsFailure = true
+					unrecoverableFailures = append(unrecoverableFailures, cS.State)
 				}
 			}
 		}
 	}
 
-	return totalBlocks, readyBlocks, failingBlocks, unrecoverableFailures
+	return podsFailure, unrecoverableFailures
 }
