@@ -91,8 +91,8 @@ type BlockWorker struct {
 	DataProvider DataProvider `json:"dataProvider"`
 }
 
-// BlockSpec defines a Container Block in a Flow
-type BlockSpec struct {
+// ContainerBlockSpec defines a Container Block in a Flow
+type ContainerBlockSpec struct {
 	BlockID string `json:"id"`
 	Image   string `json:"image"`
 	// +optional
@@ -111,8 +111,13 @@ type BlockSpec struct {
 type FlowSpec struct {
 	Astarte      v1.LocalObjectReference `json:"astarte"`
 	AstarteRealm string                  `json:"astarteRealm"`
-	//+kubebuilder:validation:MinItems:=1
-	Blocks []BlockSpec `json:"blocks"`
+	// Defines the amount of non-container blocks in the Flow
+	NativeBlocks int `json:"nativeBlocks"`
+	// Defines the overall resources consumed by Native Blocks
+	NativeBlocksResources v1.ResourceList `json:"nativeBlocksResources"`
+	// EE Only: Defines the Flow Pool in which the Flow will be allocated.
+	FlowPool        v1.LocalObjectReference `json:"flowPool,omitempty"`
+	ContainerBlocks []ContainerBlockSpec    `json:"blocks"`
 }
 
 // FlowStatus defines the observed state of Flow
@@ -124,6 +129,8 @@ type FlowStatus struct {
 	// ReadyBlocks represents the total number of Ready Blocks in the Flow. In a healthy Flow,
 	// this matches the number of Total Blocks.
 	ReadyBlocks int `json:"readyBlocks"`
+	// The overall resources allocated in the cluster for this Block
+	Resources v1.ResourceList `json:"resources"`
 	// FailingBlocks represents the total number of Blocks with non temporary failures. Present only
 	// if any of the Blocks is in such state. When present, manual intervention is most likely required.
 	// +optional

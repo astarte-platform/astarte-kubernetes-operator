@@ -44,7 +44,7 @@ spec:
               type: string
             blocks:
               items:
-                description: BlockSpec defines a Container Block in a Flow
+                description: ContainerBlockSpec defines a Container Block in a Flow
                 properties:
                   config:
                     description: Configuration represents the JSON string carrying
@@ -264,12 +264,34 @@ spec:
                 - image
                 - workers
                 type: object
-              minItems: 1
               type: array
+            flowPool:
+              description: 'EE Only: Defines the Flow Pool in which the Flow will
+                be allocated.'
+              properties:
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    TODO: Add other useful fields. apiVersion, kind, uid?'
+                  type: string
+              type: object
+            nativeBlocks:
+              description: Defines the amount of non-container blocks in the Flow
+              type: integer
+            nativeBlocksResources:
+              additionalProperties:
+                anyOf:
+                - type: integer
+                - type: string
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                x-kubernetes-int-or-string: true
+              description: Defines the overall resources consumed by Native Blocks
+              type: object
           required:
           - astarte
           - astarteRealm
           - blocks
+          - nativeBlocks
+          - nativeBlocksResources
           type: object
         status:
           description: FlowStatus defines the observed state of Flow
@@ -283,6 +305,16 @@ spec:
               description: ReadyBlocks represents the total number of Ready Blocks
                 in the Flow. In a healthy Flow, this matches the number of Total Blocks.
               type: integer
+            resources:
+              additionalProperties:
+                anyOf:
+                - type: integer
+                - type: string
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                x-kubernetes-int-or-string: true
+              description: The overall resources allocated in the cluster for this
+                Block
+              type: object
             state:
               description: State defines the overall state of the Flow
               type: string
@@ -356,6 +388,7 @@ spec:
               type: array
           required:
           - readyBlocks
+          - resources
           - state
           - totalBlocks
           type: object
