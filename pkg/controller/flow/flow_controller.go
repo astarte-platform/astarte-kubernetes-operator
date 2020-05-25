@@ -138,9 +138,9 @@ func (r *ReconcileFlow) Reconcile(request reconcile.Request) (reconcile.Result, 
 	totalBlocks, readyBlocks, failingBlocks, resList, unrecoverableFailures := r.computeBlocksState(reqLogger, blockList, instance)
 
 	// Set status defaults
-	instance.Status.TotalBlocks = totalBlocks
-	instance.Status.ReadyBlocks = readyBlocks
-	instance.Status.FailingBlocks = failingBlocks
+	instance.Status.TotalContainerBlocks = totalBlocks
+	instance.Status.ReadyContainerBlocks = readyBlocks
+	instance.Status.FailingContainerBlocks = failingBlocks
 	instance.Status.Resources = resList
 	instance.Status.UnrecoverableFailures = unrecoverableFailures
 

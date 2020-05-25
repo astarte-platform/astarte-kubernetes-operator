@@ -296,14 +296,15 @@ spec:
         status:
           description: FlowStatus defines the observed state of Flow
           properties:
-            failingBlocks:
-              description: FailingBlocks represents the total number of Blocks with
-                non temporary failures. Present only if any of the Blocks is in such
-                state. When present, manual intervention is most likely required.
+            failingContainerBlocks:
+              description: Represents the total number of Container Blocks with non
+                temporary failures. Present only if any of the Blocks is in such state.
+                When present, manual intervention is most likely required.
               type: integer
-            readyBlocks:
-              description: ReadyBlocks represents the total number of Ready Blocks
-                in the Flow. In a healthy Flow, this matches the number of Total Blocks.
+            readyContainerBlocks:
+              description: Represents the total number of Ready Container Blocks in
+                the Flow. In a healthy Flow, this matches the number of Total Container
+                Blocks.
               type: integer
             resources:
               additionalProperties:
@@ -318,8 +319,8 @@ spec:
             state:
               description: State defines the overall state of the Flow
               type: string
-            totalBlocks:
-              description: TotalBlocks represents the total number of the Blocks in
+            totalContainerBlocks:
+              description: Represents the total number of the Container Blocks in
                 the Flow
               type: integer
             unrecoverableFailures:
@@ -387,10 +388,10 @@ spec:
                 type: object
               type: array
           required:
-          - readyBlocks
+          - readyContainerBlocks
           - resources
           - state
-          - totalBlocks
+          - totalContainerBlocks
           type: object
       type: object
   version: v1alpha1

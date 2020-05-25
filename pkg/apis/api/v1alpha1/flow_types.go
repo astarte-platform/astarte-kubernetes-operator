@@ -124,17 +124,17 @@ type FlowSpec struct {
 type FlowStatus struct {
 	// State defines the overall state of the Flow
 	State FlowState `json:"state"`
-	// TotalBlocks represents the total number of the Blocks in the Flow
-	TotalBlocks int `json:"totalBlocks"`
-	// ReadyBlocks represents the total number of Ready Blocks in the Flow. In a healthy Flow,
-	// this matches the number of Total Blocks.
-	ReadyBlocks int `json:"readyBlocks"`
+	// Represents the total number of the Container Blocks in the Flow
+	TotalContainerBlocks int `json:"totalContainerBlocks"`
+	// Represents the total number of Ready Container Blocks in the Flow. In a healthy Flow,
+	// this matches the number of Total Container Blocks.
+	ReadyContainerBlocks int `json:"readyContainerBlocks"`
 	// The overall resources allocated in the cluster for this Block
 	Resources v1.ResourceList `json:"resources"`
-	// FailingBlocks represents the total number of Blocks with non temporary failures. Present only
+	// Represents the total number of Container Blocks with non temporary failures. Present only
 	// if any of the Blocks is in such state. When present, manual intervention is most likely required.
 	// +optional
-	FailingBlocks int `json:"failingBlocks,omitempty"`
+	FailingContainerBlocks int `json:"failingContainerBlocks,omitempty"`
 	// UnrecoverableFailures lists all the ContainerStates of failing containers, for further inspection.
 	// +optional
 	UnrecoverableFailures []v1.ContainerState `json:"unrecoverableFailures,omitempty"`
