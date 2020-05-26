@@ -44,7 +44,7 @@ spec:
               type: string
             blocks:
               items:
-                description: BlockSpec defines a Container Block in a Flow
+                description: ContainerBlockSpec defines a Container Block in a Flow
                 properties:
                   config:
                     description: Configuration represents the JSON string carrying
@@ -264,30 +264,63 @@ spec:
                 - image
                 - workers
                 type: object
-              minItems: 1
               type: array
+            flowPool:
+              description: 'EE Only: Defines the Flow Pool in which the Flow will
+                be allocated.'
+              properties:
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    TODO: Add other useful fields. apiVersion, kind, uid?'
+                  type: string
+              type: object
+            nativeBlocks:
+              description: Defines the amount of non-container blocks in the Flow
+              type: integer
+            nativeBlocksResources:
+              additionalProperties:
+                anyOf:
+                - type: integer
+                - type: string
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                x-kubernetes-int-or-string: true
+              description: Defines the overall resources consumed by Native Blocks
+              type: object
           required:
           - astarte
           - astarteRealm
           - blocks
+          - nativeBlocks
+          - nativeBlocksResources
           type: object
         status:
           description: FlowStatus defines the observed state of Flow
           properties:
-            failingBlocks:
-              description: FailingBlocks represents the total number of Blocks with
-                non temporary failures. Present only if any of the Blocks is in such
-                state. When present, manual intervention is most likely required.
+            failingContainerBlocks:
+              description: Represents the total number of Container Blocks with non
+                temporary failures. Present only if any of the Blocks is in such state.
+                When present, manual intervention is most likely required.
               type: integer
-            readyBlocks:
-              description: ReadyBlocks represents the total number of Ready Blocks
-                in the Flow. In a healthy Flow, this matches the number of Total Blocks.
+            readyContainerBlocks:
+              description: Represents the total number of Ready Container Blocks in
+                the Flow. In a healthy Flow, this matches the number of Total Container
+                Blocks.
               type: integer
+            resources:
+              additionalProperties:
+                anyOf:
+                - type: integer
+                - type: string
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                x-kubernetes-int-or-string: true
+              description: The overall resources allocated in the cluster for this
+                Block
+              type: object
             state:
               description: State defines the overall state of the Flow
               type: string
-            totalBlocks:
-              description: TotalBlocks represents the total number of the Blocks in
+            totalContainerBlocks:
+              description: Represents the total number of the Container Blocks in
                 the Flow
               type: integer
             unrecoverableFailures:
@@ -355,9 +388,10 @@ spec:
                 type: object
               type: array
           required:
-          - readyBlocks
+          - readyContainerBlocks
+          - resources
           - state
-          - totalBlocks
+          - totalContainerBlocks
           type: object
       type: object
   version: v1alpha1

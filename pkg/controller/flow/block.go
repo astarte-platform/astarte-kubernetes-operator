@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func ensureBlock(cr *apiv1alpha1.Flow, block apiv1alpha1.BlockSpec, astarte *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func ensureBlock(cr *apiv1alpha1.Flow, block apiv1alpha1.ContainerBlockSpec, astarte *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	// In this, we'll have to orchestrate all workers, including bringing them up/down on demand
 	baseLabels := map[string]string{
 		"component":  "astarte-flow",
@@ -122,7 +122,7 @@ func ensureBlock(cr *apiv1alpha1.Flow, block apiv1alpha1.BlockSpec, astarte *api
 }
 
 func getFlowWorkerContainers(existingWorkerSecrets map[string]v1.Secret, baseLabels map[string]string, defaultRmqConfig apiv1alpha1.RabbitMQConfig,
-	cr *apiv1alpha1.Flow, block apiv1alpha1.BlockSpec, astarte *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) (map[string]v1.Secret, []v1.Container, error) {
+	cr *apiv1alpha1.Flow, block apiv1alpha1.ContainerBlockSpec, astarte *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) (map[string]v1.Secret, []v1.Container, error) {
 	workerContainers := []v1.Container{}
 	for _, w := range block.Workers {
 		workerName := generateWorkerName(cr, block, w, astarte)
@@ -151,7 +151,7 @@ func getFlowWorkerContainers(existingWorkerSecrets map[string]v1.Secret, baseLab
 	return existingWorkerSecrets, workerContainers, nil
 }
 
-func ensureWorkerContainer(block apiv1alpha1.BlockSpec, worker apiv1alpha1.BlockWorker) v1.Container {
+func ensureWorkerContainer(block apiv1alpha1.ContainerBlockSpec, worker apiv1alpha1.BlockWorker) v1.Container {
 	// Set up a Deployment and reconcile.
 	return v1.Container{
 		// The worker ID, pretty simple
@@ -184,7 +184,7 @@ func ensureWorkerContainer(block apiv1alpha1.BlockSpec, worker apiv1alpha1.Block
 	}
 }
 
-func generateVolumesFor(cr *apiv1alpha1.Flow, block apiv1alpha1.BlockSpec, astarte *apiv1alpha1.Astarte) []v1.Volume {
+func generateVolumesFor(cr *apiv1alpha1.Flow, block apiv1alpha1.ContainerBlockSpec, astarte *apiv1alpha1.Astarte) []v1.Volume {
 	// Start with the block-config volume
 	ret := []v1.Volume{
 		{
@@ -236,7 +236,7 @@ func generateWorkerConfigurationFor(worker apiv1alpha1.BlockWorker, defaultRmqCo
 	return ret, nil
 }
 
-func generateBlockName(cr *apiv1alpha1.Flow, block apiv1alpha1.BlockSpec, astarte *apiv1alpha1.Astarte) string {
+func generateBlockName(cr *apiv1alpha1.Flow, block apiv1alpha1.ContainerBlockSpec, astarte *apiv1alpha1.Astarte) string {
 	workerName := fmt.Sprintf("%s-flow-%s-block-%s", astarte.Name, cr.Name, block.BlockID)
 
 	// 253 is the "magic limit" for names in Kubernetes. Ensure we're not past that.
@@ -249,7 +249,7 @@ func generateBlockName(cr *apiv1alpha1.Flow, block apiv1alpha1.BlockSpec, astart
 	return workerName
 }
 
-func generateWorkerName(cr *apiv1alpha1.Flow, block apiv1alpha1.BlockSpec, worker apiv1alpha1.BlockWorker, astarte *apiv1alpha1.Astarte) string {
+func generateWorkerName(cr *apiv1alpha1.Flow, block apiv1alpha1.ContainerBlockSpec, worker apiv1alpha1.BlockWorker, astarte *apiv1alpha1.Astarte) string {
 	workerName := fmt.Sprintf("%s-flow-%s-block-%s-%s", astarte.Name, cr.Name, block.BlockID, worker.WorkerID)
 
 	// 253 is the "magic limit" for names in Kubernetes. Ensure we're not past that.
