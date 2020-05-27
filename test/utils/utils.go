@@ -46,7 +46,11 @@ const (
 // EnsureAstarteServicesReadinessUpTo10 ensures all existing Astarte components up to 1.0
 func EnsureAstarteServicesReadinessUpTo10(namespace string, f *framework.Framework) error {
 	// The previous stuff
-	if err := EnsureAstarteServicesReadinessUpTo011(namespace, f); err != nil {
+	if err := EnsureAstarteServicesReadinessUpTo011(namespace, f, false); err != nil {
+		return err
+	}
+
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-cfssl", f); err != nil {
 		return err
 	}
 
@@ -58,10 +62,12 @@ func EnsureAstarteServicesReadinessUpTo10(namespace string, f *framework.Framewo
 }
 
 // EnsureAstarteServicesReadinessUpTo011 ensures all existing Astarte components up to 0.11
-func EnsureAstarteServicesReadinessUpTo011(namespace string, f *framework.Framework) error {
+func EnsureAstarteServicesReadinessUpTo011(namespace string, f *framework.Framework, checkCFSSL bool) error {
 	// Check all the StatefulSets
-	if err := EnsureStatefulSetReadiness(namespace, "example-astarte-cfssl", f); err != nil {
-		return err
+	if checkCFSSL {
+		if err := EnsureStatefulSetReadiness(namespace, "example-astarte-cfssl", f); err != nil {
+			return err
+		}
 	}
 	if err := EnsureStatefulSetReadiness(namespace, "example-astarte-cassandra", f); err != nil {
 		return err
