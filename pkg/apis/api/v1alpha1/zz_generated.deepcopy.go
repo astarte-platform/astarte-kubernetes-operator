@@ -269,6 +269,7 @@ func (in *AstarteCFSSLSpec) DeepCopyInto(out *AstarteCFSSLSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	out.CASecret = in.CASecret
 	if in.DBConfig != nil {
 		in, out := &in.DBConfig, &out.DBConfig
 		*out = new(AstarteCFSSLDBConfigSpec)

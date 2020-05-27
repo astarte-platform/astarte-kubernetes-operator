@@ -428,6 +428,8 @@ type AstarteCFSSLSpec struct {
 	// +optional
 	CaExpiry string `json:"caExpiry,omitempty"`
 	// +optional
+	CASecret v1.LocalObjectReference `json:"caSecret,omitempty"`
+	// +optional
 	CertificateExpiry string `json:"certificateExpiry,omitempty"`
 	// +optional
 	DBConfig *AstarteCFSSLDBConfigSpec `json:"dbConfig,omitempty"`
