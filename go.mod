@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/Masterminds/semver/v3 v3.1.0
+	github.com/cloudflare/cfssl v1.4.1
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/go-logr/logr v0.1.0
 	github.com/imdario/mergo v0.3.9

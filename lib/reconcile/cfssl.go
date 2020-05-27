@@ -28,9 +28,13 @@ import (
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/deps"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
+	"github.com/astarte-platform/astarte-kubernetes-operator/version"
+	cfsslcsr "github.com/cloudflare/cfssl/csr"
+	"github.com/cloudflare/cfssl/initca"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -42,14 +46,105 @@ import (
 
 // EnsureCFSSL reconciles CFSSL
 func EnsureCFSSL(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
-	//reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name)
-	statefulSetName := cr.Name + "-cfssl"
-	labels := map[string]string{"app": statefulSetName}
-
 	// Validate where necessary
 	if err := validateCFSSLDefinition(cr.Spec.CFSSL); err != nil {
 		return err
 	}
+
+	constraint, _ := semver.NewConstraint("< 1.0.0")
+	semVer, err := version.GetAstarteSemanticVersionFrom(cr.Spec.Version)
+
+	if err == nil {
+		semVer.SetPrerelease("")
+	}
+
+	if constraint.Check(semVer) {
+		// Then it's a statefulset
+		return ensureCFSSLStatefulSet(cr, c, scheme)
+	}
+
+	// Otherwise, reconcile the deployment
+	return ensureCFSSLDeployment(cr, c, scheme)
+}
+
+func ensureCFSSLDeployment(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+	deploymentName := cr.Name + "-cfssl"
+	labels := map[string]string{"app": deploymentName}
+
+	// Ok. Shall we deploy?
+	if !pointy.BoolValue(cr.Spec.CFSSL.Deploy, true) {
+		log.Info("Skipping CFSSL Deployment")
+		// Before returning - check if we shall clean up the Deployment.
+		// It is the only thing actually requiring resources, the rest will be cleaned up eventually when the
+		// Astarte resource is deleted.
+		theDeployment := &appsv1.Deployment{}
+		err := c.Get(context.TODO(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, theDeployment)
+		if err == nil {
+			log.Info("Deleting previously existing CFSSL Deployment, which is no longer needed")
+			if err = c.Delete(context.TODO(), theDeployment); err != nil {
+				return err
+			}
+		}
+
+		// That would be all for today.
+		return nil
+	}
+
+	// Add common sidecars
+	if err := ensureCFSSLCommonSidecars(deploymentName, labels, cr, c, scheme); err != nil {
+		return err
+	}
+
+	caSecretName := cr.Name + "-devices-ca"
+	if cr.Spec.CFSSL.CASecret.Name != "" {
+		// Don't even try creating it
+		caSecretName = cr.Spec.CFSSL.CASecret.Name
+	} else if err := ensureCFSSLCASecret(caSecretName, cr, c, scheme); err != nil {
+		return err
+	}
+
+	// Ensure the proxy secret for TLS authentication
+	if err := ensureCFSSLCAProxySecret(caSecretName, cr.Name+"-cfssl-ca", cr, c, scheme); err != nil {
+		return err
+	}
+
+	// Compute and prepare all data for building the StatefulSet
+	deploymentSpec := appsv1.DeploymentSpec{
+		Selector: &metav1.LabelSelector{
+			MatchLabels: labels,
+		},
+		Template: v1.PodTemplateSpec{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: labels,
+			},
+			Spec: getCFSSLPodSpec(deploymentName, "", caSecretName, cr),
+		},
+	}
+
+	// Build the Deployment
+	cfsslDeployment := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: deploymentName, Namespace: cr.Namespace}}
+	result, err := controllerutil.CreateOrUpdate(context.TODO(), c, cfsslDeployment, func() error {
+		if e := controllerutil.SetControllerReference(cr, cfsslDeployment, scheme); e != nil {
+			return e
+		}
+
+		// Assign the Spec.
+		cfsslDeployment.Spec = deploymentSpec
+		cfsslDeployment.Spec.Replicas = pointy.Int32(1)
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	misc.LogCreateOrUpdateOperationResult(log, result, cr, cfsslDeployment)
+	return nil
+}
+
+func ensureCFSSLStatefulSet(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+	statefulSetName := cr.Name + "-cfssl"
+	labels := map[string]string{"app": statefulSetName}
 
 	// Ok. Shall we deploy?
 	if !pointy.BoolValue(cr.Spec.CFSSL.Deploy, true) {
@@ -70,8 +165,57 @@ func EnsureCFSSL(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Schem
 		return nil
 	}
 
+	// Add common sidecars
+	if err := ensureCFSSLCommonSidecars(statefulSetName, labels, cr, c, scheme); err != nil {
+		return err
+	}
+
+	// Let's check upon Storage now.
+	dataVolumeName, persistentVolumeClaim := computePersistentVolumeClaim(statefulSetName+"-data", resource.NewScaledQuantity(4, resource.Giga),
+		cr.Spec.CFSSL.Storage, cr)
+
+	// Compute and prepare all data for building the StatefulSet
+	statefulSetSpec := appsv1.StatefulSetSpec{
+		ServiceName: statefulSetName,
+		Selector: &metav1.LabelSelector{
+			MatchLabels: labels,
+		},
+		Template: v1.PodTemplateSpec{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: labels,
+			},
+			Spec: getCFSSLPodSpec(statefulSetName, dataVolumeName, "", cr),
+		},
+	}
+
+	if persistentVolumeClaim != nil {
+		statefulSetSpec.VolumeClaimTemplates = []v1.PersistentVolumeClaim{*persistentVolumeClaim}
+	}
+
+	// Build the StatefulSet
+	cfsslStatefulSet := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: statefulSetName, Namespace: cr.Namespace}}
+	result, err := controllerutil.CreateOrUpdate(context.TODO(), c, cfsslStatefulSet, func() error {
+		if e := controllerutil.SetControllerReference(cr, cfsslStatefulSet, scheme); e != nil {
+			return e
+		}
+
+		// Assign the Spec.
+		cfsslStatefulSet.Spec = statefulSetSpec
+		cfsslStatefulSet.Spec.Replicas = pointy.Int32(1)
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	misc.LogCreateOrUpdateOperationResult(log, result, cr, cfsslStatefulSet)
+	return nil
+}
+
+func ensureCFSSLCommonSidecars(resourceName string, labels map[string]string, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	// Good. Now, reconcile the service first of all.
-	service := &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: statefulSetName, Namespace: cr.Namespace}}
+	service := &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: resourceName, Namespace: cr.Namespace}}
 	if result, err := controllerutil.CreateOrUpdate(context.TODO(), c, service, func() error {
 		if err := controllerutil.SetControllerReference(cr, service, scheme); err != nil {
 			return err
@@ -99,50 +243,11 @@ func EnsureCFSSL(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Schem
 	if err != nil {
 		return err
 	}
-	if _, e := misc.ReconcileConfigMap(statefulSetName+"-config", configMap, cr, c, scheme, log); e != nil {
+	if _, e := misc.ReconcileConfigMap(resourceName+"-config", configMap, cr, c, scheme, log); e != nil {
 		return e
 	}
 
-	// Let's check upon Storage now.
-	dataVolumeName, persistentVolumeClaim := computePersistentVolumeClaim(statefulSetName+"-data", resource.NewScaledQuantity(4, resource.Giga),
-		cr.Spec.CFSSL.Storage, cr)
-
-	// Compute and prepare all data for building the StatefulSet
-	statefulSetSpec := appsv1.StatefulSetSpec{
-		ServiceName: statefulSetName,
-		Selector: &metav1.LabelSelector{
-			MatchLabels: labels,
-		},
-		Template: v1.PodTemplateSpec{
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: labels,
-			},
-			Spec: getCFSSLPodSpec(statefulSetName, dataVolumeName, cr),
-		},
-	}
-
-	if persistentVolumeClaim != nil {
-		statefulSetSpec.VolumeClaimTemplates = []v1.PersistentVolumeClaim{*persistentVolumeClaim}
-	}
-
-	// Build the StatefulSet
-	cfsslStatefulSet := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: statefulSetName, Namespace: cr.Namespace}}
-	result, err := controllerutil.CreateOrUpdate(context.TODO(), c, cfsslStatefulSet, func() error {
-		if e := controllerutil.SetControllerReference(cr, cfsslStatefulSet, scheme); e != nil {
-			return e
-		}
-
-		// Assign the Spec.
-		cfsslStatefulSet.Spec = statefulSetSpec
-		cfsslStatefulSet.Spec.Replicas = pointy.Int32(1)
-
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
-	misc.LogCreateOrUpdateOperationResult(log, result, cr, service)
+	// All good!
 	return nil
 }
 
@@ -180,7 +285,8 @@ func getCFSSLProbe(cr *apiv1alpha1.Astarte) *v1.Probe {
 	}
 }
 
-func getCFSSLPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.Astarte) v1.PodSpec {
+// TODO: Deprecate dataVolumeName and all the jargon when we won't support < 1.0 anymore
+func getCFSSLPodSpec(statefulSetName, dataVolumeName, secretName string, cr *apiv1alpha1.Astarte) v1.PodSpec {
 	// Defaults to the custom image built in Astarte
 	astarteVersion, _ := semver.NewVersion(cr.Spec.Version)
 	cfsslImage := getAstarteImageFromChannel("cfssl", deps.GetDefaultVersionForCFSSL(astarteVersion), cr)
@@ -195,22 +301,70 @@ func getCFSSLPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.Ast
 		resources = *cr.Spec.CFSSL.Resources
 	}
 
+	volumeMounts := []v1.VolumeMount{
+		{
+			Name:      "config",
+			MountPath: "/etc/cfssl",
+		},
+	}
+	volumes := []v1.Volume{
+		{
+			Name: "config",
+			VolumeSource: v1.VolumeSource{
+				ConfigMap: &v1.ConfigMapVolumeSource{
+					LocalObjectReference: v1.LocalObjectReference{Name: statefulSetName + "-config"},
+				},
+			},
+		},
+	}
+	env := []v1.EnvVar{}
+
+	if dataVolumeName != "" {
+		volumeMounts = append(volumeMounts, v1.VolumeMount{
+			Name:      dataVolumeName,
+			MountPath: "/data",
+		})
+	} else {
+		volumeMounts = append(volumeMounts, v1.VolumeMount{
+			Name:      "devices-ca",
+			MountPath: "/devices-ca",
+			ReadOnly:  true,
+		})
+		volumes = append(volumes, v1.Volume{
+			Name: "devices-ca",
+			VolumeSource: v1.VolumeSource{
+				Secret: &v1.SecretVolumeSource{
+					SecretName: secretName,
+				},
+			},
+		})
+		env = append(env, v1.EnvVar{
+			Name:  "KUBERNETES",
+			Value: "1",
+		}, v1.EnvVar{
+			Name:  "CFSSL_CA_CERTIFICATE",
+			Value: "/devices-ca/" + v1.TLSCertKey,
+		}, v1.EnvVar{
+			Name:  "CFSSL_CA_PRIVATE_KEY",
+			Value: "/devices-ca/" + v1.TLSPrivateKeyKey,
+		})
+
+		if cr.Spec.CFSSL.DBConfig != nil {
+			env = append(env, v1.EnvVar{
+				Name:  "CFSSL_USE_DB",
+				Value: "1",
+			})
+		}
+	}
+
 	ps := v1.PodSpec{
 		TerminationGracePeriodSeconds: pointy.Int64(30),
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
 		Containers: []v1.Container{
 			{
-				Name: "cfssl",
-				VolumeMounts: []v1.VolumeMount{
-					{
-						Name:      "config",
-						MountPath: "/etc/cfssl",
-					},
-					{
-						Name:      dataVolumeName,
-						MountPath: "/data",
-					},
-				},
+				Name:            "cfssl",
+				VolumeMounts:    volumeMounts,
+				Env:             env,
 				Image:           cfsslImage,
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Ports: []v1.ContainerPort{
@@ -221,16 +375,7 @@ func getCFSSLPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.Ast
 				Resources:      resources,
 			},
 		},
-		Volumes: []v1.Volume{
-			{
-				Name: "config",
-				VolumeSource: v1.VolumeSource{
-					ConfigMap: &v1.ConfigMapVolumeSource{
-						LocalObjectReference: v1.LocalObjectReference{Name: statefulSetName + "-config"},
-					},
-				},
-			},
-		},
+		Volumes: volumes,
 	}
 
 	return ps
@@ -238,7 +383,11 @@ func getCFSSLPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.Ast
 
 func getCFSSLConfigMapData(cr *apiv1alpha1.Astarte) (map[string]string, error) {
 	// First of all, build the default maps.
-	dbConfig, caRootConfig, csrRootCa, e := getCFSSLConfigMapDataDefaults()
+	caRootConfig, csrRootCa, e := getCFSSLConfigMapDataDefaults()
+	if e != nil {
+		return nil, e
+	}
+	dbConfig, e := getCFSSLDBConfig(cr)
 	if e != nil {
 		return nil, e
 	}
@@ -254,15 +403,6 @@ func getCFSSLConfigMapData(cr *apiv1alpha1.Astarte) (map[string]string, error) {
 	}
 
 	// Are there any full overrides?
-	// DB Configuration
-	if overriddenDBConfig, err := getCFSSLFullOverride(cr.Spec.CFSSL.DBConfig); err == nil && overriddenDBConfig != nil {
-		dbConfig = overriddenDBConfig
-		// Switch in for retrocompatibility
-		dbConfig["data_source"] = dbConfig["dataSource"]
-		delete(dbConfig, "dataSource")
-	} else if err != nil {
-		return nil, err
-	}
 	// CSR Root CA
 	if overriddenCSRRootCa, err := getCFSSLFullOverride(cr.Spec.CFSSL.CSRRootCa); err == nil && overriddenCSRRootCa != nil {
 		csrRootCa = overriddenCSRRootCa
@@ -282,18 +422,62 @@ func getCFSSLConfigMapData(cr *apiv1alpha1.Astarte) (map[string]string, error) {
 		return nil, err
 	}
 
-	return map[string]string{
+	configMapData := map[string]string{
 		"ca_root_config.json": string(caRootConfigJSON),
 		"csr_root_ca.json":    string(csrRootCaJSON),
-		"db_config.json":      string(dbConfigJSON),
-	}, nil
+	}
+
+	// Add DB Config only if we have it, to adhere to all CFSSL variants
+	if dbConfigJSON != nil {
+		configMapData["db_config.json"] = string(dbConfigJSON)
+	}
+
+	return configMapData, nil
+}
+
+func getCFSSLDBConfig(cr *apiv1alpha1.Astarte) (map[string]interface{}, error) {
+	// By default, this one has to be nil...
+	var dbConfig map[string]interface{} = nil
+
+	// ...unless we're < 1.0.0.
+	constraint, _ := semver.NewConstraint("< 1.0.0")
+	semVer, err := version.GetAstarteSemanticVersionFrom(cr.Spec.Version)
+	if err != nil {
+		return nil, err
+	}
+	semVer.SetPrerelease("")
+
+	if constraint.Check(semVer) {
+		// Then it's a statefulset
+		dbConfig = map[string]interface{}{"data_source": "/data/certs.db", "driver": "sqlite3"}
+	}
+
+	// DB Configuration
+	if overriddenDBConfig, err := getCFSSLFullOverride(cr.Spec.CFSSL.DBConfig); err == nil && overriddenDBConfig != nil {
+		dbConfig = overriddenDBConfig
+		// Switch in for retrocompatibility
+		if val, ok := dbConfig["dataSource"]; ok {
+			dbConfig["data_source"] = val
+			delete(dbConfig, "dataSource")
+		}
+	} else if err != nil {
+		return nil, err
+	}
+
+	return dbConfig, nil
 }
 
 func getCFSSLJSONFormattedConfigMapData(dbConfig, csrRootCa, caRootConfig map[string]interface{}) ([]byte, []byte, []byte, error) {
-	dbConfigJSON, err := json.Marshal(dbConfig)
-	if err != nil {
-		return nil, nil, nil, err
+	// dbConfig might be as well nil
+	var dbConfigJSON []byte = nil
+	if dbConfig != nil {
+		var err error
+		dbConfigJSON, err = json.Marshal(dbConfig)
+		if err != nil {
+			return nil, nil, nil, err
+		}
 	}
+
 	csrRootCaJSON, err := json.Marshal(csrRootCa)
 	if err != nil {
 		return nil, nil, nil, err
@@ -322,23 +506,19 @@ func getCFSSLFullOverride(field interface{}) (map[string]interface{}, error) {
 	return nil, nil
 }
 
-func getCFSSLConfigMapDataDefaults() (map[string]interface{}, map[string]interface{}, map[string]interface{}, error) {
-	dbConfigDefaultJSON := `{"data_source": "/data/certs.db", "driver": "sqlite3"}`
+func getCFSSLConfigMapDataDefaults() (map[string]interface{}, map[string]interface{}, error) {
 	caRootConfigDefaultJSON := `{"signing": {"default": {"usages": ["digital signature", "cert sign", "crl sign", "signing"], "ca_constraint": {"max_path_len_zero": true, "max_path_len": 0, "is_ca": true}, "expiry": "2190h"}}}`
 	csrRootCaDefaultJSON := `{"ca": {"expiry": "262800h"}, "CN": "Astarte Root CA", "key": {"algo": "rsa", "size": 2048}, "names": [{"C": "IT", "ST": "Lombardia", "L": "Milan", "O": "Astarte User", "OU": "IoT Division"}]}`
-	var dbConfig, caRootConfig, csrRootCa map[string]interface{}
+	var caRootConfig, csrRootCa map[string]interface{}
 
-	if err := json.Unmarshal([]byte(dbConfigDefaultJSON), &dbConfig); err != nil {
-		return nil, nil, nil, err
-	}
 	if err := json.Unmarshal([]byte(caRootConfigDefaultJSON), &caRootConfig); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 	if err := json.Unmarshal([]byte(csrRootCaDefaultJSON), &csrRootCa); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
-	return dbConfig, caRootConfig, csrRootCa, nil
+	return caRootConfig, csrRootCa, nil
 }
 
 // This stuff is useful for other components which need to interact with CFSSL
@@ -349,4 +529,56 @@ func getCFSSLURL(cr *apiv1alpha1.Astarte) string {
 
 	// We're on defaults then. Give the standard hostname + port for our service
 	return fmt.Sprintf("http://%s-cfssl.%s.svc.cluster.local", cr.Name, cr.Namespace)
+}
+
+func ensureCFSSLCAProxySecret(secretName, proxySecretName string, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+	// Grab the real secret (the TLS one)
+	s := &v1.Secret{}
+	if err := c.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: cr.Namespace}, s); err != nil {
+		return err
+	}
+
+	// Reconcile the proxy secret with ca.crt in place of our standard key
+	_, err := misc.ReconcileSecret(proxySecretName, map[string][]byte{"ca.crt": s.Data[v1.TLSCertKey]}, cr, c, scheme, log)
+	return err
+}
+
+func ensureCFSSLCASecret(secretName string, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+	// We want to ensure that we create / update the secret ONLY if it doesn't exist. So check that first.
+	s := &v1.Secret{}
+	if err := c.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: cr.Namespace}, s); err == nil {
+		// A Secret exists. So we're good.
+		return nil
+	} else if !kerrors.IsNotFound(err) {
+		// An error of different nature occurred, so report it
+		return err
+	}
+
+	// If we got here, it doesn't exist. So go for it.
+	return createCFSSLCASecret(secretName, cr, c, scheme)
+}
+
+func createCFSSLCASecret(secretName string, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+	// Get our configuration
+	cfsslConfig, err := getCFSSLConfigMapData(cr)
+	if err != nil {
+		return err
+	}
+
+	// Prepare the request
+	req := cfsslcsr.CertificateRequest{
+		KeyRequest: cfsslcsr.NewKeyRequest(),
+	}
+	if e := json.Unmarshal([]byte(cfsslConfig["csr_root_ca.json"]), &req); e != nil {
+		return err
+	}
+
+	cert, _, key, err := initca.New(&req)
+	if err != nil {
+		return err
+	}
+
+	// Reconcile our secret
+	_, err = misc.ReconcileTLSSecret(secretName, string(cert), string(key), cr, c, scheme, log)
+	return err
 }

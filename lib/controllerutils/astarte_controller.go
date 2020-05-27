@@ -276,9 +276,18 @@ func (r *ReconcileHelper) ReconcileAstarteResources(instance *apiv1alpha1.Astart
 		return err
 	}
 
-	// CFSSL CA Secret
-	if err := recon.EnsureCFSSLCASecret(instance, r.Client, r.Scheme); err != nil {
-		return err
+	// CFSSL CA Secret - if we're < 1.0.0
+	constraint, _ := semver.NewConstraint("< 1.0.0")
+	semVer, err := version.GetAstarteSemanticVersionFrom(instance.Spec.Version)
+
+	if err == nil {
+		semVer.SetPrerelease("")
+	}
+
+	if constraint.Check(semVer) {
+		if err := recon.EnsureCFSSLCASecret(instance, r.Client, r.Scheme); err != nil {
+			return err
+		}
 	}
 
 	// OK! Now it's time to reconcile all of Astarte Services
