@@ -16,6 +16,8 @@
   limitations under the License.
 */
 
+// TODO: Deprecate and kill this file when we are no longer supporting < 1.0
+
 package reconcile
 
 import (

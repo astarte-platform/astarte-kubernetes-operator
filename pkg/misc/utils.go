@@ -79,6 +79,30 @@ func ReconcileConfigMap(objName string, data map[string]string, cr metav1.Object
 	return result, err
 }
 
+// ReconcileTLSSecret creates or updates a TLS Secret through controllerutil through its data
+func ReconcileTLSSecret(objName string, cert, key string, cr metav1.Object, c client.Client, scheme *runtime.Scheme, log logr.Logger) (controllerutil.OperationResult, error) {
+	secret := &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: objName, Namespace: cr.GetNamespace()}}
+	result, err := controllerutil.CreateOrUpdate(context.TODO(), c, secret, func() error {
+		if err := controllerutil.SetControllerReference(cr, secret, scheme); err != nil {
+			return err
+		}
+
+		secret.Type = v1.SecretTypeTLS
+		secret.StringData = map[string]string{
+			v1.TLSCertKey:       cert,
+			v1.TLSPrivateKeyKey: key,
+		}
+		return nil
+	})
+
+	if err != nil {
+		return controllerutil.OperationResultNone, err
+	}
+
+	LogCreateOrUpdateOperationResult(log, result, cr, secret)
+	return result, err
+}
+
 // ReconcileSecret creates or updates a Secret through controllerutil through its data
 func ReconcileSecret(objName string, data map[string][]byte, cr metav1.Object, c client.Client, scheme *runtime.Scheme, log logr.Logger) (controllerutil.OperationResult, error) {
 	secret := &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: objName, Namespace: cr.GetNamespace()}}

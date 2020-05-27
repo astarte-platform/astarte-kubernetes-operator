@@ -129,18 +129,8 @@ func (r *ReconcileHelper) ComputeClusterHealth(reqLogger logr.Logger, instance *
 			nonReadyDeployments++
 		}
 	}
-	if pointy.BoolValue(instance.Spec.CFSSL.Deploy, true) {
-		astarteStatefulSet = &appsv1.StatefulSet{}
-		if err := r.Client.Get(context.TODO(), types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name + "-cfssl"},
-			astarteStatefulSet); err == nil {
-			if astarteStatefulSet.Status.ReadyReplicas == 0 {
-				nonReadyDeployments++
-			}
-		} else {
-			// Just increase the count - it might be a temporary error as the StatefulSet is being created.
-			reqLogger.V(1).Info("Could not Get Astarte CFSSL StatefulSet to compute health.")
-			nonReadyDeployments++
-		}
+	if !r.computeCFSSLHealth(reqLogger, instance) {
+		nonReadyDeployments++
 	}
 
 	if nonReadyDeployments == 0 {
@@ -149,6 +139,48 @@ func (r *ReconcileHelper) ComputeClusterHealth(reqLogger logr.Logger, instance *
 		return apiv1alpha1.AstarteClusterHealthYellow
 	}
 	return apiv1alpha1.AstarteClusterHealthRed
+}
+
+func (r *ReconcileHelper) computeCFSSLHealth(reqLogger logr.Logger, instance *apiv1alpha1.Astarte) bool {
+	if !pointy.BoolValue(instance.Spec.CFSSL.Deploy, true) {
+		return true
+	}
+
+	constraint, _ := semver.NewConstraint("< 1.0.0")
+	semVer, err := version.GetAstarteSemanticVersionFrom(instance.Spec.Version)
+
+	if err == nil {
+		semVer.SetPrerelease("")
+	}
+
+	// Statefulset or Deployment?
+	if constraint.Check(semVer) {
+		cfsslStatefulSet := &appsv1.StatefulSet{}
+		if err := r.Client.Get(context.TODO(), types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name + "-cfssl"},
+			cfsslStatefulSet); err == nil {
+			if cfsslStatefulSet.Status.ReadyReplicas == 0 {
+				return false
+			}
+		} else {
+			// Just increase the count - it might be a temporary error as the StatefulSet is being created.
+			reqLogger.V(1).Info("Could not Get Astarte CFSSL StatefulSet to compute health.")
+			return false
+		}
+	} else {
+		cfsslDeployment := &appsv1.Deployment{}
+		if err := r.Client.Get(context.TODO(), types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name + "-cfssl"},
+			cfsslDeployment); err == nil {
+			if cfsslDeployment.Status.ReadyReplicas == 0 {
+				return false
+			}
+		} else {
+			// Just increase the count - it might be a temporary error as the Deployment is being created.
+			reqLogger.V(1).Info("Could not Get Astarte CFSSL Deployment to compute health.")
+			return false
+		}
+	}
+
+	return true
 }
 
 // EnsureStatusCoherency ensures status coherency
@@ -276,9 +308,18 @@ func (r *ReconcileHelper) ReconcileAstarteResources(instance *apiv1alpha1.Astart
 		return err
 	}
 
-	// CFSSL CA Secret
-	if err := recon.EnsureCFSSLCASecret(instance, r.Client, r.Scheme); err != nil {
-		return err
+	// CFSSL CA Secret - if we're < 1.0.0
+	constraint, _ := semver.NewConstraint("< 1.0.0")
+	semVer, err := version.GetAstarteSemanticVersionFrom(instance.Spec.Version)
+
+	if err == nil {
+		semVer.SetPrerelease("")
+	}
+
+	if constraint.Check(semVer) {
+		if err := recon.EnsureCFSSLCASecret(instance, r.Client, r.Scheme); err != nil {
+			return err
+		}
 	}
 
 	// OK! Now it's time to reconcile all of Astarte Services

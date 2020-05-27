@@ -22,16 +22,23 @@ import semver "github.com/Masterminds/semver/v3"
 
 // GetDefaultVersionForCFSSL returns the default CFSSL version based on the Astarte version requested
 func GetDefaultVersionForCFSSL(astarteVersion *semver.Version) string {
-	latestVersion := "1.4.1-astarte.0"
+	latestVersion := "1.4.1-astarte.1"
 	if astarteVersion == nil {
 		// We're on snapshot, return latest
 		return latestVersion
 	}
 
 	checkVersion, _ := astarteVersion.SetPrerelease("")
+
 	c, _ := semver.NewConstraint("< 0.11.0")
 	if c.Check(&checkVersion) {
 		return "1.0.0-astarte.0"
+	}
+
+	// Before 1.0.0, we always defaulted to a must-have DB configuration. So keep it.
+	c, _ = semver.NewConstraint("< 1.0.0")
+	if c.Check(&checkVersion) {
+		return "1.4.1-astarte.0"
 	}
 
 	return latestVersion
