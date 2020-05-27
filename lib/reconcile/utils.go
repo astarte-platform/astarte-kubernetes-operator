@@ -478,9 +478,9 @@ func getAstarteCommonVolumes(cr *apiv1alpha1.Astarte) []v1.Volume {
 			// Mount the secret!
 			ret = append(ret, v1.Volume{
 				Name: "rabbitmq-ssl-ca",
-				VolumeSource: v1.VolumeSource{ConfigMap: &v1.ConfigMapVolumeSource{
-					LocalObjectReference: cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret,
-					Items:                []v1.KeyToPath{{Key: "ca.crt", Path: "ca.crt"}},
+				VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{
+					SecretName: cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name,
+					Items:      []v1.KeyToPath{{Key: "ca.crt", Path: "ca.crt"}},
 				}},
 			})
 		}
