@@ -41,6 +41,29 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+func getCassandraUserAndPassword(conn *apiv1alpha1.AstarteCassandraConnectionSpec) (string, string) {
+	if conn != nil {
+		return conn.Username, conn.Password
+	}
+	return "", ""
+}
+
+func getCassandraUserAndPasswordKeys(conn *apiv1alpha1.AstarteCassandraConnectionSpec) (string, string) {
+	if conn != nil {
+		if conn.Secret != nil {
+			return conn.Secret.UsernameKey, conn.Secret.PasswordKey
+		}
+	}
+	return misc.CassandraDefaultUserCredentialsUsernameKey, misc.CassandraDefaultUserCredentialsPasswordKey
+}
+
+func getCassandraSecret(cr *apiv1alpha1.Astarte) *apiv1alpha1.LoginCredentialsSecret {
+	if cr.Spec.Cassandra.Connection != nil {
+		return cr.Spec.Cassandra.Connection.Secret
+	}
+	return nil
+}
+
 // EnsureCassandra reconciles Cassandra
 func EnsureCassandra(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	//reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name)
@@ -49,6 +72,17 @@ func EnsureCassandra(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.S
 
 	// Validate where necessary
 	if err := validateCassandraDefinition(cr.Spec.Cassandra); err != nil {
+		return err
+	}
+
+	// Depending on the situation, we need to take action on the credentials.
+	secretName := cr.Name + "-cassandra-user-credentials"
+	username, password := getCassandraUserAndPassword(cr.Spec.Cassandra.Connection)
+	usernameKey, passwordKey := getCassandraUserAndPasswordKeys(cr.Spec.Cassandra.Connection)
+	secret := getCassandraSecret(cr)
+	forceCredentialsCreation := false
+
+	if err := handleGenericUserCredentialsSecret(username, password, usernameKey, passwordKey, secretName, forceCredentialsCreation, secret, cr, c, scheme); err != nil {
 		return err
 	}
 

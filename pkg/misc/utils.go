@@ -39,6 +39,10 @@ const (
 	RabbitMQDefaultUserCredentialsUsernameKey = "admin-username"
 	// RabbitMQDefaultUserCredentialsPasswordKey is the default Password key for RabbitMQ Secret
 	RabbitMQDefaultUserCredentialsPasswordKey = "admin-password"
+	// CassandraDefaultUserCredentialsUsernameKey is the default Username key for Cassandra Secret
+	CassandraDefaultUserCredentialsUsernameKey = "username"
+	// CassandraDefaultUserCredentialsPasswordKey is the default Password key for Cassandra Secret
+	CassandraDefaultUserCredentialsPasswordKey = "password"
 )
 
 type allocationCoefficients struct {
@@ -392,4 +396,16 @@ func GetRabbitMQCredentialsFor(cr *apiv1alpha1.Astarte, c client.Client) (string
 	}
 
 	return host, port, string(secret.Data[usernameKey]), string(secret.Data[passwordKey]), nil
+}
+
+// GetCassandraUserCredentialsSecret gets the secret holding Cassandra credentials in the form <secret name>, <username key>, <password key>
+func GetCassandraUserCredentialsSecret(cr *apiv1alpha1.Astarte) (string, string, string) {
+	if cr.Spec.Cassandra.Connection != nil {
+		if cr.Spec.Cassandra.Connection.Secret != nil {
+			return cr.Spec.Cassandra.Connection.Secret.Name, cr.Spec.Cassandra.Connection.Secret.UsernameKey, cr.Spec.Cassandra.Connection.Secret.PasswordKey
+		}
+	}
+
+	// Standard setup
+	return cr.Name + "-cassandra-user-credentials", CassandraDefaultUserCredentialsUsernameKey, CassandraDefaultUserCredentialsPasswordKey
 }

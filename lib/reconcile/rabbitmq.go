@@ -20,8 +20,6 @@ package reconcile
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"strconv"
@@ -45,6 +43,29 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+func getRabbitMQUserAndPassword(conn *apiv1alpha1.AstarteRabbitMQConnectionSpec) (string, string) {
+	if conn != nil {
+		return conn.Username, conn.Password
+	}
+	return "", ""
+}
+
+func getRabbitMQUserAndPasswordKeys(conn *apiv1alpha1.AstarteRabbitMQConnectionSpec) (string, string) {
+	if conn != nil {
+		if conn.Secret != nil {
+			return conn.Secret.UsernameKey, conn.Secret.PasswordKey
+		}
+	}
+	return misc.RabbitMQDefaultUserCredentialsUsernameKey, misc.RabbitMQDefaultUserCredentialsPasswordKey
+}
+
+func getRabbitMQSecret(cr *apiv1alpha1.Astarte) *apiv1alpha1.LoginCredentialsSecret {
+	if cr.Spec.RabbitMQ.Connection != nil {
+		return cr.Spec.RabbitMQ.Connection.Secret
+	}
+	return nil
+}
+
 // EnsureRabbitMQ reconciles the state of RabbitMQ
 func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	statefulSetName := cr.Name + "-rabbitmq"
@@ -56,7 +77,13 @@ func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sc
 	}
 
 	// Depending on the situation, we need to take action on the credentials.
-	if err := handleRabbitMQUserCredentialsSecret(statefulSetName, cr, c, scheme); err != nil {
+	secretName := cr.Name + "-rabbitmq-user-credentials"
+	username, password := getRabbitMQUserAndPassword(cr.Spec.RabbitMQ.Connection)
+	usernameKey, passwordKey := getRabbitMQUserAndPasswordKeys(cr.Spec.RabbitMQ.Connection)
+	secret := getRabbitMQSecret(cr)
+	forceCredentialsCreation := true
+
+	if err := handleGenericUserCredentialsSecret(username, password, usernameKey, passwordKey, secretName, forceCredentialsCreation, secret, cr, c, scheme); err != nil {
 		return err
 	}
 
@@ -166,57 +193,6 @@ func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sc
 	}
 
 	misc.LogCreateOrUpdateOperationResult(log, result, cr, service)
-	return nil
-}
-
-func handleRabbitMQUserCredentialsSecret(statefulSetName string, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
-	// Depending on the situation, we need to take action on the credentials.
-	createUserCredentialsSecret := true
-	createUserCredentialsSecretFromCredentials := false
-	if cr.Spec.RabbitMQ.Connection != nil {
-		if cr.Spec.RabbitMQ.Connection.Secret != nil {
-			createUserCredentialsSecret = false
-		} else if cr.Spec.RabbitMQ.Connection.Username != "" {
-			createUserCredentialsSecretFromCredentials = true
-		}
-	}
-
-	if createUserCredentialsSecret {
-		userCredentialsSecret := &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: statefulSetName + "-user-credentials", Namespace: cr.Namespace}}
-		if result, err := controllerutil.CreateOrUpdate(context.TODO(), c, userCredentialsSecret, func() error {
-			if err := controllerutil.SetControllerReference(cr, userCredentialsSecret, scheme); err != nil {
-				return err
-			}
-			if createUserCredentialsSecretFromCredentials {
-				// Ensure the Data field matches
-				userCredentialsSecret.StringData[misc.RabbitMQDefaultUserCredentialsUsernameKey] = cr.Spec.RabbitMQ.Connection.Username
-				userCredentialsSecret.StringData[misc.RabbitMQDefaultUserCredentialsPasswordKey] = cr.Spec.RabbitMQ.Connection.Password
-				// In this case, see if we need to generate new secrets. Otherwise just skip.
-			} else if _, ok := userCredentialsSecret.Data[misc.RabbitMQDefaultUserCredentialsUsernameKey]; !ok {
-				// Create a new, random password out of 16 bytes of entropy
-				password := make([]byte, 16)
-				if _, err := rand.Read(password); err != nil {
-					return err
-				}
-				userCredentialsSecret.StringData = map[string]string{
-					misc.RabbitMQDefaultUserCredentialsUsernameKey: "astarte-admin",
-					misc.RabbitMQDefaultUserCredentialsPasswordKey: base64.URLEncoding.EncodeToString(password),
-				}
-			}
-			return nil
-		}); err == nil {
-			misc.LogCreateOrUpdateOperationResult(log, result, cr, userCredentialsSecret)
-		} else {
-			return err
-		}
-	} else {
-		// Maybe delete it, if we created it already?
-		theSecret := &v1.Secret{}
-		if err := c.Get(context.TODO(), types.NamespacedName{Name: statefulSetName + "-user-credentials", Namespace: cr.Namespace}, theSecret); err == nil {
-			return c.Delete(context.TODO(), theSecret)
-		}
-	}
-
 	return nil
 }
 
