@@ -39,7 +39,7 @@ linters-settings:
     # see https://github.com/kisielk/errcheck#the-deprecated-method for details
     ignore: SetPrerelease
   funlen:
-    lines: 120
+    lines: 150
     statements: 40
   gocognit:
     # Keep 30, so we report only truly insane things. Reconciliation functions will always be
