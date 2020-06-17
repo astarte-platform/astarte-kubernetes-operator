@@ -257,11 +257,12 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte,
 			Value: getCassandraNodes(cr),
 		})
 
+		// Append Cassandra connection env vars only if version >= 1.0.0
+		if !constraint.Check(&checkVersion) {
+			ret = appendCassandraConnectionEnvVars(ret, cr)
+		}
+
 		ret = append(ret,
-			v1.EnvVar{
-				Name:  cassandraPrefix + "CASSANDRA_NODES",
-				Value: getCassandraNodes(cr),
-			},
 			v1.EnvVar{
 				Name:  "APPENGINE_API_MAX_RESULTS_LIMIT",
 				Value: strconv.Itoa(getAppEngineAPIMaxResultslimit(cr)),

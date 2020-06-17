@@ -24,6 +24,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base32"
+	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"strconv"
@@ -37,6 +38,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -378,6 +380,86 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, bac
 	return appendRabbitMQConnectionEnvVars(ret, rpcPrefix+"RPC_AMQP_CONNECTION", cr)
 }
 
+func appendCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv1alpha1.Astarte) []v1.EnvVar {
+	spec := cr.Spec.Cassandra.Connection
+	if spec != nil {
+		// pool size
+		if spec.PoolSize != nil {
+			ret = append(ret,
+				v1.EnvVar{
+					Name:  "CASSANDRA_POOL_SIZE",
+					Value: strconv.Itoa(*spec.PoolSize),
+				},
+			)
+		}
+
+		// autodiscovery
+		if pointy.BoolValue(spec.Autodiscovery, true) {
+			ret = append(ret,
+				v1.EnvVar{
+					Name:  "CASSANDRA_AUTODISCOVERY_ENABLED",
+					Value: "true",
+				},
+			)
+		}
+
+		// SSL
+		if spec.SSLConfiguration.Enabled {
+			ret = append(ret, v1.EnvVar{
+				Name:  "CASSANDRA_SSL_ENABLED",
+				Value: "true",
+			})
+
+			// CA configuration
+			if spec.SSLConfiguration.CustomCASecret.Name != "" {
+				// getAstarteCommonVolumes will mount the volume for us, if we're here. So trust the rest of our code.
+				ret = append(ret, v1.EnvVar{
+					Name:  "CASSANDRA_SSL_CA_FILE",
+					Value: "/cassandra-ssl/ca.crt",
+				})
+			}
+
+			// SNI configuration
+			switch {
+			case spec.SSLConfiguration.CustomSNI != "":
+				ret = append(ret, v1.EnvVar{
+					Name:  "CASSANDRA_SSL_CUSTOM_SNI",
+					Value: spec.SSLConfiguration.CustomSNI,
+				})
+			case !pointy.BoolValue(spec.SSLConfiguration.SNI, true):
+				ret = append(ret, v1.EnvVar{
+					Name:  "CASSANDRA_SSL_DISABLE_SNI",
+					Value: "true",
+				})
+			}
+		}
+
+		if spec.Secret != nil || spec.Username != "" {
+			// Fetch our Credentials for Cassandra
+			userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetCassandraUserCredentialsSecret(cr)
+
+			// Standard Cassandra env vars that we need to plug in
+			ret = append(ret,
+				v1.EnvVar{
+					Name: "CASSANDRA_USERNAME",
+					ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
+						LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
+						Key:                  userCredentialsSecretUsernameKey,
+					}},
+				},
+				v1.EnvVar{
+					Name: "CASSANDRA_PASSWORD",
+					ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
+						LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
+						Key:                  userCredentialsSecretPasswordKey,
+					}},
+				},
+			)
+		}
+	}
+	return ret
+}
+
 func appendRabbitMQConnectionEnvVars(ret []v1.EnvVar, prefix string, cr *apiv1alpha1.Astarte) []v1.EnvVar {
 	spec := cr.Spec.RabbitMQ.Connection
 
@@ -579,4 +661,43 @@ func getBaseAstarteAPIURL(cr *apiv1alpha1.Astarte) string {
 	}
 
 	return fmt.Sprintf("%s://%s", scheme, cr.Spec.API.Host)
+}
+
+func handleGenericUserCredentialsSecret(username, password, usernameKey, passwordKey, secretName string, forceCredentialsCreation bool,
+	secret *apiv1alpha1.LoginCredentialsSecret, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+	secretExists := false
+	resource := &v1.Secret{}
+	if err := c.Get(context.TODO(), types.NamespacedName{Namespace: cr.Namespace, Name: secretName}, resource); err == nil {
+		secretExists = true
+	} else if !errors.IsNotFound(err) {
+		// if the error is different from NotFound, return the error
+		return err
+	}
+
+	switch {
+	case secret != nil:
+		// the secret has been defined in the cr, nothing left to do
+	case username != "":
+		newSecret := map[string]string{
+			usernameKey: username,
+			passwordKey: password,
+		}
+		_, err := misc.ReconcileSecretString(secretName, newSecret, cr, c, scheme, log)
+		return err
+	case secretExists:
+		// the secret already exists, nothing to do here
+	case forceCredentialsCreation:
+		// create a new random password out of 16 bytes of entropy
+		generatedPassword := make([]byte, 16)
+		if _, err := rand.Read(generatedPassword); err != nil {
+			return err
+		}
+		newSecret := map[string]string{
+			usernameKey: "astarte-admin",
+			passwordKey: base64.URLEncoding.EncodeToString(generatedPassword),
+		}
+		_, err := misc.ReconcileSecretString(secretName, newSecret, cr, c, scheme, log)
+		return err
+	}
+	return nil
 }

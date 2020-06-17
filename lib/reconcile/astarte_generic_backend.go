@@ -170,6 +170,11 @@ func getAstarteGenericBackendEnvVars(deploymentName string, cr *apiv1alpha1.Asta
 		Value: getCassandraNodes(cr),
 	})
 
+	// Append Cassandra connection env vars only if version >= 1.0.0
+	if !constraint.Check(&checkVersion) {
+		ret = appendCassandraConnectionEnvVars(ret, cr)
+	}
+
 	eventsExchangeName := cr.Spec.RabbitMQ.EventsExchangeName
 
 	// Depending on the component, we might need to add some more stuff.

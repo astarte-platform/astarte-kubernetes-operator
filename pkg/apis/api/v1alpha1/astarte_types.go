@@ -202,12 +202,6 @@ type AstarteRabbitMQSSLConfigurationSpec struct {
 	CustomSNI string `json:"customSNI,omitempty"`
 }
 
-type AstarteRabbitMQConnectionSecretSpec struct {
-	Name        string `json:"name"`
-	UsernameKey string `json:"usernameKey"`
-	PasswordKey string `json:"passwordKey"`
-}
-
 type AstarteRabbitMQConnectionSpec struct {
 	Host string `json:"host"`
 	Port *int16 `json:"port"`
@@ -220,7 +214,7 @@ type AstarteRabbitMQConnectionSpec struct {
 	// +optional
 	SSLConfiguration AstarteRabbitMQSSLConfigurationSpec `json:"sslConfiguration,omitempty"`
 	// +optional
-	Secret *AstarteRabbitMQConnectionSecretSpec `json:"secret,omitempty"`
+	Secret *LoginCredentialsSecret `json:"secret,omitempty"`
 }
 
 type AstarteRabbitMQSpec struct {
@@ -242,6 +236,38 @@ type AstarteRabbitMQSpec struct {
 	EventsExchangeName string `json:"eventsExchangeName,omitempty"`
 }
 
+type AstarteCassandraSSLConfigurationSpec struct {
+	// +optional
+	Enabled bool `json:"enabled,omitempty"`
+	// +optional
+	CustomCASecret v1.LocalObjectReference `json:"customCASecret,omitempty"`
+	// +optional
+	SNI *bool `json:"sni,omitempty"`
+	// +optional
+	CustomSNI string `json:"customSNI,omitempty"`
+}
+
+type LoginCredentialsSecret struct {
+	Name        string `json:"name"`
+	UsernameKey string `json:"usernameKey"`
+	PasswordKey string `json:"passwordKey"`
+}
+
+type AstarteCassandraConnectionSpec struct {
+	// +optional
+	PoolSize *int `json:"poolSize,omitempty"`
+	// +optional
+	Autodiscovery *bool `json:"autodiscovery,omitempty"`
+	// +optional
+	SSLConfiguration AstarteCassandraSSLConfigurationSpec `json:"sslConfiguration,omitempty"`
+	// +optional
+	Secret *LoginCredentialsSecret `json:"secret,omitempty"`
+	// +optional
+	Username string `json:"username,omitempty"`
+	// +optional
+	Password string `json:"password,omitempty"`
+}
+
 type AstarteCassandraSpec struct {
 	AstarteGenericClusteredResource `json:",inline"`
 	// +optional
@@ -252,6 +278,8 @@ type AstarteCassandraSpec struct {
 	HeapNewSize string `json:"heapNewSize,omitempty"`
 	// +optional
 	Storage *AstartePersistentStorageSpec `json:"storage,omitempty"`
+	// +optional
+	Connection *AstarteCassandraConnectionSpec `json:"connection,omitempty"`
 }
 
 type AstarteVerneMQSpec struct {
