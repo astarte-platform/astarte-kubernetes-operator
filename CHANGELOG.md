@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Starting with Astarte 1.0.0, CFSSL by default doesn't use a Database instead of using SQLite.
 - CFSSL is now deployed as a Deployment, and no longer requires a Persistent Volume. This also
   means SQLite is no longer supported as a Database.
+- Make the operator handle prereleases by relaxing the version contraints.
 
 ## [0.11.1] - 2020-05-18
 ### Added
