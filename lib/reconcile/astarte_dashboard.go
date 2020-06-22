@@ -163,29 +163,48 @@ func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard apiv1al
 	v := getSemanticVersionForAstarteComponent(cr, dashboard.Version)
 	constraint, _ := semver.NewConstraint("< 0.11.0")
 
-	if dashboard.Config.RealmManagementAPIURL == "" {
-		if constraint.Check(v) {
-			dashboardConfig["realm_management_api_url"] = getBaseAstarteAPIURL(cr) + "/realmmanagement/v1/"
-		} else {
-			dashboardConfig["realm_management_api_url"] = getBaseAstarteAPIURL(cr) + "/realmmanagement/"
-		}
+	constraint10, _ := semver.NewConstraint(">= 1.0.0")
+	isAstarte10 := constraint10.Check(v)
+
+	if isAstarte10 {
+		// Astarte 1.0+ just needs astarte_api_url, and single API urls only if they're explicit
+		dashboardConfig["astarte_api_url"] = getBaseAstarteAPIURL(cr)
+		dashboardConfig["enable_flow_preview"] = misc.IsAstarteComponentDeployed(cr, apiv1alpha1.FlowComponent)
 	} else {
+		// secure_connection is needed only for Astarte pre-1.0
+		dashboardConfig["secure_connection"] = pointy.BoolValue(cr.Spec.API.SSL, true)
+	}
+
+	switch {
+	case dashboard.Config.RealmManagementAPIURL != "":
 		dashboardConfig["realm_management_api_url"] = dashboard.Config.RealmManagementAPIURL
+	case constraint.Check(v):
+		dashboardConfig["realm_management_api_url"] = getBaseAstarteAPIURL(cr) + "/realmmanagement/v1/"
+	case !isAstarte10:
+		dashboardConfig["realm_management_api_url"] = getBaseAstarteAPIURL(cr) + "/realmmanagement/"
 	}
-	if dashboard.Config.AppEngineAPIURL == "" {
-		if constraint.Check(v) {
-			dashboardConfig["appengine_api_url"] = getBaseAstarteAPIURL(cr) + "/appengine/v1/"
-		} else {
-			dashboardConfig["appengine_api_url"] = getBaseAstarteAPIURL(cr) + "/appengine/"
-		}
-	} else {
+
+	switch {
+	case dashboard.Config.AppEngineAPIURL != "":
 		dashboardConfig["appengine_api_url"] = dashboard.Config.AppEngineAPIURL
+	case constraint.Check(v):
+		dashboardConfig["appengine_api_url"] = getBaseAstarteAPIURL(cr) + "/appengine/v1/"
+	case !isAstarte10:
+		dashboardConfig["appengine_api_url"] = getBaseAstarteAPIURL(cr) + "/appengine/"
 	}
-	if dashboard.Config.FlowAPIURL == "" {
-		dashboardConfig["flow_api_url"] = getBaseAstarteAPIURL(cr) + "/flow/"
-	} else {
+
+	switch {
+	case dashboard.Config.FlowAPIURL != "":
 		dashboardConfig["flow_api_url"] = dashboard.Config.FlowAPIURL
+	case !isAstarte10:
+		dashboardConfig["flow_api_url"] = getBaseAstarteAPIURL(cr) + "/flow/"
 	}
+
+	// Astarte pre-1.0 does not need pairing_api_url, so we only set it if it's explicitly given
+	if dashboard.Config.PairingAPIURL != "" {
+		dashboardConfig["pairing_api_url"] = dashboard.Config.PairingAPIURL
+	}
+
 	if dashboard.Config.DefaultRealm != "" {
 		dashboardConfig["default_realm"] = dashboard.Config.DefaultRealm
 	}
@@ -199,7 +218,6 @@ func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard apiv1al
 	} else {
 		dashboardConfig["auth"] = []apiv1alpha1.AstarteDashboardConfigAuthSpec{{Type: "token"}}
 	}
-	dashboardConfig["secure_connection"] = pointy.BoolValue(cr.Spec.API.SSL, true)
 
 	configJSON, _ := json.Marshal(dashboardConfig)
 

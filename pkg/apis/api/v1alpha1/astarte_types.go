@@ -362,6 +362,8 @@ type AstarteDashboardConfigSpec struct {
 	// +optional
 	AppEngineAPIURL string `json:"appEngineApiUrl,omitempty"`
 	// +optional
+	PairingAPIURL string `json:"pairingApiUrl,omitempty"`
+	// +optional
 	FlowAPIURL string `json:"flowApiUrl,omitempty"`
 	// +optional
 	DefaultRealm string `json:"defaultRealm,omitempty"`
