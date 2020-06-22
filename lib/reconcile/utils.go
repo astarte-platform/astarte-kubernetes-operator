@@ -583,7 +583,7 @@ func getSemanticVersionForAstarteComponent(cr *apiv1alpha1.Astarte, componentVer
 	semVer, err := version.GetAstarteSemanticVersionFrom(versionString)
 
 	if err == nil {
-		semVer.SetPrerelease("")
+		*semVer, _ = semVer.SetPrerelease("")
 	}
 
 	return semVer

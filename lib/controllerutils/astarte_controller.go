@@ -150,7 +150,7 @@ func (r *ReconcileHelper) computeCFSSLHealth(reqLogger logr.Logger, instance *ap
 	semVer, err := version.GetAstarteSemanticVersionFrom(instance.Spec.Version)
 
 	if err == nil {
-		semVer.SetPrerelease("")
+		*semVer, _ = semVer.SetPrerelease("")
 	}
 
 	// Statefulset or Deployment?
@@ -313,7 +313,7 @@ func (r *ReconcileHelper) ReconcileAstarteResources(instance *apiv1alpha1.Astart
 	semVer, err := version.GetAstarteSemanticVersionFrom(instance.Spec.Version)
 
 	if err == nil {
-		semVer.SetPrerelease("")
+		*semVer, _ = semVer.SetPrerelease("")
 	}
 
 	if constraint.Check(semVer) {

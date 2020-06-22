@@ -55,7 +55,7 @@ func EnsureCFSSL(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Schem
 	semVer, err := version.GetAstarteSemanticVersionFrom(cr.Spec.Version)
 
 	if err == nil {
-		semVer.SetPrerelease("")
+		*semVer, _ = semVer.SetPrerelease("")
 	}
 
 	if constraint.Check(semVer) {
@@ -445,7 +445,7 @@ func getCFSSLDBConfig(cr *apiv1alpha1.Astarte) (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	semVer.SetPrerelease("")
+	*semVer, _ = semVer.SetPrerelease("")
 
 	if constraint.Check(semVer) {
 		// Then it's a statefulset
