@@ -199,6 +199,8 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.Env
 
 	// Append RabbitMQ variables (trailing _, as we need two)
 	envVars = appendRabbitMQConnectionEnvVars(envVars, "DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP_", cr)
+	// Also append env vars for RPC
+	envVars = appendRabbitMQConnectionEnvVars(envVars, "RPC_AMQP_CONNECTION", cr)
 
 	checkVersion := getSemanticVersionForAstarteComponent(cr, cr.Spec.VerneMQ.Version)
 	// 0.11+ variables
