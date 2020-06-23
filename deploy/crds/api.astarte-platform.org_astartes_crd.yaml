@@ -94,8 +94,6 @@ spec:
                             type: boolean
                           sni:
                             type: boolean
-                        required:
-                        - enabled
                         type: object
                       username:
                         type: string
@@ -4996,6 +4994,8 @@ spec:
                       flowApiUrl:
                         type: string
                       image:
+                        type: string
+                      pairingApiUrl:
                         type: string
                       realmManagementApiUrl:
                         type: string
