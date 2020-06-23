@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - It is now possible to explictly set a CA for Devices through a Kubernetes TLS Secret
 - Add support for the Dashboard configuration used in Astarte 1.0 and later.
+- Allow the operator to handle snapshot release builds.
 
 ### Changed
 - Update RabbitMQ version to 3.8.x for 1.0.x releases

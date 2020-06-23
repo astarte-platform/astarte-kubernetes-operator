@@ -27,22 +27,21 @@ import (
 
 	operator "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/test/utils"
-	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 	"github.com/operator-framework/operator-sdk/pkg/test/e2eutil"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-var target011Version string = version.SnapshotVersion
+var target10Version string = "1.0-snapshot"
 
-func astarteDeploy011Test(t *testing.T, f *framework.Framework, ctx *framework.Context) error {
+func astarteDeploy10Test(t *testing.T, f *framework.Framework, ctx *framework.Context) error {
 	namespace, err := ctx.GetWatchNamespace()
 	if err != nil {
 		return fmt.Errorf("could not get namespace: %v", err)
 	}
 	exampleAstarte := utils.AstarteTestResource.DeepCopy()
 	exampleAstarte.ObjectMeta.Namespace = namespace
-	exampleAstarte.Spec.Version = target011Version
+	exampleAstarte.Spec.Version = target10Version
 
 	// use Context's create helper to create the object, and do not cleanup.
 	if err := f.Client.Create(goctx.TODO(), exampleAstarte, nil); err != nil {

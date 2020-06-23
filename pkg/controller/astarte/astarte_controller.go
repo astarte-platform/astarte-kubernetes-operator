@@ -142,6 +142,14 @@ func (r *ReconcileAstarte) Reconcile(request reconcile.Request) (reconcile.Resul
 
 	// Are we capable of handling the requested version?
 	newAstarteSemVersion, err := version.GetAstarteSemanticVersionFrom(instance.Spec.Version)
+	if newAstarteSemVersion.Prerelease() == "dev" {
+		// We're running on a release snapshot. Assume it's .0
+		*newAstarteSemVersion, _ = newAstarteSemVersion.SetPrerelease("")
+		reqLogger.Info("You are targeting a Release snapshot. This is generally not a good idea in production. Assuming a Release version", "Version", instance.Spec.Version)
+		r.recorder.Eventf(instance, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
+			"Requested an upgrade to a Release snapshot. Assuming the base Release version is %v", newAstarteSemVersion.String())
+
+	}
 	if err != nil {
 		// Reconcile every minute if we're here
 		r.recorder.Eventf(instance, "Warning", apiv1alpha1.AstarteResourceEventInconsistentVersion.String(),

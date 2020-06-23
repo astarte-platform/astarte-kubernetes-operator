@@ -66,7 +66,7 @@ func AstarteCluster(t *testing.T) {
 	}
 
 	t.Log("Starting Deployment Test")
-	if err = astarteDeploy011Test(t, f, ctx); err != nil {
+	if err = astarteDeploy10Test(t, f, ctx); err != nil {
 		t.Fatal(err)
 	}
 

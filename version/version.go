@@ -20,6 +20,7 @@ package version
 
 import (
 	"fmt"
+	"strings"
 
 	semver "github.com/Masterminds/semver/v3"
 )
@@ -30,7 +31,7 @@ const (
 
 	// AstarteVersionConstraintString represents the range of supported Astarte versions for this Operator.
 	// If the Astarte version falls out of this range, reconciliation will be immediately aborted.
-	AstarteVersionConstraintString = ">= 0.10.0, < 1.1.0"
+	AstarteVersionConstraintString = ">= 0.10.0-0, < 1.1.0-0"
 
 	// SnapshotVersion represents the name of the master/snapshot version, which can or cannot be installed
 	// by this cluster
@@ -67,6 +68,12 @@ func CanManageVersion(v string) bool {
 // GetAstarteSemanticVersionFrom returns a semver object out of an Astarte version string, returning an
 // error also if the version does not adhere to constraints or isn't supported by the Operator
 func GetAstarteSemanticVersionFrom(v string) (*semver.Version, error) {
+	if strings.HasSuffix(v, "-snapshot") {
+		// We're running on a release snapshot. Add .0 patch suffix and -pre, so that the caller is
+		// aware of this being a prerelease, but can still ignore it setting Prerelease to ""
+		v = strings.Replace(v, "-snapshot", ".0-dev", -1)
+	}
+
 	// Build a SemVer out of the requested Astarte Version in the Spec.
 	if !CanManageVersion(v) {
 		return nil, fmt.Errorf("version %s cannot be managed by this Operator", v)

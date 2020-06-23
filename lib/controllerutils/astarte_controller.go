@@ -70,17 +70,18 @@ func (r *ReconcileHelper) CheckAndPerformUpgrade(reqLogger logr.Logger, instance
 	}
 	// We need to check for upgrades.
 	versionString := instance.Status.AstarteVersion
-	// Are we on a release snapshot?
-	if strings.Contains(instance.Status.AstarteVersion, "-snapshot") {
-		// We're running on a release snapshot. Assume it's .0
-		versionString = strings.Replace(versionString, "-snapshot", ".0", -1)
-		reqLogger.Info("You are running a Release snapshot. This is generally not a good idea in production. Assuming a Release version", "Version", versionString)
-		r.Recorder.Eventf(instance, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
-			"Requested an upgrade from a Release snapshot. Assuming the base Release version is %v", versionString)
-	}
 
 	// Build the semantic version
 	oldAstarteSemVersion, err := version.GetAstarteSemanticVersionFrom(versionString)
+	// Are we on a release snapshot?
+	if oldAstarteSemVersion.Prerelease() == "dev" {
+		// We're running on a release snapshot. Assume it's .0
+		*oldAstarteSemVersion, _ = oldAstarteSemVersion.SetPrerelease("")
+		reqLogger.Info("You are running a Release snapshot. This is generally not a good idea in production. Assuming a Release version", "Version", versionString)
+		r.Recorder.Eventf(instance, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
+			"Requested an upgrade from a Release snapshot. Assuming the base Release version is %v", oldAstarteSemVersion.String())
+
+	}
 	if err != nil {
 		// Reconcile every minute if we're here
 		r.Recorder.Eventf(instance, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
