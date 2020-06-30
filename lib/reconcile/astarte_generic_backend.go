@@ -281,7 +281,7 @@ func getAstarteDataUpdaterPlantBackendEnvVars(eventsExchangeName string, cr *api
 				v1.EnvVar{
 					Name: "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_TOTAL_COUNT",
 					// This must always hold the total data queue count, not just the one this specific replica of DUP is using
-					Value: strconv.Itoa(dataQueueCount),
+					Value: strconv.Itoa(pointy.IntValue(&dataQueueCount, 64)),
 				})
 		}
 
