@@ -8,12 +8,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - It is now possible to explictly set a CA for Devices through a Kubernetes TLS Secret
 - Add support for the Dashboard configuration used in Astarte 1.0 and later.
+- Add a k8s service for each Astarte service.
 
 ### Changed
 - Update RabbitMQ version to 3.8.x for 1.0.x releases
 - Starting with Astarte 1.0.0, CFSSL by default doesn't use a Database instead of using SQLite.
 - CFSSL is now deployed as a Deployment, and no longer requires a Persistent Volume. This also
   means SQLite is no longer supported as a Database.
+- Append `-api` to existing API service names.
 
 ## [0.11.1] - 2020-05-18
 ### Added

@@ -47,6 +47,7 @@ func EnsureAstarteGenericBackendWithCustomProbe(cr *apiv1alpha1.Astarte, backend
 	component apiv1alpha1.AstarteComponent, c client.Client, scheme *runtime.Scheme, customProbe *v1.Probe) error {
 	reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name, "Astarte.Component", component)
 	deploymentName := cr.Name + "-" + component.DashedString()
+	serviceName := cr.Name + "-" + component.ServiceName()
 	labels := map[string]string{
 		"app":               deploymentName,
 		"component":         "astarte",
@@ -75,6 +76,11 @@ func EnsureAstarteGenericBackendWithCustomProbe(cr *apiv1alpha1.Astarte, backend
 
 	// First of all, check if we need to regenerate the cookie.
 	if err := ensureErlangCookieSecret(deploymentName+"-cookie", cr, c, scheme); err != nil {
+		return err
+	}
+
+	// Good. Now, reconcile the service first of all.
+	if err := createOrUpdateService(cr, c, serviceName, scheme, matchLabels, labels); err != nil {
 		return err
 	}
 

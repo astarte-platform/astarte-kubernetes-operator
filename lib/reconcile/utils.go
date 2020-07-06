@@ -44,6 +44,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -700,4 +701,33 @@ func handleGenericUserCredentialsSecret(username, password, usernameKey, passwor
 		return err
 	}
 	return nil
+}
+
+func createOrUpdateService(cr *apiv1alpha1.Astarte, c client.Client, serviceName string, scheme *runtime.Scheme,
+	matchLabels, labels map[string]string) error {
+	service := &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: serviceName, Namespace: cr.Namespace}}
+	if result, err := controllerutil.CreateOrUpdate(context.TODO(), c, service, func() error {
+		if err := controllerutil.SetControllerReference(cr, service, scheme); err != nil {
+			return err
+		}
+		// Always set everything to what we require.
+		service.ObjectMeta.Labels = labels
+		service.Spec.Type = v1.ServiceTypeClusterIP
+		service.Spec.ClusterIP = noneClusterIP
+		service.Spec.Ports = []v1.ServicePort{
+			{
+				Name:       "http",
+				Port:       astarteServicesPort,
+				TargetPort: intstr.FromString("http"),
+				Protocol:   v1.ProtocolTCP,
+			},
+		}
+		service.Spec.Selector = matchLabels
+		return nil
+	}); err == nil {
+		misc.LogCreateOrUpdateOperationResult(log, result, cr, service)
+		return nil
+	} else {
+		return err
+	}
 }

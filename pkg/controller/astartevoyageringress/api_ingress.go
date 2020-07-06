@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 
 	voyager "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
@@ -241,7 +240,7 @@ func getLEFixupForAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv
 
 func getHTTPIngressPathForAstarteComponent(parent *apiv1alpha1.Astarte, component apiv1alpha1.AstarteComponent,
 	serveMetrics bool, serveMetricsToSubnet string) voyager.HTTPIngressPath {
-	return getHTTPIngressWithPath(parent, strings.Replace(component.ServiceName(), "-", "", -1), component.ServiceName(), serveMetrics, serveMetricsToSubnet)
+	return getHTTPIngressWithPath(parent, component.ServiceRelativePath(), component.ServiceName(), serveMetrics, serveMetricsToSubnet)
 }
 
 func getHTTPIngressWithPath(parent *apiv1alpha1.Astarte, relativePath, serviceName string, serveMetrics bool, serveMetricsToSubnet string) voyager.HTTPIngressPath {

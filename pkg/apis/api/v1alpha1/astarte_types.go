@@ -138,14 +138,19 @@ func (a *AstarteComponent) DockerImageName() string {
 	return "astarte_" + a.String()
 }
 
-// ServiceName returns the Kubernetes Service Name associated to this Astarte component,
-// if any, otherwise returns an empty string.
-// This will return a meaningful value only for API components or the Dashboard.
+// ServiceName returns the Kubernetes Service Name associated to this Astarte component.
 func (a *AstarteComponent) ServiceName() string {
+	return a.DashedString()
+}
+
+// ServiceRelativePath returns the relative path where the service will be served by the Astarte Voyager Ingress.
+// This will return a meaningful value only for API components or the Dashboard.
+func (a *AstarteComponent) ServiceRelativePath() string {
 	if !strings.Contains(a.String(), "api") && a.String() != "dashboard" && a.String() != "flow" {
 		return ""
 	}
-	return strings.Replace(a.DashedString(), "-api", "", -1)
+	ret := strings.Replace(a.DashedString(), "-", "", -1)
+	return strings.Replace(ret, "api", "", -1)
 }
 
 type AstarteGenericClusteredResource struct {
