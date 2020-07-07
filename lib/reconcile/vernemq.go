@@ -98,6 +98,12 @@ func EnsureVerneMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sch
 				TargetPort: intstr.FromString("mqtt-reverse"),
 				Protocol:   v1.ProtocolTCP,
 			},
+			{
+				Name:       "webadmin",
+				Port:       8888,
+				TargetPort: intstr.FromString("webadmin"),
+				Protocol:   v1.ProtocolTCP,
+			},
 		}
 		service.Spec.Selector = labels
 		// Add Annotations for Voyager (when deployed)
