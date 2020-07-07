@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - It is now possible to explictly set a CA for Devices through a Kubernetes TLS Secret
 - Add support for the Dashboard configuration used in Astarte 1.0 and later.
 - Add a k8s service for each Astarte service.
+- Make port 15692 available for RabbitMQ metrics.
 
 ### Changed
 - Update RabbitMQ version to 3.8.x for 1.0.x releases
