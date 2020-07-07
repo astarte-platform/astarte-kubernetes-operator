@@ -139,6 +139,12 @@ func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sc
 				TargetPort: intstr.FromString("management"),
 				Protocol:   v1.ProtocolTCP,
 			},
+			{
+				Name:       "metrics",
+				Port:       15692,
+				TargetPort: intstr.FromString("metrics"),
+				Protocol:   v1.ProtocolTCP,
+			},
 		}
 		service.Spec.Selector = labels
 		return nil
@@ -344,6 +350,7 @@ func getRabbitMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.
 				Ports: []v1.ContainerPort{
 					{Name: "amqp", ContainerPort: 5672},
 					{Name: "management", ContainerPort: 15672},
+					{Name: "metrics", ContainerPort: 15692},
 				},
 				LivenessProbe:  getRabbitMQLivenessProbe(),
 				ReadinessProbe: getRabbitMQReadinessProbe(),
