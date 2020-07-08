@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add support for the Dashboard configuration used in Astarte 1.0 and later.
 - Add a k8s service for each Astarte service.
 - Make port 15692 available for RabbitMQ metrics.
+- Expose port 8888 for VerneMQ metrics.
 
 ### Changed
 - Update RabbitMQ version to 3.8.x for 1.0.x releases
