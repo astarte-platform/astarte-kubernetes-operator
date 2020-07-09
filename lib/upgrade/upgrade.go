@@ -51,8 +51,25 @@ func EnsureAstarteUpgrade(oldVersion, newVersion *semver.Version, cr *apiv1alpha
 		// Perform upgrade
 		recorder.Eventf(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
 			"Initiating Astarte 0.11 Upgrade, from version %v to version %v", cr.Status.AstarteVersion, cr.Spec.Version)
-		if err := upgradeTo011(cr, c, scheme, recorder); err != nil {
-			return err
+		if e := upgradeTo011(cr, c, scheme, recorder); e != nil {
+			return e
+		}
+	} else {
+		recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
+			"Requested Astarte Upgrade does not require any special action, continuing standard reconciliation")
+	}
+
+	// Check 0.11.x -> 1.0.x constraint
+	transitionCheck, err = validateConstraintAndPrepareUpgrade(oldVersion, newVersion, "~0.11.0", ">= 1.0.0", cr, c)
+	if err != nil {
+		return err
+	}
+	if transitionCheck {
+		// Perform upgrade
+		recorder.Eventf(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
+			"Initiating Astarte 1.0 Upgrade, from version %v to version %v", cr.Status.AstarteVersion, cr.Spec.Version)
+		if e := upgradeTo10(cr, c, scheme, recorder); e != nil {
+			return e
 		}
 	} else {
 		recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
