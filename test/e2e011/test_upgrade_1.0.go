@@ -27,12 +27,11 @@ import (
 
 	operator "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/test/utils"
-	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-var target10Version string = version.SnapshotVersion
+var target10Version string = "1.0-snapshot"
 
 func astarteUpgradeTo10Test(f *framework.Framework, ctx *framework.Context) error {
 	namespace, err := ctx.GetWatchNamespace()

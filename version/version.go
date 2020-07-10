@@ -59,6 +59,9 @@ func CanManageVersion(v string) bool {
 		return false
 	}
 
+	// Strip the prerelease
+	*targetVersion, _ = targetVersion.SetPrerelease("")
+
 	c, _ := semver.NewConstraint(AstarteVersionConstraintString)
 
 	return c.Check(targetVersion)
