@@ -146,15 +146,9 @@ func (r *ReconcileHelper) computeCFSSLHealth(reqLogger logr.Logger, instance *ap
 		return true
 	}
 
-	constraint, _ := semver.NewConstraint("< 1.0.0")
-	semVer, err := version.GetAstarteSemanticVersionFrom(instance.Spec.Version)
-
-	if err == nil {
-		*semVer, _ = semVer.SetPrerelease("")
-	}
-
 	// Statefulset or Deployment?
-	if constraint.Check(semVer) {
+	switch version.CheckConstraintAgainstAstarteVersion("< 1.0.0", instance.Spec.Version) {
+	case nil:
 		cfsslStatefulSet := &appsv1.StatefulSet{}
 		if err := r.Client.Get(context.TODO(), types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name + "-cfssl"},
 			cfsslStatefulSet); err == nil {
@@ -166,7 +160,7 @@ func (r *ReconcileHelper) computeCFSSLHealth(reqLogger logr.Logger, instance *ap
 			reqLogger.V(1).Info("Could not Get Astarte CFSSL StatefulSet to compute health.")
 			return false
 		}
-	} else {
+	case version.ErrConstraintNotSatisfied:
 		cfsslDeployment := &appsv1.Deployment{}
 		if err := r.Client.Get(context.TODO(), types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name + "-cfssl"},
 			cfsslDeployment); err == nil {
@@ -178,6 +172,8 @@ func (r *ReconcileHelper) computeCFSSLHealth(reqLogger logr.Logger, instance *ap
 			reqLogger.V(1).Info("Could not Get Astarte CFSSL Deployment to compute health.")
 			return false
 		}
+	default:
+		return false
 	}
 
 	return true
@@ -309,14 +305,7 @@ func (r *ReconcileHelper) ReconcileAstarteResources(instance *apiv1alpha1.Astart
 	}
 
 	// CFSSL CA Secret - if we're < 1.0.0
-	constraint, _ := semver.NewConstraint("< 1.0.0")
-	semVer, err := version.GetAstarteSemanticVersionFrom(instance.Spec.Version)
-
-	if err == nil {
-		*semVer, _ = semVer.SetPrerelease("")
-	}
-
-	if constraint.Check(semVer) {
+	if version.CheckConstraintAgainstAstarteVersion("< 1.0.0", instance.Spec.Version) == nil {
 		if err := recon.EnsureCFSSLCASecret(instance, r.Client, r.Scheme); err != nil {
 			return err
 		}

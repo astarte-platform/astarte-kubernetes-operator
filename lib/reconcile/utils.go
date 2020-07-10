@@ -30,7 +30,6 @@ import (
 	"strconv"
 	"strings"
 
-	semver "github.com/Masterminds/semver/v3"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
 	"github.com/astarte-platform/astarte-kubernetes-operator/version"
@@ -338,10 +337,7 @@ func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quan
 
 func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, backend apiv1alpha1.AstarteGenericClusteredResource, component apiv1alpha1.AstarteComponent) []v1.EnvVar {
 	rpcPrefix := ""
-	v := getSemanticVersionForAstarteComponent(cr, backend.Version)
-	checkVersion, _ := v.SetPrerelease("")
-	constraint, _ := semver.NewConstraint("< 1.0.0")
-	if constraint.Check(&checkVersion) {
+	if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", backend.Version, cr) == nil {
 		rpcPrefix = oldAstartePrefix
 	}
 
@@ -572,24 +568,6 @@ func getAstarteCommonVolumes(cr *apiv1alpha1.Astarte) []v1.Volume {
 	return ret
 }
 
-func getVersionForAstarteComponent(cr *apiv1alpha1.Astarte, componentVersion string) string {
-	if componentVersion != "" {
-		return componentVersion
-	}
-	return cr.Spec.Version
-}
-
-func getSemanticVersionForAstarteComponent(cr *apiv1alpha1.Astarte, componentVersion string) *semver.Version {
-	versionString := getVersionForAstarteComponent(cr, componentVersion)
-	semVer, err := version.GetAstarteSemanticVersionFrom(versionString)
-
-	if err == nil {
-		*semVer, _ = semVer.SetPrerelease("")
-	}
-
-	return semVer
-}
-
 func getAstarteCommonVolumeMounts(cr *apiv1alpha1.Astarte) []v1.VolumeMount {
 	ret := []v1.VolumeMount{
 		{
@@ -626,7 +604,7 @@ func getAstarteImageForClusteredResource(defaultImageName string, resource apiv1
 		return resource.Image
 	}
 
-	return getAstarteImageFromChannel(defaultImageName, getVersionForAstarteComponent(cr, resource.Version), cr)
+	return getAstarteImageFromChannel(defaultImageName, version.GetVersionForAstarteComponent(cr, resource.Version), cr)
 }
 
 func getImageForClusteredResource(defaultImageName, defaultImageTag string, resource apiv1alpha1.AstarteGenericClusteredResource) string {

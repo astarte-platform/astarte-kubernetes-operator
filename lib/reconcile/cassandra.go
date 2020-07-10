@@ -27,7 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	semver "github.com/Masterminds/semver/v3"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/deps"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
@@ -242,8 +241,6 @@ func getCassandraEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.E
 }
 
 func getCassandraPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.Astarte) v1.PodSpec {
-	astarteVersion, _ := semver.NewVersion(cr.Spec.Version)
-
 	resources := v1.ResourceRequirements{}
 	if cr.Spec.Cassandra.Resources != nil {
 		resources = *cr.Spec.Cassandra.Resources
@@ -263,7 +260,7 @@ func getCassandraPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1
 						MountPath: "/cassandra_data",
 					},
 				},
-				Image: getImageForClusteredResource("gcr.io/google-samples/cassandra", deps.GetDefaultVersionForCassandra(astarteVersion),
+				Image: getImageForClusteredResource("gcr.io/google-samples/cassandra", deps.GetDefaultVersionForCassandra(cr.Spec.Version),
 					cr.Spec.Cassandra.AstarteGenericClusteredResource),
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Ports: []v1.ContainerPort{
