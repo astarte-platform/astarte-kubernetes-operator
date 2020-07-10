@@ -491,6 +491,12 @@ type AstarteSystemKeyspaceSpec struct {
 	ReplicationFactor int `json:"replicationFactor,omitempty"`
 }
 
+// AstarteFeatures enables/disables selectively a set of global features in Astarte
+type AstarteFeatures struct {
+	// +optional
+	RealmDeletion bool `json:"realmDeletion,omitempty"`
+}
+
 // AstarteSpec defines the desired state of Astarte
 type AstarteSpec struct {
 	// The Astarte Version for this Resource
@@ -503,6 +509,8 @@ type AstarteSpec struct {
 	DistributionChannel string `json:"distributionChannel,omitempty"`
 	// +optional
 	DeploymentStrategy appsv1.DeploymentStrategy `json:"deploymentStrategy,omitempty"`
+	// +optional
+	Features AstarteFeatures `json:"features,omitempty"`
 	// +optional
 	/// +kubebuilder:default=true
 	RBAC *bool `json:"rbac,omitempty"`
