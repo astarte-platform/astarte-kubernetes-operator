@@ -193,6 +193,13 @@ func getAstarteGenericBackendEnvVars(deploymentName string, cr *apiv1alpha1.Asta
 					Value: strconv.Itoa(cr.Spec.AstarteSystemKeyspace.ReplicationFactor),
 				})
 		}
+		if cr.Spec.Features.RealmDeletion {
+			ret = append(ret,
+				v1.EnvVar{
+					Name:  "HOUSEKEEPING_ENABLE_REALM_DELETION",
+					Value: "true",
+				})
+		}
 	case apiv1alpha1.Pairing:
 		ret = append(ret,
 			v1.EnvVar{

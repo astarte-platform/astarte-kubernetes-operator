@@ -12050,6 +12050,13 @@ spec:
                 type: object
               distributionChannel:
                 type: string
+              features:
+                description: AstarteFeatures enables/disables selectively a set of
+                  global features in Astarte
+                properties:
+                  realmDeletion:
+                    type: boolean
+                type: object
               imagePullPolicy:
                 description: PullPolicy describes a policy for if/when to pull a container
                   image
