@@ -25,9 +25,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	semver "github.com/Masterminds/semver/v3"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
+	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -208,11 +208,8 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.Env
 	// Also append env vars for RPC
 	envVars = appendRabbitMQConnectionEnvVars(envVars, "RPC_AMQP_CONNECTION", cr)
 
-	checkVersion := getSemanticVersionForAstarteComponent(cr, cr.Spec.VerneMQ.Version)
 	// 0.11+ variables
-	c, _ := semver.NewConstraint(">= 0.11.0")
-
-	if c.Check(checkVersion) {
+	if version.CheckConstraintAgainstAstarteComponentVersion(">= 0.11.0", cr.Spec.VerneMQ.Version, cr) == nil {
 		// When installing Astarte >= 0.11, add the data queue count
 		envVars = append(envVars, v1.EnvVar{
 			Name:  "DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__DATA_QUEUE_COUNT",
@@ -221,9 +218,7 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.Env
 	}
 
 	// 1.0+ variables
-	c, _ = semver.NewConstraint(">= 1.0.0")
-
-	if c.Check(checkVersion) {
+	if version.CheckConstraintAgainstAstarteComponentVersion(">= 1.0.0", cr.Spec.VerneMQ.Version, cr) == nil {
 		if cr.Spec.VerneMQ.DeviceHeartbeatSeconds > 0 {
 			envVars = append(envVars,
 				v1.EnvVar{

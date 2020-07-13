@@ -22,9 +22,9 @@ import (
 	"context"
 	"encoding/json"
 
-	semver "github.com/Masterminds/semver/v3"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
+	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -160,11 +160,8 @@ func getAstarteDashboardPodSpec(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.A
 func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.AstarteDashboardSpec) map[string]string {
 	dashboardConfig := make(map[string]interface{})
 
-	v := getSemanticVersionForAstarteComponent(cr, dashboard.Version)
-	constraint, _ := semver.NewConstraint("< 0.11.0")
-
-	constraint10, _ := semver.NewConstraint(">= 1.0.0")
-	isAstarte10 := constraint10.Check(v)
+	isAstarte010 := version.CheckConstraintAgainstAstarteComponentVersion("< 0.11.0", dashboard.Version, cr) == nil
+	isAstarte10 := version.CheckConstraintAgainstAstarteComponentVersion(">= 1.0.0", dashboard.Version, cr) == nil
 
 	if isAstarte10 {
 		// Astarte 1.0+ just needs astarte_api_url, and single API urls only if they're explicit
@@ -178,7 +175,7 @@ func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard apiv1al
 	switch {
 	case dashboard.Config.RealmManagementAPIURL != "":
 		dashboardConfig["realm_management_api_url"] = dashboard.Config.RealmManagementAPIURL
-	case constraint.Check(v):
+	case isAstarte010:
 		dashboardConfig["realm_management_api_url"] = getBaseAstarteAPIURL(cr) + "/realmmanagement/v1/"
 	case !isAstarte10:
 		dashboardConfig["realm_management_api_url"] = getBaseAstarteAPIURL(cr) + "/realmmanagement/"
@@ -187,7 +184,7 @@ func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard apiv1al
 	switch {
 	case dashboard.Config.AppEngineAPIURL != "":
 		dashboardConfig["appengine_api_url"] = dashboard.Config.AppEngineAPIURL
-	case constraint.Check(v):
+	case isAstarte010:
 		dashboardConfig["appengine_api_url"] = getBaseAstarteAPIURL(cr) + "/appengine/v1/"
 	case !isAstarte10:
 		dashboardConfig["appengine_api_url"] = getBaseAstarteAPIURL(cr) + "/appengine/"

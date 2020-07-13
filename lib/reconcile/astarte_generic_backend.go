@@ -22,9 +22,9 @@ import (
 	"context"
 	"strconv"
 
-	semver "github.com/Masterminds/semver/v3"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
+	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -163,11 +163,11 @@ func getAstarteGenericBackendEnvVars(deploymentName string, cr *apiv1alpha1.Asta
 	ret := getAstarteCommonEnvVars(deploymentName, cr, backend, component)
 
 	cassandraPrefix := ""
-	v := getSemanticVersionForAstarteComponent(cr, backend.Version)
-	checkVersion, _ := v.SetPrerelease("")
-	constraint, _ := semver.NewConstraint("< 1.0.0")
-	if constraint.Check(&checkVersion) {
+	if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", backend.Version, cr) == nil {
 		cassandraPrefix = oldAstartePrefix
+	} else {
+		// Append Cassandra connection env vars only if version >= 1.0.0
+		ret = appendCassandraConnectionEnvVars(ret, cr)
 	}
 
 	// Add Cassandra Nodes
@@ -175,11 +175,6 @@ func getAstarteGenericBackendEnvVars(deploymentName string, cr *apiv1alpha1.Asta
 		Name:  cassandraPrefix + "CASSANDRA_NODES",
 		Value: getCassandraNodes(cr),
 	})
-
-	// Append Cassandra connection env vars only if version >= 1.0.0
-	if !constraint.Check(&checkVersion) {
-		ret = appendCassandraConnectionEnvVars(ret, cr)
-	}
 
 	eventsExchangeName := cr.Spec.RabbitMQ.EventsExchangeName
 
@@ -267,11 +262,8 @@ func getAstarteDataUpdaterPlantBackendEnvVars(eventsExchangeName string, cr *api
 			})
 	}
 
-	checkVersion := getSemanticVersionForAstarteComponent(cr, backend.Version)
 	// 0.11+ variables
-	c, _ := semver.NewConstraint(">= 0.11.0")
-
-	if c.Check(checkVersion) {
+	if version.CheckConstraintAgainstAstarteComponentVersion(">= 0.11.0", backend.Version, cr) == nil {
 		dataQueueCount := getDataQueueCount(cr)
 
 		// When installing Astarte >= 0.11, add the data queue count
@@ -288,8 +280,7 @@ func getAstarteDataUpdaterPlantBackendEnvVars(eventsExchangeName string, cr *api
 			})
 
 		// 0.11.1+ variables
-		c2, _ := semver.NewConstraint(">= 0.11.1")
-		if c2.Check(checkVersion) {
+		if version.CheckConstraintAgainstAstarteComponentVersion(">= 0.11.1", backend.Version, cr) == nil {
 			ret = append(ret,
 				v1.EnvVar{
 					Name: "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_TOTAL_COUNT",
@@ -308,8 +299,7 @@ func getAstarteDataUpdaterPlantBackendEnvVars(eventsExchangeName string, cr *api
 	}
 
 	// 1.0+ variables
-	c, _ = semver.NewConstraint(">= 1.0.0")
-	if c.Check(checkVersion) {
+	if version.CheckConstraintAgainstAstarteComponentVersion(">= 1.0.0", backend.Version, cr) == nil {
 		if cr.Spec.VerneMQ.DeviceHeartbeatSeconds > 0 {
 			ret = append(ret,
 				v1.EnvVar{
@@ -328,12 +318,7 @@ func getAstarteBackendProbe(cr *apiv1alpha1.Astarte, backend apiv1alpha1.Astarte
 		return customProbe
 	}
 
-	// Parse the version first
-	v := getSemanticVersionForAstarteComponent(cr, backend.Version)
-	checkVersion, _ := v.SetPrerelease("")
-	constraint, _ := semver.NewConstraint("< 0.11.0")
-
-	if constraint.Check(&checkVersion) {
+	if version.CheckConstraintAgainstAstarteComponentVersion("< 0.11.0", backend.Version, cr) == nil {
 		// 0.10.x has no such thing.
 		return nil
 	}

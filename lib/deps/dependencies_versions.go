@@ -18,56 +18,37 @@
 
 package deps
 
-import semver "github.com/Masterminds/semver/v3"
+import "github.com/astarte-platform/astarte-kubernetes-operator/version"
 
 // GetDefaultVersionForCFSSL returns the default CFSSL version based on the Astarte version requested
-func GetDefaultVersionForCFSSL(astarteVersion *semver.Version) string {
-	latestVersion := "1.4.1-astarte.1"
-	if astarteVersion == nil {
-		// We're on snapshot, return latest
-		return latestVersion
-	}
-
-	checkVersion, _ := astarteVersion.SetPrerelease("")
-
-	c, _ := semver.NewConstraint("< 0.11.0")
-	if c.Check(&checkVersion) {
+func GetDefaultVersionForCFSSL(astarteVersion string) string {
+	if version.CheckConstraintAgainstAstarteVersion("< 0.11.0", astarteVersion) == nil {
 		return "1.0.0-astarte.0"
 	}
 
 	// Before 1.0.0, we always defaulted to a must-have DB configuration. So keep it.
-	c, _ = semver.NewConstraint("< 1.0.0")
-	if c.Check(&checkVersion) {
+	if version.CheckConstraintAgainstAstarteVersion("< 1.0.0", astarteVersion) == nil {
 		return "1.4.1-astarte.0"
 	}
 
-	return latestVersion
+	return "1.4.1-astarte.1"
 }
 
 // GetDefaultVersionForCassandra returns the default Cassandra version based on the Astarte version requested
-func GetDefaultVersionForCassandra(astarteVersion *semver.Version) string {
+func GetDefaultVersionForCassandra(astarteVersion string) string {
 	// TODO: We should change this to the official images
 	return "v13"
 }
 
 // GetDefaultVersionForRabbitMQ returns the default RabbitMQ version based on the Astarte version requested
-func GetDefaultVersionForRabbitMQ(astarteVersion *semver.Version) string {
-	latestVersion := "3.8"
-	if astarteVersion == nil {
-		// We're on snapshot, return latest
-		return latestVersion
-	}
-
-	checkVersion, _ := astarteVersion.SetPrerelease("")
-	beforeZeroEleven, _ := semver.NewConstraint("< 0.11.0")
-	if beforeZeroEleven.Check(&checkVersion) {
+func GetDefaultVersionForRabbitMQ(astarteVersion string) string {
+	if version.CheckConstraintAgainstAstarteVersion("< 0.11.0", astarteVersion) == nil {
 		return "3.7.15"
 	}
 
-	beforeOne, _ := semver.NewConstraint("< 1.0.0")
-	if beforeOne.Check(&checkVersion) {
+	if version.CheckConstraintAgainstAstarteVersion("< 1.0.0", astarteVersion) == nil {
 		return "3.7.21"
 	}
 
-	return latestVersion
+	return "3.8"
 }

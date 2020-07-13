@@ -24,7 +24,6 @@ import (
 	"errors"
 	"fmt"
 
-	semver "github.com/Masterminds/semver/v3"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/deps"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
@@ -51,14 +50,7 @@ func EnsureCFSSL(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Schem
 		return err
 	}
 
-	constraint, _ := semver.NewConstraint("< 1.0.0")
-	semVer, err := version.GetAstarteSemanticVersionFrom(cr.Spec.Version)
-
-	if err == nil {
-		*semVer, _ = semVer.SetPrerelease("")
-	}
-
-	if constraint.Check(semVer) {
+	if version.CheckConstraintAgainstAstarteVersion("< 1.0.0", cr.Spec.Version) == nil {
 		// Then it's a statefulset
 		return ensureCFSSLStatefulSet(cr, c, scheme)
 	}
@@ -261,11 +253,8 @@ func validateCFSSLDefinition(cfssl apiv1alpha1.AstarteCFSSLSpec) error {
 }
 
 func getCFSSLProbe(cr *apiv1alpha1.Astarte) *v1.Probe {
-	c, _ := semver.NewConstraint("< 0.11.0")
-	checkVersion := getSemanticVersionForAstarteComponent(cr, cr.Spec.CFSSL.Version)
-
 	// HTTP Health is supported only from 0.11 on
-	if c.Check(checkVersion) {
+	if version.CheckConstraintAgainstAstarteComponentVersion("< 0.11.0", cr.Spec.CFSSL.Version, cr) == nil {
 		return &v1.Probe{
 			Handler:             v1.Handler{TCPSocket: &v1.TCPSocketAction{Port: intstr.FromString("http")}},
 			InitialDelaySeconds: 10,
@@ -288,8 +277,7 @@ func getCFSSLProbe(cr *apiv1alpha1.Astarte) *v1.Probe {
 // TODO: Deprecate dataVolumeName and all the jargon when we won't support < 1.0 anymore
 func getCFSSLPodSpec(statefulSetName, dataVolumeName, secretName string, cr *apiv1alpha1.Astarte) v1.PodSpec {
 	// Defaults to the custom image built in Astarte
-	astarteVersion, _ := semver.NewVersion(cr.Spec.Version)
-	cfsslImage := getAstarteImageFromChannel("cfssl", deps.GetDefaultVersionForCFSSL(astarteVersion), cr)
+	cfsslImage := getAstarteImageFromChannel("cfssl", deps.GetDefaultVersionForCFSSL(cr.Spec.Version), cr)
 	if cr.Spec.CFSSL.Image != "" {
 		cfsslImage = cr.Spec.CFSSL.Image
 	} else if cr.Spec.CFSSL.Version != "" {
@@ -440,14 +428,7 @@ func getCFSSLDBConfig(cr *apiv1alpha1.Astarte) (map[string]interface{}, error) {
 	var dbConfig map[string]interface{} = nil
 
 	// ...unless we're < 1.0.0.
-	constraint, _ := semver.NewConstraint("< 1.0.0")
-	semVer, err := version.GetAstarteSemanticVersionFrom(cr.Spec.Version)
-	if err != nil {
-		return nil, err
-	}
-	*semVer, _ = semVer.SetPrerelease("")
-
-	if constraint.Check(semVer) {
+	if version.CheckConstraintAgainstAstarteVersion("< 1.0.0", cr.Spec.Version) == nil {
 		// Then it's a statefulset
 		dbConfig = map[string]interface{}{"data_source": "/data/certs.db", "driver": "sqlite3"}
 	}

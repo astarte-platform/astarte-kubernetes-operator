@@ -98,9 +98,7 @@ func validateConstraintAndPrepareUpgrade(oldVersion, newVersion *semver.Version,
 		*newVersion, _ = newVersion.SetPrerelease("")
 	}
 
-	oldConstraintValidated, _ := oldConstraint.Validate(oldVersion)
-	newConstraintValidated, _ := newConstraint.Validate(newVersion)
-	if oldConstraintValidated && newConstraintValidated {
+	if oldConstraint.Check(oldVersion) && newConstraint.Check(newVersion) {
 		// Set the Reconciliation Phase to Upgrading
 		reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name)
 		reqLogger.Info("Upgrade found, will start Upgrade routine")
@@ -110,7 +108,9 @@ func validateConstraintAndPrepareUpgrade(oldVersion, newVersion *semver.Version,
 			reqLogger.Error(err, "Failed to update Astarte Reconciliation Phase status. Not dying for this, though")
 			// That's it - no point in failing here.
 		}
+
+		return true, nil
 	}
 
-	return oldConstraintValidated && newConstraintValidated, nil
+	return false, nil
 }

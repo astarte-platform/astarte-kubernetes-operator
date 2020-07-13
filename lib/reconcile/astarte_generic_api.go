@@ -24,9 +24,9 @@ import (
 	"strconv"
 	"strings"
 
-	semver "github.com/Masterminds/semver/v3"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
+	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 	"github.com/go-logr/logr"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
@@ -136,9 +136,7 @@ func checkShouldDeployAPI(reqLogger logr.Logger, deploymentName string, cr *apiv
 	}
 
 	// If we do need to deploy, check any constraints
-	version := getSemanticVersionForAstarteComponent(cr, api.Version)
-	constraint, _ := semver.NewConstraint(">= 1.0.0")
-	if component == apiv1alpha1.FlowComponent && !constraint.Check(version) {
+	if component == apiv1alpha1.FlowComponent && version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", api.Version, cr) == nil {
 		reqLogger.V(1).Info("Skipping Flow Deployment - not supported by this Astarte version")
 		return false
 	}
@@ -223,11 +221,11 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte,
 	switch component {
 	case apiv1alpha1.AppEngineAPI:
 		cassandraPrefix := ""
-		v := getSemanticVersionForAstarteComponent(cr, cr.Spec.Components.AppengineAPI.Version)
-		checkVersion, _ := v.SetPrerelease("")
-		constraint, _ := semver.NewConstraint("< 1.0.0")
-		if constraint.Check(&checkVersion) {
+		if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", cr.Spec.Components.AppengineAPI.Version, cr) == nil {
 			cassandraPrefix = oldAstartePrefix
+		} else {
+			// Append Cassandra connection env vars only if version >= 1.0.0
+			ret = appendCassandraConnectionEnvVars(ret, cr)
 		}
 
 		// Add Cassandra Nodes
@@ -235,11 +233,6 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte,
 			Name:  cassandraPrefix + "CASSANDRA_NODES",
 			Value: getCassandraNodes(cr),
 		})
-
-		// Append Cassandra connection env vars only if version >= 1.0.0
-		if !constraint.Check(&checkVersion) {
-			ret = appendCassandraConnectionEnvVars(ret, cr)
-		}
 
 		ret = append(ret,
 			v1.EnvVar{
@@ -314,12 +307,7 @@ func getAstarteAPIProbe(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericA
 		return customProbe
 	}
 
-	// Parse the version first
-	v := getSemanticVersionForAstarteComponent(cr, api.Version)
-	checkVersion, _ := v.SetPrerelease("")
-	constraint, _ := semver.NewConstraint("< 0.11.0")
-
-	if constraint.Check(&checkVersion) {
+	if version.CheckConstraintAgainstAstarteComponentVersion("< 0.11.0", api.Version, cr) == nil {
 		// Only Housekeeping has a health check in 0.10.x
 		if component != apiv1alpha1.HousekeepingAPI {
 			return nil
@@ -328,9 +316,7 @@ func getAstarteAPIProbe(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericA
 		return getAstarteAPIGenericProbe("/v1/health")
 	}
 
-	constraint, _ = semver.NewConstraint("< 1.0.0")
-
-	if constraint.Check(&checkVersion) {
+	if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", api.Version, cr) == nil {
 		if component == apiv1alpha1.FlowComponent {
 			return nil
 		}
