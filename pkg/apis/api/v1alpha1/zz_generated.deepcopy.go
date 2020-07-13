@@ -866,6 +866,11 @@ func (in *AstarteVerneMQSpec) DeepCopyInto(out *AstarteVerneMQSpec) {
 		*out = new(AstartePersistentStorageSpec)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.MaxOfflineMessages != nil {
+		in, out := &in.MaxOfflineMessages, &out.MaxOfflineMessages
+		*out = new(int)
+		**out = **in
+	}
 	return
 }
 
