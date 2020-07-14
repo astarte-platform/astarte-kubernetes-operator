@@ -226,6 +226,21 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.Env
 					Value: strconv.Itoa(cr.Spec.VerneMQ.DeviceHeartbeatSeconds * 1000),
 				})
 		}
+		persistentClientExpiration := cr.Spec.VerneMQ.PersistentClientExpiration
+		if persistentClientExpiration == "" {
+			// Defaults to 1 year
+			persistentClientExpiration = "1y"
+		}
+
+		envVars = append(envVars,
+			v1.EnvVar{
+				Name:  "DOCKER_VERNEMQ_PERSISTENT_CLIENT_EXPIRATION",
+				Value: persistentClientExpiration,
+			},
+			v1.EnvVar{
+				Name:  "DOCKER_VERNEMQ_MAX_OFFLINE_MESSAGES",
+				Value: strconv.Itoa(pointy.IntValue(cr.Spec.VerneMQ.MaxOfflineMessages, 1000000)),
+			})
 	}
 
 	return envVars
