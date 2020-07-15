@@ -11,6 +11,10 @@ run:
   skip-dirs:
     - external
 
+  # Don't check generated files. We don't care.
+  skip-files:
+    - api/v1alpha1/zz_generated.deepcopy.go
+
 
 # output configuration options
 output:

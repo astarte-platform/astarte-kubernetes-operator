@@ -1,0 +1,24 @@
+# permissions for end users to edit astartevoyageringresses.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: astartevoyageringress-editor-role
+rules:
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - astartevoyageringresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - astartevoyageringresses/status
+  verbs:
+  - get

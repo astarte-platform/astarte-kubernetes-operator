@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Expose port 8888 for VerneMQ metrics.
 
 ### Changed
+- Astarte Operator SDK now uses Kubebuilder as the base project structure
 - Update RabbitMQ version to 3.8.x for 1.0.x releases
 - Starting with Astarte 1.0.0, CFSSL by default doesn't use a Database instead of using SQLite.
 - CFSSL is now deployed as a Deployment, and no longer requires a Persistent Volume. This also

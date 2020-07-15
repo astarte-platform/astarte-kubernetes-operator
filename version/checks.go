@@ -22,7 +22,7 @@ import (
 	"errors"
 
 	semver "github.com/Masterminds/semver/v3"
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
 )
 
 var (

@@ -1,7 +1,0 @@
-apiVersion: api.astarte-platform.org/v1alpha1
-kind: Astarte
-metadata:
-  name: example-astarte
-spec:
-  # Add fields here
-  size: 3

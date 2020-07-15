@@ -19,59 +19,95 @@
 package oldoperator
 
 import (
+	"path/filepath"
 	"testing"
 
-	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis"
-	operator "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/test/utils"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
-	framework "github.com/operator-framework/operator-sdk/pkg/test"
-	"github.com/operator-framework/operator-sdk/pkg/test/e2eutil"
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
+
+	"github.com/astarte-platform/astarte-kubernetes-operator/controllers"
+
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-func TestAstarte(t *testing.T) {
-	astarteList := &operator.AstarteList{}
-	err := framework.AddToFrameworkScheme(apis.AddToScheme, astarteList)
-	if err != nil {
-		t.Fatalf("failed to add custom resource scheme to framework: %v", err)
-	}
-	// run subtests
-	t.Run("astarte-group", func(t *testing.T) {
-		t.Run("Cluster", AstarteCluster)
-	})
+// These tests use Ginkgo (BDD-style Go testing framework). Refer to
+// http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
+
+var cfg *rest.Config
+var k8sClient client.Client
+var testEnv *envtest.Environment
+
+const namespace string = "astarte-test"
+
+func TestAstarteRetrocompatibility(t *testing.T) {
+	RegisterFailHandler(Fail)
+
+	RunSpecsWithDefaultAndCustomReporters(t,
+		"Astarte 0.10 Controller e2e Test Suite",
+		[]Reporter{printer.NewlineReporter{}})
 }
 
-func AstarteCluster(t *testing.T) {
-	ctx := framework.NewContext(t)
-	defer ctx.Cleanup()
-	err := ctx.InitializeClusterResources(&framework.CleanupOptions{
-		TestContext:   ctx,
-		Timeout:       utils.DefaultCleanupTimeout,
-		RetryInterval: utils.DefaultCleanupRetryInterval,
+var _ = BeforeSuite(func(done Done) {
+	logf.SetLogger(zap.LoggerTo(GinkgoWriter, true))
+
+	By("bootstrapping test environment")
+	testEnv = &envtest.Environment{
+		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
+	}
+
+	var err error
+	cfg, err = testEnv.Start()
+	Expect(err).ToNot(HaveOccurred())
+	Expect(cfg).ToNot(BeNil())
+
+	err = apiv1alpha1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	// +kubebuilder:scaffold:scheme
+
+	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	Expect(err).ToNot(HaveOccurred())
+	Expect(k8sClient).ToNot(BeNil())
+
+	/*
+		Start the manager and do the right thing
+	*/
+
+	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme: scheme.Scheme,
 	})
-	if err != nil {
-		t.Fatalf("failed to initialize cluster resources: %v", err)
-	}
-	t.Log("Initialized cluster resources")
-	namespace, err := ctx.GetOperatorNamespace()
-	if err != nil {
-		t.Fatal(err)
-	}
-	// get global framework variables
-	f := framework.Global
-	// wait for astarte-operator to be ready
-	err = e2eutil.WaitForOperatorDeployment(t, f.KubeClient, namespace, "astarte-operator", 1, utils.DefaultRetryInterval, utils.DefaultTimeout)
-	if err != nil {
-		t.Fatal(err)
-	}
+	Expect(err).ToNot(HaveOccurred())
 
-	t.Log("Starting Deployment Test")
-	if err = astarteEnsureRetrocompatTest(f, ctx); err != nil {
-		t.Fatal(err)
-	}
+	err = (&controllers.AstarteReconciler{
+		Client:   k8sManager.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("Astarte"),
+		Scheme:   k8sManager.GetScheme(),
+		Recorder: k8sManager.GetEventRecorderFor("astarte-controller"),
+	}).SetupWithManager(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
 
-	t.Log("Starting Deletion Test")
-	if err = utils.AstarteDeleteTest(f, ctx); err != nil {
-		t.Fatal(err)
-	}
-}
+	go func() {
+		err = k8sManager.Start(ctrl.SetupSignalHandler())
+		Expect(err).ToNot(HaveOccurred())
+	}()
+
+	k8sClient = k8sManager.GetClient()
+	Expect(k8sClient).ToNot(BeNil())
+
+	close(done)
+}, 60)
+
+var _ = AfterSuite(func() {
+	By("tearing down the test environment")
+	err := testEnv.Stop()
+	Expect(err).ToNot(HaveOccurred())
+})

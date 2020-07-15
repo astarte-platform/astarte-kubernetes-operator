@@ -25,15 +25,15 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/reconcile"
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
 	"github.com/go-logr/logr"
 	"github.com/openlyinc/pointy"
-	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -46,6 +46,46 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
+
+// ForceRunModeEnv indicates if the operator should be forced to run in either local
+// or cluster mode (currently only used for local mode)
+var ForceRunModeEnv = "OSDK_FORCE_RUN_MODE"
+
+type RunModeType string
+
+const (
+	LocalRunMode   RunModeType = "local"
+	ClusterRunMode RunModeType = "cluster"
+)
+
+func isRunModeLocal() bool {
+	return os.Getenv(ForceRunModeEnv) == string(LocalRunMode)
+}
+
+// ErrNoNamespace indicates that a namespace could not be found for the current
+// environment
+var ErrNoNamespace = fmt.Errorf("namespace not found for current environment")
+
+// ErrRunLocal indicates that the operator is set to run in local mode (this error
+// is returned by functions that only work on operators running in cluster mode)
+var ErrRunLocal = fmt.Errorf("operator run mode forced to local")
+
+// GetOperatorNamespace returns the namespace the operator should be running in.
+func GetOperatorNamespace() (string, error) {
+	if isRunModeLocal() {
+		return "", ErrRunLocal
+	}
+	nsBytes, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", ErrNoNamespace
+		}
+		return "", err
+	}
+	ns := strings.TrimSpace(string(nsBytes))
+	log.V(1).Info("Found namespace", "Namespace", ns)
+	return ns, nil
+}
 
 func shutdownVerneMQ(cr *apiv1alpha1.Astarte, c client.Client, recorder record.EventRecorder) error {
 	reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name)
@@ -189,11 +229,11 @@ func checkRabbitMQQueue(queueState map[string]interface{}, reqLogger logr.Logger
 func openRabbitMQPortForward(cr *apiv1alpha1.Astarte) (string, chan struct{}, error) {
 	reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name)
 	var fw *portforward.PortForwarder
-	var stopChannel chan struct{} = nil
+	var stopChannel chan struct{}
 
 	// Note that we're trying to find out whether the operator is running outside the cluster
-	if _, err := k8sutil.GetOperatorNamespace(); err != nil {
-		if err == k8sutil.ErrNoNamespace || err == k8sutil.ErrRunLocal {
+	if _, err := GetOperatorNamespace(); err != nil {
+		if err == ErrNoNamespace || err == ErrRunLocal {
 			reqLogger.Info("Not running in a cluster - trying to forward RabbitMQ port")
 			restConfig, e := config.GetConfig()
 			if e != nil {
