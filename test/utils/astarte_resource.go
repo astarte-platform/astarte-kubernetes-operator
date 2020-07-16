@@ -19,7 +19,7 @@
 package utils
 
 import (
-	operator "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
+	operator "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"

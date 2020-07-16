@@ -22,8 +22,8 @@ import (
 	"context"
 	"fmt"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"

@@ -30,8 +30,8 @@ import (
 	"strconv"
 	"strings"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
@@ -684,9 +684,9 @@ func handleGenericUserCredentialsSecret(username, password, usernameKey, passwor
 func createOrUpdateService(cr *apiv1alpha1.Astarte, c client.Client, serviceName string, scheme *runtime.Scheme,
 	matchLabels, labels map[string]string) error {
 	service := &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: serviceName, Namespace: cr.Namespace}}
-	if result, err := controllerutil.CreateOrUpdate(context.TODO(), c, service, func() error {
-		if err := controllerutil.SetControllerReference(cr, service, scheme); err != nil {
-			return err
+	result, err := controllerutil.CreateOrUpdate(context.TODO(), c, service, func() error {
+		if e := controllerutil.SetControllerReference(cr, service, scheme); e != nil {
+			return e
 		}
 		// Always set everything to what we require.
 		service.ObjectMeta.Labels = labels
@@ -702,10 +702,8 @@ func createOrUpdateService(cr *apiv1alpha1.Astarte, c client.Client, serviceName
 		}
 		service.Spec.Selector = matchLabels
 		return nil
-	}); err == nil {
-		misc.LogCreateOrUpdateOperationResult(log, result, cr, service)
-		return nil
-	} else {
-		return err
-	}
+	})
+
+	misc.LogCreateOrUpdateOperationResult(log, result, cr, service)
+	return err
 }

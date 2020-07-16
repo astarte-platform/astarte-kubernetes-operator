@@ -26,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -44,17 +43,17 @@ const (
 )
 
 // EnsureAstarteServicesReadinessUpTo10 ensures all existing Astarte components up to 1.0
-func EnsureAstarteServicesReadinessUpTo10(namespace string, f *framework.Framework) error {
+func EnsureAstarteServicesReadinessUpTo10(namespace string, c client.Client) error {
 	// The previous stuff
-	if err := EnsureAstarteServicesReadinessUpTo011(namespace, f, false); err != nil {
+	if err := EnsureAstarteServicesReadinessUpTo011(namespace, c, false); err != nil {
 		return err
 	}
 
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-cfssl", f); err != nil {
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-cfssl", c); err != nil {
 		return err
 	}
 
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-flow", f); err != nil {
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-flow", c); err != nil {
 		return err
 	}
 
@@ -62,51 +61,51 @@ func EnsureAstarteServicesReadinessUpTo10(namespace string, f *framework.Framewo
 }
 
 // EnsureAstarteServicesReadinessUpTo011 ensures all existing Astarte components up to 0.11
-func EnsureAstarteServicesReadinessUpTo011(namespace string, f *framework.Framework, checkCFSSL bool) error {
+func EnsureAstarteServicesReadinessUpTo011(namespace string, c client.Client, checkCFSSL bool) error {
 	// Check all the StatefulSets
 	if checkCFSSL {
-		if err := EnsureStatefulSetReadiness(namespace, "example-astarte-cfssl", f); err != nil {
+		if err := EnsureStatefulSetReadiness(namespace, "example-astarte-cfssl", c); err != nil {
 			return err
 		}
 	}
-	if err := EnsureStatefulSetReadiness(namespace, "example-astarte-cassandra", f); err != nil {
+	if err := EnsureStatefulSetReadiness(namespace, "example-astarte-cassandra", c); err != nil {
 		return err
 	}
-	if err := EnsureStatefulSetReadiness(namespace, "example-astarte-rabbitmq", f); err != nil {
+	if err := EnsureStatefulSetReadiness(namespace, "example-astarte-rabbitmq", c); err != nil {
 		return err
 	}
 
 	// Check if API deployments + DUP are ready. If they are, we're done.
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-appengine-api", f); err != nil {
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-appengine-api", c); err != nil {
 		return err
 	}
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-housekeeping", f); err != nil {
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-housekeeping", c); err != nil {
 		return err
 	}
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-housekeeping-api", f); err != nil {
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-housekeeping-api", c); err != nil {
 		return err
 	}
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-pairing", f); err != nil {
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-pairing", c); err != nil {
 		return err
 	}
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-pairing-api", f); err != nil {
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-pairing-api", c); err != nil {
 		return err
 	}
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-realm-management", f); err != nil {
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-realm-management", c); err != nil {
 		return err
 	}
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-realm-management-api", f); err != nil {
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-realm-management-api", c); err != nil {
 		return err
 	}
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-trigger-engine", f); err != nil {
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-trigger-engine", c); err != nil {
 		return err
 	}
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-data-updater-plant", f); err != nil {
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-data-updater-plant", c); err != nil {
 		return err
 	}
 
 	// Check VerneMQ last thing
-	if err := EnsureStatefulSetReadiness(namespace, "example-astarte-vernemq", f); err != nil {
+	if err := EnsureStatefulSetReadiness(namespace, "example-astarte-vernemq", c); err != nil {
 		return err
 	}
 
@@ -115,25 +114,25 @@ func EnsureAstarteServicesReadinessUpTo011(namespace string, f *framework.Framew
 }
 
 // EnsureDeploymentReadiness ensures a Deployment is ready by the time the function is called
-func EnsureDeploymentReadiness(namespace, name string, f *framework.Framework) error {
+func EnsureDeploymentReadiness(namespace, name string, c client.Client) error {
 	deployment := &appsv1.Deployment{}
-	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, deployment)
+	err := c.Get(goctx.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, deployment)
 	if err != nil {
 		return err
 	}
 
 	if deployment.Status.ReadyReplicas < 1 {
-		return fmt.Errorf("Not ready yet")
+		return fmt.Errorf("Not ready yet: %s in %s", name, namespace)
 	}
 
 	return nil
 }
 
 // WaitForDeploymentReadiness waits until a Deployment is ready with a reasonable timeout
-func WaitForDeploymentReadiness(namespace, name string, f *framework.Framework) error {
+func WaitForDeploymentReadiness(namespace, name string, c client.Client) error {
 	return wait.Poll(DefaultRetryInterval, DefaultTimeout, func() (done bool, err error) {
 		deployment := &appsv1.Deployment{}
-		err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, deployment)
+		err = c.Get(goctx.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, deployment)
 		if err != nil {
 			return false, err
 		}
@@ -147,25 +146,25 @@ func WaitForDeploymentReadiness(namespace, name string, f *framework.Framework) 
 }
 
 // EnsureStatefulSetReadiness ensures a StatefulSet is ready by the time the function is called
-func EnsureStatefulSetReadiness(namespace, name string, f *framework.Framework) error {
+func EnsureStatefulSetReadiness(namespace, name string, c client.Client) error {
 	statefulSet := &appsv1.StatefulSet{}
-	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, statefulSet)
+	err := c.Get(goctx.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, statefulSet)
 	if err != nil {
 		return err
 	}
 
 	if statefulSet.Status.ReadyReplicas < 1 {
-		return fmt.Errorf("Not ready yet")
+		return fmt.Errorf("Not ready yet: %s in %s", name, namespace)
 	}
 
 	return nil
 }
 
 // WaitForStatefulSetReadiness waits until a StatefulSet is ready with a reasonable timeout
-func WaitForStatefulSetReadiness(namespace, name string, f *framework.Framework) error {
+func WaitForStatefulSetReadiness(namespace, name string, c client.Client) error {
 	return wait.Poll(DefaultRetryInterval, DefaultTimeout, func() (done bool, err error) {
 		statefulSet := &appsv1.StatefulSet{}
-		err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, statefulSet)
+		err = c.Get(goctx.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, statefulSet)
 		if err != nil {
 			return false, err
 		}
@@ -179,9 +178,9 @@ func WaitForStatefulSetReadiness(namespace, name string, f *framework.Framework)
 }
 
 // PrintNamespaceEvents prints to fmt all namespace events
-func PrintNamespaceEvents(namespace string, f *framework.Framework) error {
+func PrintNamespaceEvents(namespace string, c client.Client) error {
 	events := &v1.EventList{}
-	if err := f.Client.List(goctx.TODO(), events, client.InNamespace(namespace)); err != nil {
+	if err := c.List(goctx.TODO(), events, client.InNamespace(namespace)); err != nil {
 		return err
 	}
 

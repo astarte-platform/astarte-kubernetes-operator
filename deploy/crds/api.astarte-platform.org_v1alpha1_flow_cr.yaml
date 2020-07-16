@@ -1,7 +1,0 @@
-apiVersion: api.astarte-platform.org/v1alpha1
-kind: Flow
-metadata:
-  name: example-flow
-spec:
-  # Add fields here
-  size: 3

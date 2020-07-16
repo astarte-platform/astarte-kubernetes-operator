@@ -59,7 +59,8 @@ func FinalizeAstarte(c client.Client, name, namespace string, reqLogger logr.Log
 			for _, prefix := range erasePVCPrefixes {
 				if strings.HasPrefix(pvc.GetName(), prefix) {
 					// Delete.
-					if e := c.Delete(context.TODO(), &pvc); e != nil {
+					pvcCopy := pvc
+					if e := c.Delete(context.TODO(), &pvcCopy); e != nil {
 						reqLogger.Error(e, "Error while finalizing Astarte. A PersistentVolumeClaim will need to be manually removed.", "PVC", pvc)
 					}
 					break

@@ -24,7 +24,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"

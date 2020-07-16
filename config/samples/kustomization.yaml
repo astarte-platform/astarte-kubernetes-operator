@@ -1,0 +1,5 @@
+## This file is auto-generated, do not modify ##
+resources:
+- api_v1alpha1_astarte.yaml
+- api_v1alpha1_astartevoyageringress.yaml
+- api_v1alpha1_flow.yaml

@@ -26,4 +26,4 @@ jobs:
     - uses: actions/checkout@v2
     - name: Build test image
       run: |
-        docker build -t astarte-operator-ci:test -f build/Dockerfile .
+        docker build -t astarte-operator-ci:test -f Dockerfile .

@@ -24,9 +24,9 @@ import (
 	"errors"
 	"fmt"
 
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/deps"
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/pkg/apis/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/pkg/misc"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 	cfsslcsr "github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/initca"
@@ -425,7 +425,7 @@ func getCFSSLConfigMapData(cr *apiv1alpha1.Astarte) (map[string]string, error) {
 
 func getCFSSLDBConfig(cr *apiv1alpha1.Astarte) (map[string]interface{}, error) {
 	// By default, this one has to be nil...
-	var dbConfig map[string]interface{} = nil
+	var dbConfig map[string]interface{}
 
 	// ...unless we're < 1.0.0.
 	if version.CheckConstraintAgainstAstarteVersion("< 1.0.0", cr.Spec.Version) == nil {
@@ -450,7 +450,7 @@ func getCFSSLDBConfig(cr *apiv1alpha1.Astarte) (map[string]interface{}, error) {
 
 func getCFSSLJSONFormattedConfigMapData(dbConfig, csrRootCa, caRootConfig map[string]interface{}) ([]byte, []byte, []byte, error) {
 	// dbConfig might be as well nil
-	var dbConfigJSON []byte = nil
+	var dbConfigJSON []byte
 	if dbConfig != nil {
 		var err error
 		dbConfigJSON, err = json.Marshal(dbConfig)

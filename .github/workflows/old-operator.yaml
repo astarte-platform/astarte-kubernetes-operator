@@ -30,7 +30,13 @@ jobs:
       with:
         # Ensure we're on Go 1.14
         go-version: '1.14.x'
-    - uses: engineerd/setup-kind@v0.3.0
+    - uses: stefanprodan/kube-tools@v1
+      with:
+        kubectl: 1.18.2
+        kustomize: 3.5.5
+        helm: 2.16.7
+        helmv3: 3.2.1
+    - uses: engineerd/setup-kind@v0.4.0
       with:
         version: "v0.8.1"
         image: "kindest/node:v1.16.9@sha256:7175872357bc85847ec4b1aba46ed1d12fa054c83ac7a8a11f5c268957fd5765"
@@ -67,14 +73,13 @@ jobs:
     # Note: kubectl apply creates insane annotations which prevent the CRDs from working. We have to use replace.
     - name: Update Operator resources
       run: |
-        kubectl apply -f deploy/service_account.yaml
-        kubectl apply -f deploy/role.yaml
-        kubectl apply -f deploy/role_binding.yaml
-        kubectl replace -f deploy/crds/api.astarte-platform.org_astartes_crd.yaml
-        kubectl replace -f deploy/crds/api.astarte-platform.org_astartevoyageringresses_crd.yaml
-        kubectl create -f deploy/crds/api.astarte-platform.org_flows_crd.yaml
-    - name: Run Operator Retrocompat test
-      run: ./operator-sdk test local ./test/oldoperator --go-test-flags "-v -timeout 30m" --operator-namespace kube-system --watch-namespace astarte-test --up-local --no-setup
+        make install || true
+        make replace
+    - name: Run e2e tests
+      run: go test -v -timeout 20m ./...
+      working-directory: "test/oldoperator"
+      env:
+        USE_EXISTING_CLUSTER: "true"
     - name: Dump debug info
       if: failure()
       run: |
