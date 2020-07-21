@@ -107,8 +107,21 @@ func (r *AstarteVoyagerIngressReconciler) Reconcile(req ctrl.Request) (ctrl.Resu
 
 func (r *AstarteVoyagerIngressReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	// Additional checks: is the Voyager CRD installed?
+	// The Manager Client is not yet available here, we have to resort to a custom Client for now.
+	scheme := runtime.NewScheme()
+	// Setup Scheme for API Extensions v1beta1
+	if err := apiextensionsv1beta1.AddToScheme(scheme); err != nil {
+		return err
+	}
+
+	cfg := mgr.GetConfig()
+	client, e := client.New(cfg, client.Options{Scheme: scheme})
+	if e != nil {
+		return e
+	}
+
 	voyagerCRD := &apiextensionsv1beta1.CustomResourceDefinition{}
-	if err := r.Client.Get(context.TODO(), types.NamespacedName{Name: "ingresses.voyager.appscode.com"}, voyagerCRD); err != nil {
+	if err := client.Get(context.TODO(), types.NamespacedName{Name: "ingresses.voyager.appscode.com"}, voyagerCRD); err != nil {
 		if errors.IsNotFound(err) {
 			r.Log.Info("Voyager is apparently not installed in this cluster. AstarteVoyagerIngress won't be available")
 			r.shouldReconcile = false
