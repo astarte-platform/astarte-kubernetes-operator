@@ -23,13 +23,18 @@ import (
 	"fmt"
 	"time"
 
+	voyagercrd "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/voyager"
 	"github.com/go-logr/logr"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
 )
@@ -101,7 +106,37 @@ func (r *AstarteVoyagerIngressReconciler) Reconcile(req ctrl.Request) (ctrl.Resu
 }
 
 func (r *AstarteVoyagerIngressReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	// Additional checks: is the Voyager CRD installed?
+	voyagerCRD := &apiextensionsv1beta1.CustomResourceDefinition{}
+	if err := r.Client.Get(context.TODO(), types.NamespacedName{Name: "ingresses.voyager.appscode.com"}, voyagerCRD); err != nil {
+		if errors.IsNotFound(err) {
+			r.Log.Info("Voyager is apparently not installed in this cluster. AstarteVoyagerIngress won't be available")
+			r.shouldReconcile = false
+		} else {
+			return err
+		}
+
+		return ctrl.NewControllerManagedBy(mgr).
+			For(&apiv1alpha1.AstarteVoyagerIngress{}).
+			Complete(r)
+	}
+
+	r.Log.Info("Voyager found in the Cluster. Enabling AstarteVoyagerIngress")
+	r.shouldReconcile = true
+
+	pred := predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool { return true },
+		DeleteFunc: func(e event.DeleteEvent) bool { return true },
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			// Ignore updates to CR status in which case metadata.Generation does not change
+			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
+		},
+	}
+
+	// Watch for changes to secondary resource Ingress and requeue the owner AstarteVoyagerIngress
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&apiv1alpha1.AstarteVoyagerIngress{}).
+		For(&apiv1alpha1.AstarteVoyagerIngress{}, builder.WithPredicates(pred)).
+		Owns(&voyagercrd.Certificate{}).
+		Owns(&voyagercrd.Ingress{}).
 		Complete(r)
 }
