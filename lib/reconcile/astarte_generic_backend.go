@@ -163,7 +163,7 @@ func getAstarteGenericBackendEnvVars(deploymentName string, cr *apiv1alpha1.Asta
 	ret := getAstarteCommonEnvVars(deploymentName, cr, backend, component)
 
 	cassandraPrefix := ""
-	if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", backend.Version, cr) == nil {
+	if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", backend.Version, cr.Spec.Version) == nil {
 		cassandraPrefix = oldAstartePrefix
 	} else {
 		// Append Cassandra connection env vars only if version >= 1.0.0
@@ -263,7 +263,7 @@ func getAstarteDataUpdaterPlantBackendEnvVars(eventsExchangeName string, cr *api
 	}
 
 	// 0.11+ variables
-	if version.CheckConstraintAgainstAstarteComponentVersion(">= 0.11.0", backend.Version, cr) == nil {
+	if version.CheckConstraintAgainstAstarteComponentVersion(">= 0.11.0", backend.Version, cr.Spec.Version) == nil {
 		dataQueueCount := getDataQueueCount(cr)
 
 		// When installing Astarte >= 0.11, add the data queue count
@@ -280,7 +280,7 @@ func getAstarteDataUpdaterPlantBackendEnvVars(eventsExchangeName string, cr *api
 			})
 
 		// 0.11.1+ variables
-		if version.CheckConstraintAgainstAstarteComponentVersion(">= 0.11.1", backend.Version, cr) == nil {
+		if version.CheckConstraintAgainstAstarteComponentVersion(">= 0.11.1", backend.Version, cr.Spec.Version) == nil {
 			ret = append(ret,
 				v1.EnvVar{
 					Name: "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_TOTAL_COUNT",
@@ -299,7 +299,7 @@ func getAstarteDataUpdaterPlantBackendEnvVars(eventsExchangeName string, cr *api
 	}
 
 	// 1.0+ variables
-	if version.CheckConstraintAgainstAstarteComponentVersion(">= 1.0.0", backend.Version, cr) == nil {
+	if version.CheckConstraintAgainstAstarteComponentVersion(">= 1.0.0", backend.Version, cr.Spec.Version) == nil {
 		if cr.Spec.VerneMQ.DeviceHeartbeatSeconds > 0 {
 			ret = append(ret,
 				v1.EnvVar{
@@ -318,7 +318,7 @@ func getAstarteBackendProbe(cr *apiv1alpha1.Astarte, backend apiv1alpha1.Astarte
 		return customProbe
 	}
 
-	if version.CheckConstraintAgainstAstarteComponentVersion("< 0.11.0", backend.Version, cr) == nil {
+	if version.CheckConstraintAgainstAstarteComponentVersion("< 0.11.0", backend.Version, cr.Spec.Version) == nil {
 		// 0.10.x has no such thing.
 		return nil
 	}

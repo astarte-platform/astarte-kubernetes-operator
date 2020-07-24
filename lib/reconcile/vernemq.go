@@ -209,7 +209,7 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.Env
 	envVars = appendRabbitMQConnectionEnvVars(envVars, "RPC_AMQP_CONNECTION", cr)
 
 	// 0.11+ variables
-	if version.CheckConstraintAgainstAstarteComponentVersion(">= 0.11.0", cr.Spec.VerneMQ.Version, cr) == nil {
+	if version.CheckConstraintAgainstAstarteComponentVersion(">= 0.11.0", cr.Spec.VerneMQ.Version, cr.Spec.Version) == nil {
 		// When installing Astarte >= 0.11, add the data queue count
 		envVars = append(envVars, v1.EnvVar{
 			Name:  "DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__DATA_QUEUE_COUNT",
@@ -218,7 +218,7 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.Env
 	}
 
 	// 1.0+ variables
-	if version.CheckConstraintAgainstAstarteComponentVersion(">= 1.0.0", cr.Spec.VerneMQ.Version, cr) == nil {
+	if version.CheckConstraintAgainstAstarteComponentVersion(">= 1.0.0", cr.Spec.VerneMQ.Version, cr.Spec.Version) == nil {
 		if cr.Spec.VerneMQ.DeviceHeartbeatSeconds > 0 {
 			envVars = append(envVars,
 				v1.EnvVar{

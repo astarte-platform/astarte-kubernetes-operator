@@ -337,7 +337,7 @@ func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quan
 
 func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, backend apiv1alpha1.AstarteGenericClusteredResource, component apiv1alpha1.AstarteComponent) []v1.EnvVar {
 	rpcPrefix := ""
-	if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", backend.Version, cr) == nil {
+	if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", backend.Version, cr.Spec.Version) == nil {
 		rpcPrefix = oldAstartePrefix
 	}
 
@@ -604,7 +604,7 @@ func getAstarteImageForClusteredResource(defaultImageName string, resource apiv1
 		return resource.Image
 	}
 
-	return getAstarteImageFromChannel(defaultImageName, version.GetVersionForAstarteComponent(cr, resource.Version), cr)
+	return getAstarteImageFromChannel(defaultImageName, version.GetVersionForAstarteComponent(cr.Spec.Version, resource.Version), cr)
 }
 
 func getImageForClusteredResource(defaultImageName, defaultImageTag string, resource apiv1alpha1.AstarteGenericClusteredResource) string {
