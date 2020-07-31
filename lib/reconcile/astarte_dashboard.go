@@ -160,8 +160,8 @@ func getAstarteDashboardPodSpec(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.A
 func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.AstarteDashboardSpec) map[string]string {
 	dashboardConfig := make(map[string]interface{})
 
-	isAstarte010 := version.CheckConstraintAgainstAstarteComponentVersion("< 0.11.0", dashboard.Version, cr) == nil
-	isAstarte10 := version.CheckConstraintAgainstAstarteComponentVersion(">= 1.0.0", dashboard.Version, cr) == nil
+	isAstarte010 := version.CheckConstraintAgainstAstarteComponentVersion("< 0.11.0", dashboard.Version, cr.Spec.Version) == nil
+	isAstarte10 := version.CheckConstraintAgainstAstarteComponentVersion(">= 1.0.0", dashboard.Version, cr.Spec.Version) == nil
 
 	if isAstarte10 {
 		// Astarte 1.0+ just needs astarte_api_url, and single API urls only if they're explicit

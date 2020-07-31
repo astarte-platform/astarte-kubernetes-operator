@@ -136,7 +136,7 @@ func checkShouldDeployAPI(reqLogger logr.Logger, deploymentName string, cr *apiv
 	}
 
 	// If we do need to deploy, check any constraints
-	if component == apiv1alpha1.FlowComponent && version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", api.Version, cr) == nil {
+	if component == apiv1alpha1.FlowComponent && version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", api.Version, cr.Spec.Version) == nil {
 		reqLogger.V(1).Info("Skipping Flow Deployment - not supported by this Astarte version")
 		return false
 	}
@@ -221,7 +221,7 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte,
 	switch component {
 	case apiv1alpha1.AppEngineAPI:
 		cassandraPrefix := ""
-		if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", cr.Spec.Components.AppengineAPI.Version, cr) == nil {
+		if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", cr.Spec.Components.AppengineAPI.Version, cr.Spec.Version) == nil {
 			cassandraPrefix = oldAstartePrefix
 		} else {
 			// Append Cassandra connection env vars only if version >= 1.0.0
@@ -307,7 +307,7 @@ func getAstarteAPIProbe(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericA
 		return customProbe
 	}
 
-	if version.CheckConstraintAgainstAstarteComponentVersion("< 0.11.0", api.Version, cr) == nil {
+	if version.CheckConstraintAgainstAstarteComponentVersion("< 0.11.0", api.Version, cr.Spec.Version) == nil {
 		// Only Housekeeping has a health check in 0.10.x
 		if component != apiv1alpha1.HousekeepingAPI {
 			return nil
@@ -316,7 +316,7 @@ func getAstarteAPIProbe(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericA
 		return getAstarteAPIGenericProbe("/v1/health")
 	}
 
-	if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", api.Version, cr) == nil {
+	if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", api.Version, cr.Spec.Version) == nil {
 		if component == apiv1alpha1.FlowComponent {
 			return nil
 		}

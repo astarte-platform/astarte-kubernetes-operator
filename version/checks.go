@@ -22,7 +22,6 @@ import (
 	"errors"
 
 	semver "github.com/Masterminds/semver/v3"
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
 )
 
 var (
@@ -54,15 +53,15 @@ func CheckConstraintAgainstAstarteVersion(constraint, v string) error {
 }
 
 // CheckConstraintAgainstAstarteComponentVersion checks a constraint against a specialized Astarte component version
-func CheckConstraintAgainstAstarteComponentVersion(constraint, v string, cr *apiv1alpha1.Astarte) error {
-	versionString := GetVersionForAstarteComponent(cr, v)
+func CheckConstraintAgainstAstarteComponentVersion(constraint, componentVersion, astarteVersion string) error {
+	versionString := GetVersionForAstarteComponent(astarteVersion, componentVersion)
 	return CheckConstraintAgainstAstarteVersion(constraint, versionString)
 }
 
 // GetVersionForAstarteComponent returns the version for a given Astarte Component
-func GetVersionForAstarteComponent(cr *apiv1alpha1.Astarte, componentVersion string) string {
+func GetVersionForAstarteComponent(astarteVersion, componentVersion string) string {
 	if componentVersion != "" {
 		return componentVersion
 	}
-	return cr.Spec.Version
+	return astarteVersion
 }
