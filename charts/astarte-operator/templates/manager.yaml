@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: '{{ .Values.prefix }}system'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: '{{ .Values.prefix }}controller-manager'
+  namespace: '{{ .Values.namespace }}'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+      - args:
+        - --enable-leader-election
+        command:
+        - /manager
+        image: '{{ .Values.image.repository }}:{{ .Values.image.tag }}'
+        name: manager
+        resources:
+          limits:
+            cpu: '{{ .Values.resources.limits.cpu }}'
+            memory: '{{ .Values.resources.limits.memory }}'
+          requests:
+            cpu: '{{ .Values.resources.requests.cpu }}'
+            memory: '{{ .Values.resources.requests.memory }}'
+      terminationGracePeriodSeconds: 10
