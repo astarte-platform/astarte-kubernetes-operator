@@ -216,6 +216,14 @@ func GetResourcesForAstarteComponent(cr *apiv1alpha1.Astarte, requestedResources
 	}
 	realRequests[v1.ResourceMemory] = *memoryRequests
 
+	// Ensure limits aren't out of boundaries if we changed the requests
+	if cpuLimits.Cmp(*cpuLimits) < 0 {
+		cpuLimits = cpuRequests
+	}
+	if memoryLimits.Cmp(*memoryRequests) < 0 {
+		memoryLimits = memoryRequests
+	}
+
 	// Same goes for limits (for CPU). Instead, though, set a higher value. That would be 300m.
 	// For memory, we have to trust the user here.
 	if cpuLimits.MilliValue() < 300 {
