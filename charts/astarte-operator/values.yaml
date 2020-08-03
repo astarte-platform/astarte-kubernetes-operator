@@ -1,0 +1,22 @@
+# Default values for astarte-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: astarte/astarte-kubernetes-operator
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "snapshot"
+
+namespace: astarte-kubernetes-operator-system
+prefix: astarte-kubernetes-operator-
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 30Mi
+  requests:
+    cpu: 100m
+    memory: 20Mi

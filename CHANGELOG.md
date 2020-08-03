@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add a k8s service for each Astarte service.
 - Make port 15692 available for RabbitMQ metrics.
 - Expose port 8888 for VerneMQ metrics.
+- Added a Helm chart for deploying the Operator
 
 ### Changed
 - Astarte Operator SDK now uses Kubebuilder as the base project structure
