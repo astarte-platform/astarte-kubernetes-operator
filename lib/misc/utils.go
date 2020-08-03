@@ -51,16 +51,17 @@ type allocationCoefficients struct {
 }
 
 var defaultComponentAllocations = map[apiv1alpha1.AstarteComponent]allocationCoefficients{
-	apiv1alpha1.AppEngineAPI:       {CPUCoefficient: 0.19, MemoryCoefficient: 0.19},
-	apiv1alpha1.DataUpdaterPlant:   {CPUCoefficient: 0.22, MemoryCoefficient: 0.22},
-	apiv1alpha1.Housekeeping:       {CPUCoefficient: 0.05, MemoryCoefficient: 0.05},
-	apiv1alpha1.HousekeepingAPI:    {CPUCoefficient: 0.05, MemoryCoefficient: 0.05},
-	apiv1alpha1.Pairing:            {CPUCoefficient: 0.07, MemoryCoefficient: 0.07},
-	apiv1alpha1.PairingAPI:         {CPUCoefficient: 0.14, MemoryCoefficient: 0.14},
-	apiv1alpha1.RealmManagement:    {CPUCoefficient: 0.07, MemoryCoefficient: 0.07},
-	apiv1alpha1.RealmManagementAPI: {CPUCoefficient: 0.07, MemoryCoefficient: 0.07},
-	apiv1alpha1.TriggerEngine:      {CPUCoefficient: 0.08, MemoryCoefficient: 0.08},
-	apiv1alpha1.Dashboard:          {CPUCoefficient: 0.06, MemoryCoefficient: 0.06},
+	apiv1alpha1.AppEngineAPI:       {CPUCoefficient: 0.18, MemoryCoefficient: 0.18},
+	apiv1alpha1.DataUpdaterPlant:   {CPUCoefficient: 0.21, MemoryCoefficient: 0.21},
+	apiv1alpha1.FlowComponent:      {CPUCoefficient: 0.10, MemoryCoefficient: 0.10},
+	apiv1alpha1.Housekeeping:       {CPUCoefficient: 0.04, MemoryCoefficient: 0.04},
+	apiv1alpha1.HousekeepingAPI:    {CPUCoefficient: 0.04, MemoryCoefficient: 0.04},
+	apiv1alpha1.Pairing:            {CPUCoefficient: 0.06, MemoryCoefficient: 0.06},
+	apiv1alpha1.PairingAPI:         {CPUCoefficient: 0.13, MemoryCoefficient: 0.13},
+	apiv1alpha1.RealmManagement:    {CPUCoefficient: 0.06, MemoryCoefficient: 0.06},
+	apiv1alpha1.RealmManagementAPI: {CPUCoefficient: 0.06, MemoryCoefficient: 0.06},
+	apiv1alpha1.TriggerEngine:      {CPUCoefficient: 0.07, MemoryCoefficient: 0.07},
+	apiv1alpha1.Dashboard:          {CPUCoefficient: 0.05, MemoryCoefficient: 0.05},
 }
 
 // ReconcileConfigMap creates or updates a ConfigMap through controllerutil through its data map
@@ -188,20 +189,6 @@ func GetResourcesForAstarteComponent(cr *apiv1alpha1.Astarte, requestedResources
 		return v1.ResourceRequirements{}
 	}
 
-	// TODO: Kill this and integrate it into the whole shenanigan
-	if component == apiv1alpha1.FlowComponent {
-		return v1.ResourceRequirements{
-			Limits: v1.ResourceList{
-				v1.ResourceCPU:    resource.NewScaledQuantity(1000, resource.Milli).DeepCopy(),
-				v1.ResourceMemory: resource.NewScaledQuantity(512, resource.Mega).DeepCopy(),
-			},
-			Requests: v1.ResourceList{
-				v1.ResourceCPU:    resource.NewScaledQuantity(500, resource.Milli).DeepCopy(),
-				v1.ResourceMemory: resource.NewScaledQuantity(256, resource.Mega).DeepCopy(),
-			},
-		}
-	}
-
 	// Ok, let's do the distribution dance.
 	a := getWeightedDefaultAllocationFor(cr, component)
 
@@ -228,6 +215,14 @@ func GetResourcesForAstarteComponent(cr *apiv1alpha1.Astarte, requestedResources
 		memoryRequests = resource.NewScaledQuantity(128, resource.Mega)
 	}
 	realRequests[v1.ResourceMemory] = *memoryRequests
+
+	// Ensure limits aren't out of boundaries if we changed the requests
+	if cpuLimits.Cmp(*cpuLimits) < 0 {
+		cpuLimits = cpuRequests
+	}
+	if memoryLimits.Cmp(*memoryRequests) < 0 {
+		memoryLimits = memoryRequests
+	}
 
 	// Same goes for limits (for CPU). Instead, though, set a higher value. That would be 300m.
 	// For memory, we have to trust the user here.
@@ -258,6 +253,9 @@ func getNumberOfDeployedAstarteComponentsAsFloat(cr *apiv1alpha1.Astarte) float6
 		deployedComponents++
 	}
 	if pointy.BoolValue(cr.Spec.Components.DataUpdaterPlant.Deploy, true) {
+		deployedComponents++
+	}
+	if pointy.BoolValue(cr.Spec.Components.Flow.Deploy, true) {
 		deployedComponents++
 	}
 	if pointy.BoolValue(cr.Spec.Components.Housekeeping.Backend.Deploy, true) {
@@ -291,6 +289,7 @@ func getLeftoverCoefficients(cr *apiv1alpha1.Astarte) allocationCoefficients {
 	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.AppengineAPI.AstarteGenericClusteredResource, apiv1alpha1.AppEngineAPI, aC)
 	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Dashboard.AstarteGenericClusteredResource, apiv1alpha1.Dashboard, aC)
 	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource, apiv1alpha1.DataUpdaterPlant, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Flow.AstarteGenericClusteredResource, apiv1alpha1.FlowComponent, aC)
 	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Housekeeping.Backend, apiv1alpha1.Housekeeping, aC)
 	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Housekeeping.API.AstarteGenericClusteredResource, apiv1alpha1.HousekeepingAPI, aC)
 	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Pairing.Backend, apiv1alpha1.Pairing, aC)
