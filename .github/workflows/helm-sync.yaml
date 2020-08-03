@@ -22,6 +22,7 @@ on:
     paths:
     # Trigger only when the charts change
     - 'charts/**'
+    - '.github/workflows/helm-sync.yaml'
     branches:
     - 'release-*'
 
