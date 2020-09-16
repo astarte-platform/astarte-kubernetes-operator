@@ -390,7 +390,7 @@ type AstarteSpec struct {
 	// +optional
 	DistributionChannel string `json:"distributionChannel,omitempty"`
 	// +optional
-	DeploymentStrategy appsv1.DeploymentStrategy `json:"deploymentStrategy,omitempty"`
+	DeploymentStrategy *appsv1.DeploymentStrategy `json:"deploymentStrategy,omitempty"`
 	// +optional
 	/// +kubebuilder:default=true
 	RBAC *bool `json:"rbac,omitempty"`

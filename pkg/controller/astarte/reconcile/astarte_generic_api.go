@@ -111,7 +111,7 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api apiv1al
 		Selector: &metav1.LabelSelector{
 			MatchLabels: matchLabels,
 		},
-		Strategy: getDeploymentStrategyForClusteredResource(cr, api.AstarteGenericClusteredResource),
+		Strategy: getDeploymentStrategyForClusteredResource(cr, api.AstarteGenericClusteredResource, component),
 		Template: v1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: labels,
