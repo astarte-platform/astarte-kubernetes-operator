@@ -82,7 +82,7 @@ func EnsureAstarteGenericBackendWithCustomProbe(cr *apiv1alpha1.Astarte, backend
 		Selector: &metav1.LabelSelector{
 			MatchLabels: matchLabels,
 		},
-		Strategy: getDeploymentStrategyForClusteredResource(cr, backend),
+		Strategy: getDeploymentStrategyForClusteredResource(cr, backend, component),
 		Template: v1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: labels,

@@ -704,7 +704,11 @@ func (in *AstarteSpec) DeepCopyInto(out *AstarteSpec) {
 		*out = make([]v1.LocalObjectReference, len(*in))
 		copy(*out, *in)
 	}
-	in.DeploymentStrategy.DeepCopyInto(&out.DeploymentStrategy)
+	if in.DeploymentStrategy != nil {
+		in, out := &in.DeploymentStrategy, &out.DeploymentStrategy
+		*out = new(appsv1.DeploymentStrategy)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.RBAC != nil {
 		in, out := &in.RBAC, &out.RBAC
 		*out = new(bool)
