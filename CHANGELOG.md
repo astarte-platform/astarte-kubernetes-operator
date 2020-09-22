@@ -21,6 +21,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   means SQLite is no longer supported as a Database.
 - Append `-api` to existing API service names.
 
+## [0.11.3] - Unreleased
+### Changed
+- Default Trigger Engine's deployment strategy to Recreate
+- Default DUP's deployment strategy to Recreate (fixes #152)
+
+## [0.11.2] - 2020-09-01
+
 ## [0.11.1] - 2020-05-18
 ### Added
 - Add the `DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_TOTAL_COUNT` variable to support Astarte >= 0.11.1
