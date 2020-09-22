@@ -6,7 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.11.3] - Unreleased
 ### Changed
-- Default DUP's deployment strategy to Replace (fixes #152)
+- Default Trigger Engine's deployment strategy to Recreate
+- Default DUP's deployment strategy to Recreate (fixes #152)
 
 ## [0.11.2] - 2020-09-01
 
