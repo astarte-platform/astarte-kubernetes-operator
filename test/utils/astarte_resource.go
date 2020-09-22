@@ -33,10 +33,10 @@ var AstarteTestResource *operator.Astarte = &operator.Astarte{
 		Name: "example-astarte",
 	},
 	Spec: operator.AstarteSpec{
-		Version: "0.11.1",
+		Version: "0.11.2",
 		// Use the "Recreate" strategy. Some test environments are really constrained, and might not have enough
 		// resources to support RollingUpdate.
-		DeploymentStrategy: appsv1.DeploymentStrategy{
+		DeploymentStrategy: &appsv1.DeploymentStrategy{
 			Type: appsv1.RecreateDeploymentStrategyType,
 		},
 		API: operator.AstarteAPISpec{
