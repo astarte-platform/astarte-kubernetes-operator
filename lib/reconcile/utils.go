@@ -624,7 +624,8 @@ func getDeploymentStrategyForClusteredResource(cr *apiv1alpha1.Astarte, resource
 		return *resource.DeploymentStrategy
 	case cr.Spec.DeploymentStrategy != nil:
 		return *cr.Spec.DeploymentStrategy
-	case component == apiv1alpha1.DataUpdaterPlant, component == apiv1alpha1.TriggerEngine:
+	case component == apiv1alpha1.DataUpdaterPlant, component == apiv1alpha1.TriggerEngine,
+		component == apiv1alpha1.FlowComponent:
 		return appsv1.DeploymentStrategy{
 			Type: appsv1.RecreateDeploymentStrategyType,
 		}
