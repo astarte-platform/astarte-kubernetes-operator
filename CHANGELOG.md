@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added a Helm chart for deploying the Operator
 
 ### Changed
+- Default Flow's deployment strategy to Recreate
 - Astarte Operator SDK now uses Kubebuilder as the base project structure
 - Update RabbitMQ version to 3.8.x for 1.0.x releases
 - Starting with Astarte 1.0.0, CFSSL by default doesn't use a Database instead of using SQLite.
