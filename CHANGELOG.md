@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   means SQLite is no longer supported as a Database.
 - Append `-api` to existing API service names.
 
-## [0.11.3] - Unreleased
+## [0.11.3] - 2020-09-24
 ### Changed
 - Default Trigger Engine's deployment strategy to Recreate
 - Default DUP's deployment strategy to Recreate (fixes #152)
