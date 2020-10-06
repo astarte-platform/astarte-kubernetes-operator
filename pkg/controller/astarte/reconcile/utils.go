@@ -392,14 +392,14 @@ func getImageForClusteredResource(defaultImageName, defaultImageTag string, reso
 
 func getDeploymentStrategyForClusteredResource(cr *apiv1alpha1.Astarte, resource apiv1alpha1.AstarteGenericClusteredResource, component apiv1alpha1.AstarteComponent) appsv1.DeploymentStrategy {
 	switch {
-	case resource.DeploymentStrategy != nil:
-		return *resource.DeploymentStrategy
-	case cr.Spec.DeploymentStrategy != nil:
-		return *cr.Spec.DeploymentStrategy
 	case component == apiv1alpha1.DataUpdaterPlant, component == apiv1alpha1.TriggerEngine:
 		return appsv1.DeploymentStrategy{
 			Type: appsv1.RecreateDeploymentStrategyType,
 		}
+	case resource.DeploymentStrategy != nil:
+		return *resource.DeploymentStrategy
+	case cr.Spec.DeploymentStrategy != nil:
+		return *cr.Spec.DeploymentStrategy
 	default:
 		return appsv1.DeploymentStrategy{
 			Type: appsv1.RollingUpdateDeploymentStrategyType,
