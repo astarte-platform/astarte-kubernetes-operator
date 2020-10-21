@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added a Helm chart for deploying the Operator
 
 ### Changed
+- Force deployment strategy to Recreate for Flow, overriding user preferences
 - Default Flow's deployment strategy to Recreate
 - Astarte Operator SDK now uses Kubebuilder as the base project structure
 - Update RabbitMQ version to 3.8.x for 1.0.x releases
@@ -21,6 +22,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - CFSSL is now deployed as a Deployment, and no longer requires a Persistent Volume. This also
   means SQLite is no longer supported as a Database.
 - Append `-api` to existing API service names.
+
+## [0.11.4] - Unreleased
+### Changed
+- Force deployment strategy to Recreate for DUP and TE, overriding user preferences
 
 ## [0.11.3] - 2020-09-24
 ### Changed
