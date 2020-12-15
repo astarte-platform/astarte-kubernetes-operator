@@ -1,17 +1,10 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  labels:
-    control-plane: controller-manager
-  name: '{{ .Values.prefix }}system'
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
     control-plane: controller-manager
-  name: '{{ .Values.prefix }}controller-manager'
-  namespace: '{{ .Values.namespace }}'
+  name: '{{ .Release.Name }}-controller-manager'
+  namespace: '{{ .Release.Namespace }}'
 spec:
   replicas: 1
   selector:

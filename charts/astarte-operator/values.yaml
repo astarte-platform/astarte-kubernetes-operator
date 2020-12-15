@@ -10,9 +10,6 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "snapshot"
 
-namespace: astarte-kubernetes-operator-system
-prefix: astarte-kubernetes-operator-
-
 resources:
   limits:
     cpu: 100m

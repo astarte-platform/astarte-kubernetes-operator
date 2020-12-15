@@ -1,8 +1,8 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: '{{ .Values.prefix }}leader-election-role'
-  namespace: '{{ .Values.namespace }}'
+  name: '{{ .Release.Name }}-leader-election-role'
+  namespace: '{{ .Release.Namespace }}'
 rules:
 - apiGroups:
   - ""
@@ -36,7 +36,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
-  name: '{{ .Values.prefix }}manager-role'
+  name: '{{ .Release.Name }}-manager-role'
 rules:
 - apiGroups:
   - api.astarte-platform.org
@@ -195,7 +195,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: '{{ .Values.prefix }}proxy-role'
+  name: '{{ .Release.Name }}-proxy-role'
 rules:
 - apiGroups:
   - authentication.k8s.io
@@ -213,7 +213,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
-  name: '{{ .Values.prefix }}metrics-reader'
+  name: '{{ .Release.Name }}-metrics-reader'
 rules:
 - nonResourceURLs:
   - /metrics
@@ -223,50 +223,50 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: '{{ .Values.prefix }}leader-election-rolebinding'
-  namespace: '{{ .Values.namespace }}'
+  name: '{{ .Release.Name }}-leader-election-rolebinding'
+  namespace: '{{ .Release.Namespace }}'
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: '{{ .Values.prefix }}leader-election-role'
+  name: '{{ .Release.Name }}-leader-election-role'
 subjects:
 - kind: ServiceAccount
   name: default
-  namespace: '{{ .Values.namespace }}'
+  namespace: '{{ .Release.Namespace }}'
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: '{{ .Values.prefix }}manager-rolebinding'
+  name: '{{ .Release.Name }}-manager-rolebinding'
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: '{{ .Values.prefix }}manager-role'
+  name: '{{ .Release.Name }}-manager-role'
 subjects:
 - kind: ServiceAccount
   name: default
-  namespace: '{{ .Values.namespace }}'
+  namespace: '{{ .Release.Namespace }}'
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: '{{ .Values.prefix }}proxy-rolebinding'
+  name: '{{ .Release.Name }}-proxy-rolebinding'
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: '{{ .Values.prefix }}proxy-role'
+  name: '{{ .Release.Name }}-proxy-role'
 subjects:
 - kind: ServiceAccount
   name: default
-  namespace: '{{ .Values.namespace }}'
+  namespace: '{{ .Release.Namespace }}'
 ---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
     control-plane: controller-manager
-  name: '{{ .Values.prefix }}controller-manager-metrics-service'
-  namespace: '{{ .Values.namespace }}'
+  name: '{{ .Release.Name }}-controller-manager-metrics-service'
+  namespace: '{{ .Release.Namespace }}'
 spec:
   ports:
   - name: https
