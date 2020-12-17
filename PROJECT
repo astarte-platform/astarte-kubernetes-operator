@@ -11,6 +11,7 @@ resources:
 - group: api
   kind: Flow
   version: v1alpha1
+multigroup: true
 version: 3-alpha
 plugins:
   go.operator-sdk.io/v2-alpha: {}
