@@ -1,6 +1,7 @@
 domain: astarte-platform.org
 layout: go.kubebuilder.io/v2
 repo: github.com/astarte-platform/astarte-kubernetes-operator
+multigroup: true
 resources:
 - group: api
   kind: Astarte

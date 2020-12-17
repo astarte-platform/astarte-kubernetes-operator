@@ -23,7 +23,7 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-GOPATHS := ./.;./api/...;./controllers/...;./lib/...;./test/...;./version/...
+GOPATHS := ./.;./apis/...;./controllers/...;./lib/...;./test/...;./version/...
 
 all: manager
 

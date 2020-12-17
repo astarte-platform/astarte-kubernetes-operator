@@ -1,0 +1,7 @@
+apiVersion: api.astarte-platform.org.astarte-platform.org/v1alpha2
+kind: Astarte
+metadata:
+  name: astarte-sample
+spec:
+  # Add fields here
+  foo: bar

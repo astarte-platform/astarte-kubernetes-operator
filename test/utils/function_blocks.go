@@ -21,7 +21,7 @@ package utils
 import (
 	"context"
 
-	operator "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
+	operator "github.com/astarte-platform/astarte-kubernetes-operator/apis/api.astarte-platform.org/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

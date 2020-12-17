@@ -22,7 +22,6 @@ import (
 	"flag"
 	"os"
 
-	voyagercrd "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -31,7 +30,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
+	voyagercrd "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
+
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api.astarte-platform.org/v1alpha1"
+	apiastarteplatformorgv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api.astarte-platform.org/v1alpha2"
 	"github.com/astarte-platform/astarte-kubernetes-operator/controllers"
 	// +kubebuilder:scaffold:imports
 )
@@ -49,6 +51,7 @@ func init() {
 	utilruntime.Must(apiextensionsv1beta1.AddToScheme(scheme))
 
 	utilruntime.Must(apiv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(apiastarteplatformorgv1alpha2.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 

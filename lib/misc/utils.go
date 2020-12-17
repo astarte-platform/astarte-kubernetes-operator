@@ -22,7 +22,7 @@ import (
 	"context"
 	"fmt"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api.astarte-platform.org/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/openlyinc/pointy"
 	v1 "k8s.io/api/core/v1"

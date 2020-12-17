@@ -5,6 +5,7 @@ resources:
 - bases/api.astarte-platform.org_astartes.yaml
 - bases/api.astarte-platform.org_astartevoyageringresses.yaml
 - bases/api.astarte-platform.org_flows.yaml
+- bases/api.astarte-platform.org.astarte-platform.org_astartes.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:
