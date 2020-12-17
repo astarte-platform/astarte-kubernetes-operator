@@ -31,8 +31,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/controllers"
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/controllers/api"
 	// +kubebuilder:scaffold:imports
 )
 
