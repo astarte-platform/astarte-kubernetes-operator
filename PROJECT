@@ -1,5 +1,6 @@
 domain: astarte-platform.org
 layout: go.kubebuilder.io/v2
+multigroup: true
 repo: github.com/astarte-platform/astarte-kubernetes-operator
 resources:
 - group: api
@@ -14,7 +15,9 @@ resources:
 - group: api
   kind: Astarte
   version: v1alpha2
-multigroup: true
+- group: api
+  kind: AstarteVoyagerIngress
+  version: v1alpha2
 version: 3-alpha
 plugins:
   go.operator-sdk.io/v2-alpha: {}
