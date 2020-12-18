@@ -16,7 +16,7 @@
   limitations under the License.
 */
 
-package v1alpha1
+package v1alpha2
 
 import (
 	v1 "k8s.io/api/core/v1"
@@ -149,7 +149,7 @@ type FlowStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:storageversion
+
 // Flow is the Schema for the flows API
 type Flow struct {
 	metav1.TypeMeta   `json:",inline"`

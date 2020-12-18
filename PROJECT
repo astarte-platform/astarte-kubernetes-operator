@@ -18,6 +18,9 @@ resources:
 - group: api
   kind: AstarteVoyagerIngress
   version: v1alpha2
+- group: api
+  kind: Flow
+  version: v1alpha2
 version: 3-alpha
 plugins:
   go.operator-sdk.io/v2-alpha: {}
