@@ -26,7 +26,7 @@ import (
 	voyagercrd "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/voyager"
 	"github.com/go-logr/logr"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -110,7 +110,7 @@ func (r *AstarteVoyagerIngressReconciler) SetupWithManager(mgr ctrl.Manager) err
 	// The Manager Client is not yet available here, we have to resort to a custom Client for now.
 	scheme := runtime.NewScheme()
 	// Setup Scheme for API Extensions v1beta1
-	if err := apiextensionsv1beta1.AddToScheme(scheme); err != nil {
+	if err := apiextensionsv1.AddToScheme(scheme); err != nil {
 		return err
 	}
 
@@ -120,7 +120,7 @@ func (r *AstarteVoyagerIngressReconciler) SetupWithManager(mgr ctrl.Manager) err
 		return e
 	}
 
-	voyagerCRD := &apiextensionsv1beta1.CustomResourceDefinition{}
+	voyagerCRD := &apiextensionsv1.CustomResourceDefinition{}
 	if err := client.Get(context.TODO(), types.NamespacedName{Name: "ingresses.voyager.appscode.com"}, voyagerCRD); err != nil {
 		if errors.IsNotFound(err) {
 			r.Log.Info("Voyager is apparently not installed in this cluster. AstarteVoyagerIngress won't be available")
