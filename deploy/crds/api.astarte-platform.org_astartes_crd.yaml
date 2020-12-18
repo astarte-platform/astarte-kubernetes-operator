@@ -13442,6 +13442,8 @@ spec:
                   type: string
                 image:
                   type: string
+                mirrorQueue:
+                  type: string
                 port:
                   type: integer
                 replicas:

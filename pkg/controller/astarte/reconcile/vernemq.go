@@ -179,6 +179,7 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.Env
 	userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetRabbitMQUserCredentialsSecret(cr)
 	rabbitMQHost, _ := misc.GetRabbitMQHostnameAndPort(cr)
 	dataQueueCount := getDataQueueCount(cr)
+	mirrorQueue := getMirrorQueue(cr)
 
 	envVars := []v1.EnvVar{
 		v1.EnvVar{
@@ -226,6 +227,14 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.Env
 		envVars = append(envVars, v1.EnvVar{
 			Name:  "DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__DATA_QUEUE_COUNT",
 			Value: strconv.Itoa(dataQueueCount),
+		})
+	}
+
+	if mirrorQueue != "" {
+		// If a mirror queue is defined, set the relevant environment variable
+		envVars = append(envVars, v1.EnvVar{
+			Name:  "DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__MIRROR_QUEUE_NAME",
+			Value: mirrorQueue,
 		})
 	}
 
@@ -298,4 +307,8 @@ func getVerneMQPolicyRules() []rbacv1.PolicyRule {
 			Verbs:     []string{"list", "get"},
 		},
 	}
+}
+
+func getMirrorQueue(cr *apiv1alpha1.Astarte) string {
+	return cr.Spec.VerneMQ.MirrorQueue
 }
