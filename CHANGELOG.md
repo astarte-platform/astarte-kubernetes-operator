@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Force deployment strategy to Recreate for DUP and TE, overriding user preferences
 
+### Fixed
+- Fix data queue count environment variable mapping in VerneMQ
+
 ## [0.11.3] - 2020-09-24
 ### Changed
 - Default Trigger Engine's deployment strategy to Recreate
