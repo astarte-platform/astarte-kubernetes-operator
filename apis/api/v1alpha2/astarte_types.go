@@ -16,7 +16,7 @@
   limitations under the License.
 */
 
-package v1alpha1
+package v1alpha2
 
 import (
 	"strings"
@@ -155,12 +155,12 @@ func (a *AstarteComponent) ServiceRelativePath() string {
 
 type AstarteGenericClusteredResource struct {
 	// +optional
-	/// +kubebuilder:default=true
+	// +kubebuilder:default=true
 	Deploy *bool `json:"deploy,omitempty"`
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
 	// +optional
-	/// +kubebuilder:default=true
+	// +kubebuilder:default=true
 	AntiAffinity *bool `json:"antiAffinity,omitempty"`
 	// +optional
 	CustomAffinity *v1.Affinity `json:"customAffinity,omitempty"`
@@ -227,7 +227,7 @@ type AstarteRabbitMQSpec struct {
 	// +optional
 	Connection *AstarteRabbitMQConnectionSpec `json:"connection,omitempty"`
 	// +optional
-	/// +kubebuilder:default={"size": "4Gi"}
+	// +kubebuilder:default={"size": "4Gi"}
 	Storage *AstartePersistentStorageSpec `json:"storage,omitempty"`
 	// +optional
 	AdditionalPlugins []string `json:"additionalPlugins,omitempty"`
@@ -526,13 +526,13 @@ type AstarteSpec struct {
 	// +optional
 	Features AstarteFeatures `json:"features,omitempty"`
 	// +optional
-	/// +kubebuilder:default=true
+	// +kubebuilder:default=true
 	RBAC *bool `json:"rbac,omitempty"`
 	// +optional
 	StorageClassName string         `json:"storageClassName,omitempty"`
 	API              AstarteAPISpec `json:"api"`
 	// +optional
-	/// +kubebuilder:default={"deploy":true}
+	// +kubebuilder:default={"deploy":true}
 	RabbitMQ AstarteRabbitMQSpec `json:"rabbitmq"`
 	// +optional
 	Cassandra AstarteCassandraSpec `json:"cassandra"`
@@ -561,7 +561,6 @@ type AstarteStatus struct {
 
 // Astarte is the Schema for the astartes API
 // +kubebuilder:subresource:status
-// +kubebuilder:storageversion
 type Astarte struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

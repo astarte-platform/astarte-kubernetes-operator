@@ -22,7 +22,6 @@ import (
 	"flag"
 	"os"
 
-	voyagercrd "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -32,7 +31,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/controllers/api"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
+	controllersapi "github.com/astarte-platform/astarte-kubernetes-operator/controllers/api"
+	voyagercrd "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -49,6 +50,7 @@ func init() {
 	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
 
 	utilruntime.Must(apiv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(apiv1alpha2.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -75,7 +77,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.AstarteReconciler{
+	if err = (&controllersapi.AstarteReconciler{
 		Client:   mgr.GetClient(),
 		Log:      ctrl.Log.WithName("controllers").WithName("Astarte"),
 		Scheme:   mgr.GetScheme(),
@@ -84,7 +86,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Astarte")
 		os.Exit(1)
 	}
-	if err = (&controllers.AstarteVoyagerIngressReconciler{
+	if err = (&controllersapi.AstarteVoyagerIngressReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("AstarteVoyagerIngress"),
 		Scheme: mgr.GetScheme(),
@@ -92,7 +94,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "AstarteVoyagerIngress")
 		os.Exit(1)
 	}
-	if err = (&controllers.FlowReconciler{
+	if err = (&controllersapi.FlowReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Flow"),
 		Scheme: mgr.GetScheme(),

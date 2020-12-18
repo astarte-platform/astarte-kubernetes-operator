@@ -11,6 +11,9 @@ resources:
 - group: api
   kind: Flow
   version: v1alpha1
+- group: api
+  kind: Astarte
+  version: v1alpha2
 multigroup: true
 version: 3-alpha
 plugins:
