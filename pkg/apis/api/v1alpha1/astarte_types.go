@@ -229,6 +229,8 @@ type AstarteVerneMQSpec struct {
 	CaSecret string `json:"caSecret,omitempty"`
 	// +optional
 	Storage *AstartePersistentStorageSpec `json:"storage,omitempty"`
+	// +optional
+	MirrorQueue string `json:"mirrorQueue,omitempty"`
 }
 
 type AstarteGenericComponentSpec struct {
