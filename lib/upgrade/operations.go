@@ -29,9 +29,6 @@ import (
 	"strings"
 	"time"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/reconcile"
 	"github.com/go-logr/logr"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
@@ -45,6 +42,10 @@ import (
 	"k8s.io/client-go/transport/spdy"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/reconcile"
 )
 
 // ForceRunModeEnv indicates if the operator should be forced to run in either local

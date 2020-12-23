@@ -24,7 +24,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/flow"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -34,6 +33,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/flow"
 
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 )

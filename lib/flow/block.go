@@ -23,8 +23,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 	"github.com/go-logr/logr"
 	"github.com/imdario/mergo"
 	"github.com/openlyinc/pointy"
@@ -34,6 +32,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 )
 
 func EnsureBlock(cr *apiv1alpha1.Flow, block apiv1alpha1.ContainerBlockSpec, astarte *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {

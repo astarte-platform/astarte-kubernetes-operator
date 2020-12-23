@@ -25,13 +25,6 @@ import (
 	"time"
 
 	semver "github.com/Masterminds/semver/v3"
-	"github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/migrate"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
-	recon "github.com/astarte-platform/astarte-kubernetes-operator/lib/reconcile"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/upgrade"
-	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 	"github.com/go-logr/logr"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
@@ -41,6 +34,14 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/migrate"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
+	recon "github.com/astarte-platform/astarte-kubernetes-operator/lib/reconcile"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/upgrade"
+	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 )
 
 // ReconcileHelper contains all needed objects to carry over reconciliation of an Astarte-like resource

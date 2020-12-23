@@ -22,8 +22,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/controllerutils"
-	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -35,6 +33,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/controllerutils"
+	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 )

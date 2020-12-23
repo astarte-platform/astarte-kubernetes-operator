@@ -23,8 +23,6 @@ import (
 	"fmt"
 	"time"
 
-	voyagercrd "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/voyager"
 	"github.com/go-logr/logr"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -35,6 +33,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	voyagercrd "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/voyager"
 
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 )

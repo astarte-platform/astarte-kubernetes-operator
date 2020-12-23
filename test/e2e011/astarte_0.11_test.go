@@ -24,9 +24,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"k8s.io/apimachinery/pkg/types"
+
 	operator "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/test/utils"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 var (

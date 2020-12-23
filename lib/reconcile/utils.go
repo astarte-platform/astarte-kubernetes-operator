@@ -30,9 +30,6 @@ import (
 	"strconv"
 	"strings"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
-	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -46,6 +43,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
+	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 )
 
 const (
