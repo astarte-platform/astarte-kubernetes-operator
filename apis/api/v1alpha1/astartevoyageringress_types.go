@@ -19,9 +19,10 @@
 package v1alpha1
 
 import (
-	voyager "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	voyager "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 )
 
 // AstarteGenericIngressSpec is a common struct for all Ingresses defined by AstarteVoyagerIngress
@@ -123,7 +124,7 @@ type AstarteVoyagerIngressStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=avi
 // +kubebuilder:subresource:status
-
+// +kubebuilder:storageversion
 // AstarteVoyagerIngress is the Schema for the astartevoyageringresses API
 type AstarteVoyagerIngress struct {
 	Status AstarteVoyagerIngressStatus `json:"status,omitempty"`

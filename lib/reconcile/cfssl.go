@@ -24,10 +24,6 @@ import (
 	"errors"
 	"fmt"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/deps"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
-	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 	cfsslcsr "github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/initca"
 	"github.com/openlyinc/pointy"
@@ -41,6 +37,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/deps"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
+	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 )
 
 // EnsureCFSSL reconciles CFSSL

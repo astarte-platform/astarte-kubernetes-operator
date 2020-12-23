@@ -1,0 +1,7 @@
+apiVersion: api.astarte-platform.org/v1alpha2
+kind: Flow
+metadata:
+  name: flow-sample
+spec:
+  # Add fields here
+  foo: bar

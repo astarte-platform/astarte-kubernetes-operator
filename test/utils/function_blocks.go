@@ -21,9 +21,10 @@ package utils
 import (
 	"context"
 
-	operator "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	operator "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 )
 
 func EnsureAstarteBecomesGreen(name, namespace string, c client.Client) (operator.AstarteClusterHealth, error) {

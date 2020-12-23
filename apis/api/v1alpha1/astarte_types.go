@@ -561,6 +561,7 @@ type AstarteStatus struct {
 
 // Astarte is the Schema for the astartes API
 // +kubebuilder:subresource:status
+// +kubebuilder:storageversion
 type Astarte struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

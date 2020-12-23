@@ -23,9 +23,6 @@ import (
 	"encoding/json"
 	"strconv"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
-	voyager "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 	"github.com/go-logr/logr"
 	"github.com/openlyinc/pointy"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,6 +31,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	voyager "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 )
 
 func EnsureBrokerIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {

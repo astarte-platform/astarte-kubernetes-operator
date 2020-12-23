@@ -149,7 +149,7 @@ type FlowStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-
+// +kubebuilder:storageversion
 // Flow is the Schema for the flows API
 type Flow struct {
 	metav1.TypeMeta   `json:",inline"`

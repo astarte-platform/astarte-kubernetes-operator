@@ -21,10 +21,11 @@ package voyager
 import (
 	"context"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
-	voyager "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	voyager "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 )
 
 func isIngressReady(ingressName string, cr *apiv1alpha1.AstarteVoyagerIngress, c client.Client) bool {
