@@ -74,7 +74,7 @@ func (r *ReconcileHelper) CheckAndPerformUpgrade(reqLogger logr.Logger, instance
 	// Are we on a release snapshot?
 	if strings.Contains(instance.Status.AstarteVersion, "-snapshot") {
 		// We're running on a release snapshot. Assume it's .0
-		versionString = strings.Replace(versionString, "-snapshot", ".0", -1)
+		versionString = strings.ReplaceAll(versionString, "-snapshot", ".0")
 		reqLogger.Info("You are running a Release snapshot. This is generally not a good idea in production. Assuming a Release version", "Version", versionString)
 		r.Recorder.Eventf(instance, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
 			"Requested an upgrade from a Release snapshot. Assuming the base Release version is %v", versionString)

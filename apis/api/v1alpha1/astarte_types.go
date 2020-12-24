@@ -127,7 +127,7 @@ func (a *AstarteComponent) String() string {
 // DashedString returns the Astarte Component in a Kubernetes-friendly format,
 // e.g: data-updater-plant instead of data_updater_plant
 func (a *AstarteComponent) DashedString() string {
-	return strings.Replace(a.String(), "_", "-", -1)
+	return strings.ReplaceAll(a.String(), "_", "-")
 }
 
 // DockerImageName returns the Docker Image name for this Astarte Component
@@ -149,8 +149,8 @@ func (a *AstarteComponent) ServiceRelativePath() string {
 	if !strings.Contains(a.String(), "api") && a.String() != "dashboard" && a.String() != "flow" {
 		return ""
 	}
-	ret := strings.Replace(a.DashedString(), "-", "", -1)
-	return strings.Replace(ret, "api", "", -1)
+	ret := strings.ReplaceAll(a.DashedString(), "-", "")
+	return strings.ReplaceAll(ret, "api", "")
 }
 
 type AstarteGenericClusteredResource struct {

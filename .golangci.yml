@@ -55,6 +55,9 @@ linters-settings:
     # minimal occurrences count to trigger, 3 by default
     min-occurrences: 3
   gocritic:
+    disabled-checks:
+      # This is a little bit *too* strict, disable it
+      - commentFormatting
   gocyclo:
     # minimal code complexity to report, 30 by default (but we recommend 10-20)
     min-complexity: 15
