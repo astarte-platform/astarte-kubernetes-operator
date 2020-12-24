@@ -8468,6 +8468,8 @@ spec:
                   maxOfflineMessages:
                     description: The maximum number of QoS 1 or 2 messages to hold in the offline queue. Defaults to 1000000. Set to -1 for no maximum (not recommended). Set to 0 if no messages should be stored offline.
                     type: integer
+                  mirrorQueue:
+                    type: string
                   persistentClientExpiration:
                     description: 'This option allows persistent clients ( = clean session set to false) to be removed if they do not reconnect within ''persistent_client_expiration''. This is a non-standard option. As far as the MQTT specification is concerned, persistent clients persist forever. The expiration period should be an integer followed by one of ''d'', ''w'', ''m'', ''y'' for day, week, month, and year. Default: 1 year'
                     type: string

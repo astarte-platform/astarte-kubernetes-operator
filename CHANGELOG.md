@@ -30,6 +30,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Force deployment strategy to Recreate for DUP and TE, overriding user preferences
 
+### Added
+- Allow using the mirror queue functionality in the VerneMQ plugin. Note that this is not a stable
+  API and it will be removed in future versions of Astarte, since it is superseeded by AMQP
+  Triggers.
+
 ## [0.11.3] - 2020-09-24
 ### Changed
 - Default Trigger Engine's deployment strategy to Recreate

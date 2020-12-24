@@ -14838,6 +14838,8 @@ spec:
                       maximum (not recommended). Set to 0 if no messages should be
                       stored offline.
                     type: integer
+                  mirrorQueue:
+                    type: string
                   persistentClientExpiration:
                     description: 'This option allows persistent clients ( = clean
                       session set to false) to be removed if they do not reconnect
