@@ -318,6 +318,8 @@ type AstarteVerneMQSpec struct {
 	// Default: 1 year
 	// +optional
 	PersistentClientExpiration string `json:"persistentClientExpiration,omitempty"`
+	// +optional
+	MirrorQueue string `json:"mirrorQueue,omitempty"`
 }
 
 type AstarteGenericComponentSpec struct {
