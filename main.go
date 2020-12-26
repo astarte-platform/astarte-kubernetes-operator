@@ -102,6 +102,10 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Flow")
 		os.Exit(1)
 	}
+	if err = (&apiv1alpha1.Astarte{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Astarte")
+		os.Exit(1)
+	}
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")

@@ -1,0 +1,52 @@
+
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: mutating-webhook-configuration
+webhooks:
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-api-astarte-platform-org-v1alpha1-astarte
+  failurePolicy: Fail
+  name: mastarte.kb.io
+  rules:
+  - apiGroups:
+    - api.astarte-platform.org
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - astartes
+
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: validating-webhook-configuration
+webhooks:
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-api-astarte-platform-org-v1alpha1-astarte
+  failurePolicy: Fail
+  name: vastarte.kb.io
+  rules:
+  - apiGroups:
+    - api.astarte-platform.org
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - astartes

@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Make port 15692 available for RabbitMQ metrics.
 - Expose port 8888 for VerneMQ metrics.
 - Added a Helm chart for deploying the Operator
+- Added Kubernetes Webhooks
 
 ### Changed
 - Force deployment strategy to Recreate for Flow, overriding user preferences
