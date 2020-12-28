@@ -61,9 +61,10 @@ deploy: manifests kustomize
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen kustomize
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="$(GOPATHS)" output:crd:artifacts:config=config/crd/bases
-	$(KUSTOMIZE) build config/crd > charts/astarte-operator/crds/crds.yaml
+	$(KUSTOMIZE) build config/helm-crd > charts/astarte-operator/crds/crds.yaml
 	$(KUSTOMIZE) build config/helm-rbac > charts/astarte-operator/templates/rbac.yaml
 	$(KUSTOMIZE) build config/helm-manager > charts/astarte-operator/templates/manager.yaml
+	$(KUSTOMIZE) build config/helm-webhook > charts/astarte-operator/templates/webhook.yaml
 
 # Run go fmt against code
 fmt:
