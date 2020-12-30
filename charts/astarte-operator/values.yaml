@@ -4,6 +4,8 @@
 
 replicaCount: 1
 
+installCRDs: true
+
 image:
   repository: astarte/astarte-kubernetes-operator
   pullPolicy: IfNotPresent
