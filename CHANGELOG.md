@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Enable multi-group layout.
 - Upgrade apiextensions to v1.
 - Add v1alpha2 CRDs.
+- Use Go 1.15.x by default
 
 ## [0.11.4] - Unreleased
 ### Changed
