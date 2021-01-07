@@ -16,3 +16,4 @@ images:
 
 patchesStrategicMerge:
 - manager_helm_values.yaml
+- manager_webhook_patch.yaml

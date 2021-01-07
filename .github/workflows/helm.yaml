@@ -28,11 +28,22 @@ jobs:
     - uses: actions/checkout@v2
     - name: Fetch history
       run: git fetch --prune --unshallow
+    - name: Setup Helm
+      uses: azure/setup-helm@v1
+      with:
+        version: v3.4.2
+    - name: Setup chart-testing
+      uses: helm/chart-testing-action@v2.0.1
     - name: Run chart-testing (lint)
       id: lint
-      uses: helm/chart-testing-action@v1.0.0
-      with:
-        command: lint
+      run: ct lint
+    - name: Run chart-testing (list-changed)
+      id: list-changed
+      run: |
+        changed=$(ct list-changed)
+        if [[ -n "$changed" ]]; then
+          echo "::set-output name=changed::true"
+        fi
     - uses: engineerd/setup-kind@v0.5.0
       with:
         version: "v0.8.1"
@@ -41,10 +52,18 @@ jobs:
       run: |
         kubectl cluster-info
         kubectl get pods -n kube-system
-    - name: Run chart-testing (install)
-      uses: helm/chart-testing-action@v1.0.0
+    - name: Install cert-manager chart as dependency
+      run: |
+        kubectl create namespace cert-manager
+        helm repo add jetstack https://charts.jetstack.io
+        helm repo update
+        helm install cert-manager jetstack/cert-manager --namespace cert-manager --version v1.1.0 --set installCRDs=true
+    - name: Sleep for 20 seconds (wait for cert-manager to come up)
+      uses: jakejarvis/wait-action@master
       with:
-        command: install
+        time: '20s'
+    - name: Run chart-testing (install)
+      run: ct install
     - name: Sleep for 20 seconds (wait for Helm to clean up releases)
       uses: jakejarvis/wait-action@master
       with:
@@ -52,6 +71,10 @@ jobs:
     - name: Install Helm Chart
       run: |
         helm install astarte-operator ./charts/astarte-operator
+    - name: Sleep for 20 seconds (wait for Astarte Operator to come up)
+      uses: jakejarvis/wait-action@master
+      with:
+        time: '20s'
     - name: Install Astarte Resource
       run: |
         kubectl create namespace astarte-test
