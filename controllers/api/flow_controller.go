@@ -36,6 +36,7 @@ import (
 
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/flow"
 
+	"github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 )
 
@@ -100,13 +101,13 @@ func (r *FlowReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	switch {
 	case instance.Status.TotalContainerBlocks == 0:
-		instance.Status.State = apiv1alpha1.FlowStateUnknown
+		instance.Status.State = commontypes.FlowStateUnknown
 	case instance.Status.FailingContainerBlocks > 0:
-		instance.Status.State = apiv1alpha1.FlowStateUnhealthy
+		instance.Status.State = commontypes.FlowStateUnhealthy
 	case instance.Status.TotalContainerBlocks != instance.Status.ReadyContainerBlocks:
-		instance.Status.State = apiv1alpha1.FlowStateUnstable
+		instance.Status.State = commontypes.FlowStateUnstable
 	case instance.Status.TotalContainerBlocks == instance.Status.ReadyContainerBlocks:
-		instance.Status.State = apiv1alpha1.FlowStateFlowing
+		instance.Status.State = commontypes.FlowStateFlowing
 	}
 
 	// Update the Status and finish the reconciliation
