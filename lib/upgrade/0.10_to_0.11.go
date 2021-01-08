@@ -26,6 +26,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	commontypes "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 )
 
@@ -55,7 +56,7 @@ func upgradeTo011(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sche
 	// Version enforcement is done to ensure that jump upgrades will be performed sequentially.
 	// Also, given VerneMQ is shutdown at the moment, we give Housekeeping (backend) more juice temporarily by adding to its resource pool
 	// VerneMQ's resources. When reconciling later, everything should just settle automagically.
-	recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
+	recorder.Event(cr, "Normal", commontypes.AstarteResourceEventUpgrade.String(),
 		"Starting Database Migration")
 	reqLogger.Info("Upgrading Housekeeping and migrating the Database...")
 	housekeepingBackend, err := upgradeHousekeeping(landing011Version, true, cr, c, scheme, recorder)
@@ -66,11 +67,11 @@ func upgradeTo011(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sche
 	// Now we wait indefinitely until this is done. Upgrading the Database might take *a lot* of time, so unless we enter in
 	// weird states such as CrashLoopBackoff, we wait almost forever
 	if err := waitForHousekeepingUpgrade(cr, c, recorder); err != nil {
-		recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
+		recorder.Event(cr, "Warning", commontypes.AstarteResourceEventCriticalError.String(),
 			"Timed out waiting for Database Migration. Upgrade will be retried, but manual intervention is likely required")
 		return fmt.Errorf("Failed in waiting for Housekeeping deployment and migrations to go up: %v", err)
 	}
-	recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
+	recorder.Event(cr, "Normal", commontypes.AstarteResourceEventUpgrade.String(),
 		"Database migrated successfully")
 	reqLogger.Info("Database successfully migrated!")
 
@@ -80,17 +81,17 @@ func upgradeTo011(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sche
 	// Again, same thing as before: hook to a known version. There's no need to add more
 	// resources to DUP as it doesn't need them to perform this operation, and most of all it should have enough sauce already.
 	reqLogger.Info("Ensuring new RabbitMQ Queue Layout through Data Updater Plant...")
-	recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
+	recorder.Event(cr, "Normal", commontypes.AstarteResourceEventUpgrade.String(),
 		"Starting Queue layout migration")
 	if err := waitForQueueLayoutMigration(landing011Version, cr, c, scheme); err != nil {
-		recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
+		recorder.Event(cr, "Warning", commontypes.AstarteResourceEventCriticalError.String(),
 			"Could not migrate data queues. Upgrade will be retried, but manual intervention is likely required")
 		return fmt.Errorf("Failed in waiting for Data Updater Plant to come up: %v", err)
 	}
 	reqLogger.Info("RabbitMQ queues layout upgrade successful!")
 	reqLogger.Info("Your Astarte cluster has been successfully upgraded to the 0.11.x series!")
 
-	recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
+	recorder.Event(cr, "Normal", commontypes.AstarteResourceEventUpgrade.String(),
 		"Queues migrated successfully")
 
 	// This is it. Do not bring up VerneMQ or anything: the reconciliation will now do the right thing with the right versions.
@@ -110,7 +111,7 @@ func upgradeTo011(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sche
 	}
 
 	// All done! Upgraded successfully. Now let the standard reconciliation workflow do the rest.
-	recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
+	recorder.Event(cr, "Normal", commontypes.AstarteResourceEventUpgrade.String(),
 		"Astarte upgraded successfully to the 0.11.x series")
 	return nil
 }

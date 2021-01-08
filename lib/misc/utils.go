@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	commontypes "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 )
 
@@ -51,18 +52,18 @@ type allocationCoefficients struct {
 	MemoryCoefficient float64
 }
 
-var defaultComponentAllocations = map[apiv1alpha1.AstarteComponent]allocationCoefficients{
-	apiv1alpha1.AppEngineAPI:       {CPUCoefficient: 0.18, MemoryCoefficient: 0.18},
-	apiv1alpha1.DataUpdaterPlant:   {CPUCoefficient: 0.21, MemoryCoefficient: 0.21},
-	apiv1alpha1.FlowComponent:      {CPUCoefficient: 0.10, MemoryCoefficient: 0.10},
-	apiv1alpha1.Housekeeping:       {CPUCoefficient: 0.04, MemoryCoefficient: 0.04},
-	apiv1alpha1.HousekeepingAPI:    {CPUCoefficient: 0.04, MemoryCoefficient: 0.04},
-	apiv1alpha1.Pairing:            {CPUCoefficient: 0.06, MemoryCoefficient: 0.06},
-	apiv1alpha1.PairingAPI:         {CPUCoefficient: 0.13, MemoryCoefficient: 0.13},
-	apiv1alpha1.RealmManagement:    {CPUCoefficient: 0.06, MemoryCoefficient: 0.06},
-	apiv1alpha1.RealmManagementAPI: {CPUCoefficient: 0.06, MemoryCoefficient: 0.06},
-	apiv1alpha1.TriggerEngine:      {CPUCoefficient: 0.07, MemoryCoefficient: 0.07},
-	apiv1alpha1.Dashboard:          {CPUCoefficient: 0.05, MemoryCoefficient: 0.05},
+var defaultComponentAllocations = map[commontypes.AstarteComponent]allocationCoefficients{
+	commontypes.AppEngineAPI:       {CPUCoefficient: 0.18, MemoryCoefficient: 0.18},
+	commontypes.DataUpdaterPlant:   {CPUCoefficient: 0.21, MemoryCoefficient: 0.21},
+	commontypes.FlowComponent:      {CPUCoefficient: 0.10, MemoryCoefficient: 0.10},
+	commontypes.Housekeeping:       {CPUCoefficient: 0.04, MemoryCoefficient: 0.04},
+	commontypes.HousekeepingAPI:    {CPUCoefficient: 0.04, MemoryCoefficient: 0.04},
+	commontypes.Pairing:            {CPUCoefficient: 0.06, MemoryCoefficient: 0.06},
+	commontypes.PairingAPI:         {CPUCoefficient: 0.13, MemoryCoefficient: 0.13},
+	commontypes.RealmManagement:    {CPUCoefficient: 0.06, MemoryCoefficient: 0.06},
+	commontypes.RealmManagementAPI: {CPUCoefficient: 0.06, MemoryCoefficient: 0.06},
+	commontypes.TriggerEngine:      {CPUCoefficient: 0.07, MemoryCoefficient: 0.07},
+	commontypes.Dashboard:          {CPUCoefficient: 0.05, MemoryCoefficient: 0.05},
 }
 
 // ReconcileConfigMap creates or updates a ConfigMap through controllerutil through its data map
@@ -178,7 +179,7 @@ func GetVerneMQBrokerURL(cr *apiv1alpha1.Astarte) string {
 // GetResourcesForAstarteComponent returns the allocated resources for a given Astarte component, taking into account both the
 // directive from Components, and the directive from the individual component (if any).
 // It will compute a ResourceRequirements for the component based on said values and internal logic.
-func GetResourcesForAstarteComponent(cr *apiv1alpha1.Astarte, requestedResources *v1.ResourceRequirements, component apiv1alpha1.AstarteComponent) v1.ResourceRequirements {
+func GetResourcesForAstarteComponent(cr *apiv1alpha1.Astarte, requestedResources *v1.ResourceRequirements, component commontypes.AstarteComponent) v1.ResourceRequirements {
 	if requestedResources != nil {
 		// There has been an explicit allocation, so return that
 		return *requestedResources
@@ -287,23 +288,23 @@ func getNumberOfDeployedAstarteComponentsAsFloat(cr *apiv1alpha1.Astarte) float6
 func getLeftoverCoefficients(cr *apiv1alpha1.Astarte) allocationCoefficients {
 	aC := allocationCoefficients{}
 
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.AppengineAPI.AstarteGenericClusteredResource, apiv1alpha1.AppEngineAPI, aC)
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Dashboard.AstarteGenericClusteredResource, apiv1alpha1.Dashboard, aC)
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource, apiv1alpha1.DataUpdaterPlant, aC)
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Flow.AstarteGenericClusteredResource, apiv1alpha1.FlowComponent, aC)
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Housekeeping.Backend, apiv1alpha1.Housekeeping, aC)
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Housekeeping.API.AstarteGenericClusteredResource, apiv1alpha1.HousekeepingAPI, aC)
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Pairing.Backend, apiv1alpha1.Pairing, aC)
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Pairing.API.AstarteGenericClusteredResource, apiv1alpha1.PairingAPI, aC)
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.RealmManagement.Backend, apiv1alpha1.RealmManagement, aC)
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.RealmManagement.API.AstarteGenericClusteredResource, apiv1alpha1.RealmManagementAPI, aC)
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.TriggerEngine.AstarteGenericClusteredResource, apiv1alpha1.TriggerEngine, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.AppengineAPI.AstarteGenericClusteredResource, commontypes.AppEngineAPI, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Dashboard.AstarteGenericClusteredResource, commontypes.Dashboard, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource, commontypes.DataUpdaterPlant, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Flow.AstarteGenericClusteredResource, commontypes.FlowComponent, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Housekeeping.Backend, commontypes.Housekeeping, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Housekeeping.API.AstarteGenericClusteredResource, commontypes.HousekeepingAPI, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Pairing.Backend, commontypes.Pairing, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Pairing.API.AstarteGenericClusteredResource, commontypes.PairingAPI, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.RealmManagement.Backend, commontypes.RealmManagement, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.RealmManagement.API.AstarteGenericClusteredResource, commontypes.RealmManagementAPI, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.TriggerEngine.AstarteGenericClusteredResource, commontypes.TriggerEngine, aC)
 
 	return aC
 }
 
-func checkComponentForLeftoverAllocations(clusteredResource apiv1alpha1.AstarteGenericClusteredResource,
-	component apiv1alpha1.AstarteComponent, aC allocationCoefficients) allocationCoefficients {
+func checkComponentForLeftoverAllocations(clusteredResource commontypes.AstarteGenericClusteredResource,
+	component commontypes.AstarteComponent, aC allocationCoefficients) allocationCoefficients {
 	if !pointy.BoolValue(clusteredResource.Deploy, true) {
 		aC.CPUCoefficient += defaultComponentAllocations[component].CPUCoefficient
 		aC.MemoryCoefficient += defaultComponentAllocations[component].MemoryCoefficient
@@ -312,7 +313,7 @@ func checkComponentForLeftoverAllocations(clusteredResource apiv1alpha1.AstarteG
 	return aC
 }
 
-func getWeightedDefaultAllocationFor(cr *apiv1alpha1.Astarte, component apiv1alpha1.AstarteComponent) allocationCoefficients {
+func getWeightedDefaultAllocationFor(cr *apiv1alpha1.Astarte, component commontypes.AstarteComponent) allocationCoefficients {
 	// Add other percentages proportionally
 	leftovers := getLeftoverCoefficients(cr)
 	defaultAllocation := defaultComponentAllocations[component]
@@ -328,29 +329,29 @@ func getWeightedDefaultAllocationFor(cr *apiv1alpha1.Astarte, component apiv1alp
 }
 
 // IsAstarteComponentDeployed returns whether an Astarte component is deployed by cr
-func IsAstarteComponentDeployed(cr *apiv1alpha1.Astarte, component apiv1alpha1.AstarteComponent) bool {
+func IsAstarteComponentDeployed(cr *apiv1alpha1.Astarte, component commontypes.AstarteComponent) bool {
 	switch component {
-	case apiv1alpha1.AppEngineAPI:
+	case commontypes.AppEngineAPI:
 		return pointy.BoolValue(cr.Spec.Components.AppengineAPI.Deploy, true)
-	case apiv1alpha1.Dashboard:
+	case commontypes.Dashboard:
 		return pointy.BoolValue(cr.Spec.Components.Dashboard.Deploy, true)
-	case apiv1alpha1.DataUpdaterPlant:
+	case commontypes.DataUpdaterPlant:
 		return pointy.BoolValue(cr.Spec.Components.DataUpdaterPlant.Deploy, true)
-	case apiv1alpha1.FlowComponent:
+	case commontypes.FlowComponent:
 		return pointy.BoolValue(cr.Spec.Components.Flow.Deploy, true)
-	case apiv1alpha1.Housekeeping:
+	case commontypes.Housekeeping:
 		return pointy.BoolValue(cr.Spec.Components.Housekeeping.Backend.Deploy, true)
-	case apiv1alpha1.HousekeepingAPI:
+	case commontypes.HousekeepingAPI:
 		return pointy.BoolValue(cr.Spec.Components.Housekeeping.API.Deploy, true)
-	case apiv1alpha1.Pairing:
+	case commontypes.Pairing:
 		return pointy.BoolValue(cr.Spec.Components.Pairing.Backend.Deploy, true)
-	case apiv1alpha1.PairingAPI:
+	case commontypes.PairingAPI:
 		return pointy.BoolValue(cr.Spec.Components.Pairing.API.Deploy, true)
-	case apiv1alpha1.RealmManagement:
+	case commontypes.RealmManagement:
 		return pointy.BoolValue(cr.Spec.Components.RealmManagement.Backend.Deploy, true)
-	case apiv1alpha1.RealmManagementAPI:
+	case commontypes.RealmManagementAPI:
 		return pointy.BoolValue(cr.Spec.Components.RealmManagement.API.Deploy, true)
-	case apiv1alpha1.TriggerEngine:
+	case commontypes.TriggerEngine:
 		return pointy.BoolValue(cr.Spec.Components.TriggerEngine.Deploy, true)
 	}
 

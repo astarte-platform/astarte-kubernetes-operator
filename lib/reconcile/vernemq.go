@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	commontypes "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 	"github.com/astarte-platform/astarte-kubernetes-operator/version"
@@ -163,7 +164,7 @@ func EnsureVerneMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sch
 	return nil
 }
 
-func validateVerneMQDefinition(vmq *apiv1alpha1.AstarteVerneMQSpec) error {
+func validateVerneMQDefinition(vmq *commontypes.AstarteVerneMQSpec) error {
 	if vmq == nil {
 		return nil
 	}
