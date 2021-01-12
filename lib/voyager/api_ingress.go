@@ -81,6 +81,28 @@ func EnsureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 		}
 	}
 
+	ingressSpec.Rules = makeIngressRules(cr, parent, apiPaths)
+
+	// Reconcile the Ingress
+	ingress := &voyager.Ingress{ObjectMeta: metav1.ObjectMeta{Name: ingressName, Namespace: cr.Namespace}}
+	result, err := controllerutil.CreateOrUpdate(context.TODO(), c, ingress, func() error {
+		if e := controllerutil.SetControllerReference(cr, ingress, scheme); e != nil {
+			return e
+		}
+
+		// Reconcile the Spec
+		ingress.SetAnnotations(annotations)
+		ingress.Spec = ingressSpec
+		return nil
+	})
+	if err == nil {
+		misc.LogCreateOrUpdateOperationResult(log, result, cr, ingress)
+	}
+
+	return err
+}
+
+func makeIngressRules(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte, apiPaths []voyager.HTTPIngressPath) []voyager.IngressRule {
 	rules := []voyager.IngressRule{}
 	rules = append(rules, voyager.IngressRule{
 		Host:             parent.Spec.API.Host,
@@ -123,25 +145,7 @@ func EnsureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 		})
 	}
 
-	ingressSpec.Rules = rules
-
-	// Reconcile the Ingress
-	ingress := &voyager.Ingress{ObjectMeta: metav1.ObjectMeta{Name: ingressName, Namespace: cr.Namespace}}
-	result, err := controllerutil.CreateOrUpdate(context.TODO(), c, ingress, func() error {
-		if e := controllerutil.SetControllerReference(cr, ingress, scheme); e != nil {
-			return e
-		}
-
-		// Reconcile the Spec
-		ingress.SetAnnotations(annotations)
-		ingress.Spec = ingressSpec
-		return nil
-	})
-	if err == nil {
-		misc.LogCreateOrUpdateOperationResult(log, result, cr, ingress)
-	}
-
-	return err
+	return rules
 }
 
 func getAPIIngressAnnotations(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte) (map[string]string, error) {
