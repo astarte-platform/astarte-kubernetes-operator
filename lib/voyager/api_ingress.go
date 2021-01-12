@@ -81,24 +81,7 @@ func EnsureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 		}
 	}
 
-	rules := []voyager.IngressRule{}
-	rules = append(rules, voyager.IngressRule{
-		Host:             parent.Spec.API.Host,
-		IngressRuleValue: voyager.IngressRuleValue{HTTP: &voyager.HTTPIngressRuleValue{Paths: apiPaths}},
-	})
-
-	// Is the Dashboard deployed on a separate host?
-	if misc.IsAstarteComponentDeployed(parent, apiv1alpha1.Dashboard) && cr.Spec.Dashboard.Host != "" {
-		rules = append(rules, voyager.IngressRule{
-			Host: cr.Spec.Dashboard.Host,
-			IngressRuleValue: voyager.IngressRuleValue{HTTP: &voyager.HTTPIngressRuleValue{
-				// Dashboard has no metrics and the /metrics name might be used in the future, so allow it
-				Paths: []voyager.HTTPIngressPath{getHTTPIngressWithPath(parent, "", "dashboard", true, "")},
-			}},
-		})
-	}
-
-	ingressSpec.Rules = rules
+	ingressSpec.Rules = makeIngressRules(cr, parent, apiPaths)
 
 	// Reconcile the Ingress
 	ingress := &voyager.Ingress{ObjectMeta: metav1.ObjectMeta{Name: ingressName, Namespace: cr.Namespace}}
@@ -117,6 +100,52 @@ func EnsureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 	}
 
 	return err
+}
+
+func makeIngressRules(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte, apiPaths []voyager.HTTPIngressPath) []voyager.IngressRule {
+	rules := []voyager.IngressRule{}
+	rules = append(rules, voyager.IngressRule{
+		Host:             parent.Spec.API.Host,
+		IngressRuleValue: voyager.IngressRuleValue{HTTP: &voyager.HTTPIngressRuleValue{Paths: apiPaths}},
+	})
+
+	// Is the Dashboard deployed on a separate host?
+	if misc.IsAstarteComponentDeployed(parent, apiv1alpha1.Dashboard) && cr.Spec.Dashboard.Host != "" {
+		rules = append(rules, voyager.IngressRule{
+			Host: cr.Spec.Dashboard.Host,
+			IngressRuleValue: voyager.IngressRuleValue{HTTP: &voyager.HTTPIngressRuleValue{
+				// Dashboard has no metrics and the /metrics name might be used in the future, so allow it
+				Paths: []voyager.HTTPIngressPath{getHTTPIngressWithPath(parent, "", "dashboard", true, "")},
+			}},
+		})
+	}
+
+	if pointy.BoolValue(cr.Spec.Letsencrypt.Use, true) &&
+		(cr.Spec.Letsencrypt.ChallengeProvider.HTTP != nil || pointy.BoolValue(cr.Spec.Letsencrypt.AutoHTTPChallenge, false)) {
+		// The Voyager operator will try to add this rule if the HTTP challenge is enabled, so we
+		// must add it too on our side, otherwise the two operators will fight over the state of the
+		// ingress, resulting in the failure of the HTTP-01 challenge.
+		rules = append(rules, voyager.IngressRule{
+			IngressRuleValue: voyager.IngressRuleValue{
+				HTTP: &voyager.HTTPIngressRuleValue{
+					NoTLS: true,
+					Paths: []voyager.HTTPIngressPath{
+						voyager.HTTPIngressPath{
+							Path: "/.well-known/acme-challenge/",
+							Backend: voyager.HTTPIngressBackend{
+								IngressBackend: voyager.IngressBackend{
+									ServiceName: "voyager-operator.kube-system",
+									ServicePort: intstr.FromInt(56791),
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+	}
+
+	return rules
 }
 
 func getAPIIngressAnnotations(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte) (map[string]string, error) {
