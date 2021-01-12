@@ -98,6 +98,31 @@ func EnsureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 		})
 	}
 
+	if pointy.BoolValue(cr.Spec.Letsencrypt.Use, true) &&
+		(cr.Spec.Letsencrypt.ChallengeProvider.HTTP != nil || pointy.BoolValue(cr.Spec.Letsencrypt.AutoHTTPChallenge, false)) {
+		// The Voyager operator will try to add this rule if the HTTP challenge is enabled, so we
+		// must add it too on our side, otherwise the two operators will fight over the state of the
+		// ingress, resulting in the failure of the HTTP-01 challenge.
+		rules = append(rules, voyager.IngressRule{
+			IngressRuleValue: voyager.IngressRuleValue{
+				HTTP: &voyager.HTTPIngressRuleValue{
+					NoTLS: true,
+					Paths: []voyager.HTTPIngressPath{
+						voyager.HTTPIngressPath{
+							Path: "/.well-known/acme-challenge/",
+							Backend: voyager.HTTPIngressBackend{
+								IngressBackend: voyager.IngressBackend{
+									ServiceName: "voyager-operator.kube-system",
+									ServicePort: intstr.FromInt(56791),
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+	}
+
 	ingressSpec.Rules = rules
 
 	// Reconcile the Ingress
