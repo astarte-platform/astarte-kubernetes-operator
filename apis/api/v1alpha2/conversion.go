@@ -24,7 +24,7 @@ import (
 	"github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 )
 
-// ConvertTo converts this CronJob to the Hub version (v1alpha1).
+// ConvertTo converts this Astarte to the Hub version (v1alpha1).
 func (src *Astarte) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*v1alpha1.Astarte)
 
@@ -39,6 +39,54 @@ func (src *Astarte) ConvertTo(dstRaw conversion.Hub) error {
 // ConvertFrom converts from the Hub version (v1alpha1) to this version.
 func (dst *Astarte) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*v1alpha1.Astarte)
+
+	// trivial implementation
+	dst.ObjectMeta = src.ObjectMeta
+	dst.Spec = src.Spec
+	dst.Status = src.Status
+
+	return nil
+}
+
+// ConvertTo converts this AstarteVoyagerIngress to the Hub version (v1alpha1).
+func (src *AstarteVoyagerIngress) ConvertTo(dstRaw conversion.Hub) error {
+	dst := dstRaw.(*v1alpha1.AstarteVoyagerIngress)
+
+	// trivial implementation
+	dst.ObjectMeta = src.ObjectMeta
+	dst.Spec = src.Spec
+	dst.Status = src.Status
+
+	return nil
+}
+
+// ConvertFrom converts from the Hub version (v1alpha1) to this version.
+func (dst *AstarteVoyagerIngress) ConvertFrom(srcRaw conversion.Hub) error {
+	src := srcRaw.(*v1alpha1.AstarteVoyagerIngress)
+
+	// trivial implementation
+	dst.ObjectMeta = src.ObjectMeta
+	dst.Spec = src.Spec
+	dst.Status = src.Status
+
+	return nil
+}
+
+// ConvertTo converts this Flow to the Hub version (v1alpha1).
+func (src *Flow) ConvertTo(dstRaw conversion.Hub) error {
+	dst := dstRaw.(*v1alpha1.Flow)
+
+	// trivial implementation
+	dst.ObjectMeta = src.ObjectMeta
+	dst.Spec = src.Spec
+	dst.Status = src.Status
+
+	return nil
+}
+
+// ConvertFrom converts from the Hub version (v1alpha1) to this version.
+func (dst *Flow) ConvertFrom(srcRaw conversion.Hub) error {
+	src := srcRaw.(*v1alpha1.Flow)
 
 	// trivial implementation
 	dst.ObjectMeta = src.ObjectMeta

@@ -126,6 +126,14 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Astarte")
 			os.Exit(1)
 		}
+		if err = (&apiv1alpha1.AstarteVoyagerIngress{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "AstarteVoyagerIngress")
+			os.Exit(1)
+		}
+		if err = (&apiv1alpha1.Flow{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Flow")
+			os.Exit(1)
+		}
 	}
 	// +kubebuilder:scaffold:builder
 
