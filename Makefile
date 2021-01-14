@@ -11,6 +11,8 @@ BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
+GOLANGCI_VERSION = v1.35.2
+
 # Image URL to use all building/pushing image targets
 IMG ?= astarte/astarte-kubernetes-operator:latest
 CRD_OPTIONS ?= "crd:crdVersions=v1"
@@ -127,3 +129,16 @@ bundle: manifests kustomize
 # Build the bundle image.
 bundle-build:
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+
+# Download golangci-lint if needed
+golangci-lint:
+ifeq (, $(shell which golangci-lint))
+	go get github.com/golangci/golangci-lint/cmd/golangci-lint@${GOLANGCI_VERSION}
+GOLANGCI_LINT=$(shell go env GOPATH)/bin/golangci-lint
+else
+GOLANGCI_LINT=$(shell which golangci-lint)
+endif
+
+# Run linter. GOGC is set to reduce memory footprint
+lint: golangci-lint
+	GOGC=10 $(GOLANGCI_LINT) run -v --timeout 10m
