@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add v1alpha2 CRDs.
 - Use Go 1.15.x by default
 - Migrate to controller-gen 0.4.1 to ensure we can support all Kubernetes v1 APIs
+- Change logs format to logfmt
 
 ## [0.11.4] - Unreleased
 ### Changed
