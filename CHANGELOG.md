@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Migrate to controller-gen 0.4.1 to ensure we can support all Kubernetes v1 APIs
 - Change logs format to logfmt
 
-## [0.11.4] - Unreleased
+## [0.11.4] - 2021-01-26
 ### Changed
 - Force deployment strategy to Recreate for DUP and TE, overriding user preferences
 
