@@ -12,21 +12,57 @@ Astarte runs as smooth as possible. It also handles upgrades, monitoring, and mo
 
 Astarte Operator is the foundation of any Astarte installation, and you can find more information about it
 and how to use it once installed in the
-[Astarte Administration guide](https://docs.astarte-platform.org/0.11/001-intro_administrator.html).
+[Astarte Administration guide](https://docs.astarte-platform.org/1.0/001-intro_administrator.html).
 
 ## Getting started
 
-The preferred way to install and manage Astarte Operator is through [astartectl](https://github.com/astarte-platform/astartectl).
-Simply run `astartectl cluster install-operator` to install the Operator in your cluster.
+The preferred way to install and manage Astarte Operator leverages its [Helm
+chart](https://artifacthub.io/packages/helm/astarte/astarte-operator).
 
-`astartectl` also intermediates all Operator interactions, including generation of `Astarte` resources and upgrades.
-Run `astartectl cluster instance deploy` to get started with your Astarte instance immediately.
-You can find more information about `astartectl` installations in the
-[relevant chapter of Astarte's documentation](https://docs.astarte-platform.org/latest/060-setup_cluster.html#using-astartectl).
+Astarte Operator requires [`cert-manager`](https://cert-manager.io/) (`>= v1.1`) to be installed in the
+cluster in its default configuration. If you are using `cert-manager` in your cluster already you
+don't need to take any action - otherwise, you will need to install it. A complete overview on
+prerequisites can be found
+[here](https://docs.astarte-platform.org/1.0/020-prerequisites.html#content).
 
-On the other hand, if you feel like handling all of this on your own (or if you just want to learn more about the process),
-you should follow the [Astarte Administration guide](https://docs.astarte-platform.org/0.11/001-intro_administrator.html)
-in Astarte's Documentation.
+To install `cert-manager` simply run:
+```bash
+helm repo add jetstack https://charts.jetstack.io
+helm repo update
+kubectl create namespace cert-manager
+helm install \
+  cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
+  --version v1.1.0 \
+  --set installCRDs=true
+```
+
+Installing the operator is as simple as:
+```bash
+helm repo add astarte https://helm.astarte-platform.org
+helm repo update
+helm install astarte-operator astarte/astarte-operator --devel
+```
+
+These instructions will take care of installing all needed components for the Operator to run. This
+includes all the RBAC roles, Custom Resource Definitions, Webhooks, and the Operator itself.
+
+Moreover, Helm is responsible for upgrading the Astarte Operator. To do so, run:
+```bash
+helm upgrade astarte-operator astarte/astarte-operator --devel
+```
+
+If you are interested in having a deeper understanding on how the Astarte Operator works you should
+follow the [Astarte Administration
+guide](https://docs.astarte-platform.org/1.0/001-intro_administrator.html#content) in Astarte's
+Documentation.
+
+### What's next?
+
+Once your Astarte Operator is up and running in your cluster, it will be time to deploy your Astarte
+instance! All you have to do is [Setting up the
+Cluster](https://docs.astarte-platform.org/1.0/060-setup_cluster.html#content) as described in
+Astarte's Documentation.
 
 ## Kubernetes support
 
@@ -50,5 +86,6 @@ Key:
 
 ## Development
 
-Astarte's Operator is written in Go and built upon [Operator SDK](https://github.com/operator-framework/operator-sdk).
-It depends on Go 1.14.x, and requires Go Modules.
+Astarte's Operator is written in Go and built upon [Operator
+SDK](https://github.com/operator-framework/operator-sdk). It depends on Go 1.15.x, and requires Go
+Modules.
