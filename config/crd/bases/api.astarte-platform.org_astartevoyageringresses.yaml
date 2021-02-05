@@ -21,13 +21,18 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: AstarteVoyagerIngress is the Schema for the astartevoyageringresses API
+        description: AstarteVoyagerIngress is the Schema for the astartevoyageringresses
+          API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
@@ -35,18 +40,31 @@ spec:
             description: AstarteVoyagerIngressSpec defines the desired state of AstarteVoyagerIngress
             properties:
               api:
-                description: AstarteVoyagerIngressAPISpec defines the specification of the APIs
+                description: AstarteVoyagerIngressAPISpec defines the specification
+                  of the APIs
                 properties:
                   annotationsService:
                     additionalProperties:
                       type: string
                     type: object
+                  apiVersion:
+                    description: 'APIVersion defines the versioned schema of this
+                      representation of an object. Servers should convert recognized
+                      schemas to the latest internal value, and may reject unrecognized
+                      values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                    type: string
                   cors:
                     type: boolean
                   deploy:
                     type: boolean
                   exposeHousekeeping:
                     type: boolean
+                  kind:
+                    description: 'Kind is a string value representing the REST resource
+                      this object represents. Servers may infer this from the endpoint
+                      the client submits requests to. Cannot be updated. In CamelCase.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                    type: string
                   loadBalancerIp:
                     type: string
                   nodeSelector:
@@ -55,13 +73,19 @@ spec:
                     format: int32
                     type: integer
                   serveMetrics:
-                    description: When true, all /metrics endpoints for Astarte services will be served by the Ingress. Beware this might be a security hole. You can control which IPs can access /metrics with serveMetricsToSubnet
+                    description: When true, all /metrics endpoints for Astarte services
+                      will be served by the Ingress. Beware this might be a security
+                      hole. You can control which IPs can access /metrics with serveMetricsToSubnet
                     type: boolean
                   serveMetricsToSubnet:
-                    description: 'When specified and when serveMetrics is true, /metrics endpoints will be served only to IPs in the provided subnet range. The subnet has to be compatible with the HAProxy ACL src syntax (e.g.: 10.0.0.0/16)'
+                    description: 'When specified and when serveMetrics is true, /metrics
+                      endpoints will be served only to IPs in the provided subnet
+                      range. The subnet has to be compatible with the HAProxy ACL
+                      src syntax (e.g.: 10.0.0.0/16)'
                     type: string
                   tlsRef:
-                    description: LocalTypedReference contains enough information to let you inspect or modify the referred object.
+                    description: LocalTypedReference contains enough information to
+                      let you inspect or modify the referred object.
                     properties:
                       apiVersion:
                         description: API version of the referent.
@@ -78,17 +102,35 @@ spec:
                   type:
                     type: string
                 type: object
+              apiVersion:
+                description: 'APIVersion defines the versioned schema of this representation
+                  of an object. Servers should convert recognized schemas to the latest
+                  internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                type: string
               astarte:
                 type: string
               broker:
-                description: AstarteVoyagerIngressBrokerSpec defines the specification of the Broker
+                description: AstarteVoyagerIngressBrokerSpec defines the specification
+                  of the Broker
                 properties:
                   annotationsService:
                     additionalProperties:
                       type: string
                     type: object
+                  apiVersion:
+                    description: 'APIVersion defines the versioned schema of this
+                      representation of an object. Servers should convert recognized
+                      schemas to the latest internal value, and may reject unrecognized
+                      values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                    type: string
                   deploy:
                     type: boolean
+                  kind:
+                    description: 'Kind is a string value representing the REST resource
+                      this object represents. Servers may infer this from the endpoint
+                      the client submits requests to. Cannot be updated. In CamelCase.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                    type: string
                   loadBalancerIp:
                     type: string
                   maxConnections:
@@ -99,7 +141,8 @@ spec:
                     format: int32
                     type: integer
                   tlsRef:
-                    description: LocalTypedReference contains enough information to let you inspect or modify the referred object.
+                    description: LocalTypedReference contains enough information to
+                      let you inspect or modify the referred object.
                     properties:
                       apiVersion:
                         description: API version of the referent.
@@ -117,14 +160,28 @@ spec:
                     type: string
                 type: object
               dashboard:
-                description: AstarteVoyagerIngressDashboardSpec defines the specification of the Dashboard
+                description: AstarteVoyagerIngressDashboardSpec defines the specification
+                  of the Dashboard
                 properties:
+                  apiVersion:
+                    description: 'APIVersion defines the versioned schema of this
+                      representation of an object. Servers should convert recognized
+                      schemas to the latest internal value, and may reject unrecognized
+                      values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                    type: string
                   host:
+                    type: string
+                  kind:
+                    description: 'Kind is a string value representing the REST resource
+                      this object represents. Servers may infer this from the endpoint
+                      the client submits requests to. Cannot be updated. In CamelCase.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
                   ssl:
                     type: boolean
                   tlsRef:
-                    description: LocalTypedReference contains enough information to let you inspect or modify the referred object.
+                    description: LocalTypedReference contains enough information to
+                      let you inspect or modify the referred object.
                     properties:
                       apiVersion:
                         description: API version of the referent.
@@ -140,12 +197,26 @@ spec:
                     type: string
                 type: object
               imagePullPolicy:
-                description: PullPolicy describes a policy for if/when to pull a container image
+                description: PullPolicy describes a policy for if/when to pull a container
+                  image
+                type: string
+              kind:
+                description: 'Kind is a string value representing the REST resource
+                  this object represents. Servers may infer this from the endpoint
+                  the client submits requests to. Cannot be updated. In CamelCase.
+                  More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                 type: string
               letsencrypt:
-                description: AstarteVoyagerIngressLetsEncryptSpec defines the specification of the Let's Encrypt Integration
+                description: AstarteVoyagerIngressLetsEncryptSpec defines the specification
+                  of the Let's Encrypt Integration
                 properties:
                   acmeEmail:
+                    type: string
+                  apiVersion:
+                    description: 'APIVersion defines the versioned schema of this
+                      representation of an object. Servers should convert recognized
+                      schemas to the latest internal value, and may reject unrecognized
+                      values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                     type: string
                   autoHTTPChallenge:
                     type: boolean
@@ -162,7 +233,8 @@ spec:
                       http:
                         properties:
                           ingress:
-                            description: LocalTypedReference contains enough information to let you inspect or modify the referred object.
+                            description: LocalTypedReference contains enough information
+                              to let you inspect or modify the referred object.
                             properties:
                               apiVersion:
                                 description: API version of the referent.
@@ -180,6 +252,12 @@ spec:
                     items:
                       type: string
                     type: array
+                  kind:
+                    description: 'Kind is a string value representing the REST resource
+                      this object represents. Servers may infer this from the endpoint
+                      the client submits requests to. Cannot be updated. In CamelCase.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                    type: string
                   staging:
                     type: boolean
                   use:
@@ -189,7 +267,20 @@ spec:
             - astarte
             type: object
           status:
-            description: AstarteVoyagerIngressStatus defines the observed state of AstarteVoyagerIngress
+            description: AstarteVoyagerIngressStatus defines the observed state of
+              AstarteVoyagerIngress
+            properties:
+              apiVersion:
+                description: 'APIVersion defines the versioned schema of this representation
+                  of an object. Servers should convert recognized schemas to the latest
+                  internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                type: string
+              kind:
+                description: 'Kind is a string value representing the REST resource
+                  this object represents. Servers may infer this from the endpoint
+                  the client submits requests to. Cannot be updated. In CamelCase.
+                  More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                type: string
             type: object
         type: object
     served: true
@@ -199,13 +290,18 @@ spec:
   - name: v1alpha2
     schema:
       openAPIV3Schema:
-        description: AstarteVoyagerIngress is the Schema for the astartevoyageringresses API
+        description: AstarteVoyagerIngress is the Schema for the astartevoyageringresses
+          API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
@@ -213,18 +309,31 @@ spec:
             description: AstarteVoyagerIngressSpec defines the desired state of AstarteVoyagerIngress
             properties:
               api:
-                description: AstarteVoyagerIngressAPISpec defines the specification of the APIs
+                description: AstarteVoyagerIngressAPISpec defines the specification
+                  of the APIs
                 properties:
                   annotationsService:
                     additionalProperties:
                       type: string
                     type: object
+                  apiVersion:
+                    description: 'APIVersion defines the versioned schema of this
+                      representation of an object. Servers should convert recognized
+                      schemas to the latest internal value, and may reject unrecognized
+                      values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                    type: string
                   cors:
                     type: boolean
                   deploy:
                     type: boolean
                   exposeHousekeeping:
                     type: boolean
+                  kind:
+                    description: 'Kind is a string value representing the REST resource
+                      this object represents. Servers may infer this from the endpoint
+                      the client submits requests to. Cannot be updated. In CamelCase.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                    type: string
                   loadBalancerIp:
                     type: string
                   nodeSelector:
@@ -233,13 +342,19 @@ spec:
                     format: int32
                     type: integer
                   serveMetrics:
-                    description: When true, all /metrics endpoints for Astarte services will be served by the Ingress. Beware this might be a security hole. You can control which IPs can access /metrics with serveMetricsToSubnet
+                    description: When true, all /metrics endpoints for Astarte services
+                      will be served by the Ingress. Beware this might be a security
+                      hole. You can control which IPs can access /metrics with serveMetricsToSubnet
                     type: boolean
                   serveMetricsToSubnet:
-                    description: 'When specified and when serveMetrics is true, /metrics endpoints will be served only to IPs in the provided subnet range. The subnet has to be compatible with the HAProxy ACL src syntax (e.g.: 10.0.0.0/16)'
+                    description: 'When specified and when serveMetrics is true, /metrics
+                      endpoints will be served only to IPs in the provided subnet
+                      range. The subnet has to be compatible with the HAProxy ACL
+                      src syntax (e.g.: 10.0.0.0/16)'
                     type: string
                   tlsRef:
-                    description: LocalTypedReference contains enough information to let you inspect or modify the referred object.
+                    description: LocalTypedReference contains enough information to
+                      let you inspect or modify the referred object.
                     properties:
                       apiVersion:
                         description: API version of the referent.
@@ -256,17 +371,35 @@ spec:
                   type:
                     type: string
                 type: object
+              apiVersion:
+                description: 'APIVersion defines the versioned schema of this representation
+                  of an object. Servers should convert recognized schemas to the latest
+                  internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                type: string
               astarte:
                 type: string
               broker:
-                description: AstarteVoyagerIngressBrokerSpec defines the specification of the Broker
+                description: AstarteVoyagerIngressBrokerSpec defines the specification
+                  of the Broker
                 properties:
                   annotationsService:
                     additionalProperties:
                       type: string
                     type: object
+                  apiVersion:
+                    description: 'APIVersion defines the versioned schema of this
+                      representation of an object. Servers should convert recognized
+                      schemas to the latest internal value, and may reject unrecognized
+                      values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                    type: string
                   deploy:
                     type: boolean
+                  kind:
+                    description: 'Kind is a string value representing the REST resource
+                      this object represents. Servers may infer this from the endpoint
+                      the client submits requests to. Cannot be updated. In CamelCase.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                    type: string
                   loadBalancerIp:
                     type: string
                   maxConnections:
@@ -277,7 +410,8 @@ spec:
                     format: int32
                     type: integer
                   tlsRef:
-                    description: LocalTypedReference contains enough information to let you inspect or modify the referred object.
+                    description: LocalTypedReference contains enough information to
+                      let you inspect or modify the referred object.
                     properties:
                       apiVersion:
                         description: API version of the referent.
@@ -295,14 +429,28 @@ spec:
                     type: string
                 type: object
               dashboard:
-                description: AstarteVoyagerIngressDashboardSpec defines the specification of the Dashboard
+                description: AstarteVoyagerIngressDashboardSpec defines the specification
+                  of the Dashboard
                 properties:
+                  apiVersion:
+                    description: 'APIVersion defines the versioned schema of this
+                      representation of an object. Servers should convert recognized
+                      schemas to the latest internal value, and may reject unrecognized
+                      values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                    type: string
                   host:
+                    type: string
+                  kind:
+                    description: 'Kind is a string value representing the REST resource
+                      this object represents. Servers may infer this from the endpoint
+                      the client submits requests to. Cannot be updated. In CamelCase.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
                   ssl:
                     type: boolean
                   tlsRef:
-                    description: LocalTypedReference contains enough information to let you inspect or modify the referred object.
+                    description: LocalTypedReference contains enough information to
+                      let you inspect or modify the referred object.
                     properties:
                       apiVersion:
                         description: API version of the referent.
@@ -318,12 +466,26 @@ spec:
                     type: string
                 type: object
               imagePullPolicy:
-                description: PullPolicy describes a policy for if/when to pull a container image
+                description: PullPolicy describes a policy for if/when to pull a container
+                  image
+                type: string
+              kind:
+                description: 'Kind is a string value representing the REST resource
+                  this object represents. Servers may infer this from the endpoint
+                  the client submits requests to. Cannot be updated. In CamelCase.
+                  More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                 type: string
               letsencrypt:
-                description: AstarteVoyagerIngressLetsEncryptSpec defines the specification of the Let's Encrypt Integration
+                description: AstarteVoyagerIngressLetsEncryptSpec defines the specification
+                  of the Let's Encrypt Integration
                 properties:
                   acmeEmail:
+                    type: string
+                  apiVersion:
+                    description: 'APIVersion defines the versioned schema of this
+                      representation of an object. Servers should convert recognized
+                      schemas to the latest internal value, and may reject unrecognized
+                      values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                     type: string
                   autoHTTPChallenge:
                     type: boolean
@@ -340,7 +502,8 @@ spec:
                       http:
                         properties:
                           ingress:
-                            description: LocalTypedReference contains enough information to let you inspect or modify the referred object.
+                            description: LocalTypedReference contains enough information
+                              to let you inspect or modify the referred object.
                             properties:
                               apiVersion:
                                 description: API version of the referent.
@@ -358,6 +521,12 @@ spec:
                     items:
                       type: string
                     type: array
+                  kind:
+                    description: 'Kind is a string value representing the REST resource
+                      this object represents. Servers may infer this from the endpoint
+                      the client submits requests to. Cannot be updated. In CamelCase.
+                      More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                    type: string
                   staging:
                     type: boolean
                   use:
@@ -367,7 +536,20 @@ spec:
             - astarte
             type: object
           status:
-            description: AstarteVoyagerIngressStatus defines the observed state of AstarteVoyagerIngress
+            description: AstarteVoyagerIngressStatus defines the observed state of
+              AstarteVoyagerIngress
+            properties:
+              apiVersion:
+                description: 'APIVersion defines the versioned schema of this representation
+                  of an object. Servers should convert recognized schemas to the latest
+                  internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                type: string
+              kind:
+                description: 'Kind is a string value representing the REST resource
+                  this object represents. Servers may infer this from the endpoint
+                  the client submits requests to. Cannot be updated. In CamelCase.
+                  More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                type: string
             type: object
         type: object
     served: true

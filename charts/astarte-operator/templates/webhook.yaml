@@ -1,3 +1,72 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: '{{ .Release.Namespace }}/{{ .Release.Name }}-manager-webhook'
+  creationTimestamp: null
+  name: '{{ .Release.Name }}-mutating-webhook-configuration'
+webhooks:
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ .Release.Name }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /mutate-api-astarte-platform-org-v1alpha1-astarte
+  failurePolicy: Fail
+  name: mastarte.kb.io
+  rules:
+  - apiGroups:
+    - api.astarte-platform.org
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - astartes
+  sideEffects: None
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ .Release.Name }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /mutate-api-astarte-platform-org-v1alpha1-astartevoyageringress
+  failurePolicy: Fail
+  name: mastartevoyageringress.kb.io
+  rules:
+  - apiGroups:
+    - api.astarte-platform.org
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - astartevoyageringresses
+  sideEffects: None
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ .Release.Name }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /mutate-api-astarte-platform-org-v1alpha1-flow
+  failurePolicy: Fail
+  name: mflow.kb.io
+  rules:
+  - apiGroups:
+    - api.astarte-platform.org
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flows
+  sideEffects: None
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -33,38 +102,11 @@ spec:
   selfSigned: {}
 ---
 apiVersion: admissionregistration.k8s.io/v1
-kind: MutatingWebhookConfiguration
-metadata:
-  annotations:
-    cert-manager.io/inject-ca-from: '{{ .Release.Namespace }}/{{ .Release.Name }}-manager-webhook'
-  name: '{{ .Release.Name }}-mutating-webhook-configuration'
-webhooks:
-- admissionReviewVersions:
-  - v1beta1
-  clientConfig:
-    service:
-      name: '{{ .Release.Name }}-webhook-service'
-      namespace: '{{ .Release.Namespace }}'
-      path: /mutate-api-astarte-platform-org-v1alpha1-astarte
-  failurePolicy: Fail
-  name: mastarte.kb.io
-  rules:
-  - apiGroups:
-    - api.astarte-platform.org
-    apiVersions:
-    - v1alpha1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - astartes
-  sideEffects: None
----
-apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: '{{ .Release.Namespace }}/{{ .Release.Name }}-manager-webhook'
+  creationTimestamp: null
   name: '{{ .Release.Name }}-validating-webhook-configuration'
 webhooks:
 - admissionReviewVersions:
@@ -86,4 +128,44 @@ webhooks:
     - UPDATE
     resources:
     - astartes
+  sideEffects: None
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ .Release.Name }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-api-astarte-platform-org-v1alpha1-astartevoyageringress
+  failurePolicy: Fail
+  name: vastartevoyageringress.kb.io
+  rules:
+  - apiGroups:
+    - api.astarte-platform.org
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - astartevoyageringresses
+  sideEffects: None
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
+    service:
+      name: '{{ .Release.Name }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-api-astarte-platform-org-v1alpha1-flow
+  failurePolicy: Fail
+  name: vflow.kb.io
+  rules:
+  - apiGroups:
+    - api.astarte-platform.org
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flows
   sideEffects: None

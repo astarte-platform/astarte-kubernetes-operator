@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Expose port 8888 for VerneMQ metrics.
 - Added a Helm chart for deploying the Operator
 - Added Kubernetes Webhooks
+- Allow disabling webhooks with ENABLE_WEBHOOKS env var.
 
 ### Changed
 - Force deployment strategy to Recreate for Flow, overriding user preferences
@@ -29,6 +30,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Use Go 1.15.x by default
 - Migrate to controller-gen 0.4.1 to ensure we can support all Kubernetes v1 APIs
 - Change logs format to logfmt
+- Define common types to be shared by different CRD versions.
 
 ## [0.11.4] - 2021-01-26
 ### Changed
