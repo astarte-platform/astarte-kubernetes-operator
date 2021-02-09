@@ -73,7 +73,7 @@ type RabbitMQDataProvider struct {
 	// RabbitMQConfig is an optional field which allows to specify configuration for an external RabbitMQ
 	// broker. If not specified, Astarte's main Broker will be used.
 	// +optional
-	RabbitMQConfig *RabbitMQConfig `json:"rabbitmq"`
+	RabbitMQConfig *RabbitMQConfig `json:"rabbitmq,omitempty"`
 }
 
 // Type returns the type of the Data Provider
