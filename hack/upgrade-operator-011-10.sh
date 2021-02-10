@@ -34,17 +34,14 @@ function update_resources() {
 }
 
 function annotate_resources() {
-    kubectl annotate crd astartes.api.astarte-platform.org cert-manager.io/inject-ca-from=$ASTARTE_OP_RELEASE_NAMESPACE/$ASTARTE_OP_RELEASE_NAME-manager-webhook
     kubectl annotate crd astartes.api.astarte-platform.org meta.helm.sh/release-name=$ASTARTE_OP_RELEASE_NAME
     kubectl annotate crd astartes.api.astarte-platform.org meta.helm.sh/release-namespace=$ASTARTE_OP_RELEASE_NAMESPACE
     kubectl label    crd astartes.api.astarte-platform.org app.kubernetes.io/managed-by=Helm
 
-    kubectl annotate crd astartevoyageringresses.api.astarte-platform.org cert-manager.io/inject-ca-from=$ASTARTE_OP_RELEASE_NAMESPACE/$ASTARTE_OP_RELEASE_NAME-manager-webhook
     kubectl annotate crd astartevoyageringresses.api.astarte-platform.org meta.helm.sh/release-name=$ASTARTE_OP_RELEASE_NAME
     kubectl annotate crd astartevoyageringresses.api.astarte-platform.org meta.helm.sh/release-namespace=$ASTARTE_OP_RELEASE_NAMESPACE
     kubectl label    crd astartevoyageringresses.api.astarte-platform.org app.kubernetes.io/managed-by=Helm
 
-    kubectl annotate crd flows.api.astarte-platform.org cert-manager.io/inject-ca-from=$ASTARTE_OP_RELEASE_NAMESPACE/$ASTARTE_OP_RELEASE_NAME-manager-webhook
     kubectl annotate crd flows.api.astarte-platform.org meta.helm.sh/release-name=$ASTARTE_OP_RELEASE_NAME
     kubectl annotate crd flows.api.astarte-platform.org meta.helm.sh/release-namespace=$ASTARTE_OP_RELEASE_NAMESPACE
     kubectl label    crd flows.api.astarte-platform.org app.kubernetes.io/managed-by=Helm
