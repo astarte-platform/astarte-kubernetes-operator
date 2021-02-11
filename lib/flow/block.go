@@ -197,12 +197,12 @@ func ensureWorkerContainer(block commontypes.ContainerBlockSpec, worker commonty
 		// Flow Containers are a good way to snitch malicious code into the Cluster, and potentially allowing
 		// Container breakout to the node. For this reason, do not trust this container and downscale its privileges
 		// to the bottom.
-		// TODO: handle RunAsNonRoot as a feature flag
+		// TODO: handle RunAsNonRoot and ReadOnlyRootFilesystem as a feature flag
 		SecurityContext: &v1.SecurityContext{
 			Privileged:               pointy.Bool(false),
 			RunAsNonRoot:             pointy.Bool(false),
 			AllowPrivilegeEscalation: pointy.Bool(false),
-			ReadOnlyRootFilesystem:   pointy.Bool(true),
+			ReadOnlyRootFilesystem:   pointy.Bool(false),
 		},
 	}
 }
