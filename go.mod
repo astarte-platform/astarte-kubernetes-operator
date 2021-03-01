@@ -18,7 +18,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/stretchr/testify v1.6.1 // indirect
 	github.com/sykesm/zap-logfmt v0.0.4
-	go.uber.org/zap v1.12.0
+	go.uber.org/zap v1.16.0
 	golang.org/x/mod v0.4.0 // indirect
 	golang.org/x/sys v0.0.0-20201009025420-dfb3f7c4e634 // indirect
 	golang.org/x/text v0.3.4 // indirect
