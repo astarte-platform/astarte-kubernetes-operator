@@ -3,8 +3,8 @@ name: astarte-operator
 description: A Helm chart for Kubernetes
 type: application
 
-version: 1.0.0-beta.1
-appVersion: 1.0.0-beta.1
+version: 1.0.0-beta.2
+appVersion: 1.0-snapshot
 kubeVersion: ">= 1.16.0-0"
 
 home: https://github.com/astarte-platform/astarte-kubernetes-operator

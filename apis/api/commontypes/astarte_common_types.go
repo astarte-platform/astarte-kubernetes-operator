@@ -173,6 +173,9 @@ type AstarteGenericClusteredResource struct {
 	// Compute Resources for this Component.
 	// +optional
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
+	// Additional environment variables for this Component
+	// +optional
+	AdditionalEnv []v1.EnvVar `json:"additionalEnv,omitempty"`
 }
 
 // AstarteGenericAPISpec represents a generic Astarte API Component in the Deployment spec

@@ -375,6 +375,11 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, bac
 		Value: strconv.Itoa(int(astarteServicesPort)),
 	})
 
+	// Add any explicit additional env
+	if len(backend.AdditionalEnv) > 0 {
+		ret = append(ret, backend.AdditionalEnv...)
+	}
+
 	// Return with the RabbitMQ variables appended
 	return appendRabbitMQConnectionEnvVars(ret, rpcPrefix+"RPC_AMQP_CONNECTION", cr)
 }
