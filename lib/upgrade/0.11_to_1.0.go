@@ -69,6 +69,11 @@ func upgradeTo10(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Schem
 		return err
 	}
 
+	// Step 4: Remove CFSSL StatefulSet
+	if err := tearDownCFSSLStatefulSet(cr, c, recorder); err != nil {
+		return err
+	}
+
 	reqLogger.Info("Your Astarte cluster has been successfully upgraded to the 1.0.x series!")
 
 	// This is it. Do not bring up VerneMQ or anything: the reconciliation will now do the right thing with the right versions.

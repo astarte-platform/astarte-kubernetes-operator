@@ -467,3 +467,33 @@ func getSpecialHousekeepingMigrationProbe(path string) *v1.Probe {
 		FailureThreshold: 120,
 	}
 }
+
+func tearDownCFSSLStatefulSet(cr *apiv1alpha1.Astarte, c client.Client, recorder record.EventRecorder) error {
+	reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name)
+	// First, delete CFSSL StatefulSet and wait until it is done
+	CFSSLStatefulSetName := cr.Name + "-cfssl"
+	CFSSLStatefulSet := &appsv1.StatefulSet{}
+	if err := c.Get(context.TODO(), types.NamespacedName{Name: CFSSLStatefulSetName, Namespace: cr.Namespace}, CFSSLStatefulSet); err != nil {
+		return fmt.Errorf("Cannot retrieve CFSSL StatefulSet: %v", err)
+	}
+	reqLogger.Info("Tearing down the CFSSL StatefulSet.")
+	if err := c.Delete(context.TODO(), CFSSLStatefulSet); err != nil {
+		return fmt.Errorf("Could not tear down CFSSL StatefulSet: %v", err)
+	}
+	recorder.Event(cr, "Normal", commontypes.AstarteResourceEventUpgrade.String(), "Tearing down the CFSSL StatefulSet.")
+
+	reqLogger.Info("Waiting for the CFSSL StatefulSet to go down...")
+	// Now wait
+	if err := wait.Poll(retryInterval, timeout, func() (done bool, err error) {
+		statefulSet := &appsv1.StatefulSet{}
+		if err := c.Get(context.TODO(), types.NamespacedName{Name: CFSSLStatefulSetName, Namespace: cr.Namespace}, statefulSet); err != nil {
+			return true, nil
+		}
+		return false, fmt.Errorf("Failed in waiting CFSSL StatefulSet to be teared down.")
+	}); err != nil {
+		recorder.Event(cr, "Warning", commontypes.AstarteResourceEventUpgradeError.String(),
+			"Could not teard down the CFSSL StatefulSet. Upgrade will be retried")
+		return err
+	}
+	return nil
+}
