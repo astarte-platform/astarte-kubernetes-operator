@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Add `additionalEnv` field to `AstarteGenericClusteredResource`, allowing to pass custom
   environment variables to all Astarte components.
+- Add Astarte and AVI (v1plha2) custom resource samples.
 
 ## [1.0.0-beta.1] - 2021-02-16
 ### Added
