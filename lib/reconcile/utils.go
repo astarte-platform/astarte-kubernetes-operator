@@ -30,9 +30,6 @@ import (
 	"strconv"
 	"strings"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
-	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -46,6 +43,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	commontypes "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
+	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 )
 
 const (
@@ -300,7 +302,7 @@ func ensureErlangCookieSecret(secretName string, cr *apiv1alpha1.Astarte, c clie
 	return nil
 }
 
-func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quantity, storageSpec *apiv1alpha1.AstartePersistentStorageSpec,
+func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quantity, storageSpec *commontypes.AstartePersistentStorageSpec,
 	cr *apiv1alpha1.Astarte) (string, *v1.PersistentVolumeClaim) {
 	var storageClassName string
 	dataVolumeSize := defaultSize
@@ -335,7 +337,7 @@ func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quan
 	}
 }
 
-func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, backend apiv1alpha1.AstarteGenericClusteredResource, component apiv1alpha1.AstarteComponent) []v1.EnvVar {
+func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, backend commontypes.AstarteGenericClusteredResource, component commontypes.AstarteComponent) []v1.EnvVar {
 	rpcPrefix := ""
 	if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", backend.Version, cr.Spec.Version) == nil {
 		rpcPrefix = oldAstartePrefix
@@ -372,6 +374,11 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, bac
 		Name:  strings.ToUpper(component.String()) + "_PORT",
 		Value: strconv.Itoa(int(astarteServicesPort)),
 	})
+
+	// Add any explicit additional env
+	if len(backend.AdditionalEnv) > 0 {
+		ret = append(ret, backend.AdditionalEnv...)
+	}
 
 	// Return with the RabbitMQ variables appended
 	return appendRabbitMQConnectionEnvVars(ret, rpcPrefix+"RPC_AMQP_CONNECTION", cr)
@@ -591,7 +598,7 @@ func getAstarteCommonVolumeMounts(cr *apiv1alpha1.Astarte) []v1.VolumeMount {
 	return ret
 }
 
-func getAffinityForClusteredResource(appLabel string, resource apiv1alpha1.AstarteGenericClusteredResource) *v1.Affinity {
+func getAffinityForClusteredResource(appLabel string, resource commontypes.AstarteGenericClusteredResource) *v1.Affinity {
 	affinity := resource.CustomAffinity
 	if affinity == nil && pointy.BoolValue(resource.AntiAffinity, true) {
 		affinity = getStandardAntiAffinityForAppLabel(appLabel)
@@ -599,7 +606,7 @@ func getAffinityForClusteredResource(appLabel string, resource apiv1alpha1.Astar
 	return affinity
 }
 
-func getAstarteImageForClusteredResource(defaultImageName string, resource apiv1alpha1.AstarteGenericClusteredResource, cr *apiv1alpha1.Astarte) string {
+func getAstarteImageForClusteredResource(defaultImageName string, resource commontypes.AstarteGenericClusteredResource, cr *apiv1alpha1.Astarte) string {
 	if resource.Image != "" {
 		return resource.Image
 	}
@@ -607,7 +614,7 @@ func getAstarteImageForClusteredResource(defaultImageName string, resource apiv1
 	return getAstarteImageFromChannel(defaultImageName, version.GetVersionForAstarteComponent(cr.Spec.Version, resource.Version), cr)
 }
 
-func getImageForClusteredResource(defaultImageName, defaultImageTag string, resource apiv1alpha1.AstarteGenericClusteredResource) string {
+func getImageForClusteredResource(defaultImageName, defaultImageTag string, resource commontypes.AstarteGenericClusteredResource) string {
 	image := fmt.Sprintf("%s:%s", defaultImageName, defaultImageTag)
 	if resource.Image != "" {
 		image = resource.Image
@@ -618,11 +625,22 @@ func getImageForClusteredResource(defaultImageName, defaultImageTag string, reso
 	return image
 }
 
-func getDeploymentStrategyForClusteredResource(cr *apiv1alpha1.Astarte, resource apiv1alpha1.AstarteGenericClusteredResource) appsv1.DeploymentStrategy {
-	if resource.DeploymentStrategy != nil {
+func getDeploymentStrategyForClusteredResource(cr *apiv1alpha1.Astarte, resource commontypes.AstarteGenericClusteredResource, component commontypes.AstarteComponent) appsv1.DeploymentStrategy {
+	switch {
+	case component == commontypes.DataUpdaterPlant, component == commontypes.TriggerEngine,
+		component == commontypes.FlowComponent:
+		return appsv1.DeploymentStrategy{
+			Type: appsv1.RecreateDeploymentStrategyType,
+		}
+	case resource.DeploymentStrategy != nil:
 		return *resource.DeploymentStrategy
+	case cr.Spec.DeploymentStrategy != nil:
+		return *cr.Spec.DeploymentStrategy
+	default:
+		return appsv1.DeploymentStrategy{
+			Type: appsv1.RollingUpdateDeploymentStrategyType,
+		}
 	}
-	return cr.Spec.DeploymentStrategy
 }
 
 func getDataQueueCount(cr *apiv1alpha1.Astarte) int {
@@ -643,7 +661,7 @@ func getBaseAstarteAPIURL(cr *apiv1alpha1.Astarte) string {
 }
 
 func handleGenericUserCredentialsSecret(username, password, usernameKey, passwordKey, secretName string, forceCredentialsCreation bool,
-	secret *apiv1alpha1.LoginCredentialsSecret, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+	secret *commontypes.LoginCredentialsSecret, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	secretExists := false
 	resource := &v1.Secret{}
 	if err := c.Get(context.TODO(), types.NamespacedName{Namespace: cr.Namespace, Name: secretName}, resource); err == nil {

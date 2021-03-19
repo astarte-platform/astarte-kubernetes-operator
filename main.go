@@ -21,18 +21,24 @@ package main
 import (
 	"flag"
 	"os"
+	"time"
 
-	voyagercrd "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	zaplogfmt "github.com/sykesm/zap-logfmt"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	zapcr "sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/controllers"
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
+	controllersapi "github.com/astarte-platform/astarte-kubernetes-operator/controllers/api"
+	voyagercrd "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -46,9 +52,10 @@ func init() {
 
 	// Setup Scheme for other CRDs and the CRD themselves
 	utilruntime.Must(voyagercrd.AddToScheme(scheme))
-	utilruntime.Must(apiextensionsv1beta1.AddToScheme(scheme))
+	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
 
 	utilruntime.Must(apiv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(apiv1alpha2.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -61,7 +68,19 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
+	// setup logger
+	configLog := zap.NewProductionEncoderConfig()
+	configLog.EncodeTime = func(ts time.Time, encoder zapcore.PrimitiveArrayEncoder) {
+		encoder.AppendString(ts.UTC().Format(time.RFC3339))
+	}
+	logfmtEncoder := zaplogfmt.NewEncoder(configLog)
+
+	// Construct a new logr.logger.
+	log := zapcr.New(zapcr.UseDevMode(true), zapcr.WriteTo(os.Stdout), zapcr.Encoder(logfmtEncoder))
+
+	// Set the controller logger to log, which will be propagated through the whole operator, generating
+	// uniform and structured logs.
+	logf.SetLogger(log)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
@@ -75,7 +94,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.AstarteReconciler{
+	if err = (&controllersapi.AstarteReconciler{
 		Client:   mgr.GetClient(),
 		Log:      ctrl.Log.WithName("controllers").WithName("Astarte"),
 		Scheme:   mgr.GetScheme(),
@@ -84,7 +103,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Astarte")
 		os.Exit(1)
 	}
-	if err = (&controllers.AstarteVoyagerIngressReconciler{
+	if err = (&controllersapi.AstarteVoyagerIngressReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("AstarteVoyagerIngress"),
 		Scheme: mgr.GetScheme(),
@@ -92,13 +111,29 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "AstarteVoyagerIngress")
 		os.Exit(1)
 	}
-	if err = (&controllers.FlowReconciler{
+	if err = (&controllersapi.FlowReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Flow"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Flow")
 		os.Exit(1)
+	}
+	// When testing the operator locally, we may want not to run webhooks. Thus, put them behind
+	// an environment variable
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&apiv1alpha1.Astarte{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Astarte")
+			os.Exit(1)
+		}
+		if err = (&apiv1alpha1.AstarteVoyagerIngress{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "AstarteVoyagerIngress")
+			os.Exit(1)
+		}
+		if err = (&apiv1alpha1.Flow{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Flow")
+			os.Exit(1)
+		}
 	}
 	// +kubebuilder:scaffold:builder
 

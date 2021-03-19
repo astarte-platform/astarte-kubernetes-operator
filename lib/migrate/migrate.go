@@ -24,7 +24,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -35,6 +34,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 )
 
 // The purpose of this package is solely the migration of the old operator's flaky CR to the shiny new, stable,

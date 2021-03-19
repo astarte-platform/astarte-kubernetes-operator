@@ -24,9 +24,6 @@ import (
 	"fmt"
 	"strconv"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
-	voyager "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 	"github.com/go-logr/logr"
 	"github.com/openlyinc/pointy"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,6 +32,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	commontypes "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	voyager "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 )
 
 func EnsureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
@@ -67,12 +69,12 @@ func EnsureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 	// Now start with the paths
 	apiPaths := []voyager.HTTPIngressPath{}
 	// Create rules for all Astarte components
-	astarteComponents := []apiv1alpha1.AstarteComponent{apiv1alpha1.AppEngineAPI, apiv1alpha1.FlowComponent, apiv1alpha1.HousekeepingAPI, apiv1alpha1.PairingAPI, apiv1alpha1.RealmManagementAPI}
+	astarteComponents := []commontypes.AstarteComponent{commontypes.AppEngineAPI, commontypes.FlowComponent, commontypes.HousekeepingAPI, commontypes.PairingAPI, commontypes.RealmManagementAPI}
 	// Should we serve /metrics?
 	serveMetrics := pointy.BoolValue(cr.Spec.API.ServeMetrics, false)
 	// Is the Dashboard deployed without a host?
-	if misc.IsAstarteComponentDeployed(parent, apiv1alpha1.Dashboard) && cr.Spec.Dashboard.Host == "" {
-		astarteComponents = append(astarteComponents, apiv1alpha1.Dashboard)
+	if misc.IsAstarteComponentDeployed(parent, commontypes.Dashboard) && cr.Spec.Dashboard.Host == "" {
+		astarteComponents = append(astarteComponents, commontypes.Dashboard)
 	}
 	for _, component := range astarteComponents {
 		if misc.IsAstarteComponentDeployed(parent, component) {
@@ -80,24 +82,7 @@ func EnsureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 		}
 	}
 
-	rules := []voyager.IngressRule{}
-	rules = append(rules, voyager.IngressRule{
-		Host:             parent.Spec.API.Host,
-		IngressRuleValue: voyager.IngressRuleValue{HTTP: &voyager.HTTPIngressRuleValue{Paths: apiPaths}},
-	})
-
-	// Is the Dashboard deployed on a separate host?
-	if misc.IsAstarteComponentDeployed(parent, apiv1alpha1.Dashboard) && cr.Spec.Dashboard.Host != "" {
-		rules = append(rules, voyager.IngressRule{
-			Host: cr.Spec.Dashboard.Host,
-			IngressRuleValue: voyager.IngressRuleValue{HTTP: &voyager.HTTPIngressRuleValue{
-				// Dashboard has no metrics and the /metrics name might be used in the future, so allow it
-				Paths: []voyager.HTTPIngressPath{getHTTPIngressWithPath(parent, "", "dashboard", true, "")},
-			}},
-		})
-	}
-
-	ingressSpec.Rules = rules
+	ingressSpec.Rules = makeIngressRules(cr, parent, apiPaths)
 
 	// Reconcile the Ingress
 	ingress := &voyager.Ingress{ObjectMeta: metav1.ObjectMeta{Name: ingressName, Namespace: cr.Namespace}}
@@ -116,6 +101,52 @@ func EnsureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 	}
 
 	return err
+}
+
+func makeIngressRules(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte, apiPaths []voyager.HTTPIngressPath) []voyager.IngressRule {
+	rules := []voyager.IngressRule{}
+	rules = append(rules, voyager.IngressRule{
+		Host:             parent.Spec.API.Host,
+		IngressRuleValue: voyager.IngressRuleValue{HTTP: &voyager.HTTPIngressRuleValue{Paths: apiPaths}},
+	})
+
+	// Is the Dashboard deployed on a separate host?
+	if misc.IsAstarteComponentDeployed(parent, commontypes.Dashboard) && cr.Spec.Dashboard.Host != "" {
+		rules = append(rules, voyager.IngressRule{
+			Host: cr.Spec.Dashboard.Host,
+			IngressRuleValue: voyager.IngressRuleValue{HTTP: &voyager.HTTPIngressRuleValue{
+				// Dashboard has no metrics and the /metrics name might be used in the future, so allow it
+				Paths: []voyager.HTTPIngressPath{getHTTPIngressWithPath(parent, "", "dashboard", true, "")},
+			}},
+		})
+	}
+
+	if pointy.BoolValue(cr.Spec.Letsencrypt.Use, true) &&
+		(cr.Spec.Letsencrypt.ChallengeProvider.HTTP != nil || pointy.BoolValue(cr.Spec.Letsencrypt.AutoHTTPChallenge, false)) {
+		// The Voyager operator will try to add this rule if the HTTP challenge is enabled, so we
+		// must add it too on our side, otherwise the two operators will fight over the state of the
+		// ingress, resulting in the failure of the HTTP-01 challenge.
+		rules = append(rules, voyager.IngressRule{
+			IngressRuleValue: voyager.IngressRuleValue{
+				HTTP: &voyager.HTTPIngressRuleValue{
+					NoTLS: true,
+					Paths: []voyager.HTTPIngressPath{
+						voyager.HTTPIngressPath{
+							Path: "/.well-known/acme-challenge/",
+							Backend: voyager.HTTPIngressBackend{
+								IngressBackend: voyager.IngressBackend{
+									ServiceName: "voyager-operator.kube-system",
+									ServicePort: intstr.FromInt(56791),
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+	}
+
+	return rules
 }
 
 func getAPIIngressAnnotations(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte) (map[string]string, error) {
@@ -239,7 +270,7 @@ func getLEFixupForAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv
 	return nil, nil
 }
 
-func getHTTPIngressPathForAstarteComponent(parent *apiv1alpha1.Astarte, component apiv1alpha1.AstarteComponent,
+func getHTTPIngressPathForAstarteComponent(parent *apiv1alpha1.Astarte, component commontypes.AstarteComponent,
 	serveMetrics bool, serveMetricsToSubnet string) voyager.HTTPIngressPath {
 	return getHTTPIngressWithPath(parent, component.ServiceRelativePath(), component.ServiceName(), serveMetrics, serveMetricsToSubnet)
 }

@@ -25,9 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
-	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -37,6 +34,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	commontypes "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
+	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 )
 
 // EnsureVerneMQ reconciles VerneMQ
@@ -162,7 +164,7 @@ func EnsureVerneMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sch
 	return nil
 }
 
-func validateVerneMQDefinition(vmq *apiv1alpha1.AstarteVerneMQSpec) error {
+func validateVerneMQDefinition(vmq *commontypes.AstarteVerneMQSpec) error {
 	if vmq == nil {
 		return nil
 	}
@@ -183,6 +185,7 @@ func getVerneMQProbe() *v1.Probe {
 
 func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.EnvVar {
 	dataQueueCount := getDataQueueCount(cr)
+	mirrorQueue := getMirrorQueue(cr)
 
 	envVars := []v1.EnvVar{
 		{
@@ -215,6 +218,14 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.Env
 			Name:  "DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__DATA_QUEUE_COUNT",
 			Value: strconv.Itoa(dataQueueCount),
 		})
+
+		if mirrorQueue != "" {
+			// If a mirror queue is defined, set the relevant environment variable
+			envVars = append(envVars, v1.EnvVar{
+				Name:  "DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP__MIRROR_QUEUE_NAME",
+				Value: mirrorQueue,
+			})
+		}
 	}
 
 	// 1.0+ variables
@@ -312,4 +323,8 @@ func getVerneMQPolicyRules() []rbacv1.PolicyRule {
 			Verbs:     []string{"list", "get"},
 		},
 	}
+}
+
+func getMirrorQueue(cr *apiv1alpha1.Astarte) string {
+	return cr.Spec.VerneMQ.MirrorQueue
 }

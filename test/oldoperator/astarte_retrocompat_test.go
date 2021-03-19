@@ -22,7 +22,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	operator "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
 	"github.com/astarte-platform/astarte-kubernetes-operator/test/utils"
 )
 
@@ -31,9 +31,9 @@ var _ = Describe("Astarte controller", func() {
 		It("Should reconcile the resource automatically", func() {
 			By("By converting it and turning the cluster green")
 
-			Eventually(func() (operator.AstarteClusterHealth, error) {
+			Eventually(func() (commontypes.AstarteClusterHealth, error) {
 				return utils.EnsureAstarteBecomesGreen(utils.AstarteTestResource.Name, namespace, k8sClient)
-			}, utils.DefaultTimeout, utils.DefaultRetryInterval).Should(BeEquivalentTo(operator.AstarteClusterHealthGreen))
+			}, utils.DefaultTimeout, utils.DefaultRetryInterval).Should(BeEquivalentTo(commontypes.AstarteClusterHealthGreen))
 
 			By("By ensuring all Astarte services are up and running")
 			Expect(utils.EnsureAstarteServicesReadinessUpTo011(namespace, k8sClient, true)).Should(Succeed())

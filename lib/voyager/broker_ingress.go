@@ -23,9 +23,6 @@ import (
 	"encoding/json"
 	"strconv"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
-	voyager "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 	"github.com/go-logr/logr"
 	"github.com/openlyinc/pointy"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,6 +31,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	voyager "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 )
 
 func EnsureBrokerIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
@@ -84,8 +85,9 @@ func EnsureBrokerIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alp
 
 	if pointy.BoolValue(cr.Spec.Letsencrypt.Use, true) &&
 		(cr.Spec.Letsencrypt.ChallengeProvider.HTTP != nil || pointy.BoolValue(cr.Spec.Letsencrypt.AutoHTTPChallenge, false)) {
-		// In this case, we need to add another special rule to instruct the Load Balancer to keep port 80
-		// open and routed. Doing this, we can ensure the HTTP-01 challenge will succeed.
+		// The Voyager operator will try to add this rule if the HTTP challenge is enabled, so we
+		// must add it too on our side, otherwise the two operators will fight over the state of the
+		// ingress, resulting in the failure of the HTTP-01 challenge.
 		rules = append(rules, voyager.IngressRule{
 			IngressRuleValue: voyager.IngressRuleValue{
 				HTTP: &voyager.HTTPIngressRuleValue{

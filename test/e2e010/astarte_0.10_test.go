@@ -24,9 +24,11 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	operator "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/test/utils"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
+	operator "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/test/utils"
 )
 
 var (
@@ -50,9 +52,9 @@ var _ = Describe("Astarte controller", func() {
 			}, utils.DefaultTimeout, utils.DefaultRetryInterval).Should(Succeed())
 
 			By("By ensuring that the Astarte resource Status becomes green")
-			Eventually(func() (operator.AstarteClusterHealth, error) {
+			Eventually(func() (commontypes.AstarteClusterHealth, error) {
 				return utils.EnsureAstarteBecomesGreen(exampleAstarte.Name, namespace, k8sClient)
-			}, utils.DefaultTimeout, utils.DefaultRetryInterval).Should(BeEquivalentTo(operator.AstarteClusterHealthGreen))
+			}, utils.DefaultTimeout, utils.DefaultRetryInterval).Should(BeEquivalentTo(commontypes.AstarteClusterHealthGreen))
 
 			By("By ensuring all Astarte services are up and running")
 			Expect(utils.EnsureAstarteServicesReadinessUpTo011(namespace, k8sClient, true)).Should(Succeed())
@@ -75,14 +77,14 @@ var _ = Describe("Astarte controller", func() {
 			}, utils.DefaultTimeout, utils.DefaultRetryInterval).Should(BeEquivalentTo(target011Version))
 
 			By("By ensuring that the Astarte Resource has been reconciled at least once after upgrade")
-			Eventually(func() (operator.ReconciliationPhase, error) {
+			Eventually(func() (commontypes.ReconciliationPhase, error) {
 				return utils.GetAstarteReconciliationPhase(utils.AstarteTestResource.Name, namespace, k8sClient)
-			}, utils.DefaultTimeout, utils.DefaultRetryInterval).Should(BeEquivalentTo(operator.ReconciliationPhaseReconciled))
+			}, utils.DefaultTimeout, utils.DefaultRetryInterval).Should(BeEquivalentTo(commontypes.ReconciliationPhaseReconciled))
 
 			By("By ensuring that the Astarte resource Status becomes green")
-			Eventually(func() (operator.AstarteClusterHealth, error) {
+			Eventually(func() (commontypes.AstarteClusterHealth, error) {
 				return utils.EnsureAstarteBecomesGreen(utils.AstarteTestResource.Name, namespace, k8sClient)
-			}, utils.DefaultTimeout, utils.DefaultRetryInterval).Should(BeEquivalentTo(operator.AstarteClusterHealthGreen))
+			}, utils.DefaultTimeout, utils.DefaultRetryInterval).Should(BeEquivalentTo(commontypes.AstarteClusterHealthGreen))
 
 			By("By ensuring all Astarte services are up and running")
 			Expect(utils.EnsureAstarteServicesReadinessUpTo011(namespace, k8sClient, true)).Should(Succeed())

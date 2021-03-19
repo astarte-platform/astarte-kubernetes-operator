@@ -5,11 +5,12 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	operator "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+
+	operator "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 )
 
 // AstarteDeleteTest deletes an Astarte instance and tests whether it was deleted and cleaned up

@@ -1,0 +1,62 @@
+apiVersion: api.astarte-platform.org/v1alpha2
+kind: Astarte
+metadata:
+  name: astarte
+  namespace: astarte
+spec:
+  # This is the most minimal set of reasonable configuration to spin up an Astarte
+  # instance with reasonable defaults and enough control over the deployment.
+  version: 1.0.0-beta.1
+  api:
+    host: "api.astarte-example.com" # MANDATORY
+  rabbitmq:
+    resources:
+      requests:
+        cpu: 300m
+        memory: 512M
+      limits:
+        cpu: "1"
+        memory: 1000M
+  cassandra:
+    maxHeapSize: 1024M
+    heapNewSize: 256M
+    storage:
+      size: 30Gi
+    resources:
+      requests:
+        cpu: "1"
+        memory: 1024M
+      limits:
+        cpu: "2"
+        memory: 2048M
+  vernemq:
+    host: "broker.astarte-example.com"
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1024M
+      limits:
+        cpu: 1000m
+        memory: 2048M
+  cfssl:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128M
+      limits:
+        cpu: 200m
+        memory: 256M
+    storage:
+      size: 2Gi
+  components:
+    # Global resource allocation. Automatically allocates resources to components weighted in a
+    # reasonable way.
+    resources:
+      requests:
+        cpu: 1200m
+        memory: 3072M
+      limits:
+        cpu: 3000m
+        memory: 6144M
+    dashboard:
+      deploy: true

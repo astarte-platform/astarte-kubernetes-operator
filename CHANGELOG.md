@@ -4,7 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.0-beta.2] - Unreleased
+### Changed
+- Updated Operator SDK to 1.4.2
+
+### Added
+- Add `additionalEnv` field to `AstarteGenericClusteredResource`, allowing to pass custom
+  environment variables to all Astarte components.
+- Add Astarte and AVI (v1plha2) custom resource samples.
+
+## [1.0.0-beta.1] - 2021-02-16
 ### Added
 - It is now possible to explictly set a CA for Devices through a Kubernetes TLS Secret
 - Add support for the Dashboard configuration used in Astarte 1.0 and later.
@@ -12,14 +21,41 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Make port 15692 available for RabbitMQ metrics.
 - Expose port 8888 for VerneMQ metrics.
 - Added a Helm chart for deploying the Operator
+- Added Kubernetes Webhooks
+- Allow disabling webhooks with ENABLE_WEBHOOKS env var.
 
 ### Changed
+- Force deployment strategy to Recreate for Flow, overriding user preferences
+- Default Flow's deployment strategy to Recreate
 - Astarte Operator SDK now uses Kubebuilder as the base project structure
 - Update RabbitMQ version to 3.8.x for 1.0.x releases
 - Starting with Astarte 1.0.0, CFSSL by default doesn't use a Database instead of using SQLite.
 - CFSSL is now deployed as a Deployment, and no longer requires a Persistent Volume. This also
   means SQLite is no longer supported as a Database.
 - Append `-api` to existing API service names.
+- Enable multi-group layout.
+- Upgrade apiextensions to v1.
+- Add v1alpha2 CRDs.
+- Use Go 1.15.x by default
+- Migrate to controller-gen 0.4.1 to ensure we can support all Kubernetes v1 APIs
+- Change logs format to logfmt
+- Define common types to be shared by different CRD versions.
+
+## [0.11.4] - 2021-01-26
+### Changed
+- Force deployment strategy to Recreate for DUP and TE, overriding user preferences
+
+### Added
+- Allow using the mirror queue functionality in the VerneMQ plugin. Note that this is not a stable
+  API and it will be removed in future versions of Astarte, since it is superseeded by AMQP
+  Triggers.
+
+## [0.11.3] - 2020-09-24
+### Changed
+- Default Trigger Engine's deployment strategy to Recreate
+- Default DUP's deployment strategy to Recreate (fixes #152)
+
+## [0.11.2] - 2020-09-01
 
 ## [0.11.1] - 2020-05-18
 ### Added

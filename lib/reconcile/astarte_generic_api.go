@@ -24,9 +24,6 @@ import (
 	"strconv"
 	"strings"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
-	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 	"github.com/go-logr/logr"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
@@ -37,16 +34,21 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	commontypes "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
+	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 )
 
 // EnsureAstarteGenericAPI reconciles any component compatible with AstarteGenericAPISpec with a custom Probe
-func EnsureAstarteGenericAPI(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec, component apiv1alpha1.AstarteComponent,
+func EnsureAstarteGenericAPI(cr *apiv1alpha1.Astarte, api commontypes.AstarteGenericAPISpec, component commontypes.AstarteComponent,
 	c client.Client, scheme *runtime.Scheme) error {
 	return EnsureAstarteGenericAPIWithCustomProbe(cr, api, component, c, scheme, nil)
 }
 
 // EnsureAstarteGenericAPIWithCustomProbe reconciles any component compatible with AstarteGenericAPISpec with a custom Probe
-func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec, component apiv1alpha1.AstarteComponent,
+func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api commontypes.AstarteGenericAPISpec, component commontypes.AstarteComponent,
 	c client.Client, scheme *runtime.Scheme, customProbe *v1.Probe) error {
 	reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name, "Astarte.Component", component)
 	deploymentName := cr.Name + "-" + component.DashedString()
@@ -75,7 +77,7 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api apiv1al
 	}
 
 	// Service Account?
-	if component == apiv1alpha1.FlowComponent {
+	if component == commontypes.FlowComponent {
 		if err := reconcileRBACForFlow(cr.Name+"-"+component.ServiceName(), cr, c, scheme); err != nil {
 			return err
 		}
@@ -85,7 +87,7 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api apiv1al
 		Selector: &metav1.LabelSelector{
 			MatchLabels: matchLabels,
 		},
-		Strategy: getDeploymentStrategyForClusteredResource(cr, api.AstarteGenericClusteredResource),
+		Strategy: getDeploymentStrategyForClusteredResource(cr, api.AstarteGenericClusteredResource, component),
 		Template: v1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: labels,
@@ -116,8 +118,8 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api apiv1al
 	return nil
 }
 
-func checkShouldDeployAPI(reqLogger logr.Logger, deploymentName string, cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec,
-	component apiv1alpha1.AstarteComponent, c client.Client) bool {
+func checkShouldDeployAPI(reqLogger logr.Logger, deploymentName string, cr *apiv1alpha1.Astarte, api commontypes.AstarteGenericAPISpec,
+	component commontypes.AstarteComponent, c client.Client) bool {
 	if !pointy.BoolValue(api.Deploy, true) {
 		reqLogger.V(1).Info("Skipping Astarte Component Deployment")
 		// Before returning - check if we shall clean up the Deployment.
@@ -136,7 +138,7 @@ func checkShouldDeployAPI(reqLogger logr.Logger, deploymentName string, cr *apiv
 	}
 
 	// If we do need to deploy, check any constraints
-	if component == apiv1alpha1.FlowComponent && version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", api.Version, cr.Spec.Version) == nil {
+	if component == commontypes.FlowComponent && version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", api.Version, cr.Spec.Version) == nil {
 		reqLogger.V(1).Info("Skipping Flow Deployment - not supported by this Astarte version")
 		return false
 	}
@@ -144,8 +146,8 @@ func checkShouldDeployAPI(reqLogger logr.Logger, deploymentName string, cr *apiv
 	return true
 }
 
-func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec,
-	component apiv1alpha1.AstarteComponent, customProbe *v1.Probe) v1.PodSpec {
+func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha1.Astarte, api commontypes.AstarteGenericAPISpec,
+	component commontypes.AstarteComponent, customProbe *v1.Probe) v1.PodSpec {
 	ps := v1.PodSpec{
 		TerminationGracePeriodSeconds: pointy.Int64(30),
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
@@ -168,18 +170,18 @@ func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha1.Astarte,
 		Volumes: getAstarteGenericAPIVolumes(cr, component),
 	}
 
-	if component == apiv1alpha1.FlowComponent {
+	if component == commontypes.FlowComponent {
 		ps.ServiceAccountName = cr.Name + "-" + component.ServiceName()
 	}
 
 	return ps
 }
 
-func getAstarteGenericAPIVolumes(cr *apiv1alpha1.Astarte, component apiv1alpha1.AstarteComponent) []v1.Volume {
+func getAstarteGenericAPIVolumes(cr *apiv1alpha1.Astarte, component commontypes.AstarteComponent) []v1.Volume {
 	ret := getAstarteCommonVolumes(cr)
 
 	// Depending on the component, we might need to add some more stuff.
-	if component == apiv1alpha1.HousekeepingAPI {
+	if component == commontypes.HousekeepingAPI {
 		ret = append(ret, v1.Volume{
 			Name: "jwtpubkey",
 			VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{
@@ -191,11 +193,11 @@ func getAstarteGenericAPIVolumes(cr *apiv1alpha1.Astarte, component apiv1alpha1.
 	return ret
 }
 
-func getAstarteGenericAPIVolumeMounts(cr *apiv1alpha1.Astarte, component apiv1alpha1.AstarteComponent) []v1.VolumeMount {
+func getAstarteGenericAPIVolumeMounts(cr *apiv1alpha1.Astarte, component commontypes.AstarteComponent) []v1.VolumeMount {
 	ret := getAstarteCommonVolumeMounts(cr)
 
 	// Depending on the component, we might need to add some more stuff.
-	if component == apiv1alpha1.HousekeepingAPI {
+	if component == commontypes.HousekeepingAPI {
 		ret = append(ret, v1.VolumeMount{
 			Name:      "jwtpubkey",
 			MountPath: "/jwtpubkey",
@@ -206,7 +208,7 @@ func getAstarteGenericAPIVolumeMounts(cr *apiv1alpha1.Astarte, component apiv1al
 	return ret
 }
 
-func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec, component apiv1alpha1.AstarteComponent) []v1.EnvVar {
+func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, api commontypes.AstarteGenericAPISpec, component commontypes.AstarteComponent) []v1.EnvVar {
 	ret := getAstarteCommonEnvVars(deploymentName, cr, api.AstarteGenericClusteredResource, component)
 
 	// Should we disable authentication?
@@ -219,7 +221,7 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte,
 
 	// Depending on the component, we might need to add some more stuff.
 	switch component {
-	case apiv1alpha1.AppEngineAPI:
+	case commontypes.AppEngineAPI:
 		cassandraPrefix := ""
 		if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", cr.Spec.Components.AppengineAPI.Version, cr.Spec.Version) == nil {
 			cassandraPrefix = oldAstartePrefix
@@ -259,13 +261,13 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte,
 					Value: cr.Spec.Components.AppengineAPI.RoomEventsExchangeName,
 				})
 		}
-	case apiv1alpha1.HousekeepingAPI:
+	case commontypes.HousekeepingAPI:
 		// Add Public Key Information
 		ret = append(ret, v1.EnvVar{
 			Name:  "HOUSEKEEPING_API_JWT_PUBLIC_KEY_PATH",
 			Value: "/jwtpubkey/public-key",
 		})
-	case apiv1alpha1.FlowComponent:
+	case commontypes.FlowComponent:
 		ret = append(ret, getAstarteFlowEnvVars(cr)...)
 	}
 
@@ -302,14 +304,14 @@ func getAstarteFlowEnvVars(cr *apiv1alpha1.Astarte) []v1.EnvVar {
 	return appendRabbitMQConnectionEnvVars(ret, "FLOW_DEFAULT_AMQP_CONNECTION", cr)
 }
 
-func getAstarteAPIProbe(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec, component apiv1alpha1.AstarteComponent, customProbe *v1.Probe) *v1.Probe {
+func getAstarteAPIProbe(cr *apiv1alpha1.Astarte, api commontypes.AstarteGenericAPISpec, component commontypes.AstarteComponent, customProbe *v1.Probe) *v1.Probe {
 	if customProbe != nil {
 		return customProbe
 	}
 
 	if version.CheckConstraintAgainstAstarteComponentVersion("< 0.11.0", api.Version, cr.Spec.Version) == nil {
 		// Only Housekeeping has a health check in 0.10.x
-		if component != apiv1alpha1.HousekeepingAPI {
+		if component != commontypes.HousekeepingAPI {
 			return nil
 		}
 
@@ -317,7 +319,7 @@ func getAstarteAPIProbe(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericA
 	}
 
 	if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", api.Version, cr.Spec.Version) == nil {
-		if component == apiv1alpha1.FlowComponent {
+		if component == commontypes.FlowComponent {
 			return nil
 		}
 	}

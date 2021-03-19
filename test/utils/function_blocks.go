@@ -21,17 +21,19 @@ package utils
 import (
 	"context"
 
-	operator "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
+	operator "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 )
 
-func EnsureAstarteBecomesGreen(name, namespace string, c client.Client) (operator.AstarteClusterHealth, error) {
+func EnsureAstarteBecomesGreen(name, namespace string, c client.Client) (commontypes.AstarteClusterHealth, error) {
 	astarteLookupKey := types.NamespacedName{Name: name, Namespace: namespace}
 	createdAstarte := &operator.Astarte{}
 
 	if err := c.Get(context.Background(), astarteLookupKey, createdAstarte); err != nil {
-		return operator.AstarteClusterHealthRed, err
+		return commontypes.AstarteClusterHealthRed, err
 	}
 
 	return createdAstarte.Status.Health, nil
@@ -48,12 +50,12 @@ func GetAstarteStatusVersion(name, namespace string, c client.Client) (string, e
 	return installedAstarte.Status.AstarteVersion, nil
 }
 
-func GetAstarteReconciliationPhase(name, namespace string, c client.Client) (operator.ReconciliationPhase, error) {
+func GetAstarteReconciliationPhase(name, namespace string, c client.Client) (commontypes.ReconciliationPhase, error) {
 	astarteLookupKey := types.NamespacedName{Name: name, Namespace: namespace}
 	installedAstarte := &operator.Astarte{}
 
 	if err := c.Get(context.Background(), astarteLookupKey, installedAstarte); err != nil {
-		return operator.ReconciliationPhaseUnknown, err
+		return commontypes.ReconciliationPhaseUnknown, err
 	}
 
 	return installedAstarte.Status.ReconciliationPhase, nil

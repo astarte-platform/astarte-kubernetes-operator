@@ -16,7 +16,7 @@
   limitations under the License.
 */
 
-package v1alpha1
+package commontypes
 
 import (
 	"strings"
@@ -127,7 +127,7 @@ func (a *AstarteComponent) String() string {
 // DashedString returns the Astarte Component in a Kubernetes-friendly format,
 // e.g: data-updater-plant instead of data_updater_plant
 func (a *AstarteComponent) DashedString() string {
-	return strings.Replace(a.String(), "_", "-", -1)
+	return strings.ReplaceAll(a.String(), "_", "-")
 }
 
 // DockerImageName returns the Docker Image name for this Astarte Component
@@ -149,18 +149,18 @@ func (a *AstarteComponent) ServiceRelativePath() string {
 	if !strings.Contains(a.String(), "api") && a.String() != "dashboard" && a.String() != "flow" {
 		return ""
 	}
-	ret := strings.Replace(a.DashedString(), "-", "", -1)
-	return strings.Replace(ret, "api", "", -1)
+	ret := strings.ReplaceAll(a.DashedString(), "-", "")
+	return strings.ReplaceAll(ret, "api", "")
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteGenericClusteredResource struct {
+	metav1.TypeMeta `json:",inline"`
 	// +optional
-	/// +kubebuilder:default=true
 	Deploy *bool `json:"deploy,omitempty"`
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
 	// +optional
-	/// +kubebuilder:default=true
 	AntiAffinity *bool `json:"antiAffinity,omitempty"`
 	// +optional
 	CustomAffinity *v1.Affinity `json:"customAffinity,omitempty"`
@@ -173,16 +173,23 @@ type AstarteGenericClusteredResource struct {
 	// Compute Resources for this Component.
 	// +optional
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
+	// Additional environment variables for this Component
+	// +optional
+	AdditionalEnv []v1.EnvVar `json:"additionalEnv,omitempty"`
 }
 
 // AstarteGenericAPISpec represents a generic Astarte API Component in the Deployment spec
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteGenericAPISpec struct {
+	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
 	// +optional
 	DisableAuthentication *bool `json:"disableAuthentication,omitempty"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstartePersistentStorageSpec struct {
+	metav1.TypeMeta `json:",inline"`
 	// +optional
 	Size *resource.Quantity `json:"size"`
 	// +optional
@@ -191,14 +198,18 @@ type AstartePersistentStorageSpec struct {
 	VolumeDefinition *v1.Volume `json:"volumeDefinition,omitempty"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteAPISpec struct {
+	metav1.TypeMeta `json:",inline"`
 	// +optional
 	SSL  *bool  `json:"ssl,omitempty"`
 	Host string `json:"host"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteRabbitMQSSLConfigurationSpec struct {
-	Enabled bool `json:"enabled"`
+	metav1.TypeMeta `json:",inline"`
+	Enabled         bool `json:"enabled"`
 	// +optional
 	CustomCASecret v1.LocalObjectReference `json:"customCASecret,omitempty"`
 	// +optional
@@ -207,9 +218,11 @@ type AstarteRabbitMQSSLConfigurationSpec struct {
 	CustomSNI string `json:"customSNI,omitempty"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteRabbitMQConnectionSpec struct {
-	Host string `json:"host"`
-	Port *int16 `json:"port"`
+	metav1.TypeMeta `json:",inline"`
+	Host            string `json:"host"`
+	Port            *int16 `json:"port"`
 	// +optional
 	Username string `json:"username,omitempty"`
 	// +optional
@@ -222,12 +235,13 @@ type AstarteRabbitMQConnectionSpec struct {
 	Secret *LoginCredentialsSecret `json:"secret,omitempty"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteRabbitMQSpec struct {
+	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
 	// +optional
 	Connection *AstarteRabbitMQConnectionSpec `json:"connection,omitempty"`
 	// +optional
-	/// +kubebuilder:default={"size": "4Gi"}
 	Storage *AstartePersistentStorageSpec `json:"storage,omitempty"`
 	// +optional
 	AdditionalPlugins []string `json:"additionalPlugins,omitempty"`
@@ -241,7 +255,9 @@ type AstarteRabbitMQSpec struct {
 	EventsExchangeName string `json:"eventsExchangeName,omitempty"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCassandraSSLConfigurationSpec struct {
+	metav1.TypeMeta `json:",inline"`
 	// +optional
 	Enabled bool `json:"enabled,omitempty"`
 	// +optional
@@ -252,13 +268,17 @@ type AstarteCassandraSSLConfigurationSpec struct {
 	CustomSNI string `json:"customSNI,omitempty"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type LoginCredentialsSecret struct {
-	Name        string `json:"name"`
-	UsernameKey string `json:"usernameKey"`
-	PasswordKey string `json:"passwordKey"`
+	metav1.TypeMeta `json:",inline"`
+	Name            string `json:"name"`
+	UsernameKey     string `json:"usernameKey"`
+	PasswordKey     string `json:"passwordKey"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCassandraConnectionSpec struct {
+	metav1.TypeMeta `json:",inline"`
 	// +optional
 	PoolSize *int `json:"poolSize,omitempty"`
 	// +optional
@@ -273,7 +293,9 @@ type AstarteCassandraConnectionSpec struct {
 	Password string `json:"password,omitempty"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCassandraSpec struct {
+	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
 	// +optional
 	Nodes string `json:"nodes,omitempty"`
@@ -287,7 +309,9 @@ type AstarteCassandraSpec struct {
 	Connection *AstarteCassandraConnectionSpec `json:"connection,omitempty"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteVerneMQSpec struct {
+	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
 	Host                            string `json:"host"`
 	// +optional
@@ -318,16 +342,22 @@ type AstarteVerneMQSpec struct {
 	// Default: 1 year
 	// +optional
 	PersistentClientExpiration string `json:"persistentClientExpiration,omitempty"`
+	// +optional
+	MirrorQueue string `json:"mirrorQueue,omitempty"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteGenericComponentSpec struct {
+	metav1.TypeMeta `json:",inline"`
 	// +optional
 	API AstarteGenericAPISpec `json:"api,omitempty"`
 	// +optional
 	Backend AstarteGenericClusteredResource `json:"backend,omitempty"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteDataUpdaterPlantSpec struct {
+	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
 	// +optional
 	DataQueueCount *int `json:"dataQueueCount,omitempty"`
@@ -340,7 +370,9 @@ type AstarteDataUpdaterPlantSpec struct {
 	PrefetchCount *int `json:"prefetchCount,omitempty"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteTriggerEngineSpec struct {
+	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
 	// Configures the name of the Events queue. Should be configured only in installations with a highly
 	// customized RabbitMQ. It is advised to leave empty unless you know exactly what you're doing.
@@ -354,7 +386,9 @@ type AstarteTriggerEngineSpec struct {
 	EventsRoutingKey string `json:"eventsRoutingKey,omitempty"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteAppengineAPISpec struct {
+	metav1.TypeMeta       `json:",inline"`
 	AstarteGenericAPISpec `json:",inline"`
 	// +kubebuilder:validation:Minimum=100
 	// +optional
@@ -369,13 +403,17 @@ type AstarteAppengineAPISpec struct {
 	RoomEventsExchangeName string `json:"roomEventsExchangeName,omitempty"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteDashboardConfigAuthSpec struct {
-	Type string `json:"type"`
+	metav1.TypeMeta `json:",inline"`
+	Type            string `json:"type"`
 	// +optional
 	OAuthAPIURL string `json:"oauth_api_url,omitempty"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteDashboardConfigSpec struct {
+	metav1.TypeMeta `json:",inline"`
 	// +optional
 	RealmManagementAPIURL string `json:"realmManagementApiUrl,omitempty"`
 	// +optional
@@ -392,13 +430,17 @@ type AstarteDashboardConfigSpec struct {
 	Auth []AstarteDashboardConfigAuthSpec `json:"auth,omitempty"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteDashboardSpec struct {
+	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
 	// +optional
 	Config AstarteDashboardConfigSpec `json:",inline"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteComponentsSpec struct {
+	metav1.TypeMeta `json:",inline"`
 	// Compute Resources for this Component.
 	// +optional
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
@@ -420,56 +462,76 @@ type AstarteComponentsSpec struct {
 	Dashboard AstarteDashboardSpec `json:"dashboard,omitempty"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCFSSLDBConfigSpec struct {
-	Driver     string `json:"driver,omitempty"`
-	DataSource string `json:"dataSource,omitempty"`
+	metav1.TypeMeta `json:",inline"`
+	Driver          string `json:"driver,omitempty"`
+	DataSource      string `json:"dataSource,omitempty"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCFSSLCSRRootCAKeySpec struct {
-	Algo string `json:"algo"`
-	Size int    `json:"size"`
+	metav1.TypeMeta `json:",inline"`
+	Algo            string `json:"algo"`
+	Size            int    `json:"size"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCFSSLCSRRootCANamesSpec struct {
-	C  string `json:"C"`
-	L  string `json:"L"`
-	O  string `json:"O"`
-	OU string `json:"OU"`
-	ST string `json:"ST"`
+	metav1.TypeMeta `json:",inline"`
+	C               string `json:"C"`
+	L               string `json:"L"`
+	O               string `json:"O"`
+	OU              string `json:"OU"`
+	ST              string `json:"ST"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCFSSLCSRRootCACASpec struct {
-	Expiry string `json:"expiry"`
+	metav1.TypeMeta `json:",inline"`
+	Expiry          string `json:"expiry"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCFSSLCSRRootCASpec struct {
-	CN    string                           `json:"CN"`
-	Key   *AstarteCFSSLCSRRootCAKeySpec    `json:"key"`
-	Names []AstarteCFSSLCSRRootCANamesSpec `json:"names"`
-	CA    *AstarteCFSSLCSRRootCACASpec     `json:"ca"`
+	metav1.TypeMeta `json:",inline"`
+	CN              string                           `json:"CN"`
+	Key             *AstarteCFSSLCSRRootCAKeySpec    `json:"key"`
+	Names           []AstarteCFSSLCSRRootCANamesSpec `json:"names"`
+	CA              *AstarteCFSSLCSRRootCACASpec     `json:"ca"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCFSSLCARootConfigSigningCAConstraintSpec struct {
-	MaxPathLen     int  `json:"max_path_len"`
-	IsCA           bool `json:"is_ca"`
-	MaxPathLenZero bool `json:"max_path_len_zero"`
+	metav1.TypeMeta `json:",inline"`
+	MaxPathLen      int  `json:"max_path_len"`
+	IsCA            bool `json:"is_ca"`
+	MaxPathLenZero  bool `json:"max_path_len_zero"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCFSSLCARootConfigSigningDefaultSpec struct {
-	Usages       []string                                         `json:"usages"`
-	Expiry       string                                           `json:"expiry"`
-	CAConstraint *AstarteCFSSLCARootConfigSigningCAConstraintSpec `json:"ca_constraint"`
+	metav1.TypeMeta `json:",inline"`
+	Usages          []string                                         `json:"usages"`
+	Expiry          string                                           `json:"expiry"`
+	CAConstraint    *AstarteCFSSLCARootConfigSigningCAConstraintSpec `json:"ca_constraint"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCFSSLCARootConfigSigningSpec struct {
-	Default *AstarteCFSSLCARootConfigSigningDefaultSpec `json:"default"`
+	metav1.TypeMeta `json:",inline"`
+	Default         *AstarteCFSSLCARootConfigSigningDefaultSpec `json:"default"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCFSSLCARootConfigSpec struct {
-	Signing *AstarteCFSSLCARootConfigSigningSpec `json:"signing"`
+	metav1.TypeMeta `json:",inline"`
+	Signing         *AstarteCFSSLCARootConfigSigningSpec `json:"signing"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCFSSLSpec struct {
+	metav1.TypeMeta `json:",inline"`
 	// +optional
 	Deploy *bool `json:"deploy,omitempty"`
 	// +optional
@@ -499,20 +561,26 @@ type AstarteCFSSLSpec struct {
 
 // astarteSystemKeyspace configures the main system keyspace for Astarte. As of now, these settings
 // have effect only upon cluster initialization, and will be ignored otherwise.
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteSystemKeyspaceSpec struct {
+	metav1.TypeMeta `json:",inline"`
 	// The Replication Factor for the keyspace
 	// +optional
 	ReplicationFactor int `json:"replicationFactor,omitempty"`
 }
 
 // AstarteFeatures enables/disables selectively a set of global features in Astarte
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteFeatures struct {
+	metav1.TypeMeta `json:",inline"`
 	// +optional
 	RealmDeletion bool `json:"realmDeletion,omitempty"`
 }
 
 // AstarteSpec defines the desired state of Astarte
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteSpec struct {
+	metav1.TypeMeta `json:",inline"`
 	// The Astarte Version for this Resource
 	Version string `json:"version"`
 	// +optional
@@ -522,17 +590,15 @@ type AstarteSpec struct {
 	// +optional
 	DistributionChannel string `json:"distributionChannel,omitempty"`
 	// +optional
-	DeploymentStrategy appsv1.DeploymentStrategy `json:"deploymentStrategy,omitempty"`
+	DeploymentStrategy *appsv1.DeploymentStrategy `json:"deploymentStrategy,omitempty"`
 	// +optional
 	Features AstarteFeatures `json:"features,omitempty"`
 	// +optional
-	/// +kubebuilder:default=true
 	RBAC *bool `json:"rbac,omitempty"`
 	// +optional
 	StorageClassName string         `json:"storageClassName,omitempty"`
 	API              AstarteAPISpec `json:"api"`
 	// +optional
-	/// +kubebuilder:default={"deploy":true}
 	RabbitMQ AstarteRabbitMQSpec `json:"rabbitmq"`
 	// +optional
 	Cassandra AstarteCassandraSpec `json:"cassandra"`
@@ -548,36 +614,13 @@ type AstarteSpec struct {
 // TODO: Remove all omitempty from AstarteStatus in v1beta1
 
 // AstarteStatus defines the observed state of Astarte
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteStatus struct {
+	metav1.TypeMeta     `json:",inline"`
 	ReconciliationPhase ReconciliationPhase  `json:"phase,omitempty"`
 	AstarteVersion      string               `json:"astarteVersion,omitempty"`
 	OperatorVersion     string               `json:"operatorVersion,omitempty"`
 	Health              AstarteClusterHealth `json:"health,omitempty"`
 	BaseAPIURL          string               `json:"baseAPIURL,omitempty"`
 	BrokerURL           string               `json:"brokerURL,omitempty"`
-}
-
-// +kubebuilder:object:root=true
-
-// Astarte is the Schema for the astartes API
-// +kubebuilder:subresource:status
-type Astarte struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   AstarteSpec   `json:"spec,omitempty"`
-	Status AstarteStatus `json:"status,omitempty"`
-}
-
-// +kubebuilder:object:root=true
-
-// AstarteList contains a list of Astarte
-type AstarteList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Astarte `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&Astarte{}, &AstarteList{})
 }

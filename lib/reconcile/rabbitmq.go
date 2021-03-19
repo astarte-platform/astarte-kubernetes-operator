@@ -28,9 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/deps"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -40,16 +37,21 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	commontypes "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
+	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/deps"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 )
 
-func getRabbitMQUserAndPassword(conn *apiv1alpha1.AstarteRabbitMQConnectionSpec) (string, string) {
+func getRabbitMQUserAndPassword(conn *commontypes.AstarteRabbitMQConnectionSpec) (string, string) {
 	if conn != nil {
 		return conn.Username, conn.Password
 	}
 	return "", ""
 }
 
-func getRabbitMQUserAndPasswordKeys(conn *apiv1alpha1.AstarteRabbitMQConnectionSpec) (string, string) {
+func getRabbitMQUserAndPasswordKeys(conn *commontypes.AstarteRabbitMQConnectionSpec) (string, string) {
 	if conn != nil {
 		if conn.Secret != nil {
 			return conn.Secret.UsernameKey, conn.Secret.PasswordKey
@@ -58,7 +60,7 @@ func getRabbitMQUserAndPasswordKeys(conn *apiv1alpha1.AstarteRabbitMQConnectionS
 	return misc.RabbitMQDefaultUserCredentialsUsernameKey, misc.RabbitMQDefaultUserCredentialsPasswordKey
 }
 
-func getRabbitMQSecret(cr *apiv1alpha1.Astarte) *apiv1alpha1.LoginCredentialsSecret {
+func getRabbitMQSecret(cr *apiv1alpha1.Astarte) *commontypes.LoginCredentialsSecret {
 	if cr.Spec.RabbitMQ.Connection != nil {
 		return cr.Spec.RabbitMQ.Connection.Secret
 	}
@@ -201,7 +203,7 @@ func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sc
 	return nil
 }
 
-func validateRabbitMQDefinition(rmq apiv1alpha1.AstarteRabbitMQSpec) error {
+func validateRabbitMQDefinition(rmq commontypes.AstarteRabbitMQSpec) error {
 	if !pointy.BoolValue(rmq.Deploy, true) {
 		// We need to make sure that we have all needed components
 		if rmq.Connection == nil {

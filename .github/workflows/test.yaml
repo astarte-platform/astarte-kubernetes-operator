@@ -39,15 +39,15 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-go@v2
       with:
-        # Ensure we're on Go 1.14
-        go-version: '1.14.x'
+        # Ensure we're on Go 1.15
+        go-version: '1.15.x'
     - uses: stefanprodan/kube-tools@v1
       with:
         kubectl: 1.18.2
         kustomize: 3.5.5
         helm: 2.16.7
         helmv3: 3.2.1
-    - uses: engineerd/setup-kind@v0.4.0
+    - uses: engineerd/setup-kind@v0.5.0
       with:
         version: "v0.8.1"
         image: "${{ matrix.kubernetesNodeImage }}"

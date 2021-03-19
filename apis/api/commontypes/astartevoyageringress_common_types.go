@@ -7,7 +7,7 @@
   you may not use this file except in compliance with the License.
   You may obtain a copy of the License at
 
-     http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,16 +16,19 @@
   limitations under the License.
 */
 
-package v1alpha1
+package commontypes
 
 import (
-	voyager "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	voyager "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 )
 
 // AstarteGenericIngressSpec is a common struct for all Ingresses defined by AstarteVoyagerIngress
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteGenericIngressSpec struct {
+	metav1.TypeMeta `json:",inline"`
 	// +optional
 	Deploy *bool `json:"deploy,omitempty"`
 	// +optional
@@ -45,7 +48,9 @@ type AstarteGenericIngressSpec struct {
 }
 
 // AstarteVoyagerIngressAPISpec defines the specification of the APIs
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteVoyagerIngressAPISpec struct {
+	metav1.TypeMeta           `json:",inline"`
 	AstarteGenericIngressSpec `json:",inline"`
 	// +optional
 	Cors *bool `json:"cors,omitempty"`
@@ -64,7 +69,9 @@ type AstarteVoyagerIngressAPISpec struct {
 }
 
 // AstarteVoyagerIngressDashboardSpec defines the specification of the Dashboard
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteVoyagerIngressDashboardSpec struct {
+	metav1.TypeMeta `json:",inline"`
 	// +optional
 	SSL *bool `json:"ssl,omitempty"`
 	// +optional
@@ -76,14 +83,18 @@ type AstarteVoyagerIngressDashboardSpec struct {
 }
 
 // AstarteVoyagerIngressBrokerSpec defines the specification of the Broker
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteVoyagerIngressBrokerSpec struct {
+	metav1.TypeMeta           `json:",inline"`
 	AstarteGenericIngressSpec `json:",inline"`
 	// +optional
 	MaxConnections *int `json:"maxConnections,omitempty"`
 }
 
 // AstarteVoyagerIngressLetsEncryptSpec defines the specification of the Let's Encrypt Integration
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteVoyagerIngressLetsEncryptSpec struct {
+	metav1.TypeMeta `json:",inline"`
 	// +optional
 	Use *bool `json:"use,omitempty"`
 	// +optional
@@ -99,7 +110,9 @@ type AstarteVoyagerIngressLetsEncryptSpec struct {
 }
 
 // AstarteVoyagerIngressSpec defines the desired state of AstarteVoyagerIngress
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteVoyagerIngressSpec struct {
+	metav1.TypeMeta `json:",inline"`
 	// +optional
 	ImagePullPolicy *v1.PullPolicy `json:"imagePullPolicy,omitempty"`
 	Astarte         string         `json:"astarte"`
@@ -114,34 +127,10 @@ type AstarteVoyagerIngressSpec struct {
 }
 
 // AstarteVoyagerIngressStatus defines the observed state of AstarteVoyagerIngress
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteVoyagerIngressStatus struct {
+	metav1.TypeMeta `json:",inline"`
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-}
-
-// +kubebuilder:object:root=true
-// +kubebuilder:resource:shortName=avi
-// +kubebuilder:subresource:status
-
-// AstarteVoyagerIngress is the Schema for the astartevoyageringresses API
-type AstarteVoyagerIngress struct {
-	Status AstarteVoyagerIngressStatus `json:"status,omitempty"`
-	Spec   AstarteVoyagerIngressSpec   `json:"spec,omitempty"`
-
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-	metav1.TypeMeta   `json:",inline"`
-}
-
-// +kubebuilder:object:root=true
-
-// AstarteVoyagerIngressList contains a list of AstarteVoyagerIngress
-type AstarteVoyagerIngressList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []AstarteVoyagerIngress `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&AstarteVoyagerIngress{}, &AstarteVoyagerIngressList{})
 }

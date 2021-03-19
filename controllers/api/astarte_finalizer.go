@@ -21,12 +21,13 @@ package controllers
 import (
 	"context"
 
-	"github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/controllerutils"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	"github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/controllerutils"
 )
 
-const astarteFinalizer = "finalizer.astarte.astarte-platform.org"
+const astarteFinalizer = "astarte.astarte-platform.org/finalizer"
 
 func (r *AstarteReconciler) handleFinalization(instance *v1alpha1.Astarte) (ctrl.Result, error) {
 	if contains(instance.GetFinalizers(), astarteFinalizer) {
