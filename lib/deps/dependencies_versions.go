@@ -50,5 +50,5 @@ func GetDefaultVersionForRabbitMQ(astarteVersion string) string {
 		return "3.7.21"
 	}
 
-	return "3.8"
+	return "3.8.14"
 }
