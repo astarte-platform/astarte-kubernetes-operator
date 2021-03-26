@@ -36,10 +36,10 @@ jobs:
         kustomize: 3.5.5
         helm: 2.16.7
         helmv3: 3.2.1
-    - uses: engineerd/setup-kind@v0.5.0
+    - uses: container-tools/kind-action@v1
       with:
         version: "v0.8.1"
-        image: "kindest/node:v1.16.9@sha256:7175872357bc85847ec4b1aba46ed1d12fa054c83ac7a8a11f5c268957fd5765"
+        node_image: "kindest/node:v1.16.9@sha256:7175872357bc85847ec4b1aba46ed1d12fa054c83ac7a8a11f5c268957fd5765"
     # Download Operator SDK binary
     - name: Download Operator SDK
       run: |
