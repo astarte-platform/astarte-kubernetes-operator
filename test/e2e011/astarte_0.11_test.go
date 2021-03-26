@@ -33,7 +33,7 @@ import (
 
 var (
 	target011Version string = "0.11.1"
-	target10Version  string = "1.0.0-beta.1"
+	target10Version  string = "1.0.0-beta.2"
 )
 
 var _ = Describe("Astarte controller", func() {
