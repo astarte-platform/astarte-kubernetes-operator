@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Updated Operator SDK to 1.4.2
 - Remove the dangling CFSSL statefulset while upgrading Astarte from v0.11 to v1.0.
+- Update CFSSL to 1.5.0-astarte.0.
 
 ### Added
 - Add `additionalEnv` field to `AstarteGenericClusteredResource`, allowing to pass custom
