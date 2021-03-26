@@ -71,12 +71,6 @@ jobs:
       uses: jakejarvis/wait-action@master
       with:
         time: '20s'
-    - name: Run chart-testing (install)
-      run: ct install
-    - name: Sleep for 20 seconds (wait for Helm to clean up releases)
-      uses: jakejarvis/wait-action@master
-      with:
-        time: '20s'
     - name: Install Helm Chart
       run: |
         helm install astarte-operator ./charts/astarte-operator --set image.repository=kind-registry:5000/astarte-operator-ci --set image.tag=test
