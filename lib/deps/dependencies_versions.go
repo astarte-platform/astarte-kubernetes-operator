@@ -31,7 +31,7 @@ func GetDefaultVersionForCFSSL(astarteVersion string) string {
 		return "1.4.1-astarte.0"
 	}
 
-	return "1.4.1-astarte.1"
+	return "1.5.0-astarte.0"
 }
 
 // GetDefaultVersionForCassandra returns the default Cassandra version based on the Astarte version requested
@@ -50,5 +50,5 @@ func GetDefaultVersionForRabbitMQ(astarteVersion string) string {
 		return "3.7.21"
 	}
 
-	return "3.8"
+	return "3.8.14"
 }
