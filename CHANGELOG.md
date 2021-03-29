@@ -4,9 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [1.0.0-beta.2] - Unreleased
+## [1.0.0-beta.2] - 2021-03-26
 ### Changed
 - Updated Operator SDK to 1.4.2
+- Remove the dangling CFSSL statefulset while upgrading Astarte from v0.11 to v1.0.
+- Update CFSSL to 1.5.0-astarte.0.
+- Update rabbitmq to 3.8.14.
 
 ### Added
 - Add `additionalEnv` field to `AstarteGenericClusteredResource`, allowing to pass custom

@@ -30,7 +30,7 @@ import (
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 )
 
-const landing10Version string = "1.0.0-beta.1"
+const landing10Version string = "1.0.0-beta.2"
 
 // blindly upgrades to 1.0. Invokable only by the upgrade logic
 func upgradeTo10(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme, recorder record.EventRecorder) error {
@@ -66,6 +66,11 @@ func upgradeTo10(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Schem
 
 	// Step 3: Drain RabbitMQ Queues, to ensure nothing is left before we move forward.
 	if err := drainRabbitMQQueues(cr, c, recorder); err != nil {
+		return err
+	}
+
+	// Step 4: Remove CFSSL StatefulSet
+	if err := tearDownCFSSLStatefulSet(cr, c, recorder); err != nil {
 		return err
 	}
 
