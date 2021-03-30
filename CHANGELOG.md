@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - Fixed a regression in 1.0 causing CPU requests for components to go to 0
 
+### Changed
+- Deploy Flow only if explicitly requested. If you have an existing deployment, set `deploy: true`
+  in the flow component before upgrading if you want to keep it deployed.
+
 ## [1.0.0-beta.2] - 2021-03-26
 ### Changed
 - Updated Operator SDK to 1.4.2
