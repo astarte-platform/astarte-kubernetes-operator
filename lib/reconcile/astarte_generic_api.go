@@ -120,7 +120,13 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api commont
 
 func checkShouldDeployAPI(reqLogger logr.Logger, deploymentName string, cr *apiv1alpha1.Astarte, api commontypes.AstarteGenericAPISpec,
 	component commontypes.AstarteComponent, c client.Client) bool {
-	if !pointy.BoolValue(api.Deploy, true) {
+	defaultDeployValue := true
+	// Flow should be deployed only if explicitly requested
+	if component == commontypes.FlowComponent {
+		defaultDeployValue = false
+	}
+
+	if !pointy.BoolValue(api.Deploy, defaultDeployValue) {
 		reqLogger.V(1).Info("Skipping Astarte Component Deployment")
 		// Before returning - check if we shall clean up the Deployment.
 		// It is the only thing actually requiring resources, the rest will be cleaned up eventually when the
