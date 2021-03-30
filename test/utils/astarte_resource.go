@@ -22,6 +22,7 @@ import (
 	"github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
 	operator "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 
+	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -123,7 +124,8 @@ var AstarteTestResource *operator.Astarte = &operator.Astarte{
 			// on a regular basis
 			Flow: commontypes.AstarteGenericAPISpec{
 				AstarteGenericClusteredResource: commontypes.AstarteGenericClusteredResource{
-					Image: "astarte/astarte_flow:snapshot",
+					Deploy: pointy.Bool(true),
+					Image:  "astarte/astarte_flow:snapshot",
 					Resources: &v1.ResourceRequirements{
 						Limits: v1.ResourceList{
 							v1.ResourceCPU:    *resource.NewScaledQuantity(0, resource.Milli),
