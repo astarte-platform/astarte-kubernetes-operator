@@ -239,6 +239,11 @@ func getCassandraEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.E
 		},
 	}
 
+	// Add any explicit additional env
+	if len(cr.Spec.Cassandra.AdditionalEnv) > 0 {
+		envVars = append(envVars, cr.Spec.Cassandra.AdditionalEnv...)
+	}
+
 	return envVars
 }
 
