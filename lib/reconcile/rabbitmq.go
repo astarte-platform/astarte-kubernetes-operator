@@ -273,7 +273,7 @@ func getRabbitMQReadinessProbe() *v1.Probe {
 func getRabbitMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.EnvVar {
 	userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetRabbitMQUserCredentialsSecret(cr)
 
-	return []v1.EnvVar{
+	ret := []v1.EnvVar{
 		{
 			Name:  "RABBITMQ_USE_LONGNAME",
 			Value: strconv.FormatBool(true),
@@ -312,6 +312,13 @@ func getRabbitMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.En
 			}},
 		},
 	}
+
+	// Add any explicit additional env
+	if len(cr.Spec.RabbitMQ.AdditionalEnv) > 0 {
+		ret = append(ret, cr.Spec.RabbitMQ.AdditionalEnv...)
+	}
+
+	return ret
 }
 
 func getRabbitMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.Astarte) v1.PodSpec {
