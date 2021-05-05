@@ -106,7 +106,7 @@ func (r *ReconcileHelper) ComputeClusterHealth(reqLogger logr.Logger, instance *
 	if err := r.Client.List(context.TODO(), astarteDeployments, client.InNamespace(instance.Namespace),
 		client.MatchingLabels{"component": "astarte"}); err == nil {
 		for _, deployment := range astarteDeployments.Items {
-			if deployment.Status.ReadyReplicas == 0 {
+			if deployment.Status.ReadyReplicas == 0 && pointy.Int32Value(deployment.Spec.Replicas, 0) > 0 {
 				nonReadyDeployments++
 			}
 		}
