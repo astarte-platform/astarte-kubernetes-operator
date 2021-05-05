@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Deploy Flow only if explicitly requested. If you have an existing deployment, set `deploy: true`
   in the flow component before upgrading if you want to keep it deployed.
+- When computing the cluster health, neglect all the Astarte components which are not to be deployed
+  (i.e. replicas is set to 0 or deploy is false).
 
 ## [1.0.0-beta.2] - 2021-03-26
 ### Changed
