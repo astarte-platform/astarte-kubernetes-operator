@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.0.0-rc.0] - 2021-05-10
+### Fixed
+- Fixed a regression in 1.0 causing CPU requests for components to go to 0
+
+### Changed
+- Deploy Flow only if explicitly requested. If you have an existing deployment, set `deploy: true`
+  in the flow component before upgrading if you want to keep it deployed.
+- When computing the cluster health, neglect all the Astarte components which are not to be deployed
+  (i.e. replicas is set to 0 or deploy is false).
+- Update rabbitmq to 3.8.16.
+
 ## [1.0.0-beta.2] - 2021-03-26
 ### Changed
 - Updated Operator SDK to 1.4.2
@@ -15,6 +26,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add `additionalEnv` field to `AstarteGenericClusteredResource`, allowing to pass custom
   environment variables to all Astarte components.
 - Add Astarte and AVI (v1plha2) custom resource samples.
+- Add support to `additionalEnv` also to Cassandra, RabbitMQ and VerneMQ.
 
 ## [1.0.0-beta.1] - 2021-02-16
 ### Added

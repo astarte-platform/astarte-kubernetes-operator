@@ -10,7 +10,7 @@ image:
   repository: astarte/astarte-kubernetes-operator
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "1.0.0-beta.2"
+  tag: "1.0.0-rc.0"
 
 resources:
   limits:
