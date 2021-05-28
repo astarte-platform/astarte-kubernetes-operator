@@ -207,7 +207,7 @@ func GetResourcesForAstarteComponent(cr *apiv1alpha1.Astarte, requestedResources
 
 	// Adjust the requests to ensure we don't starve our services.
 	// If the CPU is <150m, we're better off bursting the component. Otherwise, add it to requests.
-	if cpuRequests.MilliValue() >= 150 {
+	if cpuRequests.MilliValue() < 150 {
 		cpuRequests = resource.NewScaledQuantity(0, resource.Milli)
 	}
 	realRequests[v1.ResourceCPU] = *cpuRequests
