@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - Unreleased
+### Changed
+- Fix bug that prevent OSX users to upgrade from v0.11 to v1.0 (now the upgrade procedure requires
+  `gawk`)
+
 ## [1.0.0-rc.0] - 2021-05-10
 ### Fixed
 - Fixed a regression in 1.0 causing CPU requests for components to go to 0
