@@ -17,13 +17,13 @@ function update_resources() {
     # crds.yaml contains all the CRDs defined by Astarte Operator in a single file.
     # Split each Custom Resource Definition and redirect it to a dedicated file whose name
     # is formatted as crd_n.yaml.
-    awk '/^# Source:/{n++}{print > "crd_" n ".yaml"}' crds.yaml
+    gawk '/^# Source:/{n++}{print > "crd_" n ".yaml"}' crds.yaml
 
     # Check which CRD is defined within each crd_n.yaml file and rename the file accordingly
     # e.g.: if crd_1.yaml implements the Astarte CRD, rename it as crd_astarte.yaml
-    mv $(grep 'singular: astarte$' ./crd_* | awk '{print $1;}' | cut -f 1 -d ":") crd_astarte.yaml
-    mv $(grep 'singular: astartevoyageringress$' ./crd_* | awk '{print $1;}' | cut -f 1 -d ":") crd_astartevoyageringress.yaml
-    mv $(grep 'singular: flow$' ./crd_* | awk '{print $1;}' | cut -f 1 -d ":") crd_flow.yaml
+    mv $(grep 'singular: astarte$' ./crd_* | gawk '{print $1;}' | cut -f 1 -d ":") crd_astarte.yaml
+    mv $(grep 'singular: astartevoyageringress$' ./crd_* | gawk '{print $1;}' | cut -f 1 -d ":") crd_astartevoyageringress.yaml
+    mv $(grep 'singular: flow$' ./crd_* | gawk '{print $1;}' | cut -f 1 -d ":") crd_flow.yaml
 
     kubectl replace -f crd_astarte.yaml
     kubectl replace -f crd_astartevoyageringress.yaml
