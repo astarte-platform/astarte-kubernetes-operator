@@ -4,10 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - Unreleased
+## [1.0.0] - 2021-07-01
 ### Changed
 - Fix bug that prevent OSX users to upgrade from v0.11 to v1.0 (now the upgrade procedure requires
   `gawk`)
+- Update CFSSL to 1.5.0-astarte.1.
 
 ## [1.0.0-rc.0] - 2021-05-10
 ### Fixed

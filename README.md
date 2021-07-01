@@ -41,7 +41,7 @@ Installing the operator is as simple as:
 ```bash
 helm repo add astarte https://helm.astarte-platform.org
 helm repo update
-helm install astarte-operator astarte/astarte-operator --devel
+helm install astarte-operator astarte/astarte-operator
 ```
 
 These instructions will take care of installing all needed components for the Operator to run. This
@@ -49,7 +49,7 @@ includes all the RBAC roles, Custom Resource Definitions, Webhooks, and the Oper
 
 Moreover, Helm is responsible for upgrading the Astarte Operator. To do so, run:
 ```bash
-helm upgrade astarte-operator astarte/astarte-operator --devel
+helm upgrade astarte-operator astarte/astarte-operator
 ```
 
 If you are interested in having a deeper understanding on how the Astarte Operator works you should
