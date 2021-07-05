@@ -23,7 +23,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         testSuite:
@@ -41,20 +41,28 @@ jobs:
       with:
         # Ensure we're on Go 1.15
         go-version: '1.15.x'
-    - uses: stefanprodan/kube-tools@v1
+    - uses: stefanprodan/kube-tools@v1.5.0
       with:
         kubectl: 1.18.2
         kustomize: 3.5.5
         helm: 2.16.7
         helmv3: 3.2.1
-    - uses: container-tools/kind-action@v1
+    - name: Set nf_conntrack_max value
+      # This step is required to avoid CrashLoopBackOff for kube-proxy
+      # see https://github.com/kubernetes-sigs/kind/issues/2240#issuecomment-838510890
+      run: |
+        sudo sysctl net/netfilter/nf_conntrack_max=131072
+    - uses: container-tools/kind-action@v1.4.0
       with:
-        version: "v0.8.1"
+        version: "v0.10.0"
         node_image: "${{ matrix.kubernetesNodeImage }}"
     - name: Ensure KinD is up
       run: |
         kubectl cluster-info
         kubectl get pods -n kube-system
+    - name: Dump cluster info
+      run: |
+        kubectl cluster-info dump
     - name: Setup needed resources
       run: |
         kubectl create namespace astarte-test
