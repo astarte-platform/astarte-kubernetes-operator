@@ -338,7 +338,7 @@ func IsAstarteComponentDeployed(cr *apiv1alpha1.Astarte, component commontypes.A
 	case commontypes.DataUpdaterPlant:
 		return pointy.BoolValue(cr.Spec.Components.DataUpdaterPlant.Deploy, true)
 	case commontypes.FlowComponent:
-		return pointy.BoolValue(cr.Spec.Components.Flow.Deploy, true)
+		return pointy.BoolValue(cr.Spec.Components.Flow.Deploy, false)
 	case commontypes.Housekeeping:
 		return pointy.BoolValue(cr.Spec.Components.Housekeeping.Backend.Deploy, true)
 	case commontypes.HousekeepingAPI:
