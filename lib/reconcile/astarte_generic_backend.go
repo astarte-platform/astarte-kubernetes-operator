@@ -95,7 +95,7 @@ func EnsureAstarteGenericBackendWithCustomProbe(cr *apiv1alpha1.Astarte, backend
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: labels,
 			},
-			Spec: getAstarteGenericBackendPodSpec(deploymentName, cr, backend, component, customProbe),
+			Spec: getAstarteGenericBackendPodSpec(deploymentName, 0, 0, cr, backend, component, customProbe),
 		},
 	}
 
@@ -121,7 +121,7 @@ func EnsureAstarteGenericBackendWithCustomProbe(cr *apiv1alpha1.Astarte, backend
 	return nil
 }
 
-func getAstarteGenericBackendPodSpec(deploymentName string, cr *apiv1alpha1.Astarte, backend commontypes.AstarteGenericClusteredResource,
+func getAstarteGenericBackendPodSpec(deploymentName string, replicaIndex, replicas int, cr *apiv1alpha1.Astarte, backend commontypes.AstarteGenericClusteredResource,
 	component commontypes.AstarteComponent, customProbe *v1.Probe) v1.PodSpec {
 	ps := v1.PodSpec{
 		TerminationGracePeriodSeconds: pointy.Int64(30),
@@ -138,7 +138,7 @@ func getAstarteGenericBackendPodSpec(deploymentName string, cr *apiv1alpha1.Asta
 				Image:           getAstarteImageForClusteredResource(component.DockerImageName(), backend, cr),
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Resources:       misc.GetResourcesForAstarteComponent(cr, backend.Resources, component),
-				Env:             getAstarteGenericBackendEnvVars(deploymentName, cr, backend, component),
+				Env:             getAstarteGenericBackendEnvVars(deploymentName, replicaIndex, replicas, cr, backend, component),
 				ReadinessProbe:  getAstarteBackendProbe(cr, backend, component, customProbe),
 				LivenessProbe:   getAstarteBackendProbe(cr, backend, component, customProbe),
 			},
@@ -161,7 +161,7 @@ func getAstarteGenericBackendVolumeMounts(cr *apiv1alpha1.Astarte) []v1.VolumeMo
 	return ret
 }
 
-func getAstarteGenericBackendEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, backend commontypes.AstarteGenericClusteredResource, component commontypes.AstarteComponent) []v1.EnvVar {
+func getAstarteGenericBackendEnvVars(deploymentName string, replicaIndex, replicas int, cr *apiv1alpha1.Astarte, backend commontypes.AstarteGenericClusteredResource, component commontypes.AstarteComponent) []v1.EnvVar {
 	ret := getAstarteCommonEnvVars(deploymentName, cr, backend, component)
 
 	cassandraPrefix := ""
@@ -208,7 +208,7 @@ func getAstarteGenericBackendEnvVars(deploymentName string, cr *apiv1alpha1.Asta
 				Value: misc.GetVerneMQBrokerURL(cr),
 			})
 	case commontypes.DataUpdaterPlant:
-		ret = append(ret, getAstarteDataUpdaterPlantBackendEnvVars(eventsExchangeName, cr, backend)...)
+		ret = append(ret, getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas, eventsExchangeName, cr, backend)...)
 	case commontypes.TriggerEngine:
 		// Add RabbitMQ variables
 		ret = appendRabbitMQConnectionEnvVars(ret, "TRIGGER_ENGINE_AMQP_CONSUMER", cr)
@@ -241,7 +241,7 @@ func getAstarteGenericBackendEnvVars(deploymentName string, cr *apiv1alpha1.Asta
 	return ret
 }
 
-func getAstarteDataUpdaterPlantBackendEnvVars(eventsExchangeName string, cr *apiv1alpha1.Astarte, backend commontypes.AstarteGenericClusteredResource) []v1.EnvVar {
+func getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas int, eventsExchangeName string, cr *apiv1alpha1.Astarte, backend commontypes.AstarteGenericClusteredResource) []v1.EnvVar {
 	ret := []v1.EnvVar{}
 
 	// Append RabbitMQ variables for both Consumer and Producer
@@ -266,20 +266,8 @@ func getAstarteDataUpdaterPlantBackendEnvVars(eventsExchangeName string, cr *api
 
 	// 0.11+ variables
 	if version.CheckConstraintAgainstAstarteComponentVersion(">= 0.11.0", backend.Version, cr.Spec.Version) == nil {
-		dataQueueCount := getDataQueueCount(cr)
-
 		// When installing Astarte >= 0.11, add the data queue count
-		ret = append(ret,
-			v1.EnvVar{
-				Name: "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_RANGE_START",
-				// TODO: This actually binds DUP to be Replicated by 1. This will change in the future after 0.11, most likely.
-				Value: "0",
-			},
-			v1.EnvVar{
-				Name: "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_RANGE_END",
-				// same as above, but fixed at queue count. Subtract 1 since the range ends at count - 1
-				Value: strconv.Itoa(dataQueueCount - 1),
-			})
+		ret = append(ret, getAstarteDataUpdaterPlantQueuesEnvVars(replicaIndex, replicas, cr)...)
 
 		// 0.11.1+ variables
 		if version.CheckConstraintAgainstAstarteComponentVersion(">= 0.11.1", backend.Version, cr.Spec.Version) == nil {
@@ -287,7 +275,7 @@ func getAstarteDataUpdaterPlantBackendEnvVars(eventsExchangeName string, cr *api
 				v1.EnvVar{
 					Name: "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_TOTAL_COUNT",
 					// This must always hold the total data queue count, not just the one this specific replica of DUP is using
-					Value: strconv.Itoa(dataQueueCount),
+					Value: strconv.Itoa(getDataQueueCount(cr)),
 				})
 		}
 
@@ -312,6 +300,36 @@ func getAstarteDataUpdaterPlantBackendEnvVars(eventsExchangeName string, cr *api
 	}
 
 	return ret
+}
+
+func getAstarteDataUpdaterPlantQueuesEnvVars(replicaIndex, replicas int, cr *apiv1alpha1.Astarte) []v1.EnvVar {
+	dataQueueCount := getDataQueueCount(cr)
+
+	// Figure out the actual value for range start and range end. Defaults to the whole span of
+	// available queues (given they're indexed from 0, the last queue is overall queue count - 1)
+	rangeStart := 0
+	rangeEnd := dataQueueCount - 1
+
+	if replicas > 1 {
+		// Split data queues evenly across all replicas
+		dataQueuePartition := dataQueueCount / replicas
+		rangeStart = dataQueuePartition * replicaIndex
+		// Ensure we take all the queues given they might not be split evenly: last replica
+		// takes everything up to the last queue
+		if replicas != replicaIndex+1 {
+			rangeEnd = (dataQueuePartition * (replicaIndex + 1)) - 1
+		}
+	}
+
+	return []v1.EnvVar{
+		{
+			Name:  "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_RANGE_START",
+			Value: strconv.Itoa(rangeStart),
+		},
+		{
+			Name:  "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_RANGE_END",
+			Value: strconv.Itoa(rangeEnd),
+		}}
 }
 
 func getAstarteBackendProbe(cr *apiv1alpha1.Astarte, backend commontypes.AstarteGenericClusteredResource,
