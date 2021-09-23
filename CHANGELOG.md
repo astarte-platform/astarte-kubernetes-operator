@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - Unreleased
+### Changed
+- Implement DUP scalability correctly by distributing multiple deployments and managing queue
+  allocation over different replicas.
+
 ## [1.0.0] - 2021-07-01
 ### Changed
 - Fix bug that prevent OSX users to upgrade from v0.11 to v1.0 (now the upgrade procedure requires
