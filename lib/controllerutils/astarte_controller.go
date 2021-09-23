@@ -382,7 +382,7 @@ func (r *ReconcileHelper) EnsureAstarteMicroservices(instance *apiv1alpha1.Astar
 	}
 
 	// Now it's Data Updater plant turn
-	if err := recon.EnsureAstarteGenericBackend(instance, instance.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource, commontypes.DataUpdaterPlant, r.Client, r.Scheme); err != nil {
+	if err := recon.EnsureAstarteDataUpdaterPlant(instance, instance.Spec.Components.DataUpdaterPlant, r.Client, r.Scheme); err != nil {
 		return err
 	}
 
