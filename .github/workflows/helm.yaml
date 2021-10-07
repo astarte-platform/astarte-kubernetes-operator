@@ -34,9 +34,13 @@ jobs:
         version: v3.4.2
     - name: Setup chart-testing
       uses: helm/chart-testing-action@v2.0.1
+    - name: Set env variable for ct target branch
+      run: echo "CT_TARGET_BRANCH=release-1.0" >> $GITHUB_ENV
+    - name: Check ct env
+      run: echo $CT_TARGET_BRANCH
     - name: Run chart-testing (lint)
       id: lint
-      run: ct lint
+      run: ct lint --target-branch $CT_TARGET_BRANCH
     - name: Run chart-testing (list-changed)
       id: list-changed
       run: |
