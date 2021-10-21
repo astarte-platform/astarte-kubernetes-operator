@@ -50,13 +50,13 @@ type FlowReconciler struct {
 // +kubebuilder:rbac:groups=api.astarte-platform.org,resources=flows,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=api.astarte-platform.org,resources=flows/status,verbs=get;update;patch
 
-func (r *FlowReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.Log.WithValues("flow", req.NamespacedName)
 	reqLogger.Info("Reconciling Flow")
 
 	// Fetch the Flow instance
 	instance := &apiv1alpha1.Flow{}
-	if err := r.Client.Get(context.TODO(), req.NamespacedName, instance); err != nil {
+	if err := r.Client.Get(ctx, req.NamespacedName, instance); err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
@@ -85,7 +85,7 @@ func (r *FlowReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	// Any leftovers we should delete?
 	for _, b := range existingBlocks {
 		block := b
-		if e := r.Client.Delete(context.TODO(), &block); e != nil {
+		if e := r.Client.Delete(ctx, &block); e != nil {
 			return reconcile.Result{}, e
 		}
 	}
@@ -111,7 +111,7 @@ func (r *FlowReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	// Update the Status and finish the reconciliation
-	if err := r.Client.Status().Update(context.TODO(), instance); err != nil {
+	if err := r.Client.Status().Update(ctx, instance); err != nil {
 		reqLogger.Error(err, "Failed to update Flow status.")
 		return reconcile.Result{}, err
 	}
