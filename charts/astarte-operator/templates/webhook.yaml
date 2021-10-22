@@ -1,9 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: '{{ .Release.Name }}-webhook-service'
+  namespace: '{{ .Release.Namespace }}'
+spec:
+  ports:
+  - port: 443
+    targetPort: 9443
+  selector:
+    control-plane: controller-manager
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: '{{ .Release.Name }}-manager-webhook'
+  namespace: '{{ .Release.Namespace }}'
+spec:
+  dnsNames:
+  - '{{ .Release.Name }}-webhook-service.{{ .Release.Namespace }}.svc'
+  - '{{ .Release.Name }}-webhook-service.{{ .Release.Namespace }}.svc.cluster.local'
+  issuerRef:
+    kind: Issuer
+    name: '{{ .Release.Name }}-selfsigned-issuer'
+  secretName: '{{ .Release.Name }}-webhook-server-cert'
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: '{{ .Release.Name }}-selfsigned-issuer'
+  namespace: '{{ .Release.Namespace }}'
+spec:
+  selfSigned: {}
+---
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: '{{ .Release.Namespace }}/{{ .Release.Name }}-manager-webhook'
-  creationTimestamp: null
   name: '{{ .Release.Name }}-mutating-webhook-configuration'
 webhooks:
 - admissionReviewVersions:
@@ -67,46 +100,11 @@ webhooks:
     - flows
   sideEffects: None
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: '{{ .Release.Name }}-webhook-service'
-  namespace: '{{ .Release.Namespace }}'
-spec:
-  ports:
-  - port: 443
-    targetPort: 9443
-  selector:
-    control-plane: controller-manager
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: '{{ .Release.Name }}-manager-webhook'
-  namespace: '{{ .Release.Namespace }}'
-spec:
-  dnsNames:
-  - '{{ .Release.Name }}-webhook-service.{{ .Release.Namespace }}.svc'
-  - '{{ .Release.Name }}-webhook-service.{{ .Release.Namespace }}.svc.cluster.local'
-  issuerRef:
-    kind: Issuer
-    name: '{{ .Release.Name }}-selfsigned-issuer'
-  secretName: '{{ .Release.Name }}-webhook-server-cert'
----
-apiVersion: cert-manager.io/v1
-kind: Issuer
-metadata:
-  name: '{{ .Release.Name }}-selfsigned-issuer'
-  namespace: '{{ .Release.Namespace }}'
-spec:
-  selfSigned: {}
----
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: '{{ .Release.Namespace }}/{{ .Release.Name }}-manager-webhook'
-  creationTimestamp: null
   name: '{{ .Release.Name }}-validating-webhook-configuration'
 webhooks:
 - admissionReviewVersions:
