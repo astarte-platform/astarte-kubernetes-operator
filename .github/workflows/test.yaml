@@ -31,9 +31,10 @@ jobs:
         - "011"
         - "10"
         kubernetesNodeImage:
-        - "kindest/node:v1.16.9@sha256:7175872357bc85847ec4b1aba46ed1d12fa054c83ac7a8a11f5c268957fd5765"
-        - "kindest/node:v1.17.5@sha256:ab3f9e6ec5ad8840eeb1f76c89bb7948c77bbf76bcebe1a8b59790b8ae9a283a"
-        - "kindest/node:v1.18.2@sha256:7b27a6d0f2517ff88ba444025beae41491b016bc6af573ba467b70c5e8e0d85f"
+        - "kindest/node:v1.18.19@sha256:7af1492e19b3192a79f606e43c35fb741e520d195f96399284515f077b3b622c"
+        - "kindest/node:v1.19.11@sha256:07db187ae84b4b7de440a73886f008cf903fcf5764ba8106a9fd5243d6f32729"
+        - "kindest/node:v1.20.7@sha256:cbeaf907fc78ac97ce7b625e4bf0de16e3ea725daf6b04f930bd14c67c671ff9"
+        - "kindest/node:v1.21.1@sha256:69860bda5563ac81e3c0057d654b5253219618a22ec3a346306239bba8cfa1a6"
       fail-fast: false
     steps:
     - uses: actions/checkout@v2
@@ -52,9 +53,9 @@ jobs:
       # see https://github.com/kubernetes-sigs/kind/issues/2240#issuecomment-838510890
       run: |
         sudo sysctl net/netfilter/nf_conntrack_max=131072
-    - uses: container-tools/kind-action@v1.4.0
+    - uses: container-tools/kind-action@v1
       with:
-        version: "v0.10.0"
+        version: "v0.11.1"
         node_image: "${{ matrix.kubernetesNodeImage }}"
     - name: Ensure KinD is up
       run: |
