@@ -73,7 +73,7 @@ Astarte's Documentation.
 | v1.17.x  | :large_orange_diamond: | :x: |
 | v1.18.x  | :white_check_mark: | :white_check_mark: |
 | v1.19.x  | :white_check_mark: | :white_check_mark: |
-| v1.20.x  | :white_check_mark: | :white_check_mark: |
+| v1.20.x  | :large_orange_diamond: | :white_check_mark: |
 | v1.21.x  | :large_orange_diamond: | :white_check_mark: |
 
 Key:
