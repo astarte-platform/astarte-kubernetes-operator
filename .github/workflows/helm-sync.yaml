@@ -27,8 +27,37 @@ on:
     - 'release-*'
 
 jobs:
+  check-chart:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        path: operator
+    - name: Setup Helm
+      uses: azure/setup-helm@v1
+      with:
+        version: v3.4.2
+    - name: Setup chart-testing
+      uses: helm/chart-testing-action@v2.1.0
+    - name: Set env variable for ct target branch
+      run: echo "CT_TARGET_BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+    - name: Set env variable to prevent chart bump errors
+      run: echo "CT_CHECK_VERSION_INCREMENT=true" >> $GITHUB_ENV
+    - name: Check ct env
+      run: echo $CT_TARGET_BRANCH $CT_CHECK_VERSION_INCREMENT
+    - name: Run chart-testing (lint)
+      id: lint
+      run: ct lint --target-branch $CT_TARGET_BRANCH
+    - name: Run chart-testing (list-changed)
+      id: list-changed
+      run: |
+        changed=$(ct list-changed)
+        if [[ -n "$changed" ]]; then
+          echo "::set-output name=changed::true"
+        fi
   release:
     runs-on: ubuntu-20.04
+    needs: check-chart
     steps:
     - uses: actions/checkout@v2
       with:
