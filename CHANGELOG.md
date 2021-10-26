@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Make tests and CI work on Kubernetes 1.20+
 - Add Kubernetes 1.19, 1.20 and 1.21 to the supported list. Deprecate anything < 1.18
 
+### Added
+- Add `SSLListener` field to handle SSL termination at VerneMQ level. Defaults to `false`. Enabling
+  this feature requires the installation of certificates within a Kubernetes secret.
+- Add `SSLListenerCertSecretName` field to reference the name of the secret containing the
+  certificate that will be used for handling SSL termination at VerneMQ level. The referenced
+  secret must be present in the same namespace in which Astarte resides. This field is parsed only
+  if `SSLListener` is set to true.
+
 ## [1.0.0] - 2021-07-01
 ### Changed
 - Fix bug that prevent OSX users to upgrade from v0.11 to v1.0 (now the upgrade procedure requires
