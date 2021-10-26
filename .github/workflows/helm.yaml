@@ -33,11 +33,17 @@ jobs:
       with:
         version: v3.4.2
     - name: Setup chart-testing
-      uses: helm/chart-testing-action@v2.0.1
+      uses: helm/chart-testing-action@v2.1.0
     - name: Set env variable for ct target branch
-      run: echo "CT_TARGET_BRANCH=release-1.0" >> $GITHUB_ENV
+      run: echo "CT_TARGET_BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+      if: ${{ github.event_name == 'push' }}
+    - name: Set env variable for ct target branch
+      run: echo "CT_TARGET_BRANCH=${GITHUB_BASE_REF#refs/heads/}" >> $GITHUB_ENV
+      if: ${{ github.event_name == 'pull_request' }}
+    - name: Set env variable to prevent chart bump errors
+      run: echo "CT_CHECK_VERSION_INCREMENT=false" >> $GITHUB_ENV
     - name: Check ct env
-      run: echo $CT_TARGET_BRANCH
+      run: echo $CT_TARGET_BRANCH $CT_CHECK_VERSION_INCREMENT
     - name: Run chart-testing (lint)
       id: lint
       run: ct lint --target-branch $CT_TARGET_BRANCH
