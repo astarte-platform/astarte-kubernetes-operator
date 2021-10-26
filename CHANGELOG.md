@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Implement DUP scalability correctly by distributing multiple deployments and managing queue
   allocation over different replicas.
+- Make tests and CI work on Kubernetes 1.20+
+- Add Kubernetes 1.19, 1.20 and 1.21 to the supported list. Deprecate anything < 1.18
 
 ## [1.0.0] - 2021-07-01
 ### Changed
