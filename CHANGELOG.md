@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   allocation over different replicas.
 - Make tests and CI work on Kubernetes 1.20+
 - Add Kubernetes 1.19, 1.20 and 1.21 to the supported list. Deprecate anything < 1.18
+- Upgrade OperatorSDK to v1.7.1.
 
 ### Added
 - Add `SSLListener` field to handle SSL termination at VerneMQ level. Defaults to `false`. Enabling
