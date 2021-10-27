@@ -37,7 +37,9 @@ import (
 
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
+	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/ingress/v1alpha1"
 	controllersapi "github.com/astarte-platform/astarte-kubernetes-operator/controllers/api"
+	ingresscontrollers "github.com/astarte-platform/astarte-kubernetes-operator/controllers/ingress"
 	voyagercrd "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 	// +kubebuilder:scaffold:imports
 )
@@ -56,6 +58,7 @@ func init() {
 
 	utilruntime.Must(apiv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(apiv1alpha2.AddToScheme(scheme))
+	utilruntime.Must(ingressv1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -135,6 +138,14 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Flow")
 			os.Exit(1)
 		}
+	}
+	if err = (&ingresscontrollers.AstarteDefaultIngressReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("ingress").WithName("AstarteDefaultIngress"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "AstarteDefaultIngress")
+		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
 
