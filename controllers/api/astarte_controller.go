@@ -59,13 +59,12 @@ type AstarteReconciler struct {
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;create
 // +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get
 
-func (r *AstarteReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
+func (r *AstarteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.Log.WithValues("astarte", req.NamespacedName)
 
 	// Fetch the Astarte instance
 	instance := &apiv1alpha1.Astarte{}
-	if err := r.Client.Get(context.TODO(), req.NamespacedName, instance); err != nil {
+	if err := r.Client.Get(ctx, req.NamespacedName, instance); err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
@@ -132,7 +131,7 @@ func (r *AstarteReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	// Update the status
 	instance.Status = reconciler.ComputeAstarteStatusResource(reqLogger, instance)
-	if err := r.Client.Status().Update(context.TODO(), instance); err != nil {
+	if err := r.Client.Status().Update(ctx, instance); err != nil {
 		reqLogger.Error(err, "Failed to update Astarte status.")
 		return ctrl.Result{}, err
 	}
@@ -166,7 +165,7 @@ func (r *AstarteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		DeleteFunc: func(e event.DeleteEvent) bool { return true },
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			// Ignore updates to CR status in which case metadata.Generation does not change
-			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
+			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
 		},
 	}
 

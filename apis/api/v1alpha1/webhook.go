@@ -19,10 +19,20 @@
 package v1alpha1
 
 import (
+	"context"
+	"errors"
+
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	"github.com/openlyinc/pointy"
 )
 
 // log is for logging in this package.
@@ -71,16 +81,14 @@ var _ webhook.Validator = &Astarte{}
 func (r *Astarte) ValidateCreate() error {
 	astartelog.Info("validate create", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object creation.
-	return nil
+	return r.validateAstarte()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *Astarte) ValidateUpdate(old runtime.Object) error {
 	astartelog.Info("validate update", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object update.
-	return nil
+	return r.validateAstarte()
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
@@ -88,6 +96,38 @@ func (r *Astarte) ValidateDelete() error {
 	astartelog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
+	return nil
+}
+
+func (r *Astarte) validateAstarte() error {
+	if pointy.BoolValue(r.Spec.VerneMQ.SSLListener, false) {
+		// check that SSLListenerCertSecretName is set
+		if r.Spec.VerneMQ.SSLListenerCertSecretName == "" {
+			err := errors.New("sslListenerCertSecretName not set")
+			astartelog.Error(err, "When deploying Astarte, if SSLListener is set to true you must provide also SSLListenerCertSecretName.")
+			return err
+		}
+
+		var theConfig *rest.Config
+		var c client.Client
+		var err error
+
+		if theConfig, err = config.GetConfig(); err != nil {
+			return err
+		}
+
+		if c, err = client.New(theConfig, client.Options{}); err != nil {
+			return err
+		}
+
+		// ensure the TLS secret is present
+		theSecret := &v1.Secret{}
+		if err := c.Get(context.Background(), types.NamespacedName{Name: r.Spec.VerneMQ.SSLListenerCertSecretName, Namespace: r.Namespace}, theSecret); err != nil {
+			astartelog.Error(err, "SSLListenerCertSecretName references a secret which is not present. Ensure to create the TLS secret in the namespace in which Astarte resides before applying the new configuration.")
+			return err
+		}
+	}
+
 	return nil
 }
 
