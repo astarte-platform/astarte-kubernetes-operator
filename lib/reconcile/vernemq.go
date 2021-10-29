@@ -20,6 +20,7 @@ package reconcile
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -237,6 +238,38 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.Env
 					Value: strconv.Itoa(cr.Spec.VerneMQ.DeviceHeartbeatSeconds * 1000),
 				})
 		}
+
+		if pointy.BoolValue(cr.Spec.VerneMQ.SSLListener, false) && cr.Spec.VerneMQ.SSLListenerCertSecretName != "" {
+			// if we are here, SSL termination must be handled at VMQ level
+			// thus, append the proper env variables
+			envVars = append(envVars, v1.EnvVar{
+				Name:  "VERNEMQ_ENABLE_SSL_LISTENER",
+				Value: strconv.FormatBool(true),
+			})
+
+			envVars = append(envVars, v1.EnvVar{
+				// to check where ca.pem comes from, have a look at this script
+				// https://github.com/astarte-platform/astarte_vmq_plugin/blob/master/docker/bin/vernemq.sh#L141
+				Name:  "DOCKER_VERNEMQ_LISTENER__SSL__DEFAULT__CAFILE",
+				Value: "/opt/vernemq/etc/ca.pem",
+			})
+
+			envVars = append(envVars, v1.EnvVar{
+				Name:  "DOCKER_VERNEMQ_LISTENER__SSL__DEFAULT__CERTFILE",
+				Value: "/opt/vernemq/etc/cert.pem",
+			})
+
+			envVars = append(envVars, v1.EnvVar{
+				Name:  "DOCKER_VERNEMQ_LISTENER__SSL__DEFAULT__KEYFILE",
+				Value: "/opt/vernemq/etc/privkey.pem",
+			})
+
+			envVars = append(envVars, v1.EnvVar{
+				Name:  "CFSSL_URL",
+				Value: fmt.Sprintf("http://%s-cfssl.%s.svc.cluster.local", cr.Name, cr.Namespace),
+			})
+		}
+
 		persistentClientExpiration := cr.Spec.VerneMQ.PersistentClientExpiration
 		if persistentClientExpiration == "" {
 			// Defaults to 1 year
@@ -280,13 +313,8 @@ func getVerneMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.A
 		Affinity:                      getAffinityForClusteredResource(statefulSetName, cr.Spec.VerneMQ.AstarteGenericClusteredResource),
 		Containers: []v1.Container{
 			{
-				Name: "vernemq",
-				VolumeMounts: []v1.VolumeMount{
-					{
-						Name:      dataVolumeName,
-						MountPath: "/opt/vernemq/data",
-					},
-				},
+				Name:         "vernemq",
+				VolumeMounts: getVerneMQVolumeMounts(dataVolumeName, cr),
 				// Defaults to the custom image built in Astarte
 				Image:           getAstarteImageForClusteredResource("vernemq", cr.Spec.VerneMQ.AstarteGenericClusteredResource, cr),
 				ImagePullPolicy: getImagePullPolicy(cr),
@@ -315,9 +343,62 @@ func getVerneMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.A
 				Env:            getVerneMQEnvVars(statefulSetName, cr),
 			},
 		},
+		Volumes: getVerneMQVolumes(cr),
 	}
 
 	return ps
+}
+
+func getVerneMQVolumes(cr *apiv1alpha1.Astarte) []v1.Volume {
+	theVolumes := []v1.Volume{}
+
+	// if SSL termination must be handled at VerneMQ level, create the volume to store the certificates
+	if pointy.BoolValue(cr.Spec.VerneMQ.SSLListener, false) && cr.Spec.VerneMQ.SSLListenerCertSecretName != "" {
+		// we don't check if the secret is already there as it is enforced by the validating webhook
+		theVolumes = append(theVolumes, v1.Volume{
+			Name: cr.Spec.VerneMQ.SSLListenerCertSecretName,
+			VolumeSource: v1.VolumeSource{
+				Secret: &v1.SecretVolumeSource{
+					DefaultMode: pointy.Int32(420),
+					SecretName:  cr.Spec.VerneMQ.SSLListenerCertSecretName,
+					Items: []v1.KeyToPath{
+						{
+							Key:  "tls.crt",
+							Path: "cert",
+						},
+						{
+							Key:  "tls.key",
+							Path: "privkey",
+						},
+					},
+				},
+			},
+		})
+	}
+
+	return theVolumes
+}
+
+func getVerneMQVolumeMounts(dataVolumeName string, cr *apiv1alpha1.Astarte) []v1.VolumeMount {
+	theVolumeMounts := []v1.VolumeMount{
+		{
+			Name:      dataVolumeName,
+			MountPath: "/opt/vernemq/data",
+		},
+	}
+
+	// if SSL termination must be handled at VerneMQ level, we have to mount the certificates
+	if pointy.BoolValue(cr.Spec.VerneMQ.SSLListener, false) && cr.Spec.VerneMQ.SSLListenerCertSecretName != "" {
+		// If we need to expose VerneMQ, let's append the secret as a volume in the pod.
+		// The key and cert in the secret are copied to /opt/vernemq/etc according to
+		// this script: https://github.com/astarte-platform/astarte_vmq_plugin/blob/master/docker/bin/vernemq.sh#L137
+		theVolumeMounts = append(theVolumeMounts, v1.VolumeMount{
+			Name:      cr.Spec.VerneMQ.SSLListenerCertSecretName,
+			MountPath: "/etc/ssl/vernemq-certs",
+			ReadOnly:  true,
+		})
+	}
+	return theVolumeMounts
 }
 
 func getVerneMQPolicyRules() []rbacv1.PolicyRule {

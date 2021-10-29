@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Implement DUP scalability correctly by distributing multiple deployments and managing queue
   allocation over different replicas.
+- Make tests and CI work on Kubernetes 1.20+
+- Add Kubernetes 1.19, 1.20 and 1.21 to the supported list. Deprecate anything < 1.18
+- Upgrade OperatorSDK to v1.7.1.
+- Use kustomize v3.8.7.
+
+### Added
+- Add `SSLListener` field to handle SSL termination at VerneMQ level. Defaults to `false`. Enabling
+  this feature requires the installation of certificates within a Kubernetes secret.
+- Add `SSLListenerCertSecretName` field to reference the name of the secret containing the
+  certificate that will be used for handling SSL termination at VerneMQ level. The referenced
+  secret must be present in the same namespace in which Astarte resides. This field is parsed only
+  if `SSLListener` is set to true.
 
 ## [1.0.0] - 2021-07-01
 ### Changed

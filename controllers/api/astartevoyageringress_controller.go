@@ -52,7 +52,7 @@ type AstarteVoyagerIngressReconciler struct {
 // +kubebuilder:rbac:groups=api.astarte-platform.org,resources=astartevoyageringresses/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=voyager.appscode.com,resources=*,verbs=get;list;watch;create;update;patch;delete
 
-func (r *AstarteVoyagerIngressReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *AstarteVoyagerIngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.Log.WithValues("astartevoyageringress", req.NamespacedName)
 
 	if !r.shouldReconcile {
@@ -63,7 +63,7 @@ func (r *AstarteVoyagerIngressReconciler) Reconcile(req ctrl.Request) (ctrl.Resu
 
 	// Fetch the AstarteVoyagerIngress instance
 	instance := &apiv1alpha1.AstarteVoyagerIngress{}
-	err := r.Client.Get(context.TODO(), req.NamespacedName, instance)
+	err := r.Client.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -77,7 +77,7 @@ func (r *AstarteVoyagerIngressReconciler) Reconcile(req ctrl.Request) (ctrl.Resu
 
 	// Get the Astarte instance
 	astarte := &apiv1alpha1.Astarte{}
-	if err := r.Client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.Astarte, Namespace: instance.Namespace}, astarte); err != nil {
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: instance.Spec.Astarte, Namespace: instance.Namespace}, astarte); err != nil {
 		if errors.IsNotFound(err) {
 			d, _ := time.ParseDuration("30s")
 			return ctrl.Result{Requeue: true, RequeueAfter: d},
@@ -143,7 +143,7 @@ func (r *AstarteVoyagerIngressReconciler) SetupWithManager(mgr ctrl.Manager) err
 		DeleteFunc: func(e event.DeleteEvent) bool { return true },
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			// Ignore updates to CR status in which case metadata.Generation does not change
-			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
+			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
 		},
 	}
 

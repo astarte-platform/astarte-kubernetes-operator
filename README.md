@@ -68,15 +68,13 @@ Astarte's Documentation.
 
 | Kubernetes Version | Supported | Tested by CI |
 | --- | --- | --- |
-| v1.11.x  | :x: | :x: |
-| v1.12.x  | :x: | :x: |
-| v1.13.x  | :x: | :x: |
-| v1.14.x  | :x: | :x: |
 | v1.15.x  | :x: | :x: |
-| v1.16.x  | :white_check_mark: | :white_check_mark: |
-| v1.17.x  | :white_check_mark: | :white_check_mark: |
+| v1.16.x  | :large_orange_diamond: | :x: |
+| v1.17.x  | :large_orange_diamond: | :x: |
 | v1.18.x  | :white_check_mark: | :white_check_mark: |
-| v1.19.x  | :large_orange_diamond: | :x: |
+| v1.19.x  | :white_check_mark: | :white_check_mark: |
+| v1.20.x  | :large_orange_diamond: | :white_check_mark: |
+| v1.21.x  | :large_orange_diamond: | :white_check_mark: |
 
 Key:
 
@@ -89,3 +87,5 @@ Key:
 Astarte's Operator is written in Go and built upon [Operator
 SDK](https://github.com/operator-framework/operator-sdk). It depends on Go 1.15.x, and requires Go
 Modules.
+
+The project is built with kustomize v3.8.7 and controller-gen v0.5.0.
