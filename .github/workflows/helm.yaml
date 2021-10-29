@@ -33,10 +33,20 @@ jobs:
       with:
         version: v3.4.2
     - name: Setup chart-testing
-      uses: helm/chart-testing-action@v2.0.1
+      uses: helm/chart-testing-action@v2.1.0
+    - name: Set env variable for ct target branch
+      run: echo "CT_TARGET_BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+      if: ${{ github.event_name == 'push' }}
+    - name: Set env variable for ct target branch
+      run: echo "CT_TARGET_BRANCH=${GITHUB_BASE_REF#refs/heads/}" >> $GITHUB_ENV
+      if: ${{ github.event_name == 'pull_request' }}
+    - name: Set env variable to prevent chart bump errors
+      run: echo "CT_CHECK_VERSION_INCREMENT=false" >> $GITHUB_ENV
+    - name: Check ct env
+      run: echo $CT_TARGET_BRANCH $CT_CHECK_VERSION_INCREMENT
     - name: Run chart-testing (lint)
       id: lint
-      run: ct lint
+      run: ct lint --target-branch $CT_TARGET_BRANCH
     - name: Run chart-testing (list-changed)
       id: list-changed
       run: |
@@ -49,10 +59,10 @@ jobs:
       # see https://github.com/kubernetes-sigs/kind/issues/2240#issuecomment-838510890
       run: |
         sudo sysctl net/netfilter/nf_conntrack_max=131072
-    - uses: container-tools/kind-action@v1.4.0
+    - uses: container-tools/kind-action@v1
       with:
-        version: "v0.10.0"
-        node_image: "kindest/node:v1.18.2@sha256:7b27a6d0f2517ff88ba444025beae41491b016bc6af573ba467b70c5e8e0d85f"
+        version: "v0.11.1"
+        node_image: "kindest/node:v1.18.19@sha256:7af1492e19b3192a79f606e43c35fb741e520d195f96399284515f077b3b622c"
     - name: Build test image
       run: |
         docker build -t astarte-operator-ci:test -f Dockerfile .

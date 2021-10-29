@@ -344,6 +344,15 @@ type AstarteVerneMQSpec struct {
 	PersistentClientExpiration string `json:"persistentClientExpiration,omitempty"`
 	// +optional
 	MirrorQueue string `json:"mirrorQueue,omitempty"`
+	// This option allows, when true, to handle SSL termination at VerneMQ level.
+	// Default: false
+	// +optional
+	SSLListener *bool `json:"sslListener,omitempty"`
+	// Reference the name of the secret containing the TLS certificate for VerneMQ.
+	// The secret must be present in the same namespace in which Astarte resides.
+	// The field will be used only if SSLListener is set to true.
+	// +optional
+	SSLListenerCertSecretName string `json:"sslListenerCertSecretName,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

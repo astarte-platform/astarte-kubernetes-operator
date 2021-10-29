@@ -1,27 +1,94 @@
 domain: astarte-platform.org
-layout: go.kubebuilder.io/v2
+projectName: astarte-kubernetes-operator
+layout: go.kubebuilder.io/v3
 multigroup: true
 repo: github.com/astarte-platform/astarte-kubernetes-operator
 resources:
-- group: api
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: astarte-platform.org
+  group: api
   kind: Astarte
+  webhooks:
+    defaulting: true
+    validation: true
+    conversion: true
+    webhookVersion: v1
+  path: github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1
   version: v1alpha1
-- group: api
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: astarte-platform.org
+  group: api
   kind: AstarteVoyagerIngress
+  webhooks:
+    defaulting: true
+    validation: true
+    conversion: true
+    webhookVersion: v1
+  path: github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1
   version: v1alpha1
-- group: api
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: astarte-platform.org
+  group: api
   kind: Flow
+  webhooks:
+    defaulting: true
+    validation: true
+    conversion: true
+    webhookVersion: v1
+  path: github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1
   version: v1alpha1
-- group: api
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: astarte-platform.org
+  group: api
   kind: Astarte
+  webhooks:
+    defaulting: true
+    validation: true
+    conversion: true
+    webhookVersion: v1
+  path: github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2
   version: v1alpha2
-- group: api
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: astarte-platform.org
+  group: api
   kind: AstarteVoyagerIngress
+  webhooks:
+    defaulting: true
+    validation: true
+    conversion: true
+    webhookVersion: v1
+  path: github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2
   version: v1alpha2
-- group: api
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: astarte-platform.org
+  group: api
   kind: Flow
+  webhooks:
+    defaulting: true
+    validation: true
+    conversion: true
+    webhookVersion: v1
+  path: github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2
   version: v1alpha2
-version: 3-alpha
+version: "3"
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}

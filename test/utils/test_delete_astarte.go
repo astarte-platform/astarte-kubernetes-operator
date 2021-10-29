@@ -14,6 +14,7 @@ import (
 )
 
 // AstarteDeleteTest deletes an Astarte instance and tests whether it was deleted and cleaned up
+//nolint
 func AstarteDeleteTest(c client.Client, namespace string) error {
 	installedAstarte := &operator.Astarte{}
 	// use Context's helper to Get the object
@@ -48,8 +49,14 @@ func AstarteDeleteTest(c client.Client, namespace string) error {
 		if err = c.List(goctx.TODO(), configMaps, client.InNamespace(namespace)); err != nil {
 			return false, err
 		}
-		if len(configMaps.Items) > 0 {
+		if l := len(configMaps.Items); l > 1 {
 			return false, nil
+		} else if l == 1 {
+			// From Kubernetes 1.20+, a configmap named "kube-root-ca.crt" is created by default
+			// in every namespace. If it's the only item left, let it be.
+			if configMaps.Items[0].Name != "kube-root-ca.crt" {
+				return false, nil
+			}
 		}
 
 		secrets := &v1.SecretList{}
