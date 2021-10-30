@@ -27,7 +27,6 @@ jobs:
     strategy:
       matrix:
         testSuite:
-        - "010"
         - "011"
         - "10"
         kubernetesNodeImage:

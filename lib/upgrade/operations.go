@@ -283,29 +283,6 @@ func openRabbitMQPortForward(cr *apiv1alpha1.Astarte) (string, chan struct{}, er
 	return "", nil, nil
 }
 
-func waitForQueueLayoutMigration(version string, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
-	dataUpdaterPlant := cr.Spec.Components.DataUpdaterPlant.DeepCopy()
-	dataUpdaterPlant.Version = version
-	// Ensure the policy is Replace. We don't want to have old pods hanging around.
-	dataUpdaterPlant.DeploymentStrategy = &appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
-	if err := reconcile.EnsureAstarteGenericBackend(cr, dataUpdaterPlant.AstarteGenericClusteredResource, commontypes.DataUpdaterPlant, c, scheme); err != nil {
-		return err
-	}
-	// The operation should be pretty normal and quick enough. Wait with standard timeouts here
-	return wait.Poll(retryInterval, timeout, func() (done bool, err error) {
-		deployment := &appsv1.Deployment{}
-		if err = c.Get(context.TODO(), types.NamespacedName{Name: cr.Name + "-data-updater-plant", Namespace: cr.Namespace}, deployment); err != nil {
-			return false, err
-		}
-
-		if deployment.Status.ReadyReplicas > 0 {
-			return true, nil
-		}
-
-		return false, nil
-	})
-}
-
 func waitForHousekeepingUpgrade(cr *apiv1alpha1.Astarte, c client.Client, recorder record.EventRecorder) error {
 	weirdFailuresCount := 0
 	weirdFailuresThreshold := 10
@@ -425,27 +402,6 @@ func upgradeHousekeeping(version string, drainVerneMQResources bool, cr *apiv1al
 	}
 
 	return housekeepingBackend, nil
-}
-
-func scaleDownHousekeeping(housekeepingBackend *commontypes.AstarteGenericClusteredResource, cr *apiv1alpha1.Astarte,
-	c client.Client, scheme *runtime.Scheme) error {
-	housekeepingBackend.Replicas = pointy.Int32(0)
-	if err := reconcile.EnsureAstarteGenericBackend(cr, *housekeepingBackend, commontypes.Housekeeping, c, scheme); err != nil {
-		return err
-	}
-	// Wait for it to go down, then we should be good to go.
-	return wait.Poll(retryInterval, timeout, func() (done bool, err error) {
-		deployment := &appsv1.Deployment{}
-		if err = c.Get(context.TODO(), types.NamespacedName{Name: cr.Name + "-housekeeping", Namespace: cr.Namespace}, deployment); err != nil {
-			return false, err
-		}
-
-		if deployment.Status.ReadyReplicas > 0 {
-			return false, nil
-		}
-
-		return true, nil
-	})
 }
 
 func getSpecialHousekeepingMigrationProbe(path string) *v1.Probe {

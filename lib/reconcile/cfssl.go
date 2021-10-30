@@ -254,18 +254,7 @@ func validateCFSSLDefinition(cfssl commontypes.AstarteCFSSLSpec) error {
 	return nil
 }
 
-func getCFSSLProbe(cr *apiv1alpha1.Astarte) *v1.Probe {
-	// HTTP Health is supported only from 0.11 on
-	if version.CheckConstraintAgainstAstarteComponentVersion("< 0.11.0", cr.Spec.CFSSL.Version, cr.Spec.Version) == nil {
-		return &v1.Probe{
-			Handler:             v1.Handler{TCPSocket: &v1.TCPSocketAction{Port: intstr.FromString("http")}},
-			InitialDelaySeconds: 10,
-			TimeoutSeconds:      5,
-			PeriodSeconds:       30,
-			FailureThreshold:    3,
-		}
-	}
-
+func getCFSSLProbe() *v1.Probe {
 	// Start checking after 10 seconds, every 20 seconds, fail after the 3rd attempt
 	return &v1.Probe{
 		Handler:             v1.Handler{HTTPGet: &v1.HTTPGetAction{Path: "/api/v1/cfssl/health", Port: intstr.FromString("http")}},
@@ -360,8 +349,8 @@ func getCFSSLPodSpec(statefulSetName, dataVolumeName, secretName string, cr *api
 				Ports: []v1.ContainerPort{
 					{Name: "http", ContainerPort: 8080},
 				},
-				ReadinessProbe: getCFSSLProbe(cr),
-				LivenessProbe:  getCFSSLProbe(cr),
+				ReadinessProbe: getCFSSLProbe(),
+				LivenessProbe:  getCFSSLProbe(),
 				Resources:      resources,
 			},
 		},

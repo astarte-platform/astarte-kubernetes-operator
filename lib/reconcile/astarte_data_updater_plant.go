@@ -20,7 +20,6 @@ package reconcile
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	"github.com/openlyinc/pointy"
@@ -34,7 +33,6 @@ import (
 	commontypes "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
-	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 )
 
 // EnsureAstarteDataUpdaterPlant manages multiple deployments for Astarte Data Updater Plant based on scalability requirements
@@ -64,12 +62,6 @@ func EnsureAstarteDataUpdaterPlant(cr *apiv1alpha1.Astarte, dup commontypes.Asta
 	if replicas == 1 {
 		// We should treat it as a standard case
 		return EnsureAstarteGenericBackend(cr, dup.AstarteGenericClusteredResource, component, c, scheme)
-	}
-
-	// All of this isn't supported on Astarte < 0.11.0. Fail, if that is the case.
-	if version.CheckConstraintAgainstAstarteComponentVersion(">= 0.11.0", dup.AstarteGenericClusteredResource.Version, cr.Spec.Version) != nil {
-		return fmt.Errorf("cannot deploy multiple replicas of Data Updater Plant on Astarte version %s. Upgrade to at least 0.11.0",
-			version.GetVersionForAstarteComponent(cr.Spec.Version, dup.AstarteGenericClusteredResource.Version))
 	}
 
 	// If we got here, we need to apply some custom logic to our deployments

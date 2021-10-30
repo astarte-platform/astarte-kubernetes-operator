@@ -22,10 +22,6 @@ import "github.com/astarte-platform/astarte-kubernetes-operator/version"
 
 // GetDefaultVersionForCFSSL returns the default CFSSL version based on the Astarte version requested
 func GetDefaultVersionForCFSSL(astarteVersion string) string {
-	if version.CheckConstraintAgainstAstarteVersion("< 0.11.0", astarteVersion) == nil {
-		return "1.0.0-astarte.0"
-	}
-
 	// Before 1.0.0, we always defaulted to a must-have DB configuration. So keep it.
 	if version.CheckConstraintAgainstAstarteVersion("< 1.0.0", astarteVersion) == nil {
 		return "1.4.1-astarte.0"
@@ -42,10 +38,6 @@ func GetDefaultVersionForCassandra(astarteVersion string) string {
 
 // GetDefaultVersionForRabbitMQ returns the default RabbitMQ version based on the Astarte version requested
 func GetDefaultVersionForRabbitMQ(astarteVersion string) string {
-	if version.CheckConstraintAgainstAstarteVersion("< 0.11.0", astarteVersion) == nil {
-		return "3.7.15"
-	}
-
 	if version.CheckConstraintAgainstAstarteVersion("< 1.0.0", astarteVersion) == nil {
 		return "3.7.21"
 	}
