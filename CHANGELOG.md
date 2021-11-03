@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Upgrade go to v1.17.
 - Remove common types. Automate CRD conversion functions generation.
 
+### Added
+- Add API reference docs generation.
+
 ## [1.0.1] - 2021-12-17
 ### Changed
 - Implement DUP scalability correctly by distributing multiple deployments and managing queue
