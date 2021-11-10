@@ -4,6 +4,149 @@ metadata:
   annotations:
     cert-manager.io/inject-ca-from: '{{ .Release.Namespace }}/{{ .Release.Name }}-manager-webhook'
     controller-gen.kubebuilder.io/version: v0.5.0
+  name: astartedefaultingresses.ingress.astarte-platform.org
+spec:
+  group: ingress.astarte-platform.org
+  names:
+    kind: AstarteDefaultIngress
+    listKind: AstarteDefaultIngressList
+    plural: astartedefaultingresses
+    shortNames:
+    - adi
+    singular: astartedefaultingress
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: AstarteDefaultIngress is the Schema for the astartedefaultingresses API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: AstarteDefaultIngressSpec defines the desired state of the AstarteDefaultIngress resource
+            properties:
+              api:
+                description: Define the desired state of the AstarteDefaultIngressAPISpec resource.
+                properties:
+                  apiVersion:
+                    description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                    type: string
+                  cors:
+                    description: 'When true, enable Cross-Origin Resource Sharing (CORS). Default: false.'
+                    type: boolean
+                  deploy:
+                    description: When true, deploy the API ingress.
+                    type: boolean
+                  exposeHousekeeping:
+                    description: 'When true, the housekeeping endpoint is publicly exposed. Default: true.'
+                    type: boolean
+                  kind:
+                    description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                    type: string
+                  serveMetrics:
+                    description: 'When true, all /metrics endpoints for Astarte services will be served by the Ingress. Beware this might be a security hole. You can control which IPs can access /metrics with serveMetricsToSubnet. Default: false.'
+                    type: boolean
+                  serveMetricsToSubnet:
+                    description: 'When specified and when serveMetrics is true, /metrics endpoints will be served only to IPs in the provided subnet range. The subnet has to be compatible with the HAProxy ACL src syntax (e.g.: "10.0.0.0/16"). Default: "".'
+                    type: string
+                  tlsSecret:
+                    description: The secret containing the TLS certificates and keys used to access the Astarte API. The secret must be present in the namespace in which Astarte resides. If set, this secret overrides the TLSSecret field contained in AstarteDefaultIngressSpec.
+                    type: string
+                type: object
+              apiVersion:
+                description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                type: string
+              astarte:
+                description: The name of the Astarte instance served by the AstarteDefaultIngress.
+                type: string
+              broker:
+                description: Define the desired state of the AstarteDefaultIngressBrokerSpec resource.
+                properties:
+                  apiVersion:
+                    description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                    type: string
+                  deploy:
+                    description: When true, expose the Broker.
+                    type: boolean
+                  kind:
+                    description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                    type: string
+                  loadBalancerIP:
+                    description: Set the LoadBalancerIP if and only if the broker service is of type "LoadBalancer". This feature depends on wheather the cloud provider supports specifying the LoadBalancerIP when a load balancer is created.
+                    type: string
+                  serviceType:
+                    description: 'Set the type of service employed to expose the broker. Supported values are "NodePort" and "LoadBalancer". The AstarteDefaultIngress handles TLS termination at VerneMQ level and, as such, no TLSSecret is needed to configure the broker service. Default: "LoadBalancer"'
+                    type: string
+                type: object
+              dashboard:
+                description: Define the desired state of the AstarteDefaultIngressDashboardSpec resource.
+                properties:
+                  apiVersion:
+                    description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                    type: string
+                  deploy:
+                    description: When true, deploy the Ingress for the Dashboard.
+                    type: boolean
+                  host:
+                    description: 'The host handling requests addressed to the dashboard. When deploy is true and host is not set, the dashboard will be exposed at the following URL: https://<astarte-base-url>/dashboard.'
+                    type: string
+                  kind:
+                    description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                    type: string
+                  ssl:
+                    description: When true, enable TLS authentication for the Dashboard.
+                    type: boolean
+                  tlsSecret:
+                    description: The secret containing the TLS certificates and keys used to access the Astarte Dashboard. The secret must be present in the namespace in which Astarte resides. If set, this secret overrides the TLSSecret field contained in AstarteDefaultIngressSpec.
+                    type: string
+                type: object
+              ingressClass:
+                description: 'In clusters with more than one instance of the Ingress-NGINX controller, all instances of the controllers must be aware of which Ingress object they must serve. The ingressClass field of a ingress object is the way to let the controller know about that. Default: "nginx".'
+                type: string
+              kind:
+                description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                type: string
+              tlsSecret:
+                description: The secret containing the TLS certificates and keys used to connect to Astarte. The secret must be present in the namespace in which Astarte resides and it will be used to authenticate requests for API and Dashboard. If specific configurations are required, the TLSSecret can be overridden by setting the secret in any of AstarteDefaultIngressAPISpec and AstarteDefaultIngressDashboardSpec.
+                type: string
+            required:
+            - astarte
+            type: object
+          status:
+            description: AstarteDefaultIngressStatus defines the observed state of AstarteDefaultIngress
+            properties:
+              apiVersion:
+                description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                type: string
+              kind:
+                description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: '{{ .Release.Namespace }}/{{ .Release.Name }}-manager-webhook'
+    controller-gen.kubebuilder.io/version: v0.5.0
   name: astartes.api.astarte-platform.org
 spec:
   conversion:
