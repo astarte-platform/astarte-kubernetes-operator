@@ -23,6 +23,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-logr/logr"
 	zaplogfmt "github.com/sykesm/zap-logfmt"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -73,14 +74,7 @@ func main() {
 	flag.Parse()
 
 	// setup logger
-	configLog := zap.NewProductionEncoderConfig()
-	configLog.EncodeTime = func(ts time.Time, encoder zapcore.PrimitiveArrayEncoder) {
-		encoder.AppendString(ts.UTC().Format(time.RFC3339))
-	}
-	logfmtEncoder := zaplogfmt.NewEncoder(configLog)
-
-	// Construct a new logr.logger.
-	log := zapcr.New(zapcr.UseDevMode(true), zapcr.WriteTo(os.Stdout), zapcr.Encoder(logfmtEncoder))
+	log := setupLogger()
 
 	// Set the controller logger to log, which will be propagated through the whole operator, generating
 	// uniform and structured logs.
@@ -154,4 +148,17 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func setupLogger() logr.Logger {
+	configLog := zap.NewProductionEncoderConfig()
+
+	configLog.EncodeTime = func(ts time.Time, encoder zapcore.PrimitiveArrayEncoder) {
+		encoder.AppendString(ts.UTC().Format(time.RFC3339))
+	}
+
+	logfmtEncoder := zaplogfmt.NewEncoder(configLog)
+
+	// Construct a new logr.logger.
+	return zapcr.New(zapcr.UseDevMode(true), zapcr.WriteTo(os.Stdout), zapcr.Encoder(logfmtEncoder))
 }
