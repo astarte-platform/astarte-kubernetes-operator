@@ -315,15 +315,6 @@ func getAstarteAPIProbe(cr *apiv1alpha1.Astarte, api commontypes.AstarteGenericA
 		return customProbe
 	}
 
-	if version.CheckConstraintAgainstAstarteComponentVersion("< 0.11.0", api.Version, cr.Spec.Version) == nil {
-		// Only Housekeeping has a health check in 0.10.x
-		if component != commontypes.HousekeepingAPI {
-			return nil
-		}
-
-		return getAstarteAPIGenericProbe("/v1/health")
-	}
-
 	if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", api.Version, cr.Spec.Version) == nil {
 		if component == commontypes.FlowComponent {
 			return nil

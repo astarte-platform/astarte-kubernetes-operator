@@ -162,7 +162,6 @@ func getAstarteDashboardPodSpec(cr *apiv1alpha1.Astarte, dashboard commontypes.A
 func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard commontypes.AstarteDashboardSpec) map[string]string {
 	dashboardConfig := make(map[string]interface{})
 
-	isAstarte010 := version.CheckConstraintAgainstAstarteComponentVersion("< 0.11.0", dashboard.Version, cr.Spec.Version) == nil
 	isAstarte10 := version.CheckConstraintAgainstAstarteComponentVersion(">= 1.0.0", dashboard.Version, cr.Spec.Version) == nil
 
 	if isAstarte10 {
@@ -177,8 +176,6 @@ func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard commont
 	switch {
 	case dashboard.Config.RealmManagementAPIURL != "":
 		dashboardConfig["realm_management_api_url"] = dashboard.Config.RealmManagementAPIURL
-	case isAstarte010:
-		dashboardConfig["realm_management_api_url"] = getBaseAstarteAPIURL(cr) + "/realmmanagement/v1/"
 	case !isAstarte10:
 		dashboardConfig["realm_management_api_url"] = getBaseAstarteAPIURL(cr) + "/realmmanagement/"
 	}
@@ -186,8 +183,6 @@ func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard commont
 	switch {
 	case dashboard.Config.AppEngineAPIURL != "":
 		dashboardConfig["appengine_api_url"] = dashboard.Config.AppEngineAPIURL
-	case isAstarte010:
-		dashboardConfig["appengine_api_url"] = getBaseAstarteAPIURL(cr) + "/appengine/v1/"
 	case !isAstarte10:
 		dashboardConfig["appengine_api_url"] = getBaseAstarteAPIURL(cr) + "/appengine/"
 	}

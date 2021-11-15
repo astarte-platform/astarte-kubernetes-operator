@@ -139,8 +139,8 @@ func getAstarteGenericBackendPodSpec(deploymentName string, replicaIndex, replic
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Resources:       misc.GetResourcesForAstarteComponent(cr, backend.Resources, component),
 				Env:             getAstarteGenericBackendEnvVars(deploymentName, replicaIndex, replicas, cr, backend, component),
-				ReadinessProbe:  getAstarteBackendProbe(cr, backend, component, customProbe),
-				LivenessProbe:   getAstarteBackendProbe(cr, backend, component, customProbe),
+				ReadinessProbe:  getAstarteBackendProbe(component, customProbe),
+				LivenessProbe:   getAstarteBackendProbe(component, customProbe),
 			},
 		},
 		Volumes: getAstarteGenericBackendVolumes(cr),
@@ -264,28 +264,25 @@ func getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas int, events
 			})
 	}
 
-	// 0.11+ variables
-	if version.CheckConstraintAgainstAstarteComponentVersion(">= 0.11.0", backend.Version, cr.Spec.Version) == nil {
-		// When installing Astarte >= 0.11, add the data queue count
-		ret = append(ret, getAstarteDataUpdaterPlantQueuesEnvVars(replicaIndex, replicas, cr)...)
+	// Add the data queue count
+	ret = append(ret, getAstarteDataUpdaterPlantQueuesEnvVars(replicaIndex, replicas, cr)...)
 
-		// 0.11.1+ variables
-		if version.CheckConstraintAgainstAstarteComponentVersion(">= 0.11.1", backend.Version, cr.Spec.Version) == nil {
-			ret = append(ret,
-				v1.EnvVar{
-					Name: "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_TOTAL_COUNT",
-					// This must always hold the total data queue count, not just the one this specific replica of DUP is using
-					Value: strconv.Itoa(getDataQueueCount(cr)),
-				})
-		}
+	// 0.11.1+ variables
+	if version.CheckConstraintAgainstAstarteComponentVersion(">= 0.11.1", backend.Version, cr.Spec.Version) == nil {
+		ret = append(ret,
+			v1.EnvVar{
+				Name: "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_TOTAL_COUNT",
+				// This must always hold the total data queue count, not just the one this specific replica of DUP is using
+				Value: strconv.Itoa(getDataQueueCount(cr)),
+			})
+	}
 
-		if cr.Spec.RabbitMQ.DataQueuesPrefix != "" {
-			ret = append(ret,
-				v1.EnvVar{
-					Name:  "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_PREFIX",
-					Value: cr.Spec.RabbitMQ.DataQueuesPrefix,
-				})
-		}
+	if cr.Spec.RabbitMQ.DataQueuesPrefix != "" {
+		ret = append(ret,
+			v1.EnvVar{
+				Name:  "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_PREFIX",
+				Value: cr.Spec.RabbitMQ.DataQueuesPrefix,
+			})
 	}
 
 	// 1.0+ variables
@@ -332,15 +329,9 @@ func getAstarteDataUpdaterPlantQueuesEnvVars(replicaIndex, replicas int, cr *api
 		}}
 }
 
-func getAstarteBackendProbe(cr *apiv1alpha1.Astarte, backend commontypes.AstarteGenericClusteredResource,
-	component commontypes.AstarteComponent, customProbe *v1.Probe) *v1.Probe {
+func getAstarteBackendProbe(component commontypes.AstarteComponent, customProbe *v1.Probe) *v1.Probe {
 	if customProbe != nil {
 		return customProbe
-	}
-
-	if version.CheckConstraintAgainstAstarteComponentVersion("< 0.11.0", backend.Version, cr.Spec.Version) == nil {
-		// 0.10.x has no such thing.
-		return nil
 	}
 
 	// Custom components

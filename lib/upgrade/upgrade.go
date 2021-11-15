@@ -44,25 +44,8 @@ const (
 
 // EnsureAstarteUpgrade ensures that CR with requested newVersion will be upgraded from oldVersion, if needed.
 func EnsureAstarteUpgrade(oldVersion, newVersion *semver.Version, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme, recorder record.EventRecorder) error {
-	// Check 0.10.x -> 0.11.x constraint
-	transitionCheck, err := validateConstraintAndPrepareUpgrade(oldVersion, newVersion, "~0.10.0", ">= 0.11.0", cr, c)
-	if err != nil {
-		return err
-	}
-	if transitionCheck {
-		// Perform upgrade
-		recorder.Eventf(cr, "Normal", commontypes.AstarteResourceEventUpgrade.String(),
-			"Initiating Astarte 0.11 Upgrade, from version %v to version %v", cr.Status.AstarteVersion, cr.Spec.Version)
-		if e := upgradeTo011(cr, c, scheme, recorder); e != nil {
-			return e
-		}
-	} else {
-		recorder.Event(cr, "Normal", commontypes.AstarteResourceEventUpgrade.String(),
-			"Requested Astarte Upgrade does not require any special action, continuing standard reconciliation")
-	}
-
 	// Check 0.11.x -> 1.0.x constraint
-	transitionCheck, err = validateConstraintAndPrepareUpgrade(oldVersion, newVersion, "~0.11.0", ">= 1.0.0", cr, c)
+	transitionCheck, err := validateConstraintAndPrepareUpgrade(oldVersion, newVersion, "~0.11.0", ">= 1.0.0", cr, c)
 	if err != nil {
 		return err
 	}
