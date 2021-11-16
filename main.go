@@ -117,6 +117,14 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Flow")
 		os.Exit(1)
 	}
+	if err = (&ingresscontrollers.AstarteDefaultIngressReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("ingress").WithName("AstarteDefaultIngress"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "AstarteDefaultIngress")
+		os.Exit(1)
+	}
 	// When testing the operator locally, we may want not to run webhooks. Thus, put them behind
 	// an environment variable
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
@@ -132,18 +140,10 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Flow")
 			os.Exit(1)
 		}
-	}
-	if err = (&ingresscontrollers.AstarteDefaultIngressReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("ingress").WithName("AstarteDefaultIngress"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "AstarteDefaultIngress")
-		os.Exit(1)
-	}
-	if err = (&ingressv1alpha1.AstarteDefaultIngress{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "AstarteDefaultIngress")
-		os.Exit(1)
+		if err = (&ingressv1alpha1.AstarteDefaultIngress{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "AstarteDefaultIngress")
+			os.Exit(1)
+		}
 	}
 	// +kubebuilder:scaffold:builder
 
