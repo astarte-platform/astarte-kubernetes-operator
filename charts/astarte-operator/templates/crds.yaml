@@ -8170,6 +8170,10 @@ spec:
               kind:
                 description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                 type: string
+              manualMaintenanceMode:
+                default: false
+                description: ManualMaintenanceMode pauses all reconciliation activities but still computes the resource status. It should be used only when the managed Astarte resources requires manual intervention and the Operator cannot break out of the problem by itself. Do not set this field unless you know exactly what you are doing.
+                type: boolean
               rabbitmq:
                 properties:
                   additionalEnv:
@@ -19262,6 +19266,10 @@ spec:
               kind:
                 description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                 type: string
+              manualMaintenanceMode:
+                default: false
+                description: ManualMaintenanceMode pauses all reconciliation activities but still computes the resource status. It should be used only when the managed Astarte resources requires manual intervention and the Operator cannot break out of the problem by itself. Do not set this field unless you know exactly what you are doing.
+                type: boolean
               rabbitmq:
                 properties:
                   additionalEnv:
