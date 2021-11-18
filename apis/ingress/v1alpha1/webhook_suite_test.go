@@ -73,7 +73,8 @@ var _ = BeforeSuite(func() {
 		},
 	}
 
-	cfg, err := testEnv.Start()
+	var err error
+	cfg, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
@@ -118,6 +119,10 @@ var _ = BeforeSuite(func() {
 	dialer := &net.Dialer{Timeout: time.Second}
 	addrPort := fmt.Sprintf("%s:%d", webhookInstallOptions.LocalServingHost, webhookInstallOptions.LocalServingPort)
 	Eventually(func() error {
+		// The scaffolded code assumes that TLS shouldn't be verified. This will raise a gosec error making the linter fail.
+		// The crypto.tls documentation states that it "should be used only for testing or in combination with VerifyConnection
+		// or VerifyPeerCertificate". Thus, overcome this linter limitation by adding the following gosec instruction:
+		// #nosec
 		conn, err := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true})
 		if err != nil {
 			return err
