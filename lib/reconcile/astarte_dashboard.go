@@ -155,6 +155,21 @@ func getAstarteDashboardPodSpec(cr *apiv1alpha2.Astarte, dashboard apiv1alpha2.A
 		Volumes: getAstarteDashboardVolumes(cr),
 	}
 
+	// do we want priorities?
+	if cr.Spec.Features.AstartePodPriorities.IsEnabled() {
+		//is a priorityClass specified in the Astarte CR?
+		switch dashboard.PriorityClass {
+		case highPriority:
+			ps.PriorityClassName = AstarteHighPriorityName
+		case midPriority:
+			ps.PriorityClassName = AstarteMidPriorityName
+		case lowPriority:
+			ps.PriorityClassName = AstarteLowPriorityName
+		default:
+			ps.PriorityClassName = GetDefaultAstartePriorityClassNameForComponent(component)
+		}
+	}
+
 	return ps
 }
 

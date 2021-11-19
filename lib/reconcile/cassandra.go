@@ -286,6 +286,21 @@ func getCassandraPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha2
 		},
 	}
 
+	// do we want priorities?
+	if cr.Spec.Features.AstartePodPriorities.IsEnabled() {
+		//is a priorityClass specified in the Astarte CR?
+		switch cr.Spec.Cassandra.AstarteGenericClusteredResource.PriorityClass {
+		case highPriority:
+			ps.PriorityClassName = AstarteHighPriorityName
+		case midPriority:
+			ps.PriorityClassName = AstarteMidPriorityName
+		case lowPriority:
+			ps.PriorityClassName = AstarteLowPriorityName
+		default:
+			ps.PriorityClassName = AstarteMidPriorityName
+		}
+	}
+
 	return ps
 }
 

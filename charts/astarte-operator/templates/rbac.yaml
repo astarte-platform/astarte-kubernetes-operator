@@ -258,6 +258,18 @@ rules:
   - update
   - watch
 - apiGroups:
+  - scheduling.k8s.io
+  resources:
+  - priorityclasses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - voyager.appscode.com
   resources:
   - '*'
