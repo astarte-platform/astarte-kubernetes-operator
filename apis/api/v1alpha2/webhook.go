@@ -128,6 +128,10 @@ func (r *Astarte) validateAstarte() error {
 			astartelog.Error(err, "SSLListenerCertSecretName references a secret which is not present. Ensure to create the TLS secret in the namespace in which Astarte resides before applying the new configuration.")
 			return err
 		}
+
+		if err := r.validateAstartePriorityClasses(); err != nil {
+			return err
+		}
 	}
 
 	if err := validatePodLabelsForClusteredResources(r); err != nil {
@@ -267,5 +271,28 @@ func (r *Flow) ValidateDelete() error {
 	flowlog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
+	return nil
+}
+
+func (r *Astarte) validateAstartePriorityClasses() error {
+	if r.Spec.Features.AstartePodPriorities.IsEnabled() {
+		if err := r.validatePriorityClassesValues(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *Astarte) validatePriorityClassesValues() error {
+	// default values guarantee pointers are not nil
+	highPriorityValue := *r.Spec.Features.AstartePodPriorities.AstarteHighPriority
+	midPriorityValue := *r.Spec.Features.AstartePodPriorities.AstarteMidPriority
+	lowPriorityValue := *r.Spec.Features.AstartePodPriorities.AstarteLowPriority
+	if midPriorityValue > highPriorityValue || lowPriorityValue > midPriorityValue {
+		err := errors.New("Astarte PriorityClass values are incoherent")
+		astartelog.Error(err, "Astarte PriorityClass must be ordered low < mid < high.")
+		return err
+	}
 	return nil
 }
