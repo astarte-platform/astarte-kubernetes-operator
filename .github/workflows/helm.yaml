@@ -105,6 +105,8 @@ jobs:
     - name: Dump debug info
       if: failure()
       run: |
+        kubectl logs deployment/astarte-operator-controller-manager || echo "No operator logs available"
+        kubectl logs deployment/astarte-operator-controller-manager --previous || echo "Operator never crashed"
         kubectl get pods -n astarte-test
         kubectl get deployment -n astarte-test
         kubectl get statefulset -n astarte-test
