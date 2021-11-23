@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   certificate that will be used for handling SSL termination at VerneMQ level. The referenced
   secret must be present in the same namespace in which Astarte resides. This field is parsed only
   if `SSLListener` is set to true.
+- Add `manualMaintenanceMode`, which pauses reconciliation for an Astarte resource and enables manual
+  intervention.
 
 ## [1.0.0] - 2021-07-01
 ### Changed

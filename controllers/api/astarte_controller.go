@@ -59,6 +59,7 @@ type AstarteReconciler struct {
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;create
 // +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get
 
+//nolint:funlen,gocyclo
 func (r *AstarteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.Log.WithValues("astarte", req.NamespacedName)
 
@@ -80,6 +81,20 @@ func (r *AstarteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		Client:   r.Client,
 		Recorder: r.Recorder,
 		Scheme:   r.Scheme,
+	}
+
+	// Are we in manual maintenance mode?
+	if instance.Spec.ManualMaintenanceMode {
+		// If that is so, compute the status and quit.
+		instance.Status = reconciler.ComputeAstarteStatusResource(reqLogger, instance)
+		if err := r.Client.Status().Update(ctx, instance); err != nil {
+			reqLogger.Error(err, "Failed to update Astarte status.")
+			return ctrl.Result{}, err
+		}
+
+		// Notify and return
+		reqLogger.Info("Astarte Reconciliation skipped due to Manual Maintenance Mode. Hope you know what you're doing!")
+		return ctrl.Result{}, nil
 	}
 
 	// Are we capable of handling the requested version?
