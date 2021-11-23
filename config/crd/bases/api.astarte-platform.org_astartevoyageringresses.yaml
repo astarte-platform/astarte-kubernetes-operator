@@ -45,10 +45,13 @@ spec:
                     description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                     type: string
                   cors:
+                    default: false
                     type: boolean
                   deploy:
+                    default: true
                     type: boolean
                   exposeHousekeeping:
+                    default: true
                     type: boolean
                   kind:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
@@ -58,9 +61,11 @@ spec:
                   nodeSelector:
                     type: string
                   replicas:
+                    default: 1
                     format: int32
                     type: integer
                   serveMetrics:
+                    default: false
                     description: When true, all /metrics endpoints for Astarte services will be served by the Ingress. Beware this might be a security hole. You can control which IPs can access /metrics with serveMetricsToSubnet
                     type: boolean
                   serveMetricsToSubnet:
@@ -100,6 +105,7 @@ spec:
                     description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                     type: string
                   deploy:
+                    default: true
                     type: boolean
                   kind:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
@@ -107,10 +113,12 @@ spec:
                   loadBalancerIp:
                     type: string
                   maxConnections:
+                    default: 10000
                     type: integer
                   nodeSelector:
                     type: string
                   replicas:
+                    default: 1
                     format: int32
                     type: integer
                   tlsRef:
@@ -143,6 +151,7 @@ spec:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
                   ssl:
+                    default: true
                     type: boolean
                   tlsRef:
                     description: LocalTypedReference contains enough information to let you inspect or modify the referred object.
@@ -175,6 +184,7 @@ spec:
                     description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                     type: string
                   autoHTTPChallenge:
+                    default: false
                     type: boolean
                   challengeProvider:
                     properties:
@@ -211,8 +221,10 @@ spec:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
                   staging:
+                    default: false
                     type: boolean
                   use:
+                    default: true
                     type: boolean
                 type: object
             required:
@@ -260,10 +272,13 @@ spec:
                     description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                     type: string
                   cors:
+                    default: false
                     type: boolean
                   deploy:
+                    default: true
                     type: boolean
                   exposeHousekeeping:
+                    default: true
                     type: boolean
                   kind:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
@@ -273,9 +288,11 @@ spec:
                   nodeSelector:
                     type: string
                   replicas:
+                    default: 1
                     format: int32
                     type: integer
                   serveMetrics:
+                    default: false
                     description: When true, all /metrics endpoints for Astarte services will be served by the Ingress. Beware this might be a security hole. You can control which IPs can access /metrics with serveMetricsToSubnet
                     type: boolean
                   serveMetricsToSubnet:
@@ -315,6 +332,7 @@ spec:
                     description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                     type: string
                   deploy:
+                    default: true
                     type: boolean
                   kind:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
@@ -322,10 +340,12 @@ spec:
                   loadBalancerIp:
                     type: string
                   maxConnections:
+                    default: 10000
                     type: integer
                   nodeSelector:
                     type: string
                   replicas:
+                    default: 1
                     format: int32
                     type: integer
                   tlsRef:
@@ -358,6 +378,7 @@ spec:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
                   ssl:
+                    default: true
                     type: boolean
                   tlsRef:
                     description: LocalTypedReference contains enough information to let you inspect or modify the referred object.
@@ -390,6 +411,7 @@ spec:
                     description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                     type: string
                   autoHTTPChallenge:
+                    default: false
                     type: boolean
                   challengeProvider:
                     properties:
@@ -426,8 +448,10 @@ spec:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
                   staging:
+                    default: false
                     type: boolean
                   use:
+                    default: true
                     type: boolean
                 type: object
             required:

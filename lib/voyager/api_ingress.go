@@ -25,7 +25,6 @@ import (
 	"strconv"
 
 	"github.com/go-logr/logr"
-	"github.com/openlyinc/pointy"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -41,7 +40,7 @@ import (
 
 func EnsureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
 	ingressName := getAPIIngressName(cr)
-	if !pointy.BoolValue(cr.Spec.API.Deploy, true) {
+	if !cr.Spec.API.Deploy {
 		// We're not deploying the Ingress, so we're stopping here.
 		// However, maybe we have an Ingress to clean up?
 		ingress := &voyager.Ingress{}
@@ -71,7 +70,7 @@ func EnsureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 	// Create rules for all Astarte components
 	astarteComponents := []commontypes.AstarteComponent{commontypes.AppEngineAPI, commontypes.FlowComponent, commontypes.HousekeepingAPI, commontypes.PairingAPI, commontypes.RealmManagementAPI}
 	// Should we serve /metrics?
-	serveMetrics := pointy.BoolValue(cr.Spec.API.ServeMetrics, false)
+	serveMetrics := cr.Spec.API.ServeMetrics
 	// Is the Dashboard deployed without a host?
 	if misc.IsAstarteComponentDeployed(parent, commontypes.Dashboard) && cr.Spec.Dashboard.Host == "" {
 		astarteComponents = append(astarteComponents, commontypes.Dashboard)
@@ -121,8 +120,8 @@ func makeIngressRules(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 		})
 	}
 
-	if pointy.BoolValue(cr.Spec.Letsencrypt.Use, true) &&
-		(cr.Spec.Letsencrypt.ChallengeProvider.HTTP != nil || pointy.BoolValue(cr.Spec.Letsencrypt.AutoHTTPChallenge, false)) {
+	if cr.Spec.Letsencrypt.Use &&
+		(cr.Spec.Letsencrypt.ChallengeProvider.HTTP != nil || cr.Spec.Letsencrypt.AutoHTTPChallenge) {
 		// The Voyager operator will try to add this rule if the HTTP challenge is enabled, so we
 		// must add it too on our side, otherwise the two operators will fight over the state of the
 		// ingress, resulting in the failure of the HTTP-01 challenge.
@@ -157,11 +156,9 @@ func getAPIIngressAnnotations(cr *apiv1alpha1.AstarteVoyagerIngress, parent *api
 		voyager.DefaultsOption: `{"forwardfor": "true", "dontlognull": "true"}`,
 		// Tunnel is for websockets - 10m is more then enough
 		voyager.DefaultsTimeOut: `{"tunnel": "10m"}`,
+		voyager.Replicas:        strconv.Itoa(int(cr.Spec.API.Replicas)),
 	}
-	if cr.Spec.API.Replicas != nil {
-		annotations[voyager.Replicas] = strconv.Itoa(int(pointy.Int32Value(cr.Spec.API.Replicas, 1)))
-	}
-	if pointy.BoolValue(cr.Spec.API.Cors, false) {
+	if cr.Spec.API.Cors {
 		annotations[voyager.CORSEnabled] = strconv.FormatBool(true)
 	}
 	if cr.Spec.API.NodeSelector != "" {
@@ -173,7 +170,7 @@ func getAPIIngressAnnotations(cr *apiv1alpha1.AstarteVoyagerIngress, parent *api
 	if cr.Spec.API.LoadBalancerIP != "" {
 		annotations[voyager.LoadBalancerIP] = cr.Spec.API.LoadBalancerIP
 	}
-	if pointy.BoolValue(parent.Spec.API.SSL, true) || pointy.BoolValue(cr.Spec.Dashboard.SSL, true) {
+	if parent.Spec.API.SSL || cr.Spec.Dashboard.SSL {
 		// Add safe-SSL options
 		annotations[voyager.EnableHSTS] = strconv.FormatBool(true)
 		annotations[voyager.HSTSPreload] = strconv.FormatBool(true)
@@ -196,7 +193,7 @@ func getAPIIngressSpec(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha
 	// Ok - build the Ingress Spec
 	ingressSpec := voyager.IngressSpec{}
 	// TLS first
-	if pointy.BoolValue(parent.Spec.API.SSL, true) || pointy.BoolValue(cr.Spec.Dashboard.SSL, true) {
+	if parent.Spec.API.SSL || cr.Spec.Dashboard.SSL {
 		// Ok, we should add TLS.
 		// Priority in options is: Ref - Secret Name - Let's Encrypt
 		ingressTLSs := []voyager.IngressTLS{}
@@ -210,7 +207,7 @@ func getAPIIngressSpec(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha
 			apiProcessed = true
 		}
 		// Then Dashboard - if needed
-		if pointy.BoolValue(cr.Spec.Dashboard.SSL, true) && cr.Spec.Dashboard.Host != "" {
+		if cr.Spec.Dashboard.SSL && cr.Spec.Dashboard.Host != "" {
 			if cr.Spec.Dashboard.TLSRef != nil {
 				ingressTLSs = append(ingressTLSs, voyager.IngressTLS{Ref: cr.Spec.Dashboard.TLSRef, Hosts: []string{cr.Spec.Dashboard.Host}})
 				apiProcessed = true
@@ -241,7 +238,7 @@ func getAPIIngressSpec(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha
 
 func getLEFixupForAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte,
 	c client.Client, apiProcessed, dashboardProcessed bool) (*voyager.IngressTLS, error) {
-	if (!apiProcessed || !dashboardProcessed) && pointy.BoolValue(cr.Spec.Letsencrypt.Use, true) {
+	if (!apiProcessed || !dashboardProcessed) && cr.Spec.Letsencrypt.Use {
 		// Are we bootstrapping?
 		bootstrappingLE, err := isBootstrappingLEChallenge(cr, c)
 		if err != nil {
@@ -253,7 +250,7 @@ func getLEFixupForAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv
 			if !apiProcessed {
 				hosts = append(hosts, parent.Spec.API.Host)
 			}
-			if !dashboardProcessed && pointy.BoolValue(cr.Spec.Dashboard.SSL, true) && cr.Spec.Dashboard.Host != "" {
+			if !dashboardProcessed && cr.Spec.Dashboard.SSL && cr.Spec.Dashboard.Host != "" {
 				hosts = append(hosts, cr.Spec.Dashboard.Host)
 			}
 

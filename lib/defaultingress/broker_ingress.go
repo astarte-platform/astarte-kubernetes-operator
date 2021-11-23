@@ -31,7 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/go-logr/logr"
-	"github.com/openlyinc/pointy"
 
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/ingress/v1alpha1"
@@ -41,7 +40,7 @@ import (
 func EnsureBrokerIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
 	// we actually don't have an ingress, but a service which exposes the broker
 	brokerServiceName := getBrokerServiceName(cr)
-	if !pointy.BoolValue(cr.Spec.Broker.Deploy, true) {
+	if !cr.Spec.Broker.Deploy {
 		// We're not exposing the broker, so we're stopping here.
 		// However, maybe we have a service to clean up?
 		brokerService := &v1.Service{}
@@ -85,8 +84,8 @@ func getBrokerServiceSpec(cr *ingressv1alpha1.AstarteDefaultIngress, parent *api
 	}
 
 	serviceSpec.Ports = []v1.ServicePort{
-		v1.ServicePort{
-			Port:       int32(pointy.Int16Value(parent.Spec.VerneMQ.Port, 8883)),
+		{
+			Port:       int32(parent.Spec.VerneMQ.Port),
 			TargetPort: intstr.FromInt(8883),
 		},
 	}

@@ -66,7 +66,7 @@ func ensureCFSSLDeployment(cr *apiv1alpha1.Astarte, c client.Client, scheme *run
 	labels := map[string]string{"app": deploymentName}
 
 	// Ok. Shall we deploy?
-	if !pointy.BoolValue(cr.Spec.CFSSL.Deploy, true) {
+	if !cr.Spec.CFSSL.Deploy {
 		log.Info("Skipping CFSSL Deployment")
 		// Before returning - check if we shall clean up the Deployment.
 		// It is the only thing actually requiring resources, the rest will be cleaned up eventually when the
@@ -141,7 +141,7 @@ func ensureCFSSLStatefulSet(cr *apiv1alpha1.Astarte, c client.Client, scheme *ru
 	labels := map[string]string{"app": statefulSetName}
 
 	// Ok. Shall we deploy?
-	if !pointy.BoolValue(cr.Spec.CFSSL.Deploy, true) {
+	if !cr.Spec.CFSSL.Deploy {
 		log.Info("Skipping CFSSL Deployment")
 		// Before returning - check if we shall clean up the StatefulSet.
 		// It is the only thing actually requiring resources, the rest will be cleaned up eventually when the
@@ -246,7 +246,7 @@ func ensureCFSSLCommonSidecars(resourceName string, labels map[string]string, cr
 }
 
 func validateCFSSLDefinition(cfssl commontypes.AstarteCFSSLSpec) error {
-	if !pointy.BoolValue(cfssl.Deploy, true) && cfssl.URL == "" {
+	if !cfssl.Deploy && cfssl.URL == "" {
 		return errors.New("When not deploying CFSSL, the 'url' must be specified")
 	}
 

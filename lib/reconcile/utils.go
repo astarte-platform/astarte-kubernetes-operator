@@ -30,7 +30,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -388,17 +387,17 @@ func appendCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv1alpha1.Astarte) 
 	spec := cr.Spec.Cassandra.Connection
 	if spec != nil {
 		// pool size
-		if spec.PoolSize != nil {
+		if spec.PoolSize > 0 {
 			ret = append(ret,
 				v1.EnvVar{
 					Name:  "CASSANDRA_POOL_SIZE",
-					Value: strconv.Itoa(*spec.PoolSize),
+					Value: strconv.Itoa(spec.PoolSize),
 				},
 			)
 		}
 
 		// autodiscovery
-		if pointy.BoolValue(spec.Autodiscovery, true) {
+		if spec.Autodiscovery {
 			ret = append(ret,
 				v1.EnvVar{
 					Name:  "CASSANDRA_AUTODISCOVERY_ENABLED",
@@ -430,7 +429,7 @@ func appendCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv1alpha1.Astarte) 
 					Name:  "CASSANDRA_SSL_CUSTOM_SNI",
 					Value: spec.SSLConfiguration.CustomSNI,
 				})
-			case !pointy.BoolValue(spec.SSLConfiguration.SNI, true):
+			case !spec.SSLConfiguration.SNI:
 				ret = append(ret, v1.EnvVar{
 					Name:  "CASSANDRA_SSL_DISABLE_SNI",
 					Value: "true",
@@ -501,7 +500,7 @@ func appendRabbitMQConnectionEnvVars(ret []v1.EnvVar, prefix string, cr *apiv1al
 					Name:  prefix + "_SSL_CUSTOM_SNI",
 					Value: spec.SSLConfiguration.CustomSNI,
 				})
-			case !pointy.BoolValue(spec.SSLConfiguration.SNI, true):
+			case !spec.SSLConfiguration.SNI:
 				ret = append(ret, v1.EnvVar{
 					Name:  prefix + "_SSL_DISABLE_SNI",
 					Value: "true",
@@ -600,7 +599,7 @@ func getAstarteCommonVolumeMounts(cr *apiv1alpha1.Astarte) []v1.VolumeMount {
 
 func getAffinityForClusteredResource(appLabel string, resource commontypes.AstarteGenericClusteredResource) *v1.Affinity {
 	affinity := resource.CustomAffinity
-	if affinity == nil && pointy.BoolValue(resource.AntiAffinity, true) {
+	if affinity == nil && resource.AntiAffinity {
 		affinity = getStandardAntiAffinityForAppLabel(appLabel)
 	}
 	return affinity
@@ -644,16 +643,16 @@ func getDeploymentStrategyForClusteredResource(cr *apiv1alpha1.Astarte, resource
 }
 
 func getDataQueueCount(cr *apiv1alpha1.Astarte) int {
-	return pointy.IntValue(cr.Spec.Components.DataUpdaterPlant.DataQueueCount, 128)
+	return cr.Spec.Components.DataUpdaterPlant.DataQueueCount
 }
 
 func getAppEngineAPIMaxResultslimit(cr *apiv1alpha1.Astarte) int {
-	return pointy.IntValue(cr.Spec.Components.AppengineAPI.MaxResultsLimit, 10000)
+	return cr.Spec.Components.AppengineAPI.MaxResultsLimit
 }
 
 func getBaseAstarteAPIURL(cr *apiv1alpha1.Astarte) string {
 	scheme := "https"
-	if !pointy.BoolValue(cr.Spec.API.SSL, true) {
+	if !cr.Spec.API.SSL {
 		scheme = "http"
 	}
 

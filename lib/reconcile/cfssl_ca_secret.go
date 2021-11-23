@@ -23,7 +23,6 @@ package reconcile
 import (
 	"context"
 
-	"github.com/openlyinc/pointy"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -42,7 +41,7 @@ func EnsureCFSSLCASecret(cr *apiv1alpha1.Astarte, c client.Client, scheme *runti
 	secretName := cr.Name + "-cfssl-ca"
 	serviceAccountName := jobName
 	// First of all, ensure we have the right roles.
-	if pointy.BoolValue(cr.Spec.RBAC, true) {
+	if cr.Spec.RBAC {
 		if err := reconcileStandardRBACForClusteringForApp(jobName, getCFSSLCAJobPolicyRules(), cr, c, scheme); err != nil {
 			return err
 		}

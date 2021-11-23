@@ -163,8 +163,9 @@ type AstarteGenericClusteredResource struct {
 	Deploy *bool `json:"deploy,omitempty"`
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
+	// +kubebuilder:default:=true
 	// +optional
-	AntiAffinity *bool `json:"antiAffinity,omitempty"`
+	AntiAffinity bool `json:"antiAffinity,omitempty"`
 	// +optional
 	CustomAffinity *v1.Affinity `json:"customAffinity,omitempty"`
 	// +optional
@@ -186,8 +187,9 @@ type AstarteGenericClusteredResource struct {
 type AstarteGenericAPISpec struct {
 	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
+	// +kubebuilder:default:=false
 	// +optional
-	DisableAuthentication *bool `json:"disableAuthentication,omitempty"`
+	DisableAuthentication bool `json:"disableAuthentication,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -204,8 +206,9 @@ type AstartePersistentStorageSpec struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteAPISpec struct {
 	metav1.TypeMeta `json:",inline"`
+	// +kubebuilder:default:=true
 	// +optional
-	SSL  *bool  `json:"ssl,omitempty"`
+	SSL  bool   `json:"ssl,omitempty"`
 	Host string `json:"host"`
 }
 
@@ -215,8 +218,9 @@ type AstarteRabbitMQSSLConfigurationSpec struct {
 	Enabled         bool `json:"enabled"`
 	// +optional
 	CustomCASecret v1.LocalObjectReference `json:"customCASecret,omitempty"`
+	// +kubebuilder:default:=true
 	// +optional
-	SNI *bool `json:"sni,omitempty"`
+	SNI bool `json:"sni,omitempty"`
 	// +optional
 	CustomSNI string `json:"customSNI,omitempty"`
 }
@@ -225,7 +229,9 @@ type AstarteRabbitMQSSLConfigurationSpec struct {
 type AstarteRabbitMQConnectionSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	Host            string `json:"host"`
-	Port            *int16 `json:"port"`
+	// +kubebuilder:default:=5672
+	// +optional
+	Port int16 `json:"port"`
 	// +optional
 	Username string `json:"username,omitempty"`
 	// +optional
@@ -265,8 +271,9 @@ type AstarteCassandraSSLConfigurationSpec struct {
 	Enabled bool `json:"enabled,omitempty"`
 	// +optional
 	CustomCASecret v1.LocalObjectReference `json:"customCASecret,omitempty"`
+	// +kubebuilder:default:=true
 	// +optional
-	SNI *bool `json:"sni,omitempty"`
+	SNI bool `json:"sni,omitempty"`
 	// +optional
 	CustomSNI string `json:"customSNI,omitempty"`
 }
@@ -283,9 +290,10 @@ type LoginCredentialsSecret struct {
 type AstarteCassandraConnectionSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
-	PoolSize *int `json:"poolSize,omitempty"`
+	PoolSize int `json:"poolSize,omitempty"`
+	// +kubebuilder:default:=true
 	// +optional
-	Autodiscovery *bool `json:"autodiscovery,omitempty"`
+	Autodiscovery bool `json:"autodiscovery,omitempty"`
 	// +optional
 	SSLConfiguration AstarteCassandraSSLConfigurationSpec `json:"sslConfiguration,omitempty"`
 	// +optional
@@ -317,8 +325,9 @@ type AstarteVerneMQSpec struct {
 	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
 	Host                            string `json:"host"`
+	// +kubebuilder:default:=8883
 	// +optional
-	Port *int16 `json:"port,omitempty"`
+	Port int16 `json:"port,omitempty"`
 	// +optional
 	// +optional
 	CaSecret string `json:"caSecret,omitempty"`
@@ -334,8 +343,9 @@ type AstarteVerneMQSpec struct {
 	// The maximum number of QoS 1 or 2 messages to hold in the offline queue.
 	// Defaults to 1000000. Set to -1 for no maximum (not recommended). Set to 0
 	// if no messages should be stored offline.
+	// +kubebuilder:default:=1000000
 	// +optional
-	MaxOfflineMessages *int `json:"maxOfflineMessages,omitempty"`
+	MaxOfflineMessages int `json:"maxOfflineMessages,omitempty"`
 	// This option allows persistent clients ( = clean session set to
 	// false) to be removed if they do not reconnect within 'persistent_client_expiration'.
 	// This is a non-standard option. As far as the MQTT specification is concerned,
@@ -348,9 +358,11 @@ type AstarteVerneMQSpec struct {
 	// +optional
 	MirrorQueue string `json:"mirrorQueue,omitempty"`
 	// This option allows, when true, to handle SSL termination at VerneMQ level.
-	// Default: false
+	// Note: in future versions of the Operator, this will default to true due to changes
+	// in the ingress strategy.
+	// +kubebuilder:default:=false
 	// +optional
-	SSLListener *bool `json:"sslListener,omitempty"`
+	SSLListener bool `json:"sslListener,omitempty"`
 	// Reference the name of the secret containing the TLS certificate for VerneMQ.
 	// The secret must be present in the same namespace in which Astarte resides.
 	// The field will be used only if SSLListener is set to true.
@@ -371,15 +383,17 @@ type AstarteGenericComponentSpec struct {
 type AstarteDataUpdaterPlantSpec struct {
 	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
+	// +kubebuilder:default:=128
 	// +optional
-	DataQueueCount *int `json:"dataQueueCount,omitempty"`
+	DataQueueCount int `json:"dataQueueCount,omitempty"`
 	// Controls the prefetch count for Data Updater Plant. When fine-tuning Astarte, this parameter
 	// can make a difference for what concerns Data Updater Plant ingestion performance. However,
 	// it can also degrade performance significantly and/or increase risk of data loss when misconfigured.
 	// Configure this value only if you know what you're doing and you have experience with RabbitMQ.
 	// Defaults to 300
+	// +kubebuilder:default:=300
 	// +optional
-	PrefetchCount *int `json:"prefetchCount,omitempty"`
+	PrefetchCount int `json:"prefetchCount,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -402,9 +416,10 @@ type AstarteTriggerEngineSpec struct {
 type AstarteAppengineAPISpec struct {
 	metav1.TypeMeta       `json:",inline"`
 	AstarteGenericAPISpec `json:",inline"`
+	// +kubebuilder:default:=10000
 	// +kubebuilder:validation:Minimum=100
 	// +optional
-	MaxResultsLimit *int `json:"maxResultsLimit,omitempty"`
+	MaxResultsLimit int `json:"maxResultsLimit,omitempty"`
 	// Configures the name of the Room Events queue. Should be configured only in installations with a highly
 	// customized RabbitMQ. It is advised to leave empty unless you know exactly what you're doing.
 	// +optional
@@ -544,8 +559,9 @@ type AstarteCFSSLCARootConfigSpec struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCFSSLSpec struct {
 	metav1.TypeMeta `json:",inline"`
+	// +kubebuilder:default:=true
 	// +optional
-	Deploy *bool `json:"deploy,omitempty"`
+	Deploy bool `json:"deploy,omitempty"`
 	// +optional
 	URL string `json:"url,omitempty"`
 	// +optional
@@ -605,8 +621,9 @@ type AstarteSpec struct {
 	DeploymentStrategy *appsv1.DeploymentStrategy `json:"deploymentStrategy,omitempty"`
 	// +optional
 	Features AstarteFeatures `json:"features,omitempty"`
+	// +kubebuilder:default:=true
 	// +optional
-	RBAC *bool `json:"rbac,omitempty"`
+	RBAC bool `json:"rbac,omitempty"`
 	// +optional
 	StorageClassName string         `json:"storageClassName,omitempty"`
 	API              AstarteAPISpec `json:"api"`
