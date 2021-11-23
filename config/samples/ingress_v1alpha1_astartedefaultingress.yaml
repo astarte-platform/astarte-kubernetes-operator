@@ -1,0 +1,7 @@
+apiVersion: ingress.astarte-platform.org/v1alpha1
+kind: AstarteDefaultIngress
+metadata:
+  name: astartedefaultingress-sample
+spec:
+  # Add fields here
+  foo: bar

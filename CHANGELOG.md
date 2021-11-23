@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add Kubernetes 1.19, 1.20 and 1.21 to the supported list. Deprecate anything < 1.18
 - Upgrade OperatorSDK to v1.7.1.
 - Use kustomize v3.8.7.
+- Drop support for Kubernetes < v1.19.
 
 ### Added
 - Add `SSLListener` field to handle SSL termination at VerneMQ level. Defaults to `false`. Enabling
@@ -22,6 +23,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   if `SSLListener` is set to true.
 - Add `manualMaintenanceMode`, which pauses reconciliation for an Astarte resource and enables manual
   intervention.
+- Add AstarteDefaultIngress type.
+- Add validating and mutating webhooks for AstarteDefaultIngress.
 
 ## [1.0.0] - 2021-07-01
 ### Changed
