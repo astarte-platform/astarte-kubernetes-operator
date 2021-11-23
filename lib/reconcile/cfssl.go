@@ -21,7 +21,6 @@ package reconcile
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	cfsslcsr "github.com/cloudflare/cfssl/csr"
@@ -38,7 +37,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	commontypes "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/deps"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
@@ -47,11 +45,6 @@ import (
 
 // EnsureCFSSL reconciles CFSSL
 func EnsureCFSSL(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
-	// Validate where necessary
-	if err := validateCFSSLDefinition(cr.Spec.CFSSL); err != nil {
-		return err
-	}
-
 	if version.CheckConstraintAgainstAstarteVersion("< 1.0.0", cr.Spec.Version) == nil {
 		// Then it's a statefulset
 		return ensureCFSSLStatefulSet(cr, c, scheme)
@@ -242,15 +235,6 @@ func ensureCFSSLCommonSidecars(resourceName string, labels map[string]string, cr
 	}
 
 	// All good!
-	return nil
-}
-
-func validateCFSSLDefinition(cfssl commontypes.AstarteCFSSLSpec) error {
-	if !cfssl.Deploy && cfssl.URL == "" {
-		return errors.New("When not deploying CFSSL, the 'url' must be specified")
-	}
-
-	// All is good.
 	return nil
 }
 

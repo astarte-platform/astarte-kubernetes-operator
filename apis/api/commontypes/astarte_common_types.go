@@ -208,7 +208,8 @@ type AstarteAPISpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// +kubebuilder:default:=true
 	// +optional
-	SSL  bool   `json:"ssl,omitempty"`
+	SSL bool `json:"ssl,omitempty"`
+	// +kubebuilder:validation:Pattern=`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`
 	Host string `json:"host"`
 }
 
@@ -228,7 +229,8 @@ type AstarteRabbitMQSSLConfigurationSpec struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteRabbitMQConnectionSpec struct {
 	metav1.TypeMeta `json:",inline"`
-	Host            string `json:"host"`
+	// +kubebuilder:validation:Pattern=`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`
+	Host string `json:"host"`
 	// +kubebuilder:default:=5672
 	// +optional
 	Port int16 `json:"port"`
@@ -324,7 +326,8 @@ type AstarteCassandraSpec struct {
 type AstarteVerneMQSpec struct {
 	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
-	Host                            string `json:"host"`
+	// +kubebuilder:validation:Pattern=`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`
+	Host string `json:"host"`
 	// +kubebuilder:default:=8883
 	// +optional
 	Port int16 `json:"port,omitempty"`

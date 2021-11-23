@@ -86,11 +86,15 @@ spec:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
                   loadBalancerIP:
-                    description: Set the LoadBalancerIP if and only if the broker service is of type "LoadBalancer". This feature depends on wheather the cloud provider supports specifying the LoadBalancerIP when a load balancer is created.
+                    description: Set the LoadBalancerIP if and only if the broker service is of type "LoadBalancer". This feature depends on whether the cloud provider supports specifying the LoadBalancerIP when a load balancer is created.
+                    pattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$
                     type: string
                   serviceType:
                     default: LoadBalancer
                     description: Set the type of service employed to expose the broker. Supported values are "NodePort" and "LoadBalancer". The AstarteDefaultIngress handles TLS termination at VerneMQ level and, as such, no TLSSecret is needed to configure the broker service.
+                    enum:
+                    - LoadBalancer
+                    - NodePort
                     type: string
                 type: object
               dashboard:
@@ -105,6 +109,7 @@ spec:
                     type: boolean
                   host:
                     description: 'The host handling requests addressed to the dashboard. When deploy is true and host is not set, the dashboard will be exposed at the following URL: https://<astarte-base-url>/dashboard.'
+                    pattern: ^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$
                     type: string
                   kind:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'

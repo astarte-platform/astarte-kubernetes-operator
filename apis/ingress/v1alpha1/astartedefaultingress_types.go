@@ -69,6 +69,7 @@ type AstarteDefaultIngressDashboardSpec struct {
 	SSL bool `json:"ssl,omitempty"`
 	// The host handling requests addressed to the dashboard. When deploy is true and host is not set,
 	// the dashboard will be exposed at the following URL: https://<astarte-base-url>/dashboard.
+	// +kubebuilder:validation:Pattern=`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`
 	// +optional
 	Host string `json:"host,omitempty"`
 	// The secret containing the TLS certificates and keys used to access the Astarte Dashboard. The secret
@@ -89,10 +90,12 @@ type AstarteDefaultIngressBrokerSpec struct {
 	// The AstarteDefaultIngress handles TLS termination at VerneMQ level and, as such, no TLSSecret is needed to
 	// configure the broker service.
 	// +kubebuilder:default:=LoadBalancer
+	// +kubebuilder:validation:Enum:=LoadBalancer;NodePort
 	// +optional
 	ServiceType v1.ServiceType `json:"serviceType,omitempty"`
 	// Set the LoadBalancerIP if and only if the broker service is of type "LoadBalancer". This feature depends on
-	// wheather the cloud provider supports specifying the LoadBalancerIP when a load balancer is created.
+	// whether the cloud provider supports specifying the LoadBalancerIP when a load balancer is created.
+	// +kubebuilder:validation:Pattern=`^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$`
 	// +optional
 	LoadBalancerIP string `json:"loadBalancerIP,omitempty"`
 }

@@ -36,7 +36,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	commontypes "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 	"github.com/astarte-platform/astarte-kubernetes-operator/version"
@@ -47,11 +46,6 @@ func EnsureVerneMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sch
 	//reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name)
 	statefulSetName := cr.Name + "-vernemq"
 	labels := map[string]string{"app": statefulSetName}
-
-	// Validate where necessary
-	if err := validateVerneMQDefinition(&cr.Spec.VerneMQ); err != nil {
-		return err
-	}
 
 	// Ok. Shall we deploy?
 	if !pointy.BoolValue(cr.Spec.VerneMQ.Deploy, true) {
@@ -162,14 +156,6 @@ func EnsureVerneMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sch
 	}
 
 	misc.LogCreateOrUpdateOperationResult(log, result, cr, service)
-	return nil
-}
-
-func validateVerneMQDefinition(vmq *commontypes.AstarteVerneMQSpec) error {
-	if vmq == nil {
-		return nil
-	}
-	// All is good.
 	return nil
 }
 
