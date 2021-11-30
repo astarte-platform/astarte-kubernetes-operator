@@ -38,11 +38,13 @@ spec:
                     description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                     type: string
                   host:
+                    pattern: ^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$
                     type: string
                   kind:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
                   ssl:
+                    default: true
                     type: boolean
                 required:
                 - host
@@ -146,6 +148,7 @@ spec:
                       type: object
                     type: array
                   antiAffinity:
+                    default: true
                     type: boolean
                   apiVersion:
                     description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -156,6 +159,7 @@ spec:
                         description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                         type: string
                       autodiscovery:
+                        default: true
                         type: boolean
                       kind:
                         description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
@@ -203,6 +207,7 @@ spec:
                             description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
                           sni:
+                            default: true
                             type: boolean
                         type: object
                       username:
@@ -1692,6 +1697,7 @@ spec:
                         type: string
                     type: object
                   deploy:
+                    default: true
                     type: boolean
                   image:
                     type: string
@@ -2730,6 +2736,7 @@ spec:
                           type: object
                         type: array
                       antiAffinity:
+                        default: true
                         type: boolean
                       apiVersion:
                         description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -3101,6 +3108,7 @@ spec:
                             type: string
                         type: object
                       disableAuthentication:
+                        default: false
                         type: boolean
                       image:
                         type: string
@@ -3108,6 +3116,7 @@ spec:
                         description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                         type: string
                       maxResultsLimit:
+                        default: 10000
                         minimum: 100
                         type: integer
                       replicas:
@@ -3227,6 +3236,7 @@ spec:
                           type: object
                         type: array
                       antiAffinity:
+                        default: true
                         type: boolean
                       apiVersion:
                         description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -3742,6 +3752,7 @@ spec:
                           type: object
                         type: array
                       antiAffinity:
+                        default: true
                         type: boolean
                       apiVersion:
                         description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -4088,6 +4099,7 @@ spec:
                             type: object
                         type: object
                       dataQueueCount:
+                        default: 128
                         type: integer
                       deploy:
                         type: boolean
@@ -4120,6 +4132,7 @@ spec:
                         description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                         type: string
                       prefetchCount:
+                        default: 300
                         description: Controls the prefetch count for Data Updater Plant. When fine-tuning Astarte, this parameter can make a difference for what concerns Data Updater Plant ingestion performance. However, it can also degrade performance significantly and/or increase risk of data loss when misconfigured. Configure this value only if you know what you're doing and you have experience with RabbitMQ. Defaults to 300
                         type: integer
                       replicas:
@@ -4234,6 +4247,7 @@ spec:
                           type: object
                         type: array
                       antiAffinity:
+                        default: true
                         type: boolean
                       apiVersion:
                         description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -4605,6 +4619,7 @@ spec:
                             type: string
                         type: object
                       disableAuthentication:
+                        default: false
                         type: boolean
                       image:
                         type: string
@@ -4725,6 +4740,7 @@ spec:
                               type: object
                             type: array
                           antiAffinity:
+                            default: true
                             type: boolean
                           apiVersion:
                             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -5096,6 +5112,7 @@ spec:
                                 type: string
                             type: object
                           disableAuthentication:
+                            default: false
                             type: boolean
                           image:
                             type: string
@@ -5216,6 +5233,7 @@ spec:
                               type: object
                             type: array
                           antiAffinity:
+                            default: true
                             type: boolean
                           apiVersion:
                             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -5712,6 +5730,7 @@ spec:
                               type: object
                             type: array
                           antiAffinity:
+                            default: true
                             type: boolean
                           apiVersion:
                             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -6083,6 +6102,7 @@ spec:
                                 type: string
                             type: object
                           disableAuthentication:
+                            default: false
                             type: boolean
                           image:
                             type: string
@@ -6203,6 +6223,7 @@ spec:
                               type: object
                             type: array
                           antiAffinity:
+                            default: true
                             type: boolean
                           apiVersion:
                             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -6696,6 +6717,7 @@ spec:
                               type: object
                             type: array
                           antiAffinity:
+                            default: true
                             type: boolean
                           apiVersion:
                             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -7067,6 +7089,7 @@ spec:
                                 type: string
                             type: object
                           disableAuthentication:
+                            default: false
                             type: boolean
                           image:
                             type: string
@@ -7187,6 +7210,7 @@ spec:
                               type: object
                             type: array
                           antiAffinity:
+                            default: true
                             type: boolean
                           apiVersion:
                             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -7699,6 +7723,7 @@ spec:
                           type: object
                         type: array
                       antiAffinity:
+                        default: true
                         type: boolean
                       apiVersion:
                         description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -8252,6 +8277,7 @@ spec:
                       type: string
                     type: array
                   antiAffinity:
+                    default: true
                     type: boolean
                   apiVersion:
                     description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -8262,6 +8288,7 @@ spec:
                         description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                         type: string
                       host:
+                        pattern: ^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$
                         type: string
                       kind:
                         description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
@@ -8269,6 +8296,7 @@ spec:
                       password:
                         type: string
                       port:
+                        default: 5672
                         type: integer
                       secret:
                         properties:
@@ -8309,6 +8337,7 @@ spec:
                             description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
                           sni:
+                            default: true
                             type: boolean
                         required:
                         - enabled
@@ -8319,7 +8348,6 @@ spec:
                         type: string
                     required:
                     - host
-                    - port
                     type: object
                   customAffinity:
                     description: Affinity is a group of affinity scheduling rules.
@@ -9644,6 +9672,7 @@ spec:
                     type: string
                 type: object
               rbac:
+                default: true
                 type: boolean
               storageClassName:
                 type: string
@@ -9730,6 +9759,7 @@ spec:
                       type: object
                     type: array
                   antiAffinity:
+                    default: true
                     type: boolean
                   apiVersion:
                     description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -10106,6 +10136,7 @@ spec:
                     description: Controls the device heartbeat from the broker to Astarte. The heartbeat is sent periodically to prevent Astarte from keeping up stale connections from Devices in case the broker misbehaves and does not send disconnection events. You should usually not tweak this value. Moreover, keep in mind that when a lot of devices are connected simultaneously, having a short heartbeat time might cause performance issues. Defaults to an hour.
                     type: integer
                   host:
+                    pattern: ^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$
                     type: string
                   image:
                     type: string
@@ -10113,6 +10144,7 @@ spec:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
                   maxOfflineMessages:
+                    default: 1000000
                     description: The maximum number of QoS 1 or 2 messages to hold in the offline queue. Defaults to 1000000. Set to -1 for no maximum (not recommended). Set to 0 if no messages should be stored offline.
                     type: integer
                   mirrorQueue:
@@ -10121,6 +10153,7 @@ spec:
                     description: 'This option allows persistent clients ( = clean session set to false) to be removed if they do not reconnect within ''persistent_client_expiration''. This is a non-standard option. As far as the MQTT specification is concerned, persistent clients persist forever. The expiration period should be an integer followed by one of ''d'', ''w'', ''m'', ''y'' for day, week, month, and year. Default: 1 year'
                     type: string
                   port:
+                    default: 8883
                     type: integer
                   replicas:
                     format: int32
@@ -10148,7 +10181,8 @@ spec:
                         type: object
                     type: object
                   sslListener:
-                    description: 'This option allows, when true, to handle SSL termination at VerneMQ level. Default: false'
+                    default: false
+                    description: 'This option allows, when true, to handle SSL termination at VerneMQ level. Note: in future versions of the Operator, this will default to true due to changes in the ingress strategy.'
                     type: boolean
                   sslListenerCertSecretName:
                     description: Reference the name of the secret containing the TLS certificate for VerneMQ. The secret must be present in the same namespace in which Astarte resides. The field will be used only if SSLListener is set to true.
@@ -11134,11 +11168,13 @@ spec:
                     description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                     type: string
                   host:
+                    pattern: ^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$
                     type: string
                   kind:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
                   ssl:
+                    default: true
                     type: boolean
                 required:
                 - host
@@ -11242,6 +11278,7 @@ spec:
                       type: object
                     type: array
                   antiAffinity:
+                    default: true
                     type: boolean
                   apiVersion:
                     description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -11252,6 +11289,7 @@ spec:
                         description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                         type: string
                       autodiscovery:
+                        default: true
                         type: boolean
                       kind:
                         description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
@@ -11299,6 +11337,7 @@ spec:
                             description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
                           sni:
+                            default: true
                             type: boolean
                         type: object
                       username:
@@ -12788,6 +12827,7 @@ spec:
                         type: string
                     type: object
                   deploy:
+                    default: true
                     type: boolean
                   image:
                     type: string
@@ -13826,6 +13866,7 @@ spec:
                           type: object
                         type: array
                       antiAffinity:
+                        default: true
                         type: boolean
                       apiVersion:
                         description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -14197,6 +14238,7 @@ spec:
                             type: string
                         type: object
                       disableAuthentication:
+                        default: false
                         type: boolean
                       image:
                         type: string
@@ -14204,6 +14246,7 @@ spec:
                         description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                         type: string
                       maxResultsLimit:
+                        default: 10000
                         minimum: 100
                         type: integer
                       replicas:
@@ -14323,6 +14366,7 @@ spec:
                           type: object
                         type: array
                       antiAffinity:
+                        default: true
                         type: boolean
                       apiVersion:
                         description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -14838,6 +14882,7 @@ spec:
                           type: object
                         type: array
                       antiAffinity:
+                        default: true
                         type: boolean
                       apiVersion:
                         description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -15184,6 +15229,7 @@ spec:
                             type: object
                         type: object
                       dataQueueCount:
+                        default: 128
                         type: integer
                       deploy:
                         type: boolean
@@ -15216,6 +15262,7 @@ spec:
                         description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                         type: string
                       prefetchCount:
+                        default: 300
                         description: Controls the prefetch count for Data Updater Plant. When fine-tuning Astarte, this parameter can make a difference for what concerns Data Updater Plant ingestion performance. However, it can also degrade performance significantly and/or increase risk of data loss when misconfigured. Configure this value only if you know what you're doing and you have experience with RabbitMQ. Defaults to 300
                         type: integer
                       replicas:
@@ -15330,6 +15377,7 @@ spec:
                           type: object
                         type: array
                       antiAffinity:
+                        default: true
                         type: boolean
                       apiVersion:
                         description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -15701,6 +15749,7 @@ spec:
                             type: string
                         type: object
                       disableAuthentication:
+                        default: false
                         type: boolean
                       image:
                         type: string
@@ -15821,6 +15870,7 @@ spec:
                               type: object
                             type: array
                           antiAffinity:
+                            default: true
                             type: boolean
                           apiVersion:
                             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -16192,6 +16242,7 @@ spec:
                                 type: string
                             type: object
                           disableAuthentication:
+                            default: false
                             type: boolean
                           image:
                             type: string
@@ -16312,6 +16363,7 @@ spec:
                               type: object
                             type: array
                           antiAffinity:
+                            default: true
                             type: boolean
                           apiVersion:
                             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -16808,6 +16860,7 @@ spec:
                               type: object
                             type: array
                           antiAffinity:
+                            default: true
                             type: boolean
                           apiVersion:
                             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -17179,6 +17232,7 @@ spec:
                                 type: string
                             type: object
                           disableAuthentication:
+                            default: false
                             type: boolean
                           image:
                             type: string
@@ -17299,6 +17353,7 @@ spec:
                               type: object
                             type: array
                           antiAffinity:
+                            default: true
                             type: boolean
                           apiVersion:
                             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -17792,6 +17847,7 @@ spec:
                               type: object
                             type: array
                           antiAffinity:
+                            default: true
                             type: boolean
                           apiVersion:
                             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -18163,6 +18219,7 @@ spec:
                                 type: string
                             type: object
                           disableAuthentication:
+                            default: false
                             type: boolean
                           image:
                             type: string
@@ -18283,6 +18340,7 @@ spec:
                               type: object
                             type: array
                           antiAffinity:
+                            default: true
                             type: boolean
                           apiVersion:
                             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -18795,6 +18853,7 @@ spec:
                           type: object
                         type: array
                       antiAffinity:
+                        default: true
                         type: boolean
                       apiVersion:
                         description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -19348,6 +19407,7 @@ spec:
                       type: string
                     type: array
                   antiAffinity:
+                    default: true
                     type: boolean
                   apiVersion:
                     description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -19358,6 +19418,7 @@ spec:
                         description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                         type: string
                       host:
+                        pattern: ^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$
                         type: string
                       kind:
                         description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
@@ -19365,6 +19426,7 @@ spec:
                       password:
                         type: string
                       port:
+                        default: 5672
                         type: integer
                       secret:
                         properties:
@@ -19405,6 +19467,7 @@ spec:
                             description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
                           sni:
+                            default: true
                             type: boolean
                         required:
                         - enabled
@@ -19415,7 +19478,6 @@ spec:
                         type: string
                     required:
                     - host
-                    - port
                     type: object
                   customAffinity:
                     description: Affinity is a group of affinity scheduling rules.
@@ -20740,6 +20802,7 @@ spec:
                     type: string
                 type: object
               rbac:
+                default: true
                 type: boolean
               storageClassName:
                 type: string
@@ -20826,6 +20889,7 @@ spec:
                       type: object
                     type: array
                   antiAffinity:
+                    default: true
                     type: boolean
                   apiVersion:
                     description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -21202,6 +21266,7 @@ spec:
                     description: Controls the device heartbeat from the broker to Astarte. The heartbeat is sent periodically to prevent Astarte from keeping up stale connections from Devices in case the broker misbehaves and does not send disconnection events. You should usually not tweak this value. Moreover, keep in mind that when a lot of devices are connected simultaneously, having a short heartbeat time might cause performance issues. Defaults to an hour.
                     type: integer
                   host:
+                    pattern: ^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$
                     type: string
                   image:
                     type: string
@@ -21209,6 +21274,7 @@ spec:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
                   maxOfflineMessages:
+                    default: 1000000
                     description: The maximum number of QoS 1 or 2 messages to hold in the offline queue. Defaults to 1000000. Set to -1 for no maximum (not recommended). Set to 0 if no messages should be stored offline.
                     type: integer
                   mirrorQueue:
@@ -21217,6 +21283,7 @@ spec:
                     description: 'This option allows persistent clients ( = clean session set to false) to be removed if they do not reconnect within ''persistent_client_expiration''. This is a non-standard option. As far as the MQTT specification is concerned, persistent clients persist forever. The expiration period should be an integer followed by one of ''d'', ''w'', ''m'', ''y'' for day, week, month, and year. Default: 1 year'
                     type: string
                   port:
+                    default: 8883
                     type: integer
                   replicas:
                     format: int32
@@ -21244,7 +21311,8 @@ spec:
                         type: object
                     type: object
                   sslListener:
-                    description: 'This option allows, when true, to handle SSL termination at VerneMQ level. Default: false'
+                    default: false
+                    description: 'This option allows, when true, to handle SSL termination at VerneMQ level. Note: in future versions of the Operator, this will default to true due to changes in the ingress strategy.'
                     type: boolean
                   sslListenerCertSecretName:
                     description: Reference the name of the secret containing the TLS certificate for VerneMQ. The secret must be present in the same namespace in which Astarte resides. The field will be used only if SSLListener is set to true.

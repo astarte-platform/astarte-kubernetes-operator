@@ -29,10 +29,12 @@ import (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteGenericIngressSpec struct {
 	metav1.TypeMeta `json:",inline"`
+	// +kubebuilder:default:=true
 	// +optional
-	Deploy *bool `json:"deploy,omitempty"`
+	Deploy bool `json:"deploy,omitempty"`
+	// +kubebuilder:default:=1
 	// +optional
-	Replicas *int32 `json:"replicas,omitempty"`
+	Replicas int32 `json:"replicas,omitempty"`
 	// +optional
 	Type string `json:"type,omitempty"`
 	// +optional
@@ -52,15 +54,18 @@ type AstarteGenericIngressSpec struct {
 type AstarteVoyagerIngressAPISpec struct {
 	metav1.TypeMeta           `json:",inline"`
 	AstarteGenericIngressSpec `json:",inline"`
+	// +kubebuilder:default:=false
 	// +optional
-	Cors *bool `json:"cors,omitempty"`
+	Cors bool `json:"cors,omitempty"`
+	// +kubebuilder:default:=true
 	// +optional
-	ExposeHousekeeping *bool `json:"exposeHousekeeping,omitempty"`
+	ExposeHousekeeping bool `json:"exposeHousekeeping,omitempty"`
 	// When true, all /metrics endpoints for Astarte services will be served by the Ingress.
 	// Beware this might be a security hole. You can control which IPs can access /metrics
 	// with serveMetricsToSubnet
+	// +kubebuilder:default:=false
 	// +optional
-	ServeMetrics *bool `json:"serveMetrics,omitempty"`
+	ServeMetrics bool `json:"serveMetrics,omitempty"`
 	// When specified and when serveMetrics is true, /metrics endpoints will be served only to IPs
 	// in the provided subnet range. The subnet has to be compatible with the HAProxy
 	// ACL src syntax (e.g.: 10.0.0.0/16)
@@ -72,8 +77,9 @@ type AstarteVoyagerIngressAPISpec struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteVoyagerIngressDashboardSpec struct {
 	metav1.TypeMeta `json:",inline"`
+	// +kubebuilder:default:=true
 	// +optional
-	SSL *bool `json:"ssl,omitempty"`
+	SSL bool `json:"ssl,omitempty"`
 	// +optional
 	Host string `json:"host,omitempty"`
 	// +optional
@@ -87,24 +93,28 @@ type AstarteVoyagerIngressDashboardSpec struct {
 type AstarteVoyagerIngressBrokerSpec struct {
 	metav1.TypeMeta           `json:",inline"`
 	AstarteGenericIngressSpec `json:",inline"`
+	// +kubebuilder:default:=10000
 	// +optional
-	MaxConnections *int `json:"maxConnections,omitempty"`
+	MaxConnections int `json:"maxConnections,omitempty"`
 }
 
 // AstarteVoyagerIngressLetsEncryptSpec defines the specification of the Let's Encrypt Integration
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteVoyagerIngressLetsEncryptSpec struct {
 	metav1.TypeMeta `json:",inline"`
+	// +kubebuilder:default:=true
 	// +optional
-	Use *bool `json:"use,omitempty"`
+	Use bool `json:"use,omitempty"`
+	// +kubebuilder:default:=false
 	// +optional
-	Staging *bool `json:"staging,omitempty"`
+	Staging bool `json:"staging,omitempty"`
 	// +optional
 	AcmeEmail string `json:"acmeEmail,omitempty"`
 	// +optional
 	Domains []string `json:"domains,omitempty"`
+	// +kubebuilder:default:=false
 	// +optional
-	AutoHTTPChallenge *bool `json:"autoHTTPChallenge,omitempty"`
+	AutoHTTPChallenge bool `json:"autoHTTPChallenge,omitempty"`
 	// +optional
 	ChallengeProvider voyager.ChallengeProvider `json:"challengeProvider,omitempty"`
 }

@@ -20,7 +20,6 @@ package reconcile
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -72,11 +71,6 @@ func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sc
 	statefulSetName := cr.Name + "-rabbitmq"
 	labels := map[string]string{"app": statefulSetName}
 
-	// Validate where necessary
-	if err := validateRabbitMQDefinition(cr.Spec.RabbitMQ); err != nil {
-		return err
-	}
-
 	// Depending on the situation, we need to take action on the credentials.
 	secretName := cr.Name + "-rabbitmq-user-credentials"
 	username, password := getRabbitMQUserAndPassword(cr.Spec.RabbitMQ.Connection)
@@ -112,7 +106,7 @@ func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sc
 	}
 
 	// Ensure we reconcile with the RBAC Roles, if needed.
-	if pointy.BoolValue(cr.Spec.RBAC, true) {
+	if cr.Spec.RBAC {
 		if err := reconcileStandardRBACForClusteringForApp(statefulSetName, getRabbitMQPolicyRules(), cr, c, scheme); err != nil {
 			return err
 		}
@@ -200,23 +194,6 @@ func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sc
 	}
 
 	misc.LogCreateOrUpdateOperationResult(log, result, cr, service)
-	return nil
-}
-
-func validateRabbitMQDefinition(rmq commontypes.AstarteRabbitMQSpec) error {
-	if !pointy.BoolValue(rmq.Deploy, true) {
-		// We need to make sure that we have all needed components
-		if rmq.Connection == nil {
-			return errors.New("When not deploying RabbitMQ, the 'connection' section is compulsory")
-		}
-		if rmq.Connection.Host == "" {
-			return errors.New("When not deploying RabbitMQ, it is compulsory to specify at least a Host")
-		}
-		if (rmq.Connection.Username == "" || rmq.Connection.Password == "") && rmq.Connection.Secret == nil {
-			return errors.New("When not deploying RabbitMQ, either a username/password combination or a Kubernetes secret must be provided")
-		}
-	}
-	// All is good.
 	return nil
 }
 
@@ -323,7 +300,7 @@ func getRabbitMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.En
 
 func getRabbitMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.Astarte) v1.PodSpec {
 	serviceAccountName := statefulSetName
-	if pointy.BoolValue(cr.Spec.RBAC, false) {
+	if !cr.Spec.RBAC {
 		serviceAccountName = ""
 	}
 

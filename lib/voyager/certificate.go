@@ -38,7 +38,7 @@ import (
 func EnsureCertificate(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
 	acmeSecretName := cr.Name + "-voyager-acme-account"
 	certificateName := getCertificateName(cr)
-	if !pointy.BoolValue(cr.Spec.Letsencrypt.Use, true) {
+	if !cr.Spec.Letsencrypt.Use {
 		// We're not using Let's Encrypt, so we're stopping here.
 		// However, maybe we have a certificate to clean up?
 		certificate := &voyager.Certificate{}
@@ -53,7 +53,7 @@ func EnsureCertificate(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha
 
 	// Ensure the ACME Secret, first of all
 	data := map[string]string{"ACME_EMAIL": cr.Spec.Letsencrypt.AcmeEmail}
-	if pointy.BoolValue(cr.Spec.Letsencrypt.Staging, false) {
+	if cr.Spec.Letsencrypt.Staging {
 		data["ACME_SERVER_URL"] = "https://acme-staging-v02.api.letsencrypt.org/directory"
 	}
 	if _, err := misc.ReconcileSecretString(acmeSecretName, data, cr, c, scheme, log); err != nil {
@@ -64,7 +64,7 @@ func EnsureCertificate(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha
 	// we need to wait until all of our ingresses are ready before even trying to create our certificate.
 	// Let's check, and just return nil in that case. Reconciliation will happen due to the status change
 	// on the Load Balancer.
-	if (cr.Spec.Letsencrypt.ChallengeProvider.HTTP != nil || pointy.BoolValue(cr.Spec.Letsencrypt.AutoHTTPChallenge, false)) &&
+	if (cr.Spec.Letsencrypt.ChallengeProvider.HTTP != nil || cr.Spec.Letsencrypt.AutoHTTPChallenge) &&
 		(!isAPIIngressReady(cr, c) || !isBrokerIngressReady(cr, c)) {
 		log.Info("Skipping Certificate for now, as Ingresses are not ready yet. Will check again in next Reconciliation")
 		return nil
@@ -82,7 +82,7 @@ func EnsureCertificate(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha
 		// Set all fields to our needed state
 		certificate.Spec.Domains = domains
 		certificate.Spec.ACMEUserSecretName = acmeSecretName
-		if pointy.BoolValue(cr.Spec.Letsencrypt.AutoHTTPChallenge, false) {
+		if cr.Spec.Letsencrypt.AutoHTTPChallenge {
 			// We build the right HTTP Challenge for the user, which will work with our basic setup.
 			certificate.Spec.ChallengeProvider = voyager.ChallengeProvider{
 				HTTP: &voyager.HTTPChallengeProvider{
@@ -110,10 +110,10 @@ func getCertificateDomains(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1a
 	if len(domains) == 0 {
 		// Compute the domains list based on the parent Astarte resource
 		if pointy.BoolValue(parent.Spec.Components.Dashboard.Deploy, true) && cr.Spec.Dashboard.Host != "" &&
-			pointy.BoolValue(cr.Spec.Dashboard.SSL, true) {
+			cr.Spec.Dashboard.SSL {
 			domains = append(domains, cr.Spec.Dashboard.Host)
 		}
-		if pointy.BoolValue(parent.Spec.API.SSL, true) {
+		if parent.Spec.API.SSL {
 			domains = append(domains, parent.Spec.API.Host)
 		}
 		domains = append(domains, parent.Spec.VerneMQ.Host)
@@ -128,11 +128,11 @@ func getCertificateName(cr *apiv1alpha1.AstarteVoyagerIngress) string {
 
 func isBootstrappingLEChallenge(cr *apiv1alpha1.AstarteVoyagerIngress, c client.Client) (bool, error) {
 	// If we're not using Let's Encrypt, that's pretty easy
-	if !pointy.BoolValue(cr.Spec.Letsencrypt.Use, true) {
+	if !cr.Spec.Letsencrypt.Use {
 		return false, nil
 	}
 	// If we're not on a HTTP-01 Challenge, same deal.
-	if cr.Spec.Letsencrypt.ChallengeProvider.HTTP == nil && !pointy.BoolValue(cr.Spec.Letsencrypt.AutoHTTPChallenge, false) {
+	if cr.Spec.Letsencrypt.ChallengeProvider.HTTP == nil && !cr.Spec.Letsencrypt.AutoHTTPChallenge {
 		return false, nil
 	}
 

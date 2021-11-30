@@ -20,19 +20,23 @@ package v1alpha1
 
 import (
 	"context"
-	"errors"
 
+	"github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
+	"github.com/astarte-platform/astarte-kubernetes-operator/version"
+
+	"github.com/openlyinc/pointy"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-
-	"github.com/openlyinc/pointy"
 )
 
 // log is for logging in this package.
@@ -100,35 +104,143 @@ func (r *Astarte) ValidateDelete() error {
 }
 
 func (r *Astarte) validateAstarte() error {
-	if pointy.BoolValue(r.Spec.VerneMQ.SSLListener, false) {
-		// check that SSLListenerCertSecretName is set
-		if r.Spec.VerneMQ.SSLListenerCertSecretName == "" {
-			err := errors.New("sslListenerCertSecretName not set")
-			astartelog.Error(err, "When deploying Astarte, if SSLListener is set to true you must provide also SSLListenerCertSecretName.")
-			return err
-		}
+	var theConfig *rest.Config
+	var c client.Client
+	var err error
 
-		var theConfig *rest.Config
-		var c client.Client
-		var err error
+	if theConfig, err = config.GetConfig(); err != nil {
+		return err
+	}
 
-		if theConfig, err = config.GetConfig(); err != nil {
-			return err
-		}
+	if c, err = client.New(theConfig, client.Options{}); err != nil {
+		return err
+	}
 
-		if c, err = client.New(theConfig, client.Options{}); err != nil {
-			return err
-		}
+	allErrors := field.ErrorList{}
 
-		// ensure the TLS secret is present
-		theSecret := &v1.Secret{}
-		if err := c.Get(context.Background(), types.NamespacedName{Name: r.Spec.VerneMQ.SSLListenerCertSecretName, Namespace: r.Namespace}, theSecret); err != nil {
-			astartelog.Error(err, "SSLListenerCertSecretName references a secret which is not present. Ensure to create the TLS secret in the namespace in which Astarte resides before applying the new configuration.")
-			return err
+	// Check if we can manage the requested Astarte version or not
+	if !version.CanManageVersion(r.Spec.Version) {
+		fldPath := field.NewPath("spec").Child("version")
+		err := field.NotSupported(fldPath, r.Spec.Version, []string{version.AstarteVersionConstraintString})
+		astartelog.Error(err, "Version %s is not supported by this Operator. Supported Astarte versions adhere to these constraints: %s",
+			r.Spec.Version, version.AstarteVersionConstraintString)
+		allErrors = append(allErrors, err)
+	}
+
+	if r.Spec.VerneMQ.SSLListener {
+		if err := validateVerneMQSSLListener(r, c); err != nil {
+			allErrors = append(allErrors, err)
 		}
 	}
 
+	if err := validateCassandraDefinition(r.Spec.Cassandra); err != nil {
+		allErrors = append(allErrors, err)
+	}
+
+	if err := validateCFSSLDefinition(r.Spec.CFSSL); err != nil {
+		allErrors = append(allErrors, err)
+	}
+
+	if err := validateRabbitMQDefinition(r, c); err != nil {
+		allErrors = append(allErrors, err...)
+	}
+
+	if len(allErrors) == 0 {
+		return nil
+	}
+	return apierrors.NewInvalid(
+		schema.GroupKind{Group: "api", Kind: "Astarte"},
+		r.Name,
+		allErrors,
+	)
+}
+
+func validateVerneMQSSLListener(r *Astarte, c client.Client) *field.Error {
+	// check that SSLListenerCertSecretName is set
+	if r.Spec.VerneMQ.SSLListenerCertSecretName == "" {
+		fldPath := field.NewPath("spec").Child("vernemq").Child("sslListenerCertSecretName")
+		err := field.Required(fldPath, "When deploying VerneMQ's SSL Listener, you must provide also SSLListenerCertSecretName.")
+		return err
+	}
+
+	// ensure the TLS secret is present
+	theSecret := &v1.Secret{}
+	if err := c.Get(context.Background(), types.NamespacedName{Name: r.Spec.VerneMQ.SSLListenerCertSecretName, Namespace: r.Namespace}, theSecret); err != nil {
+		fldPath := field.NewPath("spec").Child("vernemq").Child("sslListenerCertSecretName")
+		err := field.NotFound(fldPath, r.Spec.VerneMQ.SSLListenerCertSecretName)
+		astartelog.Error(err, "SSLListenerCertSecretName secret %s not found in namespace %s",
+			r.Spec.VerneMQ.SSLListenerCertSecretName, r.Namespace)
+		return err
+	}
+
 	return nil
+}
+
+func validateCassandraDefinition(cassandra commontypes.AstarteCassandraSpec) *field.Error {
+	if !pointy.BoolValue(cassandra.Deploy, true) && cassandra.Nodes == "" {
+		fldPath := field.NewPath("spec").Child("cassandra").Child("nodes")
+		err := field.Required(fldPath, "When not deploying Cassandra from the operator, the 'nodes' must be specified.")
+		return err
+	}
+
+	// All is good.
+	return nil
+}
+
+func validateCFSSLDefinition(cfssl commontypes.AstarteCFSSLSpec) *field.Error {
+	if !cfssl.Deploy && cfssl.URL == "" {
+		fldPath := field.NewPath("spec").Child("cfssl").Child("url")
+		err := field.Required(fldPath, "When not deploying CFSSL from the operator, 'url' must be specified.")
+		return err
+	}
+
+	// All is good.
+	return nil
+}
+
+func validateRabbitMQDefinition(r *Astarte, c client.Client) field.ErrorList {
+	allErrors := field.ErrorList{}
+	if !pointy.BoolValue(r.Spec.RabbitMQ.Deploy, true) {
+		// We need to make sure that we have all needed components
+		if r.Spec.RabbitMQ.Connection == nil {
+			fldPath := field.NewPath("spec").Child("rabbitmq").Child("connection")
+			err := field.Required(fldPath, "When not deploying RabbitMQ from the operator, the 'connection' section must be specified.")
+			allErrors = append(allErrors, err)
+		}
+		if r.Spec.RabbitMQ.Connection.Host == "" {
+			fldPath := field.NewPath("spec").Child("rabbitmq").Child("connection").Child("host")
+			err := field.Required(fldPath, "When not deploying RabbitMQ from the operator, the host must be specified.")
+			allErrors = append(allErrors, err)
+		}
+		if (r.Spec.RabbitMQ.Connection.Username == "" || r.Spec.RabbitMQ.Connection.Password == "") && r.Spec.RabbitMQ.Connection.Secret == nil {
+			fldPath := field.NewPath("spec").Child("rabbitmq").Child("connection").Child("host")
+			err := field.Required(fldPath,
+				"When not deploying RabbitMQ from the operator, either username and password or a secret containing credentials must be specified.")
+			allErrors = append(allErrors, err)
+		}
+		if r.Spec.RabbitMQ.Connection.Secret != nil {
+			// Check if the secret exists and has the keys we expect
+			theSecret := &v1.Secret{}
+			if err := c.Get(context.Background(), types.NamespacedName{Name: r.Spec.RabbitMQ.Connection.Secret.Name, Namespace: r.Namespace}, theSecret); err != nil {
+				fldPath := field.NewPath("spec").Child("rabbitmq").Child("connection").Child("secret").Child("name")
+				err := field.NotFound(fldPath, r.Spec.RabbitMQ.Connection.Secret.Name)
+				allErrors = append(allErrors, err)
+			} else {
+				if _, ok := theSecret.Data[r.Spec.RabbitMQ.Connection.Username]; !ok {
+					fldPath := field.NewPath("spec").Child("rabbitmq").Child("connection").Child("secret").Child("username")
+					err := field.Required(fldPath, "Specified username key not found in secret")
+					allErrors = append(allErrors, err)
+				}
+				if _, ok := theSecret.Data[r.Spec.RabbitMQ.Connection.Password]; !ok {
+					fldPath := field.NewPath("spec").Child("rabbitmq").Child("connection").Child("secret").Child("password")
+					err := field.Required(fldPath, "Specified password key not found in secret")
+					allErrors = append(allErrors, err)
+				}
+			}
+		}
+	}
+
+	return allErrors
 }
 
 // +kubebuilder:webhook:path=/mutate-api-astarte-platform-org-v1alpha1-astartevoyageringress,mutating=true,sideEffects=None,failurePolicy=fail,groups=api.astarte-platform.org,resources=astartevoyageringresses,verbs=create;update,versions=v1alpha1,name=mastartevoyageringress.kb.io,admissionReviewVersions=v1beta1
