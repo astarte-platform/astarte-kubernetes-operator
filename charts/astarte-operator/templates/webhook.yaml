@@ -206,5 +206,4 @@ webhooks:
     - UPDATE
     resources:
     - astartedefaultingresses
-    - astartes
   sideEffects: None

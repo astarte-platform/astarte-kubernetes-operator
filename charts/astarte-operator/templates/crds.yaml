@@ -79,7 +79,7 @@ spec:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
                   loadBalancerIP:
-                    description: Set the LoadBalancerIP if and only if the broker service is of type "LoadBalancer". This feature depends on wheather the cloud provider supports specifying the LoadBalancerIP when a load balancer is created.
+                    description: Set the LoadBalancerIP if and only if the broker service is of type "LoadBalancer". This feature depends on whether the cloud provider supports specifying the LoadBalancerIP when a load balancer is created.
                     type: string
                   serviceType:
                     description: 'Set the type of service employed to expose the broker. Supported values are "NodePort" and "LoadBalancer". The AstarteDefaultIngress handles TLS termination at VerneMQ level and, as such, no TLSSecret is needed to configure the broker service. Default: "LoadBalancer"'
