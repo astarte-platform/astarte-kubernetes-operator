@@ -173,7 +173,7 @@ func LogCreateOrUpdateOperationResult(log logr.Logger, result controllerutil.Ope
 
 // GetVerneMQBrokerURL returns the complete URL for VerneMQ (MQTT) for an Astarte resource
 func GetVerneMQBrokerURL(cr *apiv1alpha1.Astarte) string {
-	return fmt.Sprintf("mqtts://%s:%d", cr.Spec.VerneMQ.Host, cr.Spec.VerneMQ.Port)
+	return fmt.Sprintf("mqtts://%s:%d", cr.Spec.VerneMQ.Host, pointy.Int16Value(cr.Spec.VerneMQ.Port, 8883))
 }
 
 // GetResourcesForAstarteComponent returns the allocated resources for a given Astarte component, taking into account both the
@@ -363,7 +363,7 @@ func IsAstarteComponentDeployed(cr *apiv1alpha1.Astarte, component commontypes.A
 func GetRabbitMQHostnameAndPort(cr *apiv1alpha1.Astarte) (string, int16) {
 	if cr.Spec.RabbitMQ.Connection != nil {
 		if cr.Spec.RabbitMQ.Connection.Host != "" {
-			return cr.Spec.RabbitMQ.Connection.Host, cr.Spec.RabbitMQ.Connection.Port
+			return cr.Spec.RabbitMQ.Connection.Host, pointy.Int16Value(cr.Spec.RabbitMQ.Connection.Port, 5672)
 		}
 	}
 

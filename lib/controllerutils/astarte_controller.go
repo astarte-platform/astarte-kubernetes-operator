@@ -146,7 +146,7 @@ func (r *ReconcileHelper) ComputeClusterHealth(reqLogger logr.Logger, instance *
 }
 
 func (r *ReconcileHelper) computeCFSSLHealth(reqLogger logr.Logger, instance *apiv1alpha1.Astarte) bool {
-	if !instance.Spec.CFSSL.Deploy {
+	if !pointy.BoolValue(instance.Spec.CFSSL.Deploy, true) {
 		return true
 	}
 

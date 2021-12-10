@@ -24,6 +24,7 @@ import (
 	"strconv"
 
 	"github.com/go-logr/logr"
+	"github.com/openlyinc/pointy"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -38,7 +39,7 @@ import (
 
 func EnsureBrokerIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
 	ingressName := getBrokerIngressName(cr)
-	if !cr.Spec.Broker.Deploy {
+	if !pointy.BoolValue(cr.Spec.Broker.Deploy, true) {
 		// We're not deploying the Ingress, so we're stopping here.
 		// However, maybe we have an Ingress to clean up?
 		ingress := &voyager.Ingress{}
@@ -70,7 +71,7 @@ func EnsureBrokerIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alp
 		Host: parent.Spec.VerneMQ.Host,
 		IngressRuleValue: voyager.IngressRuleValue{
 			TCP: &voyager.TCPIngressRuleValue{
-				Port: intstr.FromInt(int(parent.Spec.VerneMQ.Port)),
+				Port: intstr.FromInt(int(pointy.Int16Value(parent.Spec.VerneMQ.Port, 8883))),
 				Backend: voyager.IngressBackend{
 					ServiceName: parent.Name + "-vernemq",
 					ServicePort: intstr.FromString("mqtt-reverse"),
@@ -82,8 +83,8 @@ func EnsureBrokerIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alp
 		},
 	})
 
-	if cr.Spec.Letsencrypt.Use &&
-		(cr.Spec.Letsencrypt.ChallengeProvider.HTTP != nil || cr.Spec.Letsencrypt.AutoHTTPChallenge) {
+	if pointy.BoolValue(cr.Spec.Letsencrypt.Use, true) &&
+		(cr.Spec.Letsencrypt.ChallengeProvider.HTTP != nil || pointy.BoolValue(cr.Spec.Letsencrypt.AutoHTTPChallenge, false)) {
 		// The Voyager operator will try to add this rule if the HTTP challenge is enabled, so we
 		// must add it too on our side, otherwise the two operators will fight over the state of the
 		// ingress, resulting in the failure of the HTTP-01 challenge.
@@ -135,12 +136,14 @@ func getBrokerIngressAnnotations(cr *apiv1alpha1.AstarteVoyagerIngress, parent *
 		voyager.AuthTLSVerifyClient: "required",
 		voyager.AuthTLSSecret:       parent.Name + "-cfssl-ca",
 		// Soft-cap this to a meaningful value
-		voyager.MaxConnections: strconv.Itoa(cr.Spec.Broker.MaxConnections),
+		voyager.MaxConnections: strconv.Itoa(pointy.IntValue(cr.Spec.Broker.MaxConnections, 10000)),
 		// Meaningful options for MQTT
 		voyager.DefaultsOption: `{"tcplog": "true", "dontlognull": "true", "clitcpka": "true"}`,
 		// Reasonable timeouts for long PINGREQs
 		voyager.DefaultsTimeOut: `{"connect": "30s", "server": "1h", "client": "1h", "tunnel": "1h"}`,
-		voyager.Replicas:        strconv.Itoa(int(cr.Spec.Broker.Replicas)),
+	}
+	if cr.Spec.Broker.Replicas != nil {
+		annotations[voyager.Replicas] = strconv.Itoa(int(pointy.Int32Value(cr.Spec.Broker.Replicas, 1)))
 	}
 	if cr.Spec.Broker.NodeSelector != "" {
 		annotations[voyager.NodeSelector] = cr.Spec.Broker.NodeSelector
@@ -175,7 +178,7 @@ func getBrokerIngressSpec(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1al
 		ingressTLS = &voyager.IngressTLS{Ref: cr.Spec.Broker.TLSRef, Hosts: []string{parent.Spec.VerneMQ.Host}}
 	case cr.Spec.Broker.TLSSecret != "":
 		ingressTLS = &voyager.IngressTLS{SecretName: cr.Spec.Broker.TLSSecret, Hosts: []string{parent.Spec.VerneMQ.Host}}
-	case cr.Spec.Letsencrypt.Use:
+	case pointy.BoolValue(cr.Spec.Letsencrypt.Use, true):
 		// Are we bootstrapping?
 		if bootstrappingLE, e := isBootstrappingLEChallenge(cr, c); e != nil {
 			return ingressSpec, e

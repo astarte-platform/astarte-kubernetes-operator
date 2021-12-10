@@ -27,28 +27,24 @@ import (
 type AstarteDefaultIngressAPISpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// When true, deploy the API ingress.
-	// +kubebuilder:default:=true
 	// +optional
-	Deploy bool `json:"deploy,omitempty"`
+	Deploy *bool `json:"deploy,omitempty"`
 	// The secret containing the TLS certificates and keys used to access the Astarte API. The secret
 	// must be present in the namespace in which Astarte resides. If set, this secret overrides the TLSSecret
 	// field contained in AstarteDefaultIngressSpec.
 	// +optional
 	TLSSecret string `json:"tlsSecret,omitempty"`
-	// When true, enable Cross-Origin Resource Sharing (CORS).
-	// +kubebuilder:default:=false
+	// When true, enable Cross-Origin Resource Sharing (CORS). Default: false.
 	// +optional
-	Cors bool `json:"cors,omitempty"`
-	// When true, the housekeeping endpoint is publicly exposed.
-	// +kubebuilder:default:=true
+	Cors *bool `json:"cors,omitempty"`
+	// When true, the housekeeping endpoint is publicly exposed. Default: true.
 	// +optional
-	ExposeHousekeeping bool `json:"exposeHousekeeping,omitempty"`
+	ExposeHousekeeping *bool `json:"exposeHousekeeping,omitempty"`
 	// When true, all /metrics endpoints for Astarte services will be served by the Ingress.
 	// Beware this might be a security hole. You can control which IPs can access /metrics
-	// with serveMetricsToSubnet.
-	// +kubebuilder:default:=false
+	// with serveMetricsToSubnet. Default: false.
 	// +optional
-	ServeMetrics bool `json:"serveMetrics,omitempty"`
+	ServeMetrics *bool `json:"serveMetrics,omitempty"`
 	// When specified and when serveMetrics is true, /metrics endpoints will be served only to IPs
 	// in the provided subnet range. The subnet has to be compatible with the HAProxy
 	// ACL src syntax (e.g.: "10.0.0.0/16"). Default: "".
@@ -60,16 +56,13 @@ type AstarteDefaultIngressAPISpec struct {
 type AstarteDefaultIngressDashboardSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// When true, deploy the Ingress for the Dashboard.
-	// +kubebuilder:default:=true
 	// +optional
-	Deploy bool `json:"deploy,omitempty"`
+	Deploy *bool `json:"deploy,omitempty"`
 	// When true, enable TLS authentication for the Dashboard.
-	// +kubebuilder:default:=true
 	// +optional
-	SSL bool `json:"ssl,omitempty"`
+	SSL *bool `json:"ssl,omitempty"`
 	// The host handling requests addressed to the dashboard. When deploy is true and host is not set,
 	// the dashboard will be exposed at the following URL: https://<astarte-base-url>/dashboard.
-	// +kubebuilder:validation:Pattern=`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`
 	// +optional
 	Host string `json:"host,omitempty"`
 	// The secret containing the TLS certificates and keys used to access the Astarte Dashboard. The secret
@@ -83,19 +76,16 @@ type AstarteDefaultIngressDashboardSpec struct {
 type AstarteDefaultIngressBrokerSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// When true, expose the Broker.
-	// +kubebuilder:default:=true
 	// +optional
-	Deploy bool `json:"deploy,omitempty"`
+	Deploy *bool `json:"deploy,omitempty"`
 	// Set the type of service employed to expose the broker. Supported values are "NodePort" and "LoadBalancer".
 	// The AstarteDefaultIngress handles TLS termination at VerneMQ level and, as such, no TLSSecret is needed to
 	// configure the broker service.
-	// +kubebuilder:default:=LoadBalancer
-	// +kubebuilder:validation:Enum:=LoadBalancer;NodePort
+	// Default: "LoadBalancer"
 	// +optional
 	ServiceType v1.ServiceType `json:"serviceType,omitempty"`
 	// Set the LoadBalancerIP if and only if the broker service is of type "LoadBalancer". This feature depends on
-	// whether the cloud provider supports specifying the LoadBalancerIP when a load balancer is created.
-	// +kubebuilder:validation:Pattern=`^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$`
+	// wheather the cloud provider supports specifying the LoadBalancerIP when a load balancer is created.
 	// +optional
 	LoadBalancerIP string `json:"loadBalancerIP,omitempty"`
 }
@@ -108,9 +98,9 @@ type AstarteDefaultIngressSpec struct {
 	// In clusters with more than one instance of the Ingress-NGINX controller, all
 	// instances of the controllers must be aware of which Ingress object they must serve.
 	// The ingressClass field of a ingress object is the way to let the controller know about that.
-	// +kubebuilder:default:=nginx
+	// Default: "nginx".
 	// +optional
-	IngressClass string `json:"ingressClass,omitempty"`
+	IngressClass string `json:"ingressClass"`
 	// Define the desired state of the AstarteDefaultIngressAPISpec resource.
 	// +optional
 	API AstarteDefaultIngressAPISpec `json:"api,omitempty"`

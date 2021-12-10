@@ -20,6 +20,7 @@ package reconcile
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -69,6 +70,11 @@ func EnsureCassandra(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.S
 	//reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name)
 	statefulSetName := cr.Name + "-cassandra"
 	labels := map[string]string{"app": statefulSetName}
+
+	// Validate where necessary
+	if err := validateCassandraDefinition(cr.Spec.Cassandra); err != nil {
+		return err
+	}
 
 	// Depending on the situation, we need to take action on the credentials.
 	secretName := cr.Name + "-cassandra-user-credentials"
@@ -165,6 +171,15 @@ func EnsureCassandra(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.S
 	}
 
 	misc.LogCreateOrUpdateOperationResult(log, result, cr, service)
+	return nil
+}
+
+func validateCassandraDefinition(cassandra commontypes.AstarteCassandraSpec) error {
+	if !pointy.BoolValue(cassandra.Deploy, true) && cassandra.Nodes == "" {
+		return errors.New("When not deploying Cassandra, the 'nodes' must be specified")
+	}
+
+	// All is good.
 	return nil
 }
 

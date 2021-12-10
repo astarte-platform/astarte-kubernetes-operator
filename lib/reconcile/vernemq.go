@@ -36,6 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	commontypes "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 	"github.com/astarte-platform/astarte-kubernetes-operator/version"
@@ -46,6 +47,11 @@ func EnsureVerneMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sch
 	//reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name)
 	statefulSetName := cr.Name + "-vernemq"
 	labels := map[string]string{"app": statefulSetName}
+
+	// Validate where necessary
+	if err := validateVerneMQDefinition(&cr.Spec.VerneMQ); err != nil {
+		return err
+	}
 
 	// Ok. Shall we deploy?
 	if !pointy.BoolValue(cr.Spec.VerneMQ.Deploy, true) {
@@ -67,7 +73,7 @@ func EnsureVerneMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sch
 	}
 
 	// Ensure we reconcile with the RBAC Roles, if needed.
-	if cr.Spec.RBAC {
+	if pointy.BoolValue(cr.Spec.RBAC, true) {
 		if err := reconcileStandardRBACForClusteringForApp(statefulSetName, getVerneMQPolicyRules(), cr, c, scheme); err != nil {
 			return err
 		}
@@ -159,6 +165,14 @@ func EnsureVerneMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sch
 	return nil
 }
 
+func validateVerneMQDefinition(vmq *commontypes.AstarteVerneMQSpec) error {
+	if vmq == nil {
+		return nil
+	}
+	// All is good.
+	return nil
+}
+
 func getVerneMQProbe() *v1.Probe {
 	// Start checking after 1 minute, every 20 seconds, fail after the 3rd attempt
 	return &v1.Probe{
@@ -225,7 +239,7 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.Env
 				})
 		}
 
-		if cr.Spec.VerneMQ.SSLListener && cr.Spec.VerneMQ.SSLListenerCertSecretName != "" {
+		if pointy.BoolValue(cr.Spec.VerneMQ.SSLListener, false) && cr.Spec.VerneMQ.SSLListenerCertSecretName != "" {
 			// if we are here, SSL termination must be handled at VMQ level
 			// thus, append the proper env variables
 			envVars = append(envVars, v1.EnvVar{
@@ -269,7 +283,7 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.Env
 			},
 			v1.EnvVar{
 				Name:  "DOCKER_VERNEMQ_MAX_OFFLINE_MESSAGES",
-				Value: strconv.Itoa(cr.Spec.VerneMQ.MaxOfflineMessages),
+				Value: strconv.Itoa(pointy.IntValue(cr.Spec.VerneMQ.MaxOfflineMessages, 1000000)),
 			})
 	}
 
@@ -283,7 +297,7 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.Env
 
 func getVerneMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.Astarte) v1.PodSpec {
 	serviceAccountName := statefulSetName
-	if !cr.Spec.RBAC {
+	if pointy.BoolValue(cr.Spec.RBAC, false) {
 		serviceAccountName = ""
 	}
 
@@ -339,7 +353,7 @@ func getVerneMQVolumes(cr *apiv1alpha1.Astarte) []v1.Volume {
 	theVolumes := []v1.Volume{}
 
 	// if SSL termination must be handled at VerneMQ level, create the volume to store the certificates
-	if cr.Spec.VerneMQ.SSLListener && cr.Spec.VerneMQ.SSLListenerCertSecretName != "" {
+	if pointy.BoolValue(cr.Spec.VerneMQ.SSLListener, false) && cr.Spec.VerneMQ.SSLListenerCertSecretName != "" {
 		// we don't check if the secret is already there as it is enforced by the validating webhook
 		theVolumes = append(theVolumes, v1.Volume{
 			Name: cr.Spec.VerneMQ.SSLListenerCertSecretName,
@@ -374,7 +388,7 @@ func getVerneMQVolumeMounts(dataVolumeName string, cr *apiv1alpha1.Astarte) []v1
 	}
 
 	// if SSL termination must be handled at VerneMQ level, we have to mount the certificates
-	if cr.Spec.VerneMQ.SSLListener && cr.Spec.VerneMQ.SSLListenerCertSecretName != "" {
+	if pointy.BoolValue(cr.Spec.VerneMQ.SSLListener, false) && cr.Spec.VerneMQ.SSLListenerCertSecretName != "" {
 		// If we need to expose VerneMQ, let's append the secret as a volume in the pod.
 		// The key and cert in the secret are copied to /opt/vernemq/etc according to
 		// this script: https://github.com/astarte-platform/astarte_vmq_plugin/blob/master/docker/bin/vernemq.sh#L137
