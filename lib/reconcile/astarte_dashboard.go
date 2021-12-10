@@ -171,7 +171,7 @@ func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard commont
 		dashboardConfig["enable_flow_preview"] = misc.IsAstarteComponentDeployed(cr, commontypes.FlowComponent)
 	} else {
 		// secure_connection is needed only for Astarte pre-1.0
-		dashboardConfig["secure_connection"] = cr.Spec.API.SSL
+		dashboardConfig["secure_connection"] = pointy.BoolValue(cr.Spec.API.SSL, true)
 	}
 
 	switch {

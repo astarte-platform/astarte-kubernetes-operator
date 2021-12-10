@@ -41,23 +41,19 @@ spec:
                     description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                     type: string
                   cors:
-                    default: false
-                    description: When true, enable Cross-Origin Resource Sharing (CORS).
+                    description: 'When true, enable Cross-Origin Resource Sharing (CORS). Default: false.'
                     type: boolean
                   deploy:
-                    default: true
                     description: When true, deploy the API ingress.
                     type: boolean
                   exposeHousekeeping:
-                    default: true
-                    description: When true, the housekeeping endpoint is publicly exposed.
+                    description: 'When true, the housekeeping endpoint is publicly exposed. Default: true.'
                     type: boolean
                   kind:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
                   serveMetrics:
-                    default: false
-                    description: When true, all /metrics endpoints for Astarte services will be served by the Ingress. Beware this might be a security hole. You can control which IPs can access /metrics with serveMetricsToSubnet.
+                    description: 'When true, all /metrics endpoints for Astarte services will be served by the Ingress. Beware this might be a security hole. You can control which IPs can access /metrics with serveMetricsToSubnet. Default: false.'
                     type: boolean
                   serveMetricsToSubnet:
                     description: 'When specified and when serveMetrics is true, /metrics endpoints will be served only to IPs in the provided subnet range. The subnet has to be compatible with the HAProxy ACL src syntax (e.g.: "10.0.0.0/16"). Default: "".'
@@ -79,7 +75,6 @@ spec:
                     description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                     type: string
                   deploy:
-                    default: true
                     description: When true, expose the Broker.
                     type: boolean
                   kind:
@@ -89,8 +84,7 @@ spec:
                     description: Set the LoadBalancerIP if and only if the broker service is of type "LoadBalancer". This feature depends on wheather the cloud provider supports specifying the LoadBalancerIP when a load balancer is created.
                     type: string
                   serviceType:
-                    default: LoadBalancer
-                    description: Set the type of service employed to expose the broker. Supported values are "NodePort" and "LoadBalancer". The AstarteDefaultIngress handles TLS termination at VerneMQ level and, as such, no TLSSecret is needed to configure the broker service.
+                    description: 'Set the type of service employed to expose the broker. Supported values are "NodePort" and "LoadBalancer". The AstarteDefaultIngress handles TLS termination at VerneMQ level and, as such, no TLSSecret is needed to configure the broker service. Default: "LoadBalancer"'
                     type: string
                 type: object
               dashboard:
@@ -100,7 +94,6 @@ spec:
                     description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                     type: string
                   deploy:
-                    default: true
                     description: When true, deploy the Ingress for the Dashboard.
                     type: boolean
                   host:
@@ -110,7 +103,6 @@ spec:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
                   ssl:
-                    default: true
                     description: When true, enable TLS authentication for the Dashboard.
                     type: boolean
                   tlsSecret:
@@ -118,8 +110,7 @@ spec:
                     type: string
                 type: object
               ingressClass:
-                default: nginx
-                description: In clusters with more than one instance of the Ingress-NGINX controller, all instances of the controllers must be aware of which Ingress object they must serve. The ingressClass field of a ingress object is the way to let the controller know about that.
+                description: 'In clusters with more than one instance of the Ingress-NGINX controller, all instances of the controllers must be aware of which Ingress object they must serve. The ingressClass field of a ingress object is the way to let the controller know about that. Default: "nginx".'
                 type: string
               kind:
                 description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'

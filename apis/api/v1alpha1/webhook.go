@@ -31,6 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	"github.com/openlyinc/pointy"
 )
 
 // log is for logging in this package.
@@ -98,7 +100,7 @@ func (r *Astarte) ValidateDelete() error {
 }
 
 func (r *Astarte) validateAstarte() error {
-	if r.Spec.VerneMQ.SSLListener {
+	if pointy.BoolValue(r.Spec.VerneMQ.SSLListener, false) {
 		// check that SSLListenerCertSecretName is set
 		if r.Spec.VerneMQ.SSLListenerCertSecretName == "" {
 			err := errors.New("sslListenerCertSecretName not set")

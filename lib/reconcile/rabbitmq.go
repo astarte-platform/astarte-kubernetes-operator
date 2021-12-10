@@ -112,7 +112,7 @@ func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sc
 	}
 
 	// Ensure we reconcile with the RBAC Roles, if needed.
-	if cr.Spec.RBAC {
+	if pointy.BoolValue(cr.Spec.RBAC, true) {
 		if err := reconcileStandardRBACForClusteringForApp(statefulSetName, getRabbitMQPolicyRules(), cr, c, scheme); err != nil {
 			return err
 		}
@@ -323,7 +323,7 @@ func getRabbitMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.En
 
 func getRabbitMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.Astarte) v1.PodSpec {
 	serviceAccountName := statefulSetName
-	if !cr.Spec.RBAC {
+	if pointy.BoolValue(cr.Spec.RBAC, false) {
 		serviceAccountName = ""
 	}
 

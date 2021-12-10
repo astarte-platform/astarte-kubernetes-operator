@@ -42,7 +42,7 @@ import (
 
 func EnsureAPIIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
 	ingressName := getAPIIngressName(cr)
-	if !cr.Spec.API.Deploy {
+	if !pointy.BoolValue(cr.Spec.API.Deploy, true) {
 		// We're not deploying the Ingress, so we're stopping here.
 		// However, maybe we have an Ingress to clean up?
 		ingress := &networkingv1.Ingress{}
@@ -67,7 +67,7 @@ func EnsureAPIIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1al
 			"use-forwarded-headers": "true",
 		}
 
-		if parent.Spec.API.SSL || cr.Spec.Dashboard.SSL {
+		if pointy.BoolValue(parent.Spec.API.SSL, true) || pointy.BoolValue(cr.Spec.Dashboard.SSL, true) {
 			configMap.Data["hsts"] = strconv.FormatBool(true)
 			configMap.Data["hsts-preload"] = strconv.FormatBool(true)
 			configMap.Data["hsts-include-subdomains"] = strconv.FormatBool(true)
@@ -125,7 +125,7 @@ func getAPIIngressAnnotations(cr *ingressv1alpha1.AstarteDefaultIngress) map[str
 	}
 
 	// Should we serve /metrics?
-	if !cr.Spec.API.ServeMetrics {
+	if !pointy.BoolValue(cr.Spec.API.ServeMetrics, false) {
 		allowSubnetAnnotation := ""
 		if cr.Spec.API.ServeMetricsToSubnet != "" {
 			allowSubnetAnnotation = fmt.Sprintf("allow %s;\n", cr.Spec.API.ServeMetricsToSubnet)
@@ -141,7 +141,7 @@ func getAPIIngressAnnotations(cr *ingressv1alpha1.AstarteDefaultIngress) map[str
 	}
 
 	// Should we enable cors?
-	if cr.Spec.API.Cors {
+	if pointy.BoolValue(cr.Spec.API.Cors, false) {
 		annotations["nginx.ingress.kubernetes.io/enable-cors"] = strconv.FormatBool(true)
 	}
 
@@ -171,7 +171,7 @@ func getAPIIngressTLS(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1al
 	ingressTLSs := []networkingv1.IngressTLS{}
 
 	// Check API
-	if parent.Spec.API.SSL || cr.Spec.Dashboard.SSL {
+	if pointy.BoolValue(parent.Spec.API.SSL, true) || pointy.BoolValue(cr.Spec.Dashboard.SSL, true) {
 		secretName := cr.Spec.TLSSecret
 		if cr.Spec.API.TLSSecret != "" {
 			secretName = cr.Spec.API.TLSSecret
@@ -185,7 +185,7 @@ func getAPIIngressTLS(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1al
 	}
 
 	// Then check the dashboard, if needed
-	if cr.Spec.Dashboard.Deploy && cr.Spec.Dashboard.SSL && cr.Spec.Dashboard.Host != "" {
+	if pointy.BoolValue(cr.Spec.Dashboard.Deploy, true) && pointy.BoolValue(cr.Spec.Dashboard.SSL, true) && cr.Spec.Dashboard.Host != "" {
 		secretName := cr.Spec.TLSSecret
 		if cr.Spec.Dashboard.TLSSecret != "" {
 			secretName = cr.Spec.Dashboard.TLSSecret
@@ -208,7 +208,7 @@ func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1
 	astarteComponents := []commontypes.AstarteComponent{commontypes.AppEngineAPI, commontypes.FlowComponent, commontypes.PairingAPI, commontypes.RealmManagementAPI}
 
 	// are we supposed to expose housekeeping?
-	if cr.Spec.API.ExposeHousekeeping {
+	if pointy.BoolValue(cr.Spec.API.ExposeHousekeeping, true) {
 		astarteComponents = append(astarteComponents, commontypes.HousekeepingAPI)
 	}
 

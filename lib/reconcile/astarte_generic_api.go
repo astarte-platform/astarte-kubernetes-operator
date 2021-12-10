@@ -218,7 +218,7 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte,
 	ret := getAstarteCommonEnvVars(deploymentName, cr, api.AstarteGenericClusteredResource, component)
 
 	// Should we disable authentication?
-	if api.DisableAuthentication {
+	if pointy.BoolValue(api.DisableAuthentication, false) {
 		ret = append(ret, v1.EnvVar{
 			Name:  strings.ToUpper(component.String()) + "_DISABLE_AUTHENTICATION",
 			Value: strconv.FormatBool(true),

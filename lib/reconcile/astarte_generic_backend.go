@@ -256,11 +256,13 @@ func getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas int, events
 			})
 	}
 
-	ret = append(ret,
-		v1.EnvVar{
-			Name:  "DATA_UPDATER_PLANT_AMQP_CONSUMER_PREFETCH_COUNT",
-			Value: strconv.Itoa(cr.Spec.Components.DataUpdaterPlant.PrefetchCount),
-		})
+	if cr.Spec.Components.DataUpdaterPlant.PrefetchCount != nil {
+		ret = append(ret,
+			v1.EnvVar{
+				Name:  "DATA_UPDATER_PLANT_AMQP_CONSUMER_PREFETCH_COUNT",
+				Value: strconv.Itoa(pointy.IntValue(cr.Spec.Components.DataUpdaterPlant.PrefetchCount, 300)),
+			})
+	}
 
 	// 0.11+ variables
 	if version.CheckConstraintAgainstAstarteComponentVersion(">= 0.11.0", backend.Version, cr.Spec.Version) == nil {

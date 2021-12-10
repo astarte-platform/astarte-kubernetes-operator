@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/openlyinc/pointy"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -133,7 +134,7 @@ func (r *AstarteDefaultIngress) validateAstarteDefaultIngress() error {
 
 // TODO use kubebuilder defaults
 func (r *AstarteDefaultIngress) validateBrokerServiceType() *field.Error {
-	if r.Spec.Broker.Deploy {
+	if pointy.BoolValue(r.Spec.Broker.Deploy, true) {
 		if r.Spec.Broker.ServiceType == v1.ServiceTypeNodePort || r.Spec.Broker.ServiceType == v1.ServiceTypeLoadBalancer {
 			return nil
 		}
@@ -160,7 +161,7 @@ func (r *AstarteDefaultIngress) validateReferencedAstarte(c client.Client) (*api
 }
 
 func (r *AstarteDefaultIngress) validateBrokerTLSConfig(astarte *apiv1alpha1.Astarte) *field.Error {
-	if !astarte.Spec.VerneMQ.SSLListener && r.Spec.Broker.Deploy {
+	if !pointy.BoolValue(astarte.Spec.VerneMQ.SSLListener, false) && pointy.BoolValue(r.Spec.Broker.Deploy, true) {
 		err := errors.New("Broker TLS is misconfigured. Review your Astarte CR to ensure TLS termination at VerneMQ level.")
 		fldPath := field.NewPath("astarte").Child("spec").Child("vernemq").Child("sslListenerCertSecretName")
 
@@ -171,8 +172,8 @@ func (r *AstarteDefaultIngress) validateBrokerTLSConfig(astarte *apiv1alpha1.Ast
 }
 
 func (r *AstarteDefaultIngress) validateDashboardTLSConfig() *field.Error {
-	if r.Spec.TLSSecret == "" && r.Spec.Dashboard.SSL &&
-		r.Spec.Dashboard.Deploy && r.Spec.Dashboard.TLSSecret == "" {
+	if r.Spec.TLSSecret == "" && pointy.BoolValue(r.Spec.Dashboard.SSL, true) &&
+		pointy.BoolValue(r.Spec.Dashboard.Deploy, true) && r.Spec.Dashboard.TLSSecret == "" {
 
 		fldPath := field.NewPath("spec").Child("dashboard").Child("tlsSecret")
 		err := errors.New("TLS misconfigured for dashboard.")
@@ -184,7 +185,7 @@ func (r *AstarteDefaultIngress) validateDashboardTLSConfig() *field.Error {
 }
 
 func (r *AstarteDefaultIngress) validateAPITLSConfig() *field.Error {
-	if r.Spec.TLSSecret == "" && r.Spec.API.TLSSecret == "" && r.Spec.API.Deploy {
+	if r.Spec.TLSSecret == "" && r.Spec.API.TLSSecret == "" && pointy.BoolValue(r.Spec.API.Deploy, true) {
 		fldPath := field.NewPath("spec").Child("api").Child("tlsSecret")
 		err := errors.New("TLS misconfigured for API.")
 
@@ -197,8 +198,8 @@ func (r *AstarteDefaultIngress) validateAPITLSConfig() *field.Error {
 func (r *AstarteDefaultIngress) validateTLSSecretExistence(c client.Client) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if r.Spec.TLSSecret != "" && (r.Spec.API.TLSSecret == "" || (r.Spec.Dashboard.SSL &&
-		r.Spec.Dashboard.Deploy && r.Spec.Dashboard.TLSSecret == "")) {
+	if r.Spec.TLSSecret != "" && (r.Spec.API.TLSSecret == "" || (pointy.BoolValue(r.Spec.Dashboard.SSL, true) &&
+		pointy.BoolValue(r.Spec.Dashboard.Deploy, true) && r.Spec.Dashboard.TLSSecret == "")) {
 
 		if err := getSecret(c, r.Spec.TLSSecret, r.Namespace, field.NewPath("spec").Child("tlsSecret")); err != nil {
 			allErrs = append(allErrs, err)
@@ -211,7 +212,7 @@ func (r *AstarteDefaultIngress) validateTLSSecretExistence(c client.Client) fiel
 		}
 	}
 
-	if r.Spec.Dashboard.SSL && r.Spec.Dashboard.Deploy && r.Spec.Dashboard.TLSSecret != "" {
+	if pointy.BoolValue(r.Spec.Dashboard.SSL, true) && pointy.BoolValue(r.Spec.Dashboard.Deploy, true) && r.Spec.Dashboard.TLSSecret != "" {
 		if err := getSecret(c, r.Spec.Dashboard.TLSSecret, r.Namespace, field.NewPath("spec").Child("dashboard").Child("tlsSecret")); err != nil {
 			allErrs = append(allErrs, err)
 		}
