@@ -219,7 +219,7 @@ func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1
 				IngressRuleValue: networkingv1.IngressRuleValue{
 					HTTP: &networkingv1.HTTPIngressRuleValue{
 						Paths: []networkingv1.HTTPIngressPath{
-							networkingv1.HTTPIngressPath{
+							{
 								Path:     fmt.Sprintf("/%s(/|$)(.*)", component.ServiceRelativePath()),
 								PathType: &pathTypePrefix,
 								Backend: networkingv1.IngressBackend{
@@ -237,27 +237,29 @@ func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1
 	}
 
 	// and handle the Dashboard, if needed
-	theDashboard := commontypes.Dashboard
-	if misc.IsAstarteComponentDeployed(parent, commontypes.Dashboard) {
-		ingressRules = append(ingressRules, networkingv1.IngressRule{
-			Host: getDashboardHost(cr, parent),
-			IngressRuleValue: networkingv1.IngressRuleValue{
-				HTTP: &networkingv1.HTTPIngressRuleValue{
-					Paths: []networkingv1.HTTPIngressPath{
-						networkingv1.HTTPIngressPath{
-							Path:     getDashboardServiceRelativePath(cr),
-							PathType: &pathTypePrefix,
-							Backend: networkingv1.IngressBackend{
-								Service: &networkingv1.IngressServiceBackend{
-									Name: cr.Spec.Astarte + "-" + theDashboard.ServiceName(),
-									Port: networkingv1.ServiceBackendPort{Name: "http"},
+	if pointy.BoolValue(cr.Spec.Dashboard.Deploy, true) {
+		theDashboard := commontypes.Dashboard
+		if misc.IsAstarteComponentDeployed(parent, commontypes.Dashboard) {
+			ingressRules = append(ingressRules, networkingv1.IngressRule{
+				Host: getDashboardHost(cr, parent),
+				IngressRuleValue: networkingv1.IngressRuleValue{
+					HTTP: &networkingv1.HTTPIngressRuleValue{
+						Paths: []networkingv1.HTTPIngressPath{
+							{
+								Path:     getDashboardServiceRelativePath(cr),
+								PathType: &pathTypePrefix,
+								Backend: networkingv1.IngressBackend{
+									Service: &networkingv1.IngressServiceBackend{
+										Name: cr.Spec.Astarte + "-" + theDashboard.ServiceName(),
+										Port: networkingv1.ServiceBackendPort{Name: "http"},
+									},
 								},
 							},
 						},
 					},
 				},
-			},
-		})
+			})
+		}
 	}
 
 	return ingressRules
