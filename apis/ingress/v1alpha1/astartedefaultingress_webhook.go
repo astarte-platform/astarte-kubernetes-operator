@@ -30,10 +30,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
@@ -41,9 +39,14 @@ import (
 )
 
 // log is for logging in this package.
-var astartedefaultingresslog = logf.Log.WithName("astartedefaultingress-resource")
+var (
+	astartedefaultingresslog = logf.Log.WithName("astartedefaultingress-resource")
+	c                        client.Client
+)
 
 func (r *AstarteDefaultIngress) SetupWebhookWithManager(mgr ctrl.Manager) error {
+	c = mgr.GetClient()
+
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
@@ -60,7 +63,7 @@ func (r *AstarteDefaultIngress) Default() {
 	// TODO(user): fill in your defaulting logic.
 }
 
-//+kubebuilder:webhook:path=/validate-ingress-astarte-platform-org-v1alpha1-astartedefaultingress,mutating=false,failurePolicy=fail,sideEffects=None,groups=ingress.astarte-platform.org,resources=astartedefaultingresses;astartes,verbs=create;update,versions=v1alpha1,name=vastartedefaultingress.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-ingress-astarte-platform-org-v1alpha1-astartedefaultingress,mutating=false,failurePolicy=fail,sideEffects=None,groups=ingress.astarte-platform.org,resources=astartedefaultingresses,verbs=create;update,versions=v1alpha1,name=vastartedefaultingress.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &AstarteDefaultIngress{}
 
@@ -86,18 +89,6 @@ func (r *AstarteDefaultIngress) ValidateDelete() error {
 }
 
 func (r *AstarteDefaultIngress) validateAstarteDefaultIngress() error {
-	var theConfig *rest.Config
-	var c client.Client
-	var err error
-
-	if theConfig, err = config.GetConfig(); err != nil {
-		return err
-	}
-
-	if c, err = client.New(theConfig, client.Options{}); err != nil {
-		return err
-	}
-
 	allErrors := field.ErrorList{}
 
 	astarte, astarteFoundErr := r.validateReferencedAstarte(c)
