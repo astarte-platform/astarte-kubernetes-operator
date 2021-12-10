@@ -82,13 +82,12 @@ linters-settings:
     settings:
       mnd:
         # the list of enabled checks, see https://github.com/tommy-muehle/go-mnd/#checks for description.
-        checks: [argument,case,condition,operation,return,assign]
+        checks: argument,case,condition,operation,return,assign
   govet:
     # report about shadowed variables
     check-shadowing: true
     enable-all: true
-    disable:
-      - fieldalignment
+  depguard:
   lll:
     # max line length, lines longer will be reported. Default is 120.
     # '\t' is counted as 1 character by default, and can be changed with the tab-width option
@@ -144,6 +143,7 @@ linters:
     - goprintffuncname
     - gosec
     #- lll
+    - maligned
     - unconvert
     - unparam
   
