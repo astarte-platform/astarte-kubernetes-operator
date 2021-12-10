@@ -151,12 +151,20 @@ func getAPIIngressAnnotations(cr *ingressv1alpha1.AstarteDefaultIngress) map[str
 func getAPIIngressSpec(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha1.Astarte) networkingv1.IngressSpec {
 	ingressSpec := networkingv1.IngressSpec{
 		// define which ingress controller will implement the ingress
-		IngressClassName: pointy.String(cr.Spec.IngressClass),
+		IngressClassName: getIngressClassName(cr),
 		TLS:              getAPIIngressTLS(cr, parent),
 		Rules:            getAPIIngressRules(cr, parent),
 	}
 
 	return ingressSpec
+}
+
+// TODO handle with kubebuilder defaults
+func getIngressClassName(cr *ingressv1alpha1.AstarteDefaultIngress) *string {
+	if cr.Spec.IngressClass == "" {
+		return pointy.String("nginx")
+	}
+	return pointy.String(cr.Spec.IngressClass)
 }
 
 func getAPIIngressTLS(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha1.Astarte) []networkingv1.IngressTLS {
@@ -211,7 +219,7 @@ func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1
 				IngressRuleValue: networkingv1.IngressRuleValue{
 					HTTP: &networkingv1.HTTPIngressRuleValue{
 						Paths: []networkingv1.HTTPIngressPath{
-							{
+							networkingv1.HTTPIngressPath{
 								Path:     fmt.Sprintf("/%s(/|$)(.*)", component.ServiceRelativePath()),
 								PathType: &pathTypePrefix,
 								Backend: networkingv1.IngressBackend{
@@ -236,7 +244,7 @@ func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1
 			IngressRuleValue: networkingv1.IngressRuleValue{
 				HTTP: &networkingv1.HTTPIngressRuleValue{
 					Paths: []networkingv1.HTTPIngressPath{
-						{
+						networkingv1.HTTPIngressPath{
 							Path:     getDashboardServiceRelativePath(cr),
 							PathType: &pathTypePrefix,
 							Backend: networkingv1.IngressBackend{
