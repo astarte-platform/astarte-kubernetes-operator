@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add AstarteDefaultIngress type.
 - Add validating and mutating webhooks for AstarteDefaultIngress.
 
+### Fixed
+- Fix bug that prevented the Astarte controller from deleting collections of deployments.
+
 ## [1.0.0] - 2021-07-01
 ### Changed
 - Fix bug that prevent OSX users to upgrade from v0.11 to v1.0 (now the upgrade procedure requires
