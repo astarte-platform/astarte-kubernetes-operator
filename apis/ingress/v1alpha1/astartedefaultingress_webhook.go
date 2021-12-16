@@ -30,10 +30,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
@@ -41,9 +39,14 @@ import (
 )
 
 // log is for logging in this package.
-var astartedefaultingresslog = logf.Log.WithName("astartedefaultingress-resource")
+var (
+	astartedefaultingresslog = logf.Log.WithName("astartedefaultingress-resource")
+	c                        client.Client
+)
 
 func (r *AstarteDefaultIngress) SetupWebhookWithManager(mgr ctrl.Manager) error {
+	c = mgr.GetClient()
+
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
@@ -60,7 +63,7 @@ func (r *AstarteDefaultIngress) Default() {
 	// TODO(user): fill in your defaulting logic.
 }
 
-//+kubebuilder:webhook:path=/validate-ingress-astarte-platform-org-v1alpha1-astartedefaultingress,mutating=false,failurePolicy=fail,sideEffects=None,groups=ingress.astarte-platform.org,resources=astartedefaultingresses;astartes,verbs=create;update,versions=v1alpha1,name=vastartedefaultingress.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-ingress-astarte-platform-org-v1alpha1-astartedefaultingress,mutating=false,failurePolicy=fail,sideEffects=None,groups=ingress.astarte-platform.org,resources=astartedefaultingresses,verbs=create;update,versions=v1alpha1,name=vastartedefaultingress.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &AstarteDefaultIngress{}
 
@@ -86,34 +89,22 @@ func (r *AstarteDefaultIngress) ValidateDelete() error {
 }
 
 func (r *AstarteDefaultIngress) validateAstarteDefaultIngress() error {
-	var theConfig *rest.Config
-	var c client.Client
-	var err error
-
-	if theConfig, err = config.GetConfig(); err != nil {
-		return err
-	}
-
-	if c, err = client.New(theConfig, client.Options{}); err != nil {
-		return err
-	}
-
 	allErrors := field.ErrorList{}
 
 	astarte, astarteFoundErr := r.validateReferencedAstarte(c)
 	if astarteFoundErr != nil {
 		allErrors = append(allErrors, astarteFoundErr)
 	}
-	// if astarte is not found, do not check the broker config as it is not available anyway
+	// if astarte is not found, do not check the api and broker config as they are not available anyway
 	if astarteFoundErr == nil {
 		if err := r.validateBrokerTLSConfig(astarte); err != nil {
 			allErrors = append(allErrors, err)
 		}
+		if err := r.validateAPITLSConfig(astarte); err != nil {
+			allErrors = append(allErrors, err)
+		}
 	}
 	if err := r.validateBrokerServiceType(); err != nil {
-		allErrors = append(allErrors, err)
-	}
-	if err := r.validateAPITLSConfig(); err != nil {
 		allErrors = append(allErrors, err)
 	}
 	if err := r.validateDashboardTLSConfig(); err != nil {
@@ -154,18 +145,17 @@ func (r *AstarteDefaultIngress) validateReferencedAstarte(c client.Client) (*api
 	// ensure that the referenced Astarte instance exists
 	theAstarte := &apiv1alpha1.Astarte{}
 	if err := c.Get(context.Background(), types.NamespacedName{Name: r.Spec.Astarte, Namespace: r.Namespace}, theAstarte); err != nil {
-		astartedefaultingresslog.Error(err, "The referenced Astarte does not exist.")
-		return nil, field.Invalid(fldPath, r.Spec.Astarte, err.Error())
+		astartedefaultingresslog.Error(err, "Could not find the referenced Astarte.")
+		return nil, field.NotFound(fldPath, r.Spec.Astarte)
 	}
 	return theAstarte, nil
 }
 
 func (r *AstarteDefaultIngress) validateBrokerTLSConfig(astarte *apiv1alpha1.Astarte) *field.Error {
 	if !pointy.BoolValue(astarte.Spec.VerneMQ.SSLListener, false) && pointy.BoolValue(r.Spec.Broker.Deploy, true) {
-		err := errors.New("Broker TLS is misconfigured. Review your Astarte CR to ensure TLS termination at VerneMQ level.")
-		fldPath := field.NewPath("astarte").Child("spec").Child("vernemq").Child("sslListenerCertSecretName")
-
-		return field.Invalid(fldPath, astarte.Spec.VerneMQ.SSLListenerCertSecretName, err.Error())
+		fldPath := field.NewPath("spec").Child("broker").Child("deploy")
+		return field.Invalid(fldPath, astarte.Spec.VerneMQ.SSLListenerCertSecretName,
+			"When deploying Broker Ingress, VerneMQ SSLListener must be enabled in the main Astarte resource.")
 	}
 
 	return nil
@@ -174,23 +164,17 @@ func (r *AstarteDefaultIngress) validateBrokerTLSConfig(astarte *apiv1alpha1.Ast
 func (r *AstarteDefaultIngress) validateDashboardTLSConfig() *field.Error {
 	if r.Spec.TLSSecret == "" && pointy.BoolValue(r.Spec.Dashboard.SSL, true) &&
 		pointy.BoolValue(r.Spec.Dashboard.Deploy, true) && r.Spec.Dashboard.TLSSecret == "" {
-
 		fldPath := field.NewPath("spec").Child("dashboard").Child("tlsSecret")
-		err := errors.New("TLS misconfigured for dashboard.")
-
-		astartedefaultingresslog.Error(err, "Ensure to provide a TLS secret to secure your connection.")
-		return field.Invalid(fldPath, r.Spec.Dashboard.TLSSecret, err.Error())
+		return field.Required(fldPath, "Requested SSL support for Dashboard, but no TLS Secret provided")
 	}
 	return nil
 }
 
-func (r *AstarteDefaultIngress) validateAPITLSConfig() *field.Error {
-	if r.Spec.TLSSecret == "" && r.Spec.API.TLSSecret == "" && pointy.BoolValue(r.Spec.API.Deploy, true) {
+func (r *AstarteDefaultIngress) validateAPITLSConfig(astarte *apiv1alpha1.Astarte) *field.Error {
+	if pointy.BoolValue(astarte.Spec.API.SSL, true) && r.Spec.TLSSecret == "" &&
+		r.Spec.API.TLSSecret == "" && pointy.BoolValue(r.Spec.API.Deploy, true) {
 		fldPath := field.NewPath("spec").Child("api").Child("tlsSecret")
-		err := errors.New("TLS misconfigured for API.")
-
-		astartedefaultingresslog.Error(err, "Ensure to provide a TLS secret to secure your connection.")
-		return field.Invalid(fldPath, r.Spec.API.TLSSecret, err.Error())
+		return field.Required(fldPath, "Requested SSL support for API, but no TLS Secret provided")
 	}
 	return nil
 }
@@ -224,10 +208,8 @@ func (r *AstarteDefaultIngress) validateTLSSecretExistence(c client.Client) fiel
 func getSecret(c client.Client, secretName string, namespace string, fldPath *field.Path) *field.Error {
 	theSecret := &v1.Secret{}
 	if err := c.Get(context.Background(), types.NamespacedName{Name: secretName, Namespace: namespace}, theSecret); err != nil {
-		errMsg := fmt.Sprintf("The secret %s does not exist in namespace %s.", secretName, namespace)
-		astartedefaultingresslog.Error(err, errMsg)
-
-		return field.Invalid(fldPath, secretName, err.Error())
+		astartedefaultingresslog.Error(err, fmt.Sprintf("The secret %s does not exist in namespace %s.", secretName, namespace))
+		return field.NotFound(fldPath, secretName)
 	}
 	return nil
 }

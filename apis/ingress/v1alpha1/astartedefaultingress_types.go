@@ -85,7 +85,7 @@ type AstarteDefaultIngressBrokerSpec struct {
 	// +optional
 	ServiceType v1.ServiceType `json:"serviceType,omitempty"`
 	// Set the LoadBalancerIP if and only if the broker service is of type "LoadBalancer". This feature depends on
-	// wheather the cloud provider supports specifying the LoadBalancerIP when a load balancer is created.
+	// whether the cloud provider supports specifying the LoadBalancerIP when a load balancer is created.
 	// +optional
 	LoadBalancerIP string `json:"loadBalancerIP,omitempty"`
 }

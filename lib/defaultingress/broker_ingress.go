@@ -60,8 +60,20 @@ func EnsureBrokerIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv
 		if e := controllerutil.SetControllerReference(cr, brokerService, scheme); e != nil {
 			return e
 		}
+		brokerService.Spec.Selector = map[string]string{"app": fmt.Sprintf("%s-vernemq", cr.Spec.Astarte)}
+		brokerService.Spec.Ports = []v1.ServicePort{
+			{
+				Port:       int32(pointy.Int16Value(parent.Spec.VerneMQ.Port, 8883)),
+				TargetPort: intstr.FromInt(8883),
+			},
+		}
+		brokerService.Spec.Type = cr.Spec.Broker.ServiceType
+		// required to preserve client IP
+		brokerService.Spec.ExternalTrafficPolicy = v1.ServiceExternalTrafficPolicyTypeLocal
 
-		brokerService.Spec = getBrokerServiceSpec(cr, parent)
+		if cr.Spec.Broker.LoadBalancerIP != "" && cr.Spec.Broker.ServiceType == v1.ServiceTypeLoadBalancer {
+			brokerService.Spec.LoadBalancerIP = cr.Spec.Broker.LoadBalancerIP
+		}
 
 		return nil
 	})
@@ -74,31 +86,4 @@ func EnsureBrokerIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv
 
 func getBrokerServiceName(cr *ingressv1alpha1.AstarteDefaultIngress) string {
 	return cr.Name + "-broker-service"
-}
-
-func getBrokerServiceSpec(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha1.Astarte) v1.ServiceSpec {
-	serviceSpec := v1.ServiceSpec{}
-
-	serviceSelector := fmt.Sprintf("%s-vernemq", cr.Spec.Astarte)
-	serviceSpec.Selector = map[string]string{
-		"app": serviceSelector,
-	}
-
-	serviceSpec.Ports = []v1.ServicePort{
-		v1.ServicePort{
-			Port:       int32(pointy.Int16Value(parent.Spec.VerneMQ.Port, 8883)),
-			TargetPort: intstr.FromInt(8883),
-		},
-	}
-
-	serviceSpec.Type = cr.Spec.Broker.ServiceType
-
-	// required to preserve client IP
-	serviceSpec.ExternalTrafficPolicy = v1.ServiceExternalTrafficPolicyTypeLocal
-
-	if cr.Spec.Broker.LoadBalancerIP != "" && cr.Spec.Broker.ServiceType == v1.ServiceTypeLoadBalancer {
-		serviceSpec.LoadBalancerIP = cr.Spec.Broker.LoadBalancerIP
-	}
-
-	return serviceSpec
 }
