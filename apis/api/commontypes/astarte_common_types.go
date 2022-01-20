@@ -83,6 +83,9 @@ const (
 	// ReconciliationPhaseReconciled means the Resource is currently reconciled and stable. The resource should stay in this
 	// state for most of the time.
 	ReconciliationPhaseReconciled ReconciliationPhase = "Reconciled"
+	// ReconciliationPhaseManualMaintenanceMode means the Resource is currently not being reconciled as the resource is in
+	// Manual Maintenance Mode. This happens only when the user explicitly requires that.
+	ReconciliationPhaseManualMaintenanceMode ReconciliationPhase = "Disabled, in Manual Maintenance Mode"
 	// ReconciliationPhaseFailed means the Resource failed to reconcile. If this state persists, a manual intervention
 	// might be necessary.
 	ReconciliationPhaseFailed ReconciliationPhase = "Failed"
@@ -618,6 +621,13 @@ type AstarteSpec struct {
 	Components AstarteComponentsSpec `json:"components"`
 	// +optional
 	AstarteSystemKeyspace AstarteSystemKeyspaceSpec `json:"astarteSystemKeyspace,omitempty"`
+	// ManualMaintenanceMode pauses all reconciliation activities but still computes the resource
+	// status. It should be used only when the managed Astarte resources requires manual intervention
+	// and the Operator cannot break out of the problem by itself. Do not set this field unless you
+	// know exactly what you are doing.
+	// +kubebuilder:default:=false
+	// +optional
+	ManualMaintenanceMode bool `json:"manualMaintenanceMode,omitempty"`
 }
 
 // TODO: Remove all omitempty from AstarteStatus in v1beta1

@@ -296,6 +296,10 @@ func (r *ReconcileHelper) ComputeAstarteStatusResource(reqLogger logr.Logger, in
 	newAstarteStatus.BaseAPIURL = "https://" + instance.Spec.API.Host
 	newAstarteStatus.BrokerURL = misc.GetVerneMQBrokerURL(instance)
 
+	if instance.Spec.ManualMaintenanceMode {
+		newAstarteStatus.ReconciliationPhase = commontypes.ReconciliationPhaseManualMaintenanceMode
+	}
+
 	// Return the Astarte status
 	return newAstarteStatus
 }

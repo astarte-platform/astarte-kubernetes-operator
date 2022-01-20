@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Removed support for Astarte 0.10
 
-## [1.0.1] - Unreleased
+## [1.0.1] - 2021-12-17
 ### Changed
 - Implement DUP scalability correctly by distributing multiple deployments and managing queue
   allocation over different replicas.
@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add Kubernetes 1.19, 1.20 and 1.21 to the supported list. Deprecate anything < 1.18
 - Upgrade OperatorSDK to v1.7.1.
 - Use kustomize v3.8.7.
+- Drop support for Kubernetes < v1.19.
 
 ### Added
 - Add `SSLListener` field to handle SSL termination at VerneMQ level. Defaults to `false`. Enabling
@@ -24,6 +25,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   certificate that will be used for handling SSL termination at VerneMQ level. The referenced
   secret must be present in the same namespace in which Astarte resides. This field is parsed only
   if `SSLListener` is set to true.
+- Add `manualMaintenanceMode`, which pauses reconciliation for an Astarte resource and enables manual
+  intervention.
+- Add AstarteDefaultIngress type.
+- Add validating and mutating webhooks for AstarteDefaultIngress.
+
+### Fixed
+- Fix bug that prevented the Astarte controller from deleting collections of deployments.
 
 ## [1.0.0] - 2021-07-01
 ### Changed
