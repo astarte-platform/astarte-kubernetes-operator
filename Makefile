@@ -13,6 +13,9 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 GOLANGCI_VERSION = v1.35.2
 
+# ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
+ENVTEST_K8S_VERSION = 1.21
+
 # Image URL to use all building/pushing image targets
 IMG ?= astarte/astarte-kubernetes-operator:latest
 CRD_OPTIONS ?= "crd:crdVersions=v1"
@@ -34,9 +37,11 @@ GOPATHS := ./.;./apis/...;./controllers/...;./lib/...;./test/...;./version/...
 
 all: manager
 
-# Run tests
-test: generate fmt vet manifests
-	go test ./... -coverprofile cover.out
+ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
+test: manifests generate fmt vet ## Run tests.
+	mkdir -p ${ENVTEST_ASSETS_DIR}
+	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.8.3/hack/setup-envtest.sh
+	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test -v ./... -coverprofile cover.out
 
 # Build manager binary
 manager: generate fmt vet
