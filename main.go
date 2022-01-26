@@ -23,6 +23,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-logr/logr"
 	zaplogfmt "github.com/sykesm/zap-logfmt"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -37,7 +38,9 @@ import (
 
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
+	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/ingress/v1alpha1"
 	controllersapi "github.com/astarte-platform/astarte-kubernetes-operator/controllers/api"
+	ingresscontrollers "github.com/astarte-platform/astarte-kubernetes-operator/controllers/ingress"
 	voyagercrd "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 	// +kubebuilder:scaffold:imports
 )
@@ -56,6 +59,7 @@ func init() {
 
 	utilruntime.Must(apiv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(apiv1alpha2.AddToScheme(scheme))
+	utilruntime.Must(ingressv1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -70,14 +74,7 @@ func main() {
 	flag.Parse()
 
 	// setup logger
-	configLog := zap.NewProductionEncoderConfig()
-	configLog.EncodeTime = func(ts time.Time, encoder zapcore.PrimitiveArrayEncoder) {
-		encoder.AppendString(ts.UTC().Format(time.RFC3339))
-	}
-	logfmtEncoder := zaplogfmt.NewEncoder(configLog)
-
-	// Construct a new logr.logger.
-	log := zapcr.New(zapcr.UseDevMode(true), zapcr.WriteTo(os.Stdout), zapcr.Encoder(logfmtEncoder))
+	log := setupLogger()
 
 	// Set the controller logger to log, which will be propagated through the whole operator, generating
 	// uniform and structured logs.
@@ -120,6 +117,14 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Flow")
 		os.Exit(1)
 	}
+	if err = (&ingresscontrollers.AstarteDefaultIngressReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("ingress").WithName("AstarteDefaultIngress"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "AstarteDefaultIngress")
+		os.Exit(1)
+	}
 	// When testing the operator locally, we may want not to run webhooks. Thus, put them behind
 	// an environment variable
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
@@ -135,6 +140,10 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Flow")
 			os.Exit(1)
 		}
+		if err = (&ingressv1alpha1.AstarteDefaultIngress{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "AstarteDefaultIngress")
+			os.Exit(1)
+		}
 	}
 	// +kubebuilder:scaffold:builder
 
@@ -143,4 +152,17 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func setupLogger() logr.Logger {
+	configLog := zap.NewProductionEncoderConfig()
+
+	configLog.EncodeTime = func(ts time.Time, encoder zapcore.PrimitiveArrayEncoder) {
+		encoder.AppendString(ts.UTC().Format(time.RFC3339))
+	}
+
+	logfmtEncoder := zaplogfmt.NewEncoder(configLog)
+
+	// Construct a new logr.logger.
+	return zapcr.New(zapcr.UseDevMode(true), zapcr.WriteTo(os.Stdout), zapcr.Encoder(logfmtEncoder))
 }

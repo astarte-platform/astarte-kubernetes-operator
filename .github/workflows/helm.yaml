@@ -62,7 +62,7 @@ jobs:
     - uses: container-tools/kind-action@v1
       with:
         version: "v0.11.1"
-        node_image: "kindest/node:v1.18.19@sha256:7af1492e19b3192a79f606e43c35fb741e520d195f96399284515f077b3b622c"
+        node_image: "kindest/node:v1.21.1@sha256:69860bda5563ac81e3c0057d654b5253219618a22ec3a346306239bba8cfa1a6"
     - name: Build test image
       run: |
         docker build -t astarte-operator-ci:test -f Dockerfile .
@@ -105,6 +105,8 @@ jobs:
     - name: Dump debug info
       if: failure()
       run: |
+        kubectl logs deployment/astarte-operator-controller-manager || echo "No operator logs available"
+        kubectl logs deployment/astarte-operator-controller-manager --previous || echo "Operator never crashed"
         kubectl get pods -n astarte-test
         kubectl get deployment -n astarte-test
         kubectl get statefulset -n astarte-test
