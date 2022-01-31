@@ -11,7 +11,11 @@ BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
+# Tools versions
+CONTROLLER_GEN_VERSION = v0.7.0
+CONTROLLER_RUNTIME_VERSION = v0.10.0 # This must be coincident with the version set in go.mod
 GOLANGCI_VERSION = v1.35.2
+KUSTOMIZE_VERSION = v3.8.7
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.22
@@ -34,43 +38,60 @@ SHELL = /usr/bin/env bash -o pipefail
 
 GOPATHS := ./.;./apis/...;./controllers/...;./lib/...;./test/...;./version/...
 
+ifndef ignore-not-found
+  ignore-not-found = false
+endif
+
+.PHONY: all
 all: manager
 
 ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
+.PHONY: test
 test: manifests generate fmt vet ## Run tests.
 	mkdir -p ${ENVTEST_ASSETS_DIR}
-	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.8.3/hack/setup-envtest.sh
+	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/${CONTROLLER_RUNTIME_VERSION}/hack/setup-envtest.sh
 	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test -v ./... -coverprofile cover.out
 
 # Build manager binary
+.PHONY: manager
 manager: generate fmt vet
 	go build -o bin/manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
+.PHONY: run
 run: generate fmt vet manifests
 	go run ./main.go
 
 # Install CRDs into a cluster
 # Use create due to the annotations limit in apply
+.PHONY: install
 install: manifests kustomize
 	$(KUSTOMIZE) build config/crd | kubectl create -f -
 
 # Replace CRDs into a cluster
-# Use replace due to the annotations limit in apply
+.PHONY: replace
 replace: manifests kustomize
 	$(KUSTOMIZE) build config/crd | kubectl replace -f -
 
-# Uninstall CRDs from a cluster
+# Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+.PHONY: uninstall
 uninstall: manifests kustomize
-	$(KUSTOMIZE) build config/crd | kubectl delete -f -
+	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 # Use create due to the annotations limit in apply
+.PHONY: deploy
 deploy: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl create -f -
 
+# Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+.PHONY: undeploy
+undeploy:
+	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+
 # Generate manifests e.g. CRD, RBAC etc.
+.PHONY: manifests
 manifests: controller-gen kustomize
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 	$(KUSTOMIZE) build config/helm-crd > charts/astarte-operator/templates/crds.yaml
@@ -79,27 +100,33 @@ manifests: controller-gen kustomize
 	$(KUSTOMIZE) build config/helm-webhook > charts/astarte-operator/templates/webhook.yaml
 
 # Run go fmt against code
+.PHONY: fmt
 fmt:
 	go fmt $(go list ./... | grep -v /external/)
 
 # Run go vet against code
+.PHONY: vet
 vet:
 	go vet $(go list ./... | grep -v /external/)
 
 # Generate code
+.PHONY: generate
 generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="$(GOPATHS)"
 
 # Build the docker image
+.PHONY: docker-build
 docker-build: test
 	docker build -t ${IMG} .
 
 # Push the docker image
+.PHONY: docker-push
 docker-push:
 	docker push ${IMG}
 
 # find or download controller-gen
 # download controller-gen if necessary
+.PHONY: controller-gen
 controller-gen:
 ifeq (, $(shell which controller-gen))
 	@{ \
@@ -107,7 +134,7 @@ ifeq (, $(shell which controller-gen))
 	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$CONTROLLER_GEN_TMP_DIR ;\
 	go mod init tmp ;\
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.7.0 ;\
+	go get sigs.k8s.io/controller-tools/cmd/controller-gen@${CONTROLLER_GEN_VERSION} ;\
 	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
 	}
 CONTROLLER_GEN=$(GOBIN)/controller-gen
@@ -115,6 +142,7 @@ else
 CONTROLLER_GEN=$(shell which controller-gen)
 endif
 
+.PHONY: kustomize
 kustomize:
 ifeq (, $(shell which kustomize))
 	@{ \
@@ -122,7 +150,7 @@ ifeq (, $(shell which kustomize))
 	KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
 	cd $$KUSTOMIZE_GEN_TMP_DIR ;\
 	go mod init tmp ;\
-	go get sigs.k8s.io/kustomize/kustomize/v3@v3.8.7 ;\
+	go get sigs.k8s.io/kustomize/kustomize/v3@${KUSTOMIZE_VERSION} ;\
 	rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
 	}
 KUSTOMIZE=$(GOBIN)/kustomize
@@ -131,16 +159,19 @@ KUSTOMIZE=$(shell which kustomize)
 endif
 
 # Generate bundle manifests and metadata, then validate generated files.
+.PHONY: bundle
 bundle: manifests kustomize
 	operator-sdk generate kustomize manifests -q
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	operator-sdk bundle validate ./bundle
 
 # Build the bundle image.
+.PHONY: bundle-build
 bundle-build:
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
 # Download golangci-lint if needed
+.PHONY: golangci-lint
 golangci-lint:
 ifeq (, $(shell which golangci-lint))
 	go get github.com/golangci/golangci-lint/cmd/golangci-lint@${GOLANGCI_VERSION}
@@ -150,5 +181,6 @@ GOLANGCI_LINT=$(shell which golangci-lint)
 endif
 
 # Run linter. GOGC is set to reduce memory footprint
+.PHONY: lint
 lint: golangci-lint
 	GOGC=10 $(GOLANGCI_LINT) run -v --timeout 10m

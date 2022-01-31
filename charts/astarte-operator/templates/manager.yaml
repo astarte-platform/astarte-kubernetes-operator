@@ -1,6 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  annotations:
+    kubectl.kubernetes.io/default-container: manager
   labels:
     control-plane: controller-manager
   name: '{{ .Release.Name }}-controller-manager'
