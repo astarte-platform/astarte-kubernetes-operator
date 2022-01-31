@@ -40,7 +40,7 @@ metadata:
   name: '{{ .Release.Name }}-mutating-webhook-configuration'
 webhooks:
 - admissionReviewVersions:
-  - v1beta1
+  - v1
   clientConfig:
     service:
       name: '{{ .Release.Name }}-webhook-service'
@@ -60,7 +60,7 @@ webhooks:
     - astartes
   sideEffects: None
 - admissionReviewVersions:
-  - v1beta1
+  - v1
   clientConfig:
     service:
       name: '{{ .Release.Name }}-webhook-service'
@@ -80,7 +80,7 @@ webhooks:
     - astartevoyageringresses
   sideEffects: None
 - admissionReviewVersions:
-  - v1beta1
+  - v1
   clientConfig:
     service:
       name: '{{ .Release.Name }}-webhook-service'
@@ -128,7 +128,7 @@ metadata:
   name: '{{ .Release.Name }}-validating-webhook-configuration'
 webhooks:
 - admissionReviewVersions:
-  - v1beta1
+  - v1
   clientConfig:
     service:
       name: '{{ .Release.Name }}-webhook-service'
@@ -148,7 +148,7 @@ webhooks:
     - astartes
   sideEffects: None
 - admissionReviewVersions:
-  - v1beta1
+  - v1
   clientConfig:
     service:
       name: '{{ .Release.Name }}-webhook-service'
@@ -168,7 +168,7 @@ webhooks:
     - astartevoyageringresses
   sideEffects: None
 - admissionReviewVersions:
-  - v1beta1
+  - v1
   clientConfig:
     service:
       name: '{{ .Release.Name }}-webhook-service'
