@@ -45,6 +45,45 @@ endif
 .PHONY: all
 all: manager
 
+# The help target prints out all targets with their descriptions organized
+# beneath their categories. The categories are represented by '##@' and the
+# target descriptions by '##'. The awk commands is responsible for reading the
+# entire set of makefiles included in this invocation, looking for lines of the
+# file as xyz: ## something, and then pretty-format the target and help. Then,
+# if there's a line with ##@ something, that gets pretty-printed as a category.
+# More info on the usage of ANSI control characters for terminal formatting:
+# https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_parameters
+# More info on the awk command:
+# http://linuxcommand.org/lc3_adv_awk.php
+
+##@ General
+
+.PHONY: help
+help: ## Display this help.
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+##@ Development
+
+.PHONY: manifests
+manifests: controller-gen kustomize ## Generate manifests e.g. CRD, RBAC etc.
+	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(KUSTOMIZE) build config/helm-crd > charts/astarte-operator/templates/crds.yaml
+	$(KUSTOMIZE) build config/helm-rbac > charts/astarte-operator/templates/rbac.yaml
+	$(KUSTOMIZE) build config/helm-manager > charts/astarte-operator/templates/manager.yaml
+	$(KUSTOMIZE) build config/helm-webhook > charts/astarte-operator/templates/webhook.yaml
+
+.PHONY: generate ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: controller-gen
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="$(GOPATHS)"
+
+.PHONY: fmt
+fmt: ## Run go fmt against code.
+	go fmt $(go list ./... | grep -v /external/)
+
+.PHONY: vet
+vet: ## Run go vet against code.
+	go vet $(go list ./... | grep -v /external/)
+
 ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
 .PHONY: test
 test: manifests generate fmt vet ## Run tests.
@@ -52,82 +91,53 @@ test: manifests generate fmt vet ## Run tests.
 	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/${CONTROLLER_RUNTIME_VERSION}/hack/setup-envtest.sh
 	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test -v ./... -coverprofile cover.out
 
-# Build manager binary
+##@ Build
+
 .PHONY: manager
-manager: generate fmt vet
+manager: generate fmt vet  ## Build manager binary.
 	go build -o bin/manager main.go
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 .PHONY: run
-run: generate fmt vet manifests
+run: generate fmt vet manifests ## Run a controller from your host against the Kubernetes cluster configured in ~/.kube/config. Call with ENABLE_WEBHOOKS=false to exclude webhooks.
 	go run ./main.go
 
-# Install CRDs into a cluster
+.PHONY: docker-build
+docker-build: test ## Build docker image with the manager.
+	docker build -t ${IMG} .
+
+.PHONY: docker-push
+docker-push: ## Push docker image with the manager.
+	docker push ${IMG}
+
+##@ Deployment
+
 # Use create due to the annotations limit in apply
-.PHONY: install
+.PHONY: install ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 install: manifests kustomize
 	$(KUSTOMIZE) build config/crd | kubectl create -f -
 
 # Replace CRDs into a cluster
 .PHONY: replace
-replace: manifests kustomize
+replace: manifests kustomize ## Replace CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl replace -f -
 
-# Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 .PHONY: uninstall
-uninstall: manifests kustomize
+uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
-# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 # Use create due to the annotations limit in apply
 .PHONY: deploy
-deploy: manifests kustomize
+deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl create -f -
 
-# Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 .PHONY: undeploy
-undeploy:
+undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
-# Generate manifests e.g. CRD, RBAC etc.
-.PHONY: manifests
-manifests: controller-gen kustomize
-	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-	$(KUSTOMIZE) build config/helm-crd > charts/astarte-operator/templates/crds.yaml
-	$(KUSTOMIZE) build config/helm-rbac > charts/astarte-operator/templates/rbac.yaml
-	$(KUSTOMIZE) build config/helm-manager > charts/astarte-operator/templates/manager.yaml
-	$(KUSTOMIZE) build config/helm-webhook > charts/astarte-operator/templates/webhook.yaml
-
-# Run go fmt against code
-.PHONY: fmt
-fmt:
-	go fmt $(go list ./... | grep -v /external/)
-
-# Run go vet against code
-.PHONY: vet
-vet:
-	go vet $(go list ./... | grep -v /external/)
-
-# Generate code
-.PHONY: generate
-generate: controller-gen
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="$(GOPATHS)"
-
-# Build the docker image
-.PHONY: docker-build
-docker-build: test
-	docker build -t ${IMG} .
-
-# Push the docker image
-.PHONY: docker-push
-docker-push:
-	docker push ${IMG}
-
-# find or download controller-gen
-# download controller-gen if necessary
 .PHONY: controller-gen
-controller-gen:
+controller-gen: ## Download controller-gen locally if necessary.
 ifeq (, $(shell which controller-gen))
 	@{ \
 	set -e ;\
@@ -143,7 +153,7 @@ CONTROLLER_GEN=$(shell which controller-gen)
 endif
 
 .PHONY: kustomize
-kustomize:
+kustomize: ## Download kustomize locally if necessary.
 ifeq (, $(shell which kustomize))
 	@{ \
 	set -e ;\
@@ -158,29 +168,27 @@ else
 KUSTOMIZE=$(shell which kustomize)
 endif
 
-# Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle
-bundle: manifests kustomize
+bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.
 	operator-sdk generate kustomize manifests -q
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	operator-sdk bundle validate ./bundle
 
-# Build the bundle image.
 .PHONY: bundle-build
-bundle-build:
+bundle-build: ## Build the bundle image.
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
-# Download golangci-lint if needed
+##@ Linter
+
+.PHONY: lint
+lint: golangci-lint ## Run linter.
+	GOGC=10 $(GOLANGCI_LINT) run -v --timeout 10m
+
 .PHONY: golangci-lint
-golangci-lint:
+golangci-lint: ## Download golangci-lint if needed.
 ifeq (, $(shell which golangci-lint))
 	go get github.com/golangci/golangci-lint/cmd/golangci-lint@${GOLANGCI_VERSION}
 GOLANGCI_LINT=$(shell go env GOPATH)/bin/golangci-lint
 else
 GOLANGCI_LINT=$(shell which golangci-lint)
 endif
-
-# Run linter. GOGC is set to reduce memory footprint
-.PHONY: lint
-lint: golangci-lint
-	GOGC=10 $(GOLANGCI_LINT) run -v --timeout 10m
