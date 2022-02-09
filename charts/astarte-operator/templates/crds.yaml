@@ -25796,7 +25796,7 @@ spec:
             - version
             type: object
           status:
-            description: AstarteStatus defines the observed state of Astarte
+            description: 'TODO: Remove all omitempty from AstarteStatus in v1beta1 AstarteStatus defines the observed state of Astarte'
             properties:
               apiVersion:
                 description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'

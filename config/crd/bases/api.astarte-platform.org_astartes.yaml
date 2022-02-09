@@ -46360,7 +46360,7 @@ spec:
             - version
             type: object
           status:
-            description: AstarteStatus defines the observed state of Astarte
+            description: 'TODO: Remove all omitempty from AstarteStatus in v1beta1 AstarteStatus defines the observed state of Astarte'
             properties:
               apiVersion:
                 description: 'APIVersion defines the versioned schema of this representation
