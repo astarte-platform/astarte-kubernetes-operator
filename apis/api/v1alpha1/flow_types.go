@@ -183,7 +183,3 @@ type FlowStatus struct {
 	// +optional
 	UnrecoverableFailures []v1.ContainerState `json:"unrecoverableFailures,omitempty"`
 }
-
-func init() {
-	SchemeBuilder.Register(&Flow{}, &FlowList{})
-}

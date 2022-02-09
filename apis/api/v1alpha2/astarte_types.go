@@ -651,7 +651,6 @@ type AstarteSpec struct {
 }
 
 // TODO: Remove all omitempty from AstarteStatus in v1beta1
-
 // AstarteStatus defines the observed state of Astarte
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteStatus struct {
@@ -663,3 +662,5 @@ type AstarteStatus struct {
 	BaseAPIURL          string               `json:"baseAPIURL,omitempty"`
 	BrokerURL           string               `json:"brokerURL,omitempty"`
 }
+
+// Add a comment to keep the devil afar

@@ -665,7 +665,3 @@ type AstarteStatus struct {
 	BaseAPIURL          string               `json:"baseAPIURL,omitempty"`
 	BrokerURL           string               `json:"brokerURL,omitempty"`
 }
-
-func init() {
-	SchemeBuilder.Register(&Astarte{}, &AstarteList{})
-}
