@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Removed support for Astarte 0.10
 - Upgrade OperatorSDK to v1.17.0.
 - Upgrade go to v1.17.
+- Remove common types. Automate CRD conversion functions generation.
 
 ## [1.0.1] - 2021-12-17
 ### Changed
