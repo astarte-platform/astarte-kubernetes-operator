@@ -16,6 +16,9 @@ CONTROLLER_GEN_VERSION = v0.8.0
 CONTROLLER_RUNTIME_VERSION = v0.11.0 # This must be coincident with the version set in go.mod
 GOLANGCI_VERSION = v1.35.2
 KUSTOMIZE_VERSION = v3.8.7
+# Conversion-gen version should match the older k8s version supported by the operator. 
+# Note: the major lags behind by one (see https://github.com/kubernetes/code-generator#where-does-it-come-from).
+CONVERSION_GEN_VERSION = v0.19.16 
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.23
@@ -73,7 +76,9 @@ manifests: controller-gen kustomize ## Generate manifests e.g. CRD, RBAC etc.
 	$(KUSTOMIZE) build config/helm-webhook > charts/astarte-operator/templates/webhook.yaml
 
 .PHONY: generate ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-generate: controller-gen
+generate: controller-gen conversion-gen
+	$(CONVERSION_GEN) --go-header-file "./hack/boilerplate.go.txt" --input-dirs "./apis/api/v1alpha2" \
+		-O zz_generated.conversion --output-base "." 
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="$(GOPATHS)"
 
 .PHONY: fmt
@@ -166,6 +171,22 @@ ifeq (, $(shell which kustomize))
 KUSTOMIZE=$(GOBIN)/kustomize
 else
 KUSTOMIZE=$(shell which kustomize)
+endif
+
+.PHONY: conversion-gen
+conversion-gen: ## Download conversion-gen locally if necessary.
+ifeq (, $(shell which conversion-gen))
+	@{ \
+	set -e ;\
+	CONVERSION_GEN_TMP_DIR=$$(mktemp -d) ;\
+	cd $$CONVERSION_GEN_TMP_DIR ;\
+	go mod init tmp ;\
+	go get k8s.io/code-generator/cmd/conversion-gen@${CONVERSION_GEN_VERSION} ;\
+	rm -rf $$CONVERSION_GEN_TMP_DIR ;\
+	}
+CONVERSION_GEN=$(GOBIN)/conversion-gen
+else
+CONVERSION_GEN=$(shell which conversion-gen)
 endif
 
 .PHONY: bundle

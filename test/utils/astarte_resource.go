@@ -19,7 +19,6 @@
 package utils
 
 import (
-	"github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
 	operator "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 
 	"github.com/openlyinc/pointy"
@@ -34,19 +33,19 @@ var AstarteTestResource *operator.Astarte = &operator.Astarte{
 	ObjectMeta: metav1.ObjectMeta{
 		Name: "example-astarte",
 	},
-	Spec: commontypes.AstarteSpec{
+	Spec: operator.AstarteSpec{
 		Version: "0.11.4",
 		// Use the "Recreate" strategy. Some test environments are really constrained, and might not have enough
 		// resources to support RollingUpdate.
 		DeploymentStrategy: &appsv1.DeploymentStrategy{
 			Type: appsv1.RecreateDeploymentStrategyType,
 		},
-		API: commontypes.AstarteAPISpec{
+		API: operator.AstarteAPISpec{
 			Host: "api.autotest.astarte-platform.org",
 		},
-		VerneMQ: commontypes.AstarteVerneMQSpec{
+		VerneMQ: operator.AstarteVerneMQSpec{
 			Host: "broker.autotest.astarte-platform.org",
-			AstarteGenericClusteredResource: commontypes.AstarteGenericClusteredResource{
+			AstarteGenericClusteredResource: operator.AstarteGenericClusteredResource{
 				Resources: &v1.ResourceRequirements{
 					Limits: v1.ResourceList{
 						v1.ResourceCPU:    *resource.NewScaledQuantity(0, resource.Milli),
@@ -59,8 +58,8 @@ var AstarteTestResource *operator.Astarte = &operator.Astarte{
 				},
 			},
 		},
-		RabbitMQ: commontypes.AstarteRabbitMQSpec{
-			AstarteGenericClusteredResource: commontypes.AstarteGenericClusteredResource{
+		RabbitMQ: operator.AstarteRabbitMQSpec{
+			AstarteGenericClusteredResource: operator.AstarteGenericClusteredResource{
 				Resources: &v1.ResourceRequirements{
 					Limits: v1.ResourceList{
 						v1.ResourceCPU:    *resource.NewScaledQuantity(1000, resource.Milli),
@@ -73,13 +72,13 @@ var AstarteTestResource *operator.Astarte = &operator.Astarte{
 				},
 			},
 		},
-		Cassandra: commontypes.AstarteCassandraSpec{
+		Cassandra: operator.AstarteCassandraSpec{
 			MaxHeapSize: "512M",
 			HeapNewSize: "256M",
-			Storage: &commontypes.AstartePersistentStorageSpec{
+			Storage: &operator.AstartePersistentStorageSpec{
 				Size: resource.NewScaledQuantity(10, resource.Giga),
 			},
-			AstarteGenericClusteredResource: commontypes.AstarteGenericClusteredResource{
+			AstarteGenericClusteredResource: operator.AstarteGenericClusteredResource{
 				Resources: &v1.ResourceRequirements{
 					Limits: v1.ResourceList{
 						v1.ResourceCPU:    *resource.NewScaledQuantity(1000, resource.Milli),
@@ -92,7 +91,7 @@ var AstarteTestResource *operator.Astarte = &operator.Astarte{
 				},
 			},
 		},
-		CFSSL: commontypes.AstarteCFSSLSpec{
+		CFSSL: operator.AstarteCFSSLSpec{
 			Resources: &v1.ResourceRequirements{
 				Limits: v1.ResourceList{
 					v1.ResourceCPU:    *resource.NewScaledQuantity(0, resource.Milli),
@@ -103,11 +102,11 @@ var AstarteTestResource *operator.Astarte = &operator.Astarte{
 					v1.ResourceMemory: *resource.NewScaledQuantity(128, resource.Mega),
 				},
 			},
-			Storage: &commontypes.AstartePersistentStorageSpec{
+			Storage: &operator.AstartePersistentStorageSpec{
 				Size: resource.NewScaledQuantity(2, resource.Giga),
 			},
 		},
-		Components: commontypes.AstarteComponentsSpec{
+		Components: operator.AstarteComponentsSpec{
 			Resources: &v1.ResourceRequirements{
 				Limits: v1.ResourceList{
 					v1.ResourceCPU:    *resource.NewScaledQuantity(0, resource.Milli),
@@ -122,8 +121,8 @@ var AstarteTestResource *operator.Astarte = &operator.Astarte{
 			// in global resource allocation.
 			// TODO we need to explicitly set Flow's tag. Handle this case as soon as Flow images are tagged
 			// on a regular basis
-			Flow: commontypes.AstarteGenericAPISpec{
-				AstarteGenericClusteredResource: commontypes.AstarteGenericClusteredResource{
+			Flow: operator.AstarteGenericAPISpec{
+				AstarteGenericClusteredResource: operator.AstarteGenericClusteredResource{
 					Deploy: pointy.Bool(true),
 					Image:  "astarte/astarte_flow:snapshot",
 					Resources: &v1.ResourceRequirements{

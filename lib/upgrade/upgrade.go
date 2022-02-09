@@ -28,7 +28,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	commontypes "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 )
 
@@ -51,13 +50,13 @@ func EnsureAstarteUpgrade(oldVersion, newVersion *semver.Version, cr *apiv1alpha
 	}
 	if transitionCheck {
 		// Perform upgrade
-		recorder.Eventf(cr, "Normal", commontypes.AstarteResourceEventUpgrade.String(),
+		recorder.Eventf(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
 			"Initiating Astarte 1.0 Upgrade, from version %v to version %v", cr.Status.AstarteVersion, cr.Spec.Version)
 		if e := upgradeTo10(cr, c, scheme, recorder); e != nil {
 			return e
 		}
 	} else {
-		recorder.Event(cr, "Normal", commontypes.AstarteResourceEventUpgrade.String(),
+		recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
 			"Requested Astarte Upgrade does not require any special action, continuing standard reconciliation")
 	}
 
@@ -87,7 +86,7 @@ func validateConstraintAndPrepareUpgrade(oldVersion, newVersion *semver.Version,
 		// Set the Reconciliation Phase to Upgrading
 		reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name)
 		reqLogger.Info("Upgrade found, will start Upgrade routine")
-		cr.Status.ReconciliationPhase = commontypes.ReconciliationPhaseUpgrading
+		cr.Status.ReconciliationPhase = apiv1alpha1.ReconciliationPhaseUpgrading
 		// Update the status
 		if err := c.Status().Update(context.TODO(), cr); err != nil {
 			reqLogger.Error(err, "Failed to update Astarte Reconciliation Phase status. Not dying for this, though")

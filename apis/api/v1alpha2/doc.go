@@ -1,7 +1,7 @@
 /*
   This file is part of Astarte.
 
-  Copyright 2020 Ispirata Srl
+  Copyright 2022 Ispirata Srl
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,16 +18,6 @@
 
 // Package v1alpha2 contains API Schema definitions for the api v1alpha2 API group
 // +kubebuilder:object:generate=true
+// +k8s:conversion-gen=github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1
 // +groupName=api.astarte-platform.org
 package v1alpha2
-
-var (
-// GroupVersion is group version used to register these objects
-// GroupVersion = schema.GroupVersion{Group: "api.astarte-platform.org", Version: "v1alpha2"}
-
-// SchemeBuilder is used to add go types to the GroupVersionKind scheme
-// SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
-
-// AddToScheme adds the types in this group-version to the given scheme.
-// AddToScheme = SchemeBuilder.AddToScheme
-)
