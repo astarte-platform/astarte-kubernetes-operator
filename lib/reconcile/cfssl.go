@@ -257,7 +257,7 @@ func validateCFSSLDefinition(cfssl commontypes.AstarteCFSSLSpec) error {
 func getCFSSLProbe() *v1.Probe {
 	// Start checking after 10 seconds, every 20 seconds, fail after the 3rd attempt
 	return &v1.Probe{
-		Handler:             v1.Handler{HTTPGet: &v1.HTTPGetAction{Path: "/api/v1/cfssl/health", Port: intstr.FromString("http")}},
+		ProbeHandler:        v1.ProbeHandler{HTTPGet: &v1.HTTPGetAction{Path: "/api/v1/cfssl/health", Port: intstr.FromString("http")}},
 		InitialDelaySeconds: 10,
 		TimeoutSeconds:      5,
 		PeriodSeconds:       20,

@@ -186,7 +186,7 @@ func validateCassandraDefinition(cassandra commontypes.AstarteCassandraSpec) err
 func getCassandraProbe() *v1.Probe {
 	// Start checking after 1 minute, every 20 seconds, fail after the 3rd attempt
 	return &v1.Probe{
-		Handler:             v1.Handler{Exec: &v1.ExecAction{Command: []string{"/bin/bash", "-c", "/ready-probe.sh"}}},
+		ProbeHandler:        v1.ProbeHandler{Exec: &v1.ExecAction{Command: []string{"/bin/bash", "-c", "/ready-probe.sh"}}},
 		InitialDelaySeconds: 15,
 		TimeoutSeconds:      5,
 		PeriodSeconds:       20,
@@ -282,7 +282,7 @@ func getCassandraPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1
 				SecurityContext: &v1.SecurityContext{
 					Capabilities: &v1.Capabilities{Add: []v1.Capability{"IPC_LOCK"}},
 				},
-				Lifecycle: &v1.Lifecycle{PreStop: &v1.Handler{Exec: &v1.ExecAction{Command: []string{"/bin/sh", "-c", "nodetool drain"}}}},
+				Lifecycle: &v1.Lifecycle{PreStop: &v1.LifecycleHandler{Exec: &v1.ExecAction{Command: []string{"/bin/sh", "-c", "nodetool drain"}}}},
 			},
 		},
 	}

@@ -248,7 +248,7 @@ func getRabbitMQLivenessProbe() *v1.Probe {
 	// rabbitmqctl status is pretty expensive. Don't run it more than once per minute.
 	// Also, give it enough time to start.
 	return &v1.Probe{
-		Handler:             v1.Handler{Exec: &v1.ExecAction{Command: []string{"rabbitmqctl", "status"}}},
+		ProbeHandler:        v1.ProbeHandler{Exec: &v1.ExecAction{Command: []string{"rabbitmqctl", "status"}}},
 		InitialDelaySeconds: 300,
 		TimeoutSeconds:      10,
 		PeriodSeconds:       60,
@@ -261,7 +261,7 @@ func getRabbitMQReadinessProbe() *v1.Probe {
 	// Starting at least 3.7.21, rabbitmqctl status fails if the app hasn't started yet, and this could take *a lot*
 	// of time. Increase the failure threshold to 15 before giving up.
 	return &v1.Probe{
-		Handler:             v1.Handler{Exec: &v1.ExecAction{Command: []string{"rabbitmqctl", "status"}}},
+		ProbeHandler:        v1.ProbeHandler{Exec: &v1.ExecAction{Command: []string{"rabbitmqctl", "status"}}},
 		InitialDelaySeconds: 30,
 		TimeoutSeconds:      10,
 		PeriodSeconds:       30,

@@ -12,13 +12,13 @@ endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # Tools versions
-CONTROLLER_GEN_VERSION = v0.7.0
-CONTROLLER_RUNTIME_VERSION = v0.10.0 # This must be coincident with the version set in go.mod
+CONTROLLER_GEN_VERSION = v0.8.0
+CONTROLLER_RUNTIME_VERSION = v0.11.0 # This must be coincident with the version set in go.mod
 GOLANGCI_VERSION = v1.35.2
 KUSTOMIZE_VERSION = v3.8.7
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.22
+ENVTEST_K8S_VERSION = 1.23
 
 # Image URL to use all building/pushing image targets
 IMG ?= astarte/astarte-kubernetes-operator:latest

@@ -1,10 +1,9 @@
-
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.7.0
+    controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
   name: astartes.api.astarte-platform.org
 spec:
@@ -1674,21 +1673,19 @@ spec:
                               before the pod starts, and deleted when the pod is removed.
                               \n Use this if: a) the volume is only needed while the
                               pod runs, b) features of normal volumes like restoring
-                              from snapshot or capacity    tracking are needed, c)
-                              the storage driver is specified through a storage class,
+                              from snapshot or capacity tracking are needed, c) the
+                              storage driver is specified through a storage class,
                               and d) the storage driver supports dynamic volume provisioning
-                              through    a PersistentVolumeClaim (see EphemeralVolumeSource
-                              for more    information on the connection between this
-                              volume type    and PersistentVolumeClaim). \n Use PersistentVolumeClaim
+                              through a PersistentVolumeClaim (see EphemeralVolumeSource
+                              for more information on the connection between this
+                              volume type and PersistentVolumeClaim). \n Use PersistentVolumeClaim
                               or one of the vendor-specific APIs for volumes that
                               persist for longer than the lifecycle of an individual
                               pod. \n Use CSI for light-weight local ephemeral volumes
                               if the CSI driver is meant to be used that way - see
                               the documentation of the driver for more information.
                               \n A pod can use both types of ephemeral volumes and
-                              persistent volumes at the same time. \n This is a beta
-                              feature and only available when the GenericEphemeralVolume
-                              feature gate is enabled."
+                              persistent volumes at the same time."
                             properties:
                               volumeClaimTemplate:
                                 description: "Will be used to create a stand-alone
@@ -1785,13 +1782,13 @@ spec:
                                           the other is non-empty. There are two important
                                           differences between DataSource and DataSourceRef:
                                           * While DataSource only allows two specific
-                                          types of objects, DataSourceRef   allows
-                                          any non-core object, as well as PersistentVolumeClaim
+                                          types of objects, DataSourceRef allows any
+                                          non-core object, as well as PersistentVolumeClaim
                                           objects. * While DataSource ignores disallowed
-                                          values (dropping them), DataSourceRef   preserves
+                                          values (dropping them), DataSourceRef preserves
                                           all values, and generates an error if a
-                                          disallowed value is   specified. (Alpha)
-                                          Using this field requires the AnyVolumeDataSource
+                                          disallowed value is specified. (Alpha) Using
+                                          this field requires the AnyVolumeDataSource
                                           feature gate to be enabled.'
                                         properties:
                                           apiGroup:
@@ -1816,8 +1813,12 @@ spec:
                                         type: object
                                       resources:
                                         description: 'Resources represents the minimum
-                                          resources the volume should have. More info:
-                                          https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
+                                          resources the volume should have. If RecoverVolumeExpansionFailure
+                                          feature is enabled users are allowed to
+                                          specify resource requirements that are lower
+                                          than previous value but must still be higher
+                                          than capacity recorded in the status field
+                                          of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
                                         properties:
                                           limits:
                                             additionalProperties:
@@ -3518,21 +3519,19 @@ spec:
                               before the pod starts, and deleted when the pod is removed.
                               \n Use this if: a) the volume is only needed while the
                               pod runs, b) features of normal volumes like restoring
-                              from snapshot or capacity    tracking are needed, c)
-                              the storage driver is specified through a storage class,
+                              from snapshot or capacity tracking are needed, c) the
+                              storage driver is specified through a storage class,
                               and d) the storage driver supports dynamic volume provisioning
-                              through    a PersistentVolumeClaim (see EphemeralVolumeSource
-                              for more    information on the connection between this
-                              volume type    and PersistentVolumeClaim). \n Use PersistentVolumeClaim
+                              through a PersistentVolumeClaim (see EphemeralVolumeSource
+                              for more information on the connection between this
+                              volume type and PersistentVolumeClaim). \n Use PersistentVolumeClaim
                               or one of the vendor-specific APIs for volumes that
                               persist for longer than the lifecycle of an individual
                               pod. \n Use CSI for light-weight local ephemeral volumes
                               if the CSI driver is meant to be used that way - see
                               the documentation of the driver for more information.
                               \n A pod can use both types of ephemeral volumes and
-                              persistent volumes at the same time. \n This is a beta
-                              feature and only available when the GenericEphemeralVolume
-                              feature gate is enabled."
+                              persistent volumes at the same time."
                             properties:
                               volumeClaimTemplate:
                                 description: "Will be used to create a stand-alone
@@ -3629,13 +3628,13 @@ spec:
                                           the other is non-empty. There are two important
                                           differences between DataSource and DataSourceRef:
                                           * While DataSource only allows two specific
-                                          types of objects, DataSourceRef   allows
-                                          any non-core object, as well as PersistentVolumeClaim
+                                          types of objects, DataSourceRef allows any
+                                          non-core object, as well as PersistentVolumeClaim
                                           objects. * While DataSource ignores disallowed
-                                          values (dropping them), DataSourceRef   preserves
+                                          values (dropping them), DataSourceRef preserves
                                           all values, and generates an error if a
-                                          disallowed value is   specified. (Alpha)
-                                          Using this field requires the AnyVolumeDataSource
+                                          disallowed value is specified. (Alpha) Using
+                                          this field requires the AnyVolumeDataSource
                                           feature gate to be enabled.'
                                         properties:
                                           apiGroup:
@@ -3660,8 +3659,12 @@ spec:
                                         type: object
                                       resources:
                                         description: 'Resources represents the minimum
-                                          resources the volume should have. More info:
-                                          https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
+                                          resources the volume should have. If RecoverVolumeExpansionFailure
+                                          feature is enabled users are allowed to
+                                          specify resource requirements that are lower
+                                          than previous value but must still be higher
+                                          than capacity recorded in the status field
+                                          of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
                                         properties:
                                           limits:
                                             additionalProperties:
@@ -19294,21 +19297,19 @@ spec:
                               before the pod starts, and deleted when the pod is removed.
                               \n Use this if: a) the volume is only needed while the
                               pod runs, b) features of normal volumes like restoring
-                              from snapshot or capacity    tracking are needed, c)
-                              the storage driver is specified through a storage class,
+                              from snapshot or capacity tracking are needed, c) the
+                              storage driver is specified through a storage class,
                               and d) the storage driver supports dynamic volume provisioning
-                              through    a PersistentVolumeClaim (see EphemeralVolumeSource
-                              for more    information on the connection between this
-                              volume type    and PersistentVolumeClaim). \n Use PersistentVolumeClaim
+                              through a PersistentVolumeClaim (see EphemeralVolumeSource
+                              for more information on the connection between this
+                              volume type and PersistentVolumeClaim). \n Use PersistentVolumeClaim
                               or one of the vendor-specific APIs for volumes that
                               persist for longer than the lifecycle of an individual
                               pod. \n Use CSI for light-weight local ephemeral volumes
                               if the CSI driver is meant to be used that way - see
                               the documentation of the driver for more information.
                               \n A pod can use both types of ephemeral volumes and
-                              persistent volumes at the same time. \n This is a beta
-                              feature and only available when the GenericEphemeralVolume
-                              feature gate is enabled."
+                              persistent volumes at the same time."
                             properties:
                               volumeClaimTemplate:
                                 description: "Will be used to create a stand-alone
@@ -19405,13 +19406,13 @@ spec:
                                           the other is non-empty. There are two important
                                           differences between DataSource and DataSourceRef:
                                           * While DataSource only allows two specific
-                                          types of objects, DataSourceRef   allows
-                                          any non-core object, as well as PersistentVolumeClaim
+                                          types of objects, DataSourceRef allows any
+                                          non-core object, as well as PersistentVolumeClaim
                                           objects. * While DataSource ignores disallowed
-                                          values (dropping them), DataSourceRef   preserves
+                                          values (dropping them), DataSourceRef preserves
                                           all values, and generates an error if a
-                                          disallowed value is   specified. (Alpha)
-                                          Using this field requires the AnyVolumeDataSource
+                                          disallowed value is specified. (Alpha) Using
+                                          this field requires the AnyVolumeDataSource
                                           feature gate to be enabled.'
                                         properties:
                                           apiGroup:
@@ -19436,8 +19437,12 @@ spec:
                                         type: object
                                       resources:
                                         description: 'Resources represents the minimum
-                                          resources the volume should have. More info:
-                                          https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
+                                          resources the volume should have. If RecoverVolumeExpansionFailure
+                                          feature is enabled users are allowed to
+                                          specify resource requirements that are lower
+                                          than previous value but must still be higher
+                                          than capacity recorded in the status field
+                                          of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
                                         properties:
                                           limits:
                                             additionalProperties:
@@ -21999,21 +22004,19 @@ spec:
                               before the pod starts, and deleted when the pod is removed.
                               \n Use this if: a) the volume is only needed while the
                               pod runs, b) features of normal volumes like restoring
-                              from snapshot or capacity    tracking are needed, c)
-                              the storage driver is specified through a storage class,
+                              from snapshot or capacity tracking are needed, c) the
+                              storage driver is specified through a storage class,
                               and d) the storage driver supports dynamic volume provisioning
-                              through    a PersistentVolumeClaim (see EphemeralVolumeSource
-                              for more    information on the connection between this
-                              volume type    and PersistentVolumeClaim). \n Use PersistentVolumeClaim
+                              through a PersistentVolumeClaim (see EphemeralVolumeSource
+                              for more information on the connection between this
+                              volume type and PersistentVolumeClaim). \n Use PersistentVolumeClaim
                               or one of the vendor-specific APIs for volumes that
                               persist for longer than the lifecycle of an individual
                               pod. \n Use CSI for light-weight local ephemeral volumes
                               if the CSI driver is meant to be used that way - see
                               the documentation of the driver for more information.
                               \n A pod can use both types of ephemeral volumes and
-                              persistent volumes at the same time. \n This is a beta
-                              feature and only available when the GenericEphemeralVolume
-                              feature gate is enabled."
+                              persistent volumes at the same time."
                             properties:
                               volumeClaimTemplate:
                                 description: "Will be used to create a stand-alone
@@ -22110,13 +22113,13 @@ spec:
                                           the other is non-empty. There are two important
                                           differences between DataSource and DataSourceRef:
                                           * While DataSource only allows two specific
-                                          types of objects, DataSourceRef   allows
-                                          any non-core object, as well as PersistentVolumeClaim
+                                          types of objects, DataSourceRef allows any
+                                          non-core object, as well as PersistentVolumeClaim
                                           objects. * While DataSource ignores disallowed
-                                          values (dropping them), DataSourceRef   preserves
+                                          values (dropping them), DataSourceRef preserves
                                           all values, and generates an error if a
-                                          disallowed value is   specified. (Alpha)
-                                          Using this field requires the AnyVolumeDataSource
+                                          disallowed value is specified. (Alpha) Using
+                                          this field requires the AnyVolumeDataSource
                                           feature gate to be enabled.'
                                         properties:
                                           apiGroup:
@@ -22141,8 +22144,12 @@ spec:
                                         type: object
                                       resources:
                                         description: 'Resources represents the minimum
-                                          resources the volume should have. More info:
-                                          https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
+                                          resources the volume should have. If RecoverVolumeExpansionFailure
+                                          feature is enabled users are allowed to
+                                          specify resource requirements that are lower
+                                          than previous value but must still be higher
+                                          than capacity recorded in the status field
+                                          of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
                                         properties:
                                           limits:
                                             additionalProperties:
@@ -24856,21 +24863,19 @@ spec:
                               before the pod starts, and deleted when the pod is removed.
                               \n Use this if: a) the volume is only needed while the
                               pod runs, b) features of normal volumes like restoring
-                              from snapshot or capacity    tracking are needed, c)
-                              the storage driver is specified through a storage class,
+                              from snapshot or capacity tracking are needed, c) the
+                              storage driver is specified through a storage class,
                               and d) the storage driver supports dynamic volume provisioning
-                              through    a PersistentVolumeClaim (see EphemeralVolumeSource
-                              for more    information on the connection between this
-                              volume type    and PersistentVolumeClaim). \n Use PersistentVolumeClaim
+                              through a PersistentVolumeClaim (see EphemeralVolumeSource
+                              for more information on the connection between this
+                              volume type and PersistentVolumeClaim). \n Use PersistentVolumeClaim
                               or one of the vendor-specific APIs for volumes that
                               persist for longer than the lifecycle of an individual
                               pod. \n Use CSI for light-weight local ephemeral volumes
                               if the CSI driver is meant to be used that way - see
                               the documentation of the driver for more information.
                               \n A pod can use both types of ephemeral volumes and
-                              persistent volumes at the same time. \n This is a beta
-                              feature and only available when the GenericEphemeralVolume
-                              feature gate is enabled."
+                              persistent volumes at the same time."
                             properties:
                               volumeClaimTemplate:
                                 description: "Will be used to create a stand-alone
@@ -24967,13 +24972,13 @@ spec:
                                           the other is non-empty. There are two important
                                           differences between DataSource and DataSourceRef:
                                           * While DataSource only allows two specific
-                                          types of objects, DataSourceRef   allows
-                                          any non-core object, as well as PersistentVolumeClaim
+                                          types of objects, DataSourceRef allows any
+                                          non-core object, as well as PersistentVolumeClaim
                                           objects. * While DataSource ignores disallowed
-                                          values (dropping them), DataSourceRef   preserves
+                                          values (dropping them), DataSourceRef preserves
                                           all values, and generates an error if a
-                                          disallowed value is   specified. (Alpha)
-                                          Using this field requires the AnyVolumeDataSource
+                                          disallowed value is specified. (Alpha) Using
+                                          this field requires the AnyVolumeDataSource
                                           feature gate to be enabled.'
                                         properties:
                                           apiGroup:
@@ -24998,8 +25003,12 @@ spec:
                                         type: object
                                       resources:
                                         description: 'Resources represents the minimum
-                                          resources the volume should have. More info:
-                                          https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
+                                          resources the volume should have. If RecoverVolumeExpansionFailure
+                                          feature is enabled users are allowed to
+                                          specify resource requirements that are lower
+                                          than previous value but must still be higher
+                                          than capacity recorded in the status field
+                                          of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
                                         properties:
                                           limits:
                                             additionalProperties:
@@ -26700,21 +26709,19 @@ spec:
                               before the pod starts, and deleted when the pod is removed.
                               \n Use this if: a) the volume is only needed while the
                               pod runs, b) features of normal volumes like restoring
-                              from snapshot or capacity    tracking are needed, c)
-                              the storage driver is specified through a storage class,
+                              from snapshot or capacity tracking are needed, c) the
+                              storage driver is specified through a storage class,
                               and d) the storage driver supports dynamic volume provisioning
-                              through    a PersistentVolumeClaim (see EphemeralVolumeSource
-                              for more    information on the connection between this
-                              volume type    and PersistentVolumeClaim). \n Use PersistentVolumeClaim
+                              through a PersistentVolumeClaim (see EphemeralVolumeSource
+                              for more information on the connection between this
+                              volume type and PersistentVolumeClaim). \n Use PersistentVolumeClaim
                               or one of the vendor-specific APIs for volumes that
                               persist for longer than the lifecycle of an individual
                               pod. \n Use CSI for light-weight local ephemeral volumes
                               if the CSI driver is meant to be used that way - see
                               the documentation of the driver for more information.
                               \n A pod can use both types of ephemeral volumes and
-                              persistent volumes at the same time. \n This is a beta
-                              feature and only available when the GenericEphemeralVolume
-                              feature gate is enabled."
+                              persistent volumes at the same time."
                             properties:
                               volumeClaimTemplate:
                                 description: "Will be used to create a stand-alone
@@ -26811,13 +26818,13 @@ spec:
                                           the other is non-empty. There are two important
                                           differences between DataSource and DataSourceRef:
                                           * While DataSource only allows two specific
-                                          types of objects, DataSourceRef   allows
-                                          any non-core object, as well as PersistentVolumeClaim
+                                          types of objects, DataSourceRef allows any
+                                          non-core object, as well as PersistentVolumeClaim
                                           objects. * While DataSource ignores disallowed
-                                          values (dropping them), DataSourceRef   preserves
+                                          values (dropping them), DataSourceRef preserves
                                           all values, and generates an error if a
-                                          disallowed value is   specified. (Alpha)
-                                          Using this field requires the AnyVolumeDataSource
+                                          disallowed value is specified. (Alpha) Using
+                                          this field requires the AnyVolumeDataSource
                                           feature gate to be enabled.'
                                         properties:
                                           apiGroup:
@@ -26842,8 +26849,12 @@ spec:
                                         type: object
                                       resources:
                                         description: 'Resources represents the minimum
-                                          resources the volume should have. More info:
-                                          https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
+                                          resources the volume should have. If RecoverVolumeExpansionFailure
+                                          feature is enabled users are allowed to
+                                          specify resource requirements that are lower
+                                          than previous value but must still be higher
+                                          than capacity recorded in the status field
+                                          of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
                                         properties:
                                           limits:
                                             additionalProperties:
@@ -42476,21 +42487,19 @@ spec:
                               before the pod starts, and deleted when the pod is removed.
                               \n Use this if: a) the volume is only needed while the
                               pod runs, b) features of normal volumes like restoring
-                              from snapshot or capacity    tracking are needed, c)
-                              the storage driver is specified through a storage class,
+                              from snapshot or capacity tracking are needed, c) the
+                              storage driver is specified through a storage class,
                               and d) the storage driver supports dynamic volume provisioning
-                              through    a PersistentVolumeClaim (see EphemeralVolumeSource
-                              for more    information on the connection between this
-                              volume type    and PersistentVolumeClaim). \n Use PersistentVolumeClaim
+                              through a PersistentVolumeClaim (see EphemeralVolumeSource
+                              for more information on the connection between this
+                              volume type and PersistentVolumeClaim). \n Use PersistentVolumeClaim
                               or one of the vendor-specific APIs for volumes that
                               persist for longer than the lifecycle of an individual
                               pod. \n Use CSI for light-weight local ephemeral volumes
                               if the CSI driver is meant to be used that way - see
                               the documentation of the driver for more information.
                               \n A pod can use both types of ephemeral volumes and
-                              persistent volumes at the same time. \n This is a beta
-                              feature and only available when the GenericEphemeralVolume
-                              feature gate is enabled."
+                              persistent volumes at the same time."
                             properties:
                               volumeClaimTemplate:
                                 description: "Will be used to create a stand-alone
@@ -42587,13 +42596,13 @@ spec:
                                           the other is non-empty. There are two important
                                           differences between DataSource and DataSourceRef:
                                           * While DataSource only allows two specific
-                                          types of objects, DataSourceRef   allows
-                                          any non-core object, as well as PersistentVolumeClaim
+                                          types of objects, DataSourceRef allows any
+                                          non-core object, as well as PersistentVolumeClaim
                                           objects. * While DataSource ignores disallowed
-                                          values (dropping them), DataSourceRef   preserves
+                                          values (dropping them), DataSourceRef preserves
                                           all values, and generates an error if a
-                                          disallowed value is   specified. (Alpha)
-                                          Using this field requires the AnyVolumeDataSource
+                                          disallowed value is specified. (Alpha) Using
+                                          this field requires the AnyVolumeDataSource
                                           feature gate to be enabled.'
                                         properties:
                                           apiGroup:
@@ -42618,8 +42627,12 @@ spec:
                                         type: object
                                       resources:
                                         description: 'Resources represents the minimum
-                                          resources the volume should have. More info:
-                                          https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
+                                          resources the volume should have. If RecoverVolumeExpansionFailure
+                                          feature is enabled users are allowed to
+                                          specify resource requirements that are lower
+                                          than previous value but must still be higher
+                                          than capacity recorded in the status field
+                                          of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
                                         properties:
                                           limits:
                                             additionalProperties:
@@ -45181,21 +45194,19 @@ spec:
                               before the pod starts, and deleted when the pod is removed.
                               \n Use this if: a) the volume is only needed while the
                               pod runs, b) features of normal volumes like restoring
-                              from snapshot or capacity    tracking are needed, c)
-                              the storage driver is specified through a storage class,
+                              from snapshot or capacity tracking are needed, c) the
+                              storage driver is specified through a storage class,
                               and d) the storage driver supports dynamic volume provisioning
-                              through    a PersistentVolumeClaim (see EphemeralVolumeSource
-                              for more    information on the connection between this
-                              volume type    and PersistentVolumeClaim). \n Use PersistentVolumeClaim
+                              through a PersistentVolumeClaim (see EphemeralVolumeSource
+                              for more information on the connection between this
+                              volume type and PersistentVolumeClaim). \n Use PersistentVolumeClaim
                               or one of the vendor-specific APIs for volumes that
                               persist for longer than the lifecycle of an individual
                               pod. \n Use CSI for light-weight local ephemeral volumes
                               if the CSI driver is meant to be used that way - see
                               the documentation of the driver for more information.
                               \n A pod can use both types of ephemeral volumes and
-                              persistent volumes at the same time. \n This is a beta
-                              feature and only available when the GenericEphemeralVolume
-                              feature gate is enabled."
+                              persistent volumes at the same time."
                             properties:
                               volumeClaimTemplate:
                                 description: "Will be used to create a stand-alone
@@ -45292,13 +45303,13 @@ spec:
                                           the other is non-empty. There are two important
                                           differences between DataSource and DataSourceRef:
                                           * While DataSource only allows two specific
-                                          types of objects, DataSourceRef   allows
-                                          any non-core object, as well as PersistentVolumeClaim
+                                          types of objects, DataSourceRef allows any
+                                          non-core object, as well as PersistentVolumeClaim
                                           objects. * While DataSource ignores disallowed
-                                          values (dropping them), DataSourceRef   preserves
+                                          values (dropping them), DataSourceRef preserves
                                           all values, and generates an error if a
-                                          disallowed value is   specified. (Alpha)
-                                          Using this field requires the AnyVolumeDataSource
+                                          disallowed value is specified. (Alpha) Using
+                                          this field requires the AnyVolumeDataSource
                                           feature gate to be enabled.'
                                         properties:
                                           apiGroup:
@@ -45323,8 +45334,12 @@ spec:
                                         type: object
                                       resources:
                                         description: 'Resources represents the minimum
-                                          resources the volume should have. More info:
-                                          https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
+                                          resources the volume should have. If RecoverVolumeExpansionFailure
+                                          feature is enabled users are allowed to
+                                          specify resource requirements that are lower
+                                          than previous value but must still be higher
+                                          than capacity recorded in the status field
+                                          of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
                                         properties:
                                           limits:
                                             additionalProperties:
