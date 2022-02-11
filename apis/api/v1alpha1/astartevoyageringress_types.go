@@ -19,9 +19,10 @@
 package v1alpha1
 
 import (
-	voyager "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	voyager "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 )
 
 // +kubebuilder:object:root=true
@@ -47,7 +48,6 @@ type AstarteVoyagerIngressList struct {
 }
 
 // AstarteGenericIngressSpec is a common struct for all Ingresses defined by AstarteVoyagerIngress
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteGenericIngressSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
@@ -69,7 +69,6 @@ type AstarteGenericIngressSpec struct {
 }
 
 // AstarteVoyagerIngressAPISpec defines the specification of the APIs
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteVoyagerIngressAPISpec struct {
 	metav1.TypeMeta           `json:",inline"`
 	AstarteGenericIngressSpec `json:",inline"`
@@ -90,7 +89,6 @@ type AstarteVoyagerIngressAPISpec struct {
 }
 
 // AstarteVoyagerIngressDashboardSpec defines the specification of the Dashboard
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteVoyagerIngressDashboardSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
@@ -104,7 +102,6 @@ type AstarteVoyagerIngressDashboardSpec struct {
 }
 
 // AstarteVoyagerIngressBrokerSpec defines the specification of the Broker
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteVoyagerIngressBrokerSpec struct {
 	metav1.TypeMeta           `json:",inline"`
 	AstarteGenericIngressSpec `json:",inline"`
@@ -113,7 +110,6 @@ type AstarteVoyagerIngressBrokerSpec struct {
 }
 
 // AstarteVoyagerIngressLetsEncryptSpec defines the specification of the Let's Encrypt Integration
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteVoyagerIngressLetsEncryptSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
@@ -131,7 +127,6 @@ type AstarteVoyagerIngressLetsEncryptSpec struct {
 }
 
 // AstarteVoyagerIngressSpec defines the desired state of AstarteVoyagerIngress
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteVoyagerIngressSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
@@ -148,7 +143,6 @@ type AstarteVoyagerIngressSpec struct {
 }
 
 // AstarteVoyagerIngressStatus defines the observed state of AstarteVoyagerIngress
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteVoyagerIngressStatus struct {
 	metav1.TypeMeta `json:",inline"`
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster

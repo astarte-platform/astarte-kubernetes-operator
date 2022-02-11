@@ -63,7 +63,6 @@ const (
 )
 
 // RabbitMQConfig represents configuration for RabbitMQ
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type RabbitMQConfig struct {
 	metav1.TypeMeta `json:",inline"`
 	Host            string `json:"host"`
@@ -76,7 +75,6 @@ type RabbitMQConfig struct {
 }
 
 // RabbitMQExchange is a representation of a RabbitMQ Exchange
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type RabbitMQExchange struct {
 	metav1.TypeMeta `json:",inline"`
 	Name            string `json:"name"`
@@ -84,7 +82,6 @@ type RabbitMQExchange struct {
 }
 
 // RabbitMQDataProvider is a representation of a Data Provider based upon RabbitMQ
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type RabbitMQDataProvider struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
@@ -114,7 +111,6 @@ func (r *RabbitMQDataProvider) IsConsumer() bool {
 
 // DataProvider is a struct which defines which Data Providers (e.g. Brokers) are available for a
 // Worker
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type DataProvider struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
@@ -122,7 +118,6 @@ type DataProvider struct {
 }
 
 // BlockWorker defines a Worker for a Container Block
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type BlockWorker struct {
 	metav1.TypeMeta `json:",inline"`
 	WorkerID        string       `json:"id"`
@@ -130,7 +125,6 @@ type BlockWorker struct {
 }
 
 // ContainerBlockSpec defines a Container Block in a Flow
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type ContainerBlockSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	BlockID         string `json:"id"`
@@ -148,7 +142,6 @@ type ContainerBlockSpec struct {
 }
 
 // FlowSpec defines the desired state of Flow
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type FlowSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	Astarte         v1.LocalObjectReference `json:"astarte"`
@@ -163,7 +156,6 @@ type FlowSpec struct {
 }
 
 // FlowStatus defines the observed state of Flow
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type FlowStatus struct {
 	metav1.TypeMeta `json:",inline"`
 	// State defines the overall state of the Flow

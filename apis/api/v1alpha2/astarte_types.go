@@ -176,7 +176,6 @@ func (a *AstarteComponent) ServiceRelativePath() string {
 	return strings.ReplaceAll(ret, "api", "")
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteGenericClusteredResource struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
@@ -202,7 +201,6 @@ type AstarteGenericClusteredResource struct {
 }
 
 // AstarteGenericAPISpec represents a generic Astarte API Component in the Deployment spec
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteGenericAPISpec struct {
 	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
@@ -210,7 +208,6 @@ type AstarteGenericAPISpec struct {
 	DisableAuthentication *bool `json:"disableAuthentication,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstartePersistentStorageSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
@@ -221,7 +218,6 @@ type AstartePersistentStorageSpec struct {
 	VolumeDefinition *v1.Volume `json:"volumeDefinition,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteAPISpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
@@ -229,7 +225,6 @@ type AstarteAPISpec struct {
 	Host string `json:"host"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteRabbitMQSSLConfigurationSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	Enabled         bool `json:"enabled"`
@@ -241,7 +236,6 @@ type AstarteRabbitMQSSLConfigurationSpec struct {
 	CustomSNI string `json:"customSNI,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteRabbitMQConnectionSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	Host            string `json:"host"`
@@ -258,7 +252,6 @@ type AstarteRabbitMQConnectionSpec struct {
 	Secret *LoginCredentialsSecret `json:"secret,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteRabbitMQSpec struct {
 	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
@@ -278,7 +271,6 @@ type AstarteRabbitMQSpec struct {
 	EventsExchangeName string `json:"eventsExchangeName,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCassandraSSLConfigurationSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
@@ -291,7 +283,6 @@ type AstarteCassandraSSLConfigurationSpec struct {
 	CustomSNI string `json:"customSNI,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type LoginCredentialsSecret struct {
 	metav1.TypeMeta `json:",inline"`
 	Name            string `json:"name"`
@@ -299,7 +290,6 @@ type LoginCredentialsSecret struct {
 	PasswordKey     string `json:"passwordKey"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCassandraConnectionSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
@@ -316,7 +306,6 @@ type AstarteCassandraConnectionSpec struct {
 	Password string `json:"password,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCassandraSpec struct {
 	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
@@ -332,7 +321,6 @@ type AstarteCassandraSpec struct {
 	Connection *AstarteCassandraConnectionSpec `json:"connection,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteVerneMQSpec struct {
 	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
@@ -378,7 +366,6 @@ type AstarteVerneMQSpec struct {
 	SSLListenerCertSecretName string `json:"sslListenerCertSecretName,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteGenericComponentSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
@@ -387,7 +374,6 @@ type AstarteGenericComponentSpec struct {
 	Backend AstarteGenericClusteredResource `json:"backend,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteDataUpdaterPlantSpec struct {
 	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
@@ -402,7 +388,6 @@ type AstarteDataUpdaterPlantSpec struct {
 	PrefetchCount *int `json:"prefetchCount,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteTriggerEngineSpec struct {
 	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
@@ -418,7 +403,6 @@ type AstarteTriggerEngineSpec struct {
 	EventsRoutingKey string `json:"eventsRoutingKey,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteAppengineAPISpec struct {
 	metav1.TypeMeta       `json:",inline"`
 	AstarteGenericAPISpec `json:",inline"`
@@ -435,7 +419,6 @@ type AstarteAppengineAPISpec struct {
 	RoomEventsExchangeName string `json:"roomEventsExchangeName,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteDashboardConfigAuthSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	Type            string `json:"type"`
@@ -443,7 +426,6 @@ type AstarteDashboardConfigAuthSpec struct {
 	OAuthAPIURL string `json:"oauth_api_url,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteDashboardConfigSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
@@ -462,7 +444,6 @@ type AstarteDashboardConfigSpec struct {
 	Auth []AstarteDashboardConfigAuthSpec `json:"auth,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteDashboardSpec struct {
 	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
@@ -470,7 +451,6 @@ type AstarteDashboardSpec struct {
 	Config AstarteDashboardConfigSpec `json:",inline"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteComponentsSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// Compute Resources for this Component.
@@ -494,21 +474,18 @@ type AstarteComponentsSpec struct {
 	Dashboard AstarteDashboardSpec `json:"dashboard,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCFSSLDBConfigSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	Driver          string `json:"driver,omitempty"`
 	DataSource      string `json:"dataSource,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCFSSLCSRRootCAKeySpec struct {
 	metav1.TypeMeta `json:",inline"`
 	Algo            string `json:"algo"`
 	Size            int    `json:"size"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCFSSLCSRRootCANamesSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	C               string `json:"C"`
@@ -518,13 +495,11 @@ type AstarteCFSSLCSRRootCANamesSpec struct {
 	ST              string `json:"ST"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCFSSLCSRRootCACASpec struct {
 	metav1.TypeMeta `json:",inline"`
 	Expiry          string `json:"expiry"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCFSSLCSRRootCASpec struct {
 	metav1.TypeMeta `json:",inline"`
 	CN              string                           `json:"CN"`
@@ -533,7 +508,6 @@ type AstarteCFSSLCSRRootCASpec struct {
 	CA              *AstarteCFSSLCSRRootCACASpec     `json:"ca"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCFSSLCARootConfigSigningCAConstraintSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	MaxPathLen      int  `json:"max_path_len"`
@@ -541,7 +515,6 @@ type AstarteCFSSLCARootConfigSigningCAConstraintSpec struct {
 	MaxPathLenZero  bool `json:"max_path_len_zero"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCFSSLCARootConfigSigningDefaultSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	Usages          []string                                         `json:"usages"`
@@ -549,19 +522,16 @@ type AstarteCFSSLCARootConfigSigningDefaultSpec struct {
 	CAConstraint    *AstarteCFSSLCARootConfigSigningCAConstraintSpec `json:"ca_constraint"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCFSSLCARootConfigSigningSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	Default         *AstarteCFSSLCARootConfigSigningDefaultSpec `json:"default"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCFSSLCARootConfigSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	Signing         *AstarteCFSSLCARootConfigSigningSpec `json:"signing"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteCFSSLSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
@@ -593,7 +563,6 @@ type AstarteCFSSLSpec struct {
 
 // astarteSystemKeyspace configures the main system keyspace for Astarte. As of now, these settings
 // have effect only upon cluster initialization, and will be ignored otherwise.
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteSystemKeyspaceSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// The Replication Factor for the keyspace
@@ -602,7 +571,6 @@ type AstarteSystemKeyspaceSpec struct {
 }
 
 // AstarteFeatures enables/disables selectively a set of global features in Astarte
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteFeatures struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
@@ -610,7 +578,6 @@ type AstarteFeatures struct {
 }
 
 // AstarteSpec defines the desired state of Astarte
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// The Astarte Version for this Resource
@@ -651,8 +618,8 @@ type AstarteSpec struct {
 }
 
 // TODO: Remove all omitempty from AstarteStatus in v1beta1
+
 // AstarteStatus defines the observed state of Astarte
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AstarteStatus struct {
 	metav1.TypeMeta     `json:",inline"`
 	ReconciliationPhase ReconciliationPhase  `json:"phase,omitempty"`
@@ -662,5 +629,3 @@ type AstarteStatus struct {
 	BaseAPIURL          string               `json:"baseAPIURL,omitempty"`
 	BrokerURL           string               `json:"brokerURL,omitempty"`
 }
-
-// Add a comment to keep the devil afar
