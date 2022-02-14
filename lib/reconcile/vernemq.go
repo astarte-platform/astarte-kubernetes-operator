@@ -176,7 +176,7 @@ func validateVerneMQDefinition(vmq *commontypes.AstarteVerneMQSpec) error {
 func getVerneMQProbe() *v1.Probe {
 	// Start checking after 1 minute, every 20 seconds, fail after the 3rd attempt
 	return &v1.Probe{
-		Handler:             v1.Handler{HTTPGet: &v1.HTTPGetAction{Path: "/metrics", Port: intstr.FromInt(8888)}},
+		ProbeHandler:        v1.ProbeHandler{HTTPGet: &v1.HTTPGetAction{Path: "/metrics", Port: intstr.FromInt(8888)}},
 		InitialDelaySeconds: 60,
 		TimeoutSeconds:      10,
 		PeriodSeconds:       20,

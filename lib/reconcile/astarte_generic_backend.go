@@ -350,7 +350,7 @@ func getAstarteBackendGenericProbe(path string) *v1.Probe {
 
 func getAstarteBackendGenericProbeWithThreshold(path string, threshold int32) *v1.Probe {
 	return &v1.Probe{
-		Handler: v1.Handler{
+		ProbeHandler: v1.ProbeHandler{
 			HTTPGet: &v1.HTTPGetAction{
 				Path: path,
 				Port: intstr.FromString("http"),

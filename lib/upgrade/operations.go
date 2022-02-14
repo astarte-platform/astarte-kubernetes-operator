@@ -408,7 +408,7 @@ func getSpecialHousekeepingMigrationProbe(path string) *v1.Probe {
 	// This is a special migration probe that handles longer timeouts due to migrations.
 	// Migrations can take an insane amount of time, as such we should take this into account.
 	return &v1.Probe{
-		Handler: v1.Handler{
+		ProbeHandler: v1.ProbeHandler{
 			HTTPGet: &v1.HTTPGetAction{
 				Path: path,
 				Port: intstr.FromString("http"),

@@ -327,7 +327,7 @@ func getAstarteAPIProbe(cr *apiv1alpha1.Astarte, api commontypes.AstarteGenericA
 
 func getAstarteAPIGenericProbe(path string) *v1.Probe {
 	return &v1.Probe{
-		Handler: v1.Handler{
+		ProbeHandler: v1.ProbeHandler{
 			HTTPGet: &v1.HTTPGetAction{
 				Path: path,
 				Port: intstr.FromString("http"),
