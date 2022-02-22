@@ -37,7 +37,6 @@ import (
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/controllerutils"
 	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 
-	commontypes "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 )
 
@@ -101,7 +100,7 @@ func (r *AstarteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	newAstarteSemVersion, err := version.GetAstarteSemanticVersionFrom(instance.Spec.Version)
 	if err != nil {
 		// Reconcile every minute if we're here
-		r.Recorder.Eventf(instance, "Warning", commontypes.AstarteResourceEventInconsistentVersion.String(),
+		r.Recorder.Eventf(instance, "Warning", apiv1alpha1.AstarteResourceEventInconsistentVersion.String(),
 			err.Error(), instance.Spec.Version)
 		return ctrl.Result{RequeueAfter: time.Minute}, err
 	}
@@ -128,7 +127,7 @@ func (r *AstarteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	switch {
 	case instance.Status.AstarteVersion == "":
 		reqLogger.Info("Could not determine an existing Astarte version for this Resource. Assuming this is a new installation.")
-		r.Recorder.Event(instance, "Normal", commontypes.AstarteResourceEventStatus.String(), "Starting a brand new Astarte Cluster setup")
+		r.Recorder.Event(instance, "Normal", apiv1alpha1.AstarteResourceEventStatus.String(), "Starting a brand new Astarte Cluster setup")
 	case instance.Status.AstarteVersion == version.SnapshotVersion:
 		reqLogger.Info("You are running an Astarte snapshot. Any upgrade phase will be skipped, you hopefully know what you're doing")
 	case instance.Status.AstarteVersion != instance.Spec.Version:

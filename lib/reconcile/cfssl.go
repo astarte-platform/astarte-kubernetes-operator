@@ -38,7 +38,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	commontypes "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/deps"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
@@ -245,7 +244,7 @@ func ensureCFSSLCommonSidecars(resourceName string, labels map[string]string, cr
 	return nil
 }
 
-func validateCFSSLDefinition(cfssl commontypes.AstarteCFSSLSpec) error {
+func validateCFSSLDefinition(cfssl apiv1alpha1.AstarteCFSSLSpec) error {
 	if !pointy.BoolValue(cfssl.Deploy, true) && cfssl.URL == "" {
 		return errors.New("When not deploying CFSSL, the 'url' must be specified")
 	}

@@ -36,20 +36,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	commontypes "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/deps"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 )
 
-func getCassandraUserAndPassword(conn *commontypes.AstarteCassandraConnectionSpec) (string, string) {
+func getCassandraUserAndPassword(conn *apiv1alpha1.AstarteCassandraConnectionSpec) (string, string) {
 	if conn != nil {
 		return conn.Username, conn.Password
 	}
 	return "", ""
 }
 
-func getCassandraUserAndPasswordKeys(conn *commontypes.AstarteCassandraConnectionSpec) (string, string) {
+func getCassandraUserAndPasswordKeys(conn *apiv1alpha1.AstarteCassandraConnectionSpec) (string, string) {
 	if conn != nil {
 		if conn.Secret != nil {
 			return conn.Secret.UsernameKey, conn.Secret.PasswordKey
@@ -58,7 +57,7 @@ func getCassandraUserAndPasswordKeys(conn *commontypes.AstarteCassandraConnectio
 	return misc.CassandraDefaultUserCredentialsUsernameKey, misc.CassandraDefaultUserCredentialsPasswordKey
 }
 
-func getCassandraSecret(cr *apiv1alpha1.Astarte) *commontypes.LoginCredentialsSecret {
+func getCassandraSecret(cr *apiv1alpha1.Astarte) *apiv1alpha1.LoginCredentialsSecret {
 	if cr.Spec.Cassandra.Connection != nil {
 		return cr.Spec.Cassandra.Connection.Secret
 	}
@@ -174,7 +173,7 @@ func EnsureCassandra(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.S
 	return nil
 }
 
-func validateCassandraDefinition(cassandra commontypes.AstarteCassandraSpec) error {
+func validateCassandraDefinition(cassandra apiv1alpha1.AstarteCassandraSpec) error {
 	if !pointy.BoolValue(cassandra.Deploy, true) && cassandra.Nodes == "" {
 		return errors.New("When not deploying Cassandra, the 'nodes' must be specified")
 	}

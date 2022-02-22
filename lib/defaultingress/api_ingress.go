@@ -34,7 +34,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/openlyinc/pointy"
 
-	commontypes "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/ingress/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
@@ -205,11 +204,11 @@ func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1
 	pathTypePrefix := networkingv1.PathTypePrefix
 
 	// Create rules for all Astarte components
-	astarteComponents := []commontypes.AstarteComponent{commontypes.AppEngineAPI, commontypes.FlowComponent, commontypes.PairingAPI, commontypes.RealmManagementAPI}
+	astarteComponents := []apiv1alpha1.AstarteComponent{apiv1alpha1.AppEngineAPI, apiv1alpha1.FlowComponent, apiv1alpha1.PairingAPI, apiv1alpha1.RealmManagementAPI}
 
 	// are we supposed to expose housekeeping?
 	if pointy.BoolValue(cr.Spec.API.ExposeHousekeeping, true) {
-		astarteComponents = append(astarteComponents, commontypes.HousekeepingAPI)
+		astarteComponents = append(astarteComponents, apiv1alpha1.HousekeepingAPI)
 	}
 
 	for _, component := range astarteComponents {
@@ -238,8 +237,8 @@ func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1
 
 	// and handle the Dashboard, if needed
 	if pointy.BoolValue(cr.Spec.Dashboard.Deploy, true) {
-		theDashboard := commontypes.Dashboard
-		if misc.IsAstarteComponentDeployed(parent, commontypes.Dashboard) {
+		theDashboard := apiv1alpha1.Dashboard
+		if misc.IsAstarteComponentDeployed(parent, apiv1alpha1.Dashboard) {
 			ingressRules = append(ingressRules, networkingv1.IngressRule{
 				Host: getDashboardHost(cr, parent),
 				IngressRuleValue: networkingv1.IngressRuleValue{
@@ -275,7 +274,7 @@ func getDashboardHost(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1al
 
 func getDashboardServiceRelativePath(cr *ingressv1alpha1.AstarteDefaultIngress) string {
 	// Is the Dashboard deployed without a host?
-	theDashboard := commontypes.Dashboard
+	theDashboard := apiv1alpha1.Dashboard
 	if cr.Spec.Dashboard.Host == "" {
 		return fmt.Sprintf("/%s(/|$)(.*)", theDashboard.ServiceRelativePath())
 	}

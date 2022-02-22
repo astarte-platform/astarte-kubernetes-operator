@@ -26,7 +26,6 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	commontypes "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 )
 
@@ -41,7 +40,7 @@ func upgradeTo10(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Schem
 
 	// Step 1: Migrate the Database
 	// 1.0 allows us to do this "live". So simply upgrade Housekeeping and wait for it to settle while the cluster remains up.
-	recorder.Event(cr, "Normal", commontypes.AstarteResourceEventUpgrade.String(),
+	recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
 		"Starting Database Migration")
 	reqLogger.Info("Upgrading Housekeeping and migrating the Database...")
 	if _, err := upgradeHousekeeping(landing10Version, false, cr, c, scheme, recorder); err != nil {
@@ -51,11 +50,11 @@ func upgradeTo10(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Schem
 	// Now we wait indefinitely until this is done. Upgrading the Database might take *a lot* of time, so unless we enter in
 	// weird states such as CrashLoopBackoff, we wait almost forever
 	if err := waitForHousekeepingUpgrade(cr, c, recorder); err != nil {
-		recorder.Event(cr, "Warning", commontypes.AstarteResourceEventCriticalError.String(),
+		recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
 			"Timed out waiting for Database Migration. Upgrade will be retried, but manual intervention is likely required")
 		return fmt.Errorf("Failed in waiting for Housekeeping deployment and migrations to go up: %v", err)
 	}
-	recorder.Event(cr, "Normal", commontypes.AstarteResourceEventUpgrade.String(),
+	recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
 		"Database migrated successfully")
 	reqLogger.Info("Database successfully migrated!")
 
@@ -86,7 +85,7 @@ func upgradeTo10(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Schem
 	}
 
 	// All done! Upgraded successfully. Now let the standard reconciliation workflow do the rest.
-	recorder.Event(cr, "Normal", commontypes.AstarteResourceEventUpgrade.String(),
+	recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
 		"Astarte upgraded successfully to the 1.0.x series")
 	return nil
 }

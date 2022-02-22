@@ -43,7 +43,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
-	commontypes "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/reconcile"
@@ -102,7 +101,7 @@ func shutdownVerneMQ(cr *apiv1alpha1.Astarte, c client.Client, recorder record.E
 	if err := c.Update(context.TODO(), verneMQStatefulSet); err != nil {
 		return fmt.Errorf("Could not downscale VerneMQ statefulset: %v", err)
 	}
-	recorder.Event(cr, "Normal", commontypes.AstarteResourceEventUpgrade.String(),
+	recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
 		"Bringing down the broker to prevent data loss and mismatches. Devices won't be able to connect until the next reconciliation")
 
 	reqLogger.Info("Waiting for the broker to go down...")
@@ -119,7 +118,7 @@ func shutdownVerneMQ(cr *apiv1alpha1.Astarte, c client.Client, recorder record.E
 
 		return true, nil
 	}); err != nil {
-		recorder.Event(cr, "Warning", commontypes.AstarteResourceEventUpgradeError.String(),
+		recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventUpgradeError.String(),
 			"Could not bring down the Broker. Upgrade will be retried")
 		return fmt.Errorf("Failed in waiting for VerneMQ statefulset to shutdown: %v", err)
 	}
@@ -147,7 +146,7 @@ func drainRabbitMQQueues(cr *apiv1alpha1.Astarte, c client.Client, recorder reco
 		return err
 	}
 
-	recorder.Event(cr, "Normal", commontypes.AstarteResourceEventUpgrade.String(),
+	recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
 		"Draining RabbitMQ Data Queues")
 
 	// Get the queue state
@@ -167,7 +166,7 @@ func drainRabbitMQQueues(cr *apiv1alpha1.Astarte, c client.Client, recorder reco
 		respBody, _ := ioutil.ReadAll(resp.Body)
 		respJSON := []map[string]interface{}{}
 		if e2 := json.Unmarshal(respBody, &respJSON); e2 != nil {
-			recorder.Event(cr, "Warning", commontypes.AstarteResourceEventCriticalError.String(),
+			recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
 				"Unrecoverable error in querying RabbitMQ Management. Upgrade will be retried, but manual intervention is likely required")
 			reqLogger.Error(e2, "Unrecoverable error in querying RabbitMQ Management")
 			return false, e2
@@ -180,14 +179,14 @@ func drainRabbitMQQueues(cr *apiv1alpha1.Astarte, c client.Client, recorder reco
 		}
 		return true, nil
 	}); err != nil {
-		recorder.Event(cr, "Warning", commontypes.AstarteResourceEventCriticalError.String(),
+		recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
 			"Timed out while waiting for queues to drain. Upgrade will be retried, but manual intervention is likely required")
 		reqLogger.Error(err, "Failed in waiting for RabbitMQ queues to be drained")
 		return err
 	}
 
 	reqLogger.Info("RabbitMQ Data Queue(s) drained")
-	recorder.Event(cr, "Normal", commontypes.AstarteResourceEventUpgrade.String(),
+	recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(),
 		"RabbitMQ Data Queues successfully drained")
 
 	if stopChannel != nil {
@@ -293,7 +292,7 @@ func waitForHousekeepingUpgrade(cr *apiv1alpha1.Astarte, c client.Client, record
 			weirdFailuresCount++
 			if weirdFailuresCount > weirdFailuresThreshold {
 				// Something is off.
-				recorder.Event(cr, "Warning", commontypes.AstarteResourceEventCriticalError.String(),
+				recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
 					"Repeated errors in monitoring Database Migration. Manual intervention is likely required")
 				return false, fmt.Errorf("Failed in looking up Housekeeping API Deployment. Most likely, manual intervention is required. %v", err)
 			}
@@ -308,14 +307,14 @@ func waitForHousekeepingUpgrade(cr *apiv1alpha1.Astarte, c client.Client, record
 		}
 
 		// Ensure we aren't in the position where Housekeeping itself is crashing.
-		housekeepingComponent := commontypes.Housekeeping
+		housekeepingComponent := apiv1alpha1.Housekeeping
 		podList := &v1.PodList{}
 		if err = c.List(context.TODO(), podList, client.InNamespace(cr.Namespace),
 			client.MatchingLabels{"astarte-component": housekeepingComponent.DashedString()}); err != nil {
 			weirdFailuresCount++
 			if weirdFailuresCount > weirdFailuresThreshold {
 				// Something is off.
-				recorder.Event(cr, "Warning", commontypes.AstarteResourceEventCriticalError.String(),
+				recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
 					"Repeated errors in monitoring Database Migration. Manual intervention is likely required")
 				return false, fmt.Errorf("Failed in looking up Housekeeping pods. Most likely, manual intervention is required. %v", err)
 			}
@@ -329,7 +328,7 @@ func waitForHousekeepingUpgrade(cr *apiv1alpha1.Astarte, c client.Client, record
 			weirdFailuresCount++
 			if weirdFailuresCount > weirdFailuresThreshold {
 				// Something is off.
-				recorder.Event(cr, "Warning", commontypes.AstarteResourceEventCriticalError.String(),
+				recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
 					"Repeated errors in monitoring Database Migration. Manual intervention is likely required")
 				return false, fmt.Errorf("%v Housekeeping pods found. Most likely, manual intervention is required. %v", len(podList.Items), err)
 			}
@@ -342,7 +341,7 @@ func waitForHousekeepingUpgrade(cr *apiv1alpha1.Astarte, c client.Client, record
 			weirdFailuresCount++
 			if weirdFailuresCount > weirdFailuresThreshold {
 				// Something is off.
-				recorder.Event(cr, "Warning", commontypes.AstarteResourceEventCriticalError.String(),
+				recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
 					"Repeated errors in monitoring Database Migration. Manual intervention is likely required")
 				return false, fmt.Errorf("%v Container Statuses retrieved. Most likely, manual intervention is required. %v", len(podList.Items[0].Status.ContainerStatuses), err)
 			}
@@ -353,7 +352,7 @@ func waitForHousekeepingUpgrade(cr *apiv1alpha1.Astarte, c client.Client, record
 
 		if podList.Items[0].Status.ContainerStatuses[0].State.Waiting != nil {
 			if podList.Items[0].Status.ContainerStatuses[0].State.Waiting.Reason == "CrashLoopBackoff" {
-				recorder.Event(cr, "Warning", commontypes.AstarteResourceEventCriticalError.String(),
+				recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventCriticalError.String(),
 					"Database Migration failed. Manual intervention is likely required")
 				return true, fmt.Errorf("Housekeeping is crashing repeatedly. There has to be a problem in handling Database migrations. Please take manual action as soon as possible")
 			}
@@ -364,14 +363,14 @@ func waitForHousekeepingUpgrade(cr *apiv1alpha1.Astarte, c client.Client, record
 }
 
 func upgradeHousekeeping(version string, drainVerneMQResources bool, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme,
-	recorder record.EventRecorder) (*commontypes.AstarteGenericClusteredResource, error) {
+	recorder record.EventRecorder) (*apiv1alpha1.AstarteGenericClusteredResource, error) {
 	housekeepingBackend := cr.Spec.Components.Housekeeping.Backend.DeepCopy()
 	housekeepingBackend.Version = version
 	housekeepingBackend.Replicas = pointy.Int32(1)
 	// Ensure the policy is Replace. We don't want to have old pods hanging around.
 	housekeepingBackend.DeploymentStrategy = &appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
 	if cr.Spec.VerneMQ.Resources != nil && drainVerneMQResources {
-		resourceRequirements := misc.GetResourcesForAstarteComponent(cr, housekeepingBackend.Resources, commontypes.Housekeeping)
+		resourceRequirements := misc.GetResourcesForAstarteComponent(cr, housekeepingBackend.Resources, apiv1alpha1.Housekeeping)
 		resourceRequirements.Requests.Cpu().Add(*cr.Spec.VerneMQ.Resources.Requests.Cpu())
 		resourceRequirements.Requests.Memory().Add(*cr.Spec.VerneMQ.Resources.Requests.Memory())
 		resourceRequirements.Limits.Cpu().Add(*cr.Spec.VerneMQ.Resources.Limits.Cpu())
@@ -383,9 +382,9 @@ func upgradeHousekeeping(version string, drainVerneMQResources bool, cr *apiv1al
 	}
 
 	// Add a custom, more permissive probe to the Backend
-	if err := reconcile.EnsureAstarteGenericBackendWithCustomProbe(cr, *housekeepingBackend, commontypes.Housekeeping,
+	if err := reconcile.EnsureAstarteGenericBackendWithCustomProbe(cr, *housekeepingBackend, apiv1alpha1.Housekeeping,
 		c, scheme, getSpecialHousekeepingMigrationProbe("/health")); err != nil {
-		recorder.Event(cr, "Warning", commontypes.AstarteResourceEventUpgradeError.String(),
+		recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventUpgradeError.String(),
 			"Could not initiate Database Migration. Upgrade will be retried")
 		return nil, err
 	}
@@ -394,9 +393,9 @@ func upgradeHousekeeping(version string, drainVerneMQResources bool, cr *apiv1al
 	housekeepingAPI.Version = version
 	// Ensure the policy is Replace. We don't want to have old pods hanging around.
 	housekeepingAPI.DeploymentStrategy = &appsv1.DeploymentStrategy{Type: appsv1.RecreateDeploymentStrategyType}
-	if err := reconcile.EnsureAstarteGenericAPIWithCustomProbe(cr, *housekeepingAPI, commontypes.HousekeepingAPI, c,
+	if err := reconcile.EnsureAstarteGenericAPIWithCustomProbe(cr, *housekeepingAPI, apiv1alpha1.HousekeepingAPI, c,
 		scheme, getSpecialHousekeepingMigrationProbe("/health")); err != nil {
-		recorder.Event(cr, "Warning", commontypes.AstarteResourceEventUpgradeError.String(),
+		recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventUpgradeError.String(),
 			"Could not initiate Database Migration. Upgrade will be retried")
 		return nil, err
 	}
@@ -436,7 +435,7 @@ func tearDownCFSSLStatefulSet(cr *apiv1alpha1.Astarte, c client.Client, recorder
 	if err := c.Delete(context.TODO(), CFSSLStatefulSet); err != nil {
 		return fmt.Errorf("Could not tear down CFSSL StatefulSet: %v", err)
 	}
-	recorder.Event(cr, "Normal", commontypes.AstarteResourceEventUpgrade.String(), "Tearing down the CFSSL StatefulSet.")
+	recorder.Event(cr, "Normal", apiv1alpha1.AstarteResourceEventUpgrade.String(), "Tearing down the CFSSL StatefulSet.")
 
 	reqLogger.Info("Waiting for the CFSSL StatefulSet to go down...")
 	// Now wait
@@ -447,7 +446,7 @@ func tearDownCFSSLStatefulSet(cr *apiv1alpha1.Astarte, c client.Client, recorder
 		}
 		return false, fmt.Errorf("Failed in waiting CFSSL StatefulSet to be teared down.")
 	}); err != nil {
-		recorder.Event(cr, "Warning", commontypes.AstarteResourceEventUpgradeError.String(),
+		recorder.Event(cr, "Warning", apiv1alpha1.AstarteResourceEventUpgradeError.String(),
 			"Could not teard down the CFSSL StatefulSet. Upgrade will be retried")
 		return err
 	}
