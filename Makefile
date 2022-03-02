@@ -20,6 +20,7 @@ KUSTOMIZE_VERSION = v3.8.7
 # Note: the major lags behind by one (see https://github.com/kubernetes/code-generator#where-does-it-come-from).
 CONVERSION_GEN_VERSION = v0.19.16
 CRD_REF_DOCS_VERSION=v0.0.8
+HELM_DOCS_GEN_VERSION = v1.7.0
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.23
@@ -222,6 +223,30 @@ endif
 crd-docs: crd-ref-docs ## Generate API reference documentation from code.
 	$(CRD_REF_DOCS) --config="docs/autogen/config.yaml" --renderer=markdown --max-depth=10 \
 		--source-path="apis" --output-path="docs/content/index.md"
+
+.PHONY: norwoodj-helm-docs
+norwoodj-helm-docs: ## Download helm-docs locally if necessary.
+ifeq (, $(shell which helm-docs))
+	@{ \
+	set -e ;\
+    HELM_DOCS_TMP_DIR=$$(mktemp -d) ;\
+    cd $$HELM_DOCS_TMP_DIR ;\
+    go mod init tmp ;\
+    go get github.com/norwoodj/helm-docs/cmd/helm-docs@${HELM_DOCS_GEN_VERSION} ;\
+    rm -rf $$HELM_DOCS_TMP_DIR ;\
+    }
+HELM_DOCS_GEN=$(GOBIN)/helm-docs
+else
+HELM_DOCS_GEN=$(shell which helm-docs)
+endif
+
+.PHONY: chart-docs
+chart-docs: norwoodj-helm-docs ## Generate Helm Chart docs.
+	$(HELM_DOCS_GEN) --chart-search-root charts \
+		-t ../docs/autogen/templates/helm-chart/README.md.gotmpl
+
+.PHONY: docs
+docs: crd-docs chart-docs ## Generate docs for CRDs and Helm Chart.
 
 ##@ Linter
 
