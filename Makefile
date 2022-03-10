@@ -16,10 +16,10 @@ CONTROLLER_GEN_VERSION = v0.8.0
 CONTROLLER_RUNTIME_VERSION = v0.11.0 # This must be coincident with the version set in go.mod
 GOLANGCI_VERSION = v1.35.2
 KUSTOMIZE_VERSION = v3.8.7
-# Conversion-gen version should match the older k8s version supported by the operator. 
+# Conversion-gen version should match the older k8s version supported by the operator.
 # Note: the major lags behind by one (see https://github.com/kubernetes/code-generator#where-does-it-come-from).
 CONVERSION_GEN_VERSION = v0.19.16
-CRD_REF_DOCS_VERSION=v0.0.8-0.20220124171422-efa87ff888e6 #Master, wait for v0.0.8
+CRD_REF_DOCS_VERSION=v0.0.8
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.23

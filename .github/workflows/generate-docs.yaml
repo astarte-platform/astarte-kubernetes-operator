@@ -30,6 +30,15 @@ jobs:
         repository: astarte-platform/docs
         ssh-key: ${{ secrets.DOCS_DEPLOY_KEY }}
         path: docs
+    # Setup Go for crd-ref-docs (ubuntu-20.04 defaults to go 1.15)
+    # see https://github.com/actions/virtual-environments/issues/2447
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '1.17.x'
+    # Generate CRD docs directory for Hugo
+    - run: mkdir docs/content
+      working-directory: astarte-kubernetes-operator
     # Generate CRD docs
     - run: make crd-docs
       working-directory: astarte-kubernetes-operator
