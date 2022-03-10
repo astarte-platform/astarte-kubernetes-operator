@@ -32,8 +32,7 @@ jobs:
         path: docs
     # Generate CRD docs
     - run: make crd-docs
-      with:
-        working-directory: astarte-kubernetes-operator
+      working-directory: astarte-kubernetes-operator
     # Install Hugo
     - name: Setup Hugo
       uses: peaceiris/actions-hugo@v2
