@@ -8,7 +8,7 @@ on:
     # APIs
     - 'apis/**'
     # The workflow itself
-    - '.github/workflows/generate-api-reference-docs.yaml'
+    - '.github/workflows/generate-docs.yaml'
     branches:
     # Create the snapshot only when it matters
     - 'master'
