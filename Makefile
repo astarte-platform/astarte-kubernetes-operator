@@ -18,7 +18,8 @@ GOLANGCI_VERSION = v1.35.2
 KUSTOMIZE_VERSION = v3.8.7
 # Conversion-gen version should match the older k8s version supported by the operator. 
 # Note: the major lags behind by one (see https://github.com/kubernetes/code-generator#where-does-it-come-from).
-CONVERSION_GEN_VERSION = v0.19.16 
+CONVERSION_GEN_VERSION = v0.19.16
+CRD_REF_DOCS_VERSION=v0.0.8-0.20220124171422-efa87ff888e6 #Master, wait for v0.0.8
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.23
@@ -78,7 +79,7 @@ manifests: controller-gen kustomize ## Generate manifests e.g. CRD, RBAC etc.
 .PHONY: generate ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 generate: controller-gen conversion-gen
 	$(CONVERSION_GEN) --go-header-file "./hack/boilerplate.go.txt" --input-dirs "./apis/api/v1alpha2" \
-		-O zz_generated.conversion --output-base "." 
+		-O zz_generated.conversion --output-base "."
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="$(GOPATHS)"
 
 .PHONY: fmt
@@ -198,6 +199,29 @@ bundle: manifests kustomize ## Generate bundle manifests and metadata, then vali
 .PHONY: bundle-build
 bundle-build: ## Build the bundle image.
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+
+##@ Docs
+
+.PHONY: crd-ref-docs
+crd-ref-docs: ## Download crd-ref-docs locally if necessary.
+ifeq (, $(shell which crd-ref-docs))
+	@{ \
+	set -e ;\
+	CRD_REF_DOCS_TMP_DIR=$$(mktemp -d) ;\
+	cd $$CRD_REF_DOCS_TMP_DIR ;\
+	go mod init tmp ;\
+	go get github.com/elastic/crd-ref-docs@${CRD_REF_DOCS_VERSION};\
+	rm -rf $$CRD_REF_DOCS_TMP_DIR ;\
+	}
+CRD_REF_DOCS=$(GOBIN)/crd-ref-docs
+else
+CRD_REF_DOCS=$(shell crd-ref-docs)
+endif
+
+.PHONY: crd-docs
+crd-docs: crd-ref-docs ## Generate API reference documentation from code.
+	$(CRD_REF_DOCS) --config="docs/autogen/config.yaml" --renderer=markdown --max-depth=10 \
+		--source-path="apis" --output-path="docs/content/index.md"
 
 ##@ Linter
 

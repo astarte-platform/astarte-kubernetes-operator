@@ -1,0 +1,70 @@
+name: Docs generation
+
+on:
+  push:
+    paths:
+    # Documentation
+    - 'docs/**'
+    # APIs
+    - 'apis/**'
+    # The workflow itself
+    - '.github/workflows/generate-api-reference-docs.yaml'
+    branches:
+    # Create the snapshot only when it matters
+    - 'master'
+    - 'release-*'
+  # Run on branch/tag creation
+  create:
+
+jobs:
+  docs:
+    runs-on: ubuntu-20.04
+    steps:
+    # Checkout the source
+    - uses: actions/checkout@v2
+      with:
+        path: astarte-kubernetes-operator
+    # Checkout the docs repository
+    - uses: actions/checkout@v2
+      with:
+        repository: astarte-platform/docs
+        ssh-key: ${{ secrets.DOCS_DEPLOY_KEY }}
+        path: docs
+    # Generate CRD docs
+    - run: make crd-docs
+      with:
+        working-directory: astarte-kubernetes-operator
+    # Install Hugo
+    - name: Setup Hugo
+      uses: peaceiris/actions-hugo@v2
+      with:
+        hugo-version: '0.92.2'
+        extended: true
+    # Checkout the hugo-book theme
+    - name: Checkout hugo-book
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+        repository: alex-shpak/hugo-book
+        path: themes/hugo-book
+    # Run hugo to build docs page
+    - name: Build docs
+      run: hugo --config docs/hugo/config.yaml --contentDir docs/content --themesDir ../themes --destination docs/generated
+      working-directory: astarte-kubernetes-operator
+    - name: Copy Docs
+      run: |
+        export DOCS_DIRNAME="$(echo ${{ github.ref }} | sed 's,refs/heads/,,' | sed 's/master/snapshot/g' | sed 's/release-//g')/astarte-kubernetes-operator"
+        rm -rf docs/$DOCS_DIRNAME
+        mkdir -p docs/$DOCS_DIRNAME
+        cp -r astarte-kubernetes-operator/docs/generated/* docs/$DOCS_DIRNAME/
+    - name: Commit files
+      working-directory: ./docs
+      run: |
+        git config --local user.email "astarte-machine@ispirata.com"
+        git config --local user.name "Astarte Bot"
+        git add .
+        git commit -m "Update Astarte Kubernetes Operator documentation"
+    - name: Push changes
+      working-directory: ./docs
+      run: |
+        git push origin master
