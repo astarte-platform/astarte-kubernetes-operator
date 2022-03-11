@@ -46,7 +46,7 @@ jobs:
     - name: Setup Hugo
       uses: peaceiris/actions-hugo@v2
       with:
-        hugo-version: '0.92.2'
+        hugo-version: '0.94.1'
         extended: true
     # Checkout the hugo-book theme
     - name: Checkout hugo-book
