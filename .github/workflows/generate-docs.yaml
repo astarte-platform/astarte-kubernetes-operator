@@ -2,17 +2,17 @@ name: Docs generation
 
 on:
   push:
-    paths:
-    # Documentation
-    - 'docs/**'
-    # APIs
-    - 'apis/**'
-    # The workflow itself
-    - '.github/workflows/generate-docs.yaml'
-    branches:
-    # Create the snapshot only when it matters
-    - 'master'
-    - 'release-*'
+    # paths:
+    # # Documentation
+    # - 'docs/**'
+    # # APIs
+    # - 'apis/**'
+    # # The workflow itself
+    # - '.github/workflows/generate-docs.yaml'
+    # branches:
+    # # Create the snapshot only when it matters
+    # - 'master'
+    # - 'release-*'
   # Run on branch/tag creation
   create:
 
@@ -42,14 +42,11 @@ jobs:
     # Generate CRD docs
     - run: make crd-docs
       working-directory: astarte-kubernetes-operator
-    - name: Check crd-ref-docs generation
-      run: cat docs/content/index.md
-      working-directory: astarte-kubernetes-operator
     # Install Hugo
     - name: Setup Hugo
       uses: peaceiris/actions-hugo@v2
       with:
-        hugo-version: '0.92.2'
+        hugo-version: '0.94.1'
         extended: true
     # Checkout the hugo-book theme
     - name: Checkout hugo-book
@@ -62,25 +59,24 @@ jobs:
     - name: Build docs
       run: hugo --config docs/hugo/config.yaml --contentDir docs/content --themesDir ../themes --destination docs/generated
       working-directory: astarte-kubernetes-operator
-    - name: Check hugo page generation
-      run: |
-        ls docs/generated
-        cat docs/generated/index.html
-      working-directory: astarte-kubernetes-operator
     - name: Copy Docs
       run: |
         export DOCS_DIRNAME="$(echo ${{ github.ref }} | sed 's,refs/heads/,,' | sed 's/master/snapshot/g' | sed 's/release-//g')/astarte-kubernetes-operator"
         rm -rf docs/$DOCS_DIRNAME
         mkdir -p docs/$DOCS_DIRNAME
         cp -r astarte-kubernetes-operator/docs/generated/* docs/$DOCS_DIRNAME/
-    - name: Commit files
-      working-directory: ./docs
+    - name: Check Docs
       run: |
-        git config --local user.email "astarte-machine@ispirata.com"
-        git config --local user.name "Astarte Bot"
-        git add .
-        git commit -m "Update Astarte Kubernetes Operator documentation"
-    - name: Push changes
-      working-directory: ./docs
-      run: |
-        git push origin master
+        export DOCS_DIRNAME="$(echo ${{ github.ref }} | sed 's,refs/heads/,,' | sed 's/master/snapshot/g' | sed 's/release-//g')/astarte-kubernetes-operator"
+        cat docs/$DOCS_DIRNAME/index.html
+    # - name: Commit files
+    #   working-directory: ./docs
+    #   run: |
+    #     git config --local user.email "astarte-machine@ispirata.com"
+    #     git config --local user.name "Astarte Bot"
+    #     git add .
+    #     git commit -m "Update Astarte Kubernetes Operator documentation"
+    # - name: Push changes
+    #   working-directory: ./docs
+    #   run: |
+    #     git push origin master
