@@ -42,6 +42,9 @@ jobs:
     # Generate CRD docs
     - run: make crd-docs
       working-directory: astarte-kubernetes-operator
+    - name: Check crd-ref-docs generation
+      run: cat docs/content/index.md
+      working-directory: astarte-kubernetes-operator
     # Install Hugo
     - name: Setup Hugo
       uses: peaceiris/actions-hugo@v2
@@ -58,6 +61,11 @@ jobs:
     # Run hugo to build docs page
     - name: Build docs
       run: hugo --config docs/hugo/config.yaml --contentDir docs/content --themesDir ../themes --destination docs/generated
+      working-directory: astarte-kubernetes-operator
+    - name: Check hugo page generation
+      run: |
+        ls docs/generated
+        cat docs/generated/index.html
       working-directory: astarte-kubernetes-operator
     - name: Copy Docs
       run: |
