@@ -1,4 +1,3 @@
-baseURL: https://docs.astarte-platform.org/
 title: Astarte Kubernetes Operator APIs
 theme: hugo-book
 

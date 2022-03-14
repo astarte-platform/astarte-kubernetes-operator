@@ -55,13 +55,20 @@ jobs:
         submodules: recursive
         repository: alex-shpak/hugo-book
         path: themes/hugo-book
+    - name: Set docs dirname
+      run: |
+        DOCS_DIRNAME="$(echo ${{ github.ref }} | sed 's,refs/heads/,,' | sed 's/master/snapshot/g' | sed 's/release-//g')/astarte-kubernetes-operator"
+        echo "DOCS_DIRNAME=$DOCS_DIRNAME" >> $GITHUB_ENV
+    - name: Apply docs dirname to Hugo config
+      run: |
+          echo "baseURL: https://docs.astarte-platform.org/$DOCS_DIRNAME" >> docs/hugo/config.yaml
+      working-directory: astarte-kubernetes-operator
     # Run hugo to build docs page
     - name: Build docs
       run: hugo --config docs/hugo/config.yaml --contentDir docs/content --themesDir ../themes --destination docs/generated
       working-directory: astarte-kubernetes-operator
     - name: Copy Docs
       run: |
-        export DOCS_DIRNAME="$(echo ${{ github.ref }} | sed 's,refs/heads/,,' | sed 's/master/snapshot/g' | sed 's/release-//g')/astarte-kubernetes-operator"
         rm -rf docs/$DOCS_DIRNAME
         mkdir -p docs/$DOCS_DIRNAME
         cp -r astarte-kubernetes-operator/docs/generated/* docs/$DOCS_DIRNAME/
