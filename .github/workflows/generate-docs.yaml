@@ -43,11 +43,10 @@ jobs:
     - run: make crd-docs
       working-directory: astarte-kubernetes-operator
     # Install Hugo
-    - name: Setup Hugo
-      uses: peaceiris/actions-hugo@v2
-      with:
-        hugo-version: '0.94.1'
-        extended: true
+    - run: |
+        curl -Lo hugo.tar.gz https://github.com/gohugoio/hugo/releases/download/v0.95.0/hugo_extended_0.95.0_Linux-64bit.tar.gz
+        tar -zxvf hugo.tar.gz hugo
+      working-directory: astarte-kubernetes-operator
     # Checkout the hugo-book theme
     - name: Checkout hugo-book
       uses: actions/checkout@v2
@@ -65,7 +64,7 @@ jobs:
       working-directory: astarte-kubernetes-operator
     # Run hugo to build docs page
     - name: Build docs
-      run: hugo --config docs/hugo/config.yaml --contentDir docs/content --themesDir ../themes --destination docs/generated
+      run: ./hugo --config docs/hugo/config.yaml --contentDir docs/content --themesDir ../themes --destination docs/generated --verbose --verboseLog
       working-directory: astarte-kubernetes-operator
     - name: Copy Docs
       run: |
