@@ -1,6 +1,6 @@
 apiVersion: v2
 name: astarte-operator
-description: A Helm chart for Kubernetes
+description: The Astarte Kubernetes Operator Helm Chart.
 type: application
 
 version: 1.1.0-dev.0

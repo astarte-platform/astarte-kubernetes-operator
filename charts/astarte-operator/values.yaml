@@ -2,16 +2,19 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+# -- The number of Astarte Operator replicas in your cluster.
 replicaCount: 1
 
+# -- Whether or not to install Astarte CRDs.
 installCRDs: true
 
 image:
   repository: astarte/astarte-kubernetes-operator
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
+  # -- Overrides the image tag whose default is the chart appVersion.
   tag: "1.1.0-dev"
 
+# -- Resources to assign to each Astarte Operator instance.
 resources:
   limits:
     cpu: 100m
