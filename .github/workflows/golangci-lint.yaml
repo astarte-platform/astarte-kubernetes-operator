@@ -26,7 +26,11 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
+    # Since v3, golangci-lint needs explicit go-setup
+    - uses: actions/setup-go@v2
+      with:
+        go-version: v1.17.x
     # Run golint-ci
-    - uses: golangci/golangci-lint-action@v2
+    - uses: golangci/golangci-lint-action@v3
       with:
           version: v1.35
