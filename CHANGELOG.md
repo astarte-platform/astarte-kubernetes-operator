@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Upgrade OperatorSDK to v1.17.0.
 - Upgrade go to v1.17.
 - Remove common types. Automate CRD conversion functions generation.
+- Reconcile AstarteDefaultIngress when the Astarte CR changes.
 
 ### Added
 - Add API reference docs generation.

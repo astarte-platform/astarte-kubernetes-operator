@@ -32,7 +32,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/defaultingress"
 
@@ -111,5 +114,34 @@ func (r *AstarteDefaultIngressReconciler) SetupWithManager(mgr ctrl.Manager) err
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&ingressv1alpha1.AstarteDefaultIngress{}, builder.WithPredicates(pred)).
 		Owns(&networkingv1.Ingress{}).
+		Watches(
+			&source.Kind{Type: &apiv1alpha1.Astarte{}},
+			handler.EnqueueRequestsFromMapFunc(astarteToADIReconcileRequestFn(r.Client)),
+		).
 		Complete(r)
+}
+
+func astarteToADIReconcileRequestFn(c client.Client) func(obj client.Object) []reconcile.Request {
+	return func(obj client.Object) []reconcile.Request {
+		astarteName := obj.GetName()
+		ret := []reconcile.Request{}
+		adiList := &ingressv1alpha1.AstarteDefaultIngressList{}
+		_ = c.List(context.Background(), adiList, client.InNamespace(obj.GetNamespace()))
+
+		if len(adiList.Items) == 0 {
+			return ret
+		}
+
+		for _, item := range adiList.Items {
+			if item.Spec.Astarte == astarteName {
+				ret = append(ret, reconcile.Request{
+					NamespacedName: types.NamespacedName{
+						Name:      item.GetName(),
+						Namespace: item.GetNamespace(),
+					},
+				})
+			}
+		}
+		return ret
+	}
 }
