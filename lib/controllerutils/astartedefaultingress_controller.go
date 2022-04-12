@@ -38,6 +38,7 @@ func (r *ReconcileHelper) ComputeADIStatusResource(reqLogger logr.Logger, instan
 	return newStatus
 }
 
+// nolint:dupl
 func (r *ReconcileHelper) computeAPIStatus(reqLogger logr.Logger, instance *ingressv1alpha1.AstarteDefaultIngress) networkingv1.IngressStatus {
 	if !pointy.BoolValue(instance.Spec.API.Deploy, true) {
 		return networkingv1.IngressStatus{}
@@ -52,6 +53,7 @@ func (r *ReconcileHelper) computeAPIStatus(reqLogger logr.Logger, instance *ingr
 	return apiIngress.Status
 }
 
+// nolint:dupl
 func (r *ReconcileHelper) computeBrokerStatus(reqLogger logr.Logger, instance *ingressv1alpha1.AstarteDefaultIngress) corev1.ServiceStatus {
 	if !pointy.BoolValue(instance.Spec.Broker.Deploy, true) {
 		return corev1.ServiceStatus{}
