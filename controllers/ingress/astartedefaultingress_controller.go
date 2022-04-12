@@ -41,6 +41,7 @@ import (
 
 	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/ingress/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/controllerutils"
 )
 
 // AstarteDefaultIngressReconciler reconciles a AstarteDefaultIngress object
@@ -92,6 +93,17 @@ func (r *AstarteDefaultIngressReconciler) Reconcile(ctx context.Context, req ctr
 	}
 	// Reconcile the Broker Ingress
 	if err := defaultingress.EnsureBrokerIngress(instance, astarte, r.Client, r.Scheme, reqLogger); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	reconciler := controllerutils.ReconcileHelper{
+		Client: r.Client,
+		Scheme: r.Scheme,
+	}
+
+	instance.Status = reconciler.ComputeADIStatusResource(reqLogger, instance)
+	if err := r.Client.Status().Update(ctx, instance); err != nil {
+		reqLogger.Error(err, "Failed to update AstarteDefaultIngress status.")
 		return ctrl.Result{}, err
 	}
 
