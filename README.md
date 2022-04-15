@@ -33,7 +33,7 @@ kubectl create namespace cert-manager
 helm install \
   cert-manager jetstack/cert-manager \
   --namespace cert-manager \
-  --version v1.1.0 \
+  --version v1.7.0 \
   --set installCRDs=true
 ```
 
@@ -66,24 +66,28 @@ Astarte's Documentation.
 
 ## Kubernetes support
 
-| Kubernetes Version | Supported | Tested by CI |
-| --- | --- | --- |
-| v1.17.x  | :x: | :x: |
-| v1.18.x  | :x: | :x: |
-| v1.19.x  | :white_check_mark: | :white_check_mark: |
-| v1.20.x  | :white_check_mark: | :white_check_mark: |
-| v1.21.x  | :white_check_mark: | :white_check_mark: |
+| Kubernetes Version | Supported                        | Tested by CI                     |
+| ---                | ---                              | ---                              |
+| v1.18.x            | :x:                              | :x:                              |
+| v1.19.x            | :large_orange_diamond: :warning: | :large_orange_diamond: :warning: |
+| v1.20.x            | :white_check_mark: :warning:     | :white_check_mark: :warning:     |
+| v1.21.x            | :white_check_mark: :warning:     | :white_check_mark: :warning:     |
+| v1.22.x            | :white_check_mark:               | :white_check_mark:               |
+| v1.23.x            | :white_check_mark:               | :white_check_mark:               |
 
 Key:
 
-* :white_check_mark: : Supported and stable
-* :large_orange_diamond: : Partially supported / known to run in production, but not being targeted by the release.
-* :x: : Not supported. Run at your own risk
+* :white_check_mark: : Supported and stable.
+* :large_orange_diamond: : Partially supported / known to run in production, but not being targeted
+  by the release.
+* :x: : Not supported. Run at your own risk.
+* :warning: : Kubernetes version supporting AstarteVoyagerIngress. Please, be aware that the
+  AstarteVoyagerIngress is deprecated and the new AstarteDefaultIngress should be used.
 
 ## Development
 
 Astarte's Operator is written in Go and built upon [Operator
 SDK](https://github.com/operator-framework/operator-sdk). It depends on Go 1.15.x, requires Go
-Modules and Kubernetes >= v1.19.
+Modules and Kubernetes v1.20+.
 
 The project is built with kustomize v3.8.7 and controller-gen v0.5.0.
