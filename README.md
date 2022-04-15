@@ -19,9 +19,9 @@ and how to use it once installed in the
 The preferred way to install and manage Astarte Operator leverages its [Helm
 chart](https://artifacthub.io/packages/helm/astarte/astarte-operator).
 
-Astarte Operator requires [`cert-manager`](https://cert-manager.io/) (`>= v1.1`) to be installed in the
-cluster in its default configuration. If you are using `cert-manager` in your cluster already you
-don't need to take any action - otherwise, you will need to install it. A complete overview on
+Astarte Operator requires [`cert-manager`](https://cert-manager.io/) (`v1.7+`) to be installed in
+the cluster in its default configuration. If you are using `cert-manager` in your cluster already
+you don't need to take any action - otherwise, you will need to install it. A complete overview on
 prerequisites can be found
 [here](https://docs.astarte-platform.org/1.0/020-prerequisites.html#content).
 
