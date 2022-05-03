@@ -132,8 +132,8 @@ func EnsureCassandra(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.S
 	}
 
 	// Let's check upon Storage now.
-	dataVolumeName, persistentVolumeClaim := computePersistentVolumeClaim(statefulSetName+"-data", resource.NewScaledQuantity(30, resource.Giga),
-		cr.Spec.Cassandra.Storage, cr)
+	dataVolumeName, persistentVolumeClaim := computeOrGetPersistentVolumeClaim(statefulSetName+"-data", resource.NewScaledQuantity(30, resource.Giga),
+		cr.Spec.Cassandra.Storage, cr, c)
 
 	// Compute and prepare all data for building the StatefulSet
 	statefulSetSpec := appsv1.StatefulSetSpec{

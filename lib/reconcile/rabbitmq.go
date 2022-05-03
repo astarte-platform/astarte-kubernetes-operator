@@ -161,8 +161,8 @@ func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sc
 	}
 
 	// Let's check upon Storage now.
-	dataVolumeName, persistentVolumeClaim := computePersistentVolumeClaim(statefulSetName+"-data", resource.NewScaledQuantity(4, resource.Giga),
-		cr.Spec.RabbitMQ.Storage, cr)
+	dataVolumeName, persistentVolumeClaim := computeOrGetPersistentVolumeClaim(statefulSetName+"-data", resource.NewScaledQuantity(4, resource.Giga),
+		cr.Spec.RabbitMQ.Storage, cr, c)
 
 	// Compute and prepare all data for building the StatefulSet
 	statefulSetSpec := appsv1.StatefulSetSpec{

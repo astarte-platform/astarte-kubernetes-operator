@@ -302,6 +302,26 @@ func ensureErlangCookieSecret(secretName string, cr *apiv1alpha1.Astarte, c clie
 	return nil
 }
 
+func computeOrGetPersistentVolumeClaim(defaultName string, defaultSize *resource.Quantity, storageSpec *commontypes.AstartePersistentStorageSpec,
+	cr *apiv1alpha1.Astarte, c client.Client) (string, *v1.PersistentVolumeClaim) {
+	name, pvc := computePersistentVolumeClaim(defaultName, defaultSize, storageSpec, cr)
+	if pvc != nil {
+		return name, pvc
+	} else {
+		// need to find the PVC referenced by storageSpec.VolumeDefinition.PersistentVolumeClaim
+		thePersistentVolumeClaim := v1.PersistentVolumeClaim{}
+		if err := c.Get(context.TODO(), types.NamespacedName{
+			Name:      storageSpec.VolumeDefinition.PersistentVolumeClaim.ClaimName,
+			Namespace: cr.Namespace,
+		}, &thePersistentVolumeClaim); err != nil {
+			//fallback to old behaviour: the user will fix manually the statefulset
+			return name, nil
+		} else {
+			return name, &thePersistentVolumeClaim
+		}
+	}
+}
+
 func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quantity, storageSpec *commontypes.AstartePersistentStorageSpec,
 	cr *apiv1alpha1.Astarte) (string, *v1.PersistentVolumeClaim) {
 	var storageClassName string
