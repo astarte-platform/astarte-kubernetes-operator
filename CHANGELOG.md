@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [1.0.3] - Unreleased
+### Added
+- Add `podLabels` field to components spec to set custom labels for Astarte pods.
+
 ### Changed
 - Add Kubernetes 1.22 and 1.23 to the supported list. Remove tests for Kubernetes 1.19.
 

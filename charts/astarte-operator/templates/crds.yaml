@@ -737,6 +737,11 @@ spec:
                     type: string
                   nodes:
                     type: string
+                  podLabels:
+                    additionalProperties:
+                      type: string
+                    description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                    type: object
                   replicas:
                     format: int32
                     type: integer
@@ -1850,6 +1855,11 @@ spec:
                   kind:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
+                  podLabels:
+                    additionalProperties:
+                      type: string
+                    description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                    type: object
                   resources:
                     description: Compute Resources for this Component.
                     properties:
@@ -3262,6 +3272,11 @@ spec:
                       maxResultsLimit:
                         minimum: 100
                         type: integer
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                        type: object
                       replicas:
                         format: int32
                         type: integer
@@ -3781,6 +3796,11 @@ spec:
                         type: string
                       pairingApiUrl:
                         type: string
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                        type: object
                       realmManagementApiUrl:
                         type: string
                       replicas:
@@ -4271,6 +4291,11 @@ spec:
                       kind:
                         description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                         type: string
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                        type: object
                       prefetchCount:
                         description: Controls the prefetch count for Data Updater Plant. When fine-tuning Astarte, this parameter can make a difference for what concerns Data Updater Plant ingestion performance. However, it can also degrade performance significantly and/or increase risk of data loss when misconfigured. Configure this value only if you know what you're doing and you have experience with RabbitMQ. Defaults to 300
                         type: integer
@@ -4763,6 +4788,11 @@ spec:
                       kind:
                         description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                         type: string
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                        type: object
                       replicas:
                         format: int32
                         type: integer
@@ -5254,6 +5284,11 @@ spec:
                           kind:
                             description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -5743,6 +5778,11 @@ spec:
                           kind:
                             description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -6241,6 +6281,11 @@ spec:
                           kind:
                             description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -6730,6 +6775,11 @@ spec:
                           kind:
                             description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -7225,6 +7275,11 @@ spec:
                           kind:
                             description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -7714,6 +7769,11 @@ spec:
                           kind:
                             description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -8232,6 +8292,11 @@ spec:
                       kind:
                         description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                         type: string
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                        type: object
                       replicas:
                         format: int32
                         type: integer
@@ -8850,6 +8915,11 @@ spec:
                   kind:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
+                  podLabels:
+                    additionalProperties:
+                      type: string
+                    description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                    type: object
                   replicas:
                     format: int32
                     type: integer
@@ -10272,6 +10342,11 @@ spec:
                   persistentClientExpiration:
                     description: 'This option allows persistent clients ( = clean session set to false) to be removed if they do not reconnect within ''persistent_client_expiration''. This is a non-standard option. As far as the MQTT specification is concerned, persistent clients persist forever. The expiration period should be an integer followed by one of ''d'', ''w'', ''m'', ''y'' for day, week, month, and year. Default: 1 year'
                     type: string
+                  podLabels:
+                    additionalProperties:
+                      type: string
+                    description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                    type: object
                   port:
                     type: integer
                   replicas:
@@ -11833,6 +11908,11 @@ spec:
                     type: string
                   nodes:
                     type: string
+                  podLabels:
+                    additionalProperties:
+                      type: string
+                    description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                    type: object
                   replicas:
                     format: int32
                     type: integer
@@ -12946,6 +13026,11 @@ spec:
                   kind:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
+                  podLabels:
+                    additionalProperties:
+                      type: string
+                    description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                    type: object
                   resources:
                     description: Compute Resources for this Component.
                     properties:
@@ -14358,6 +14443,11 @@ spec:
                       maxResultsLimit:
                         minimum: 100
                         type: integer
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                        type: object
                       replicas:
                         format: int32
                         type: integer
@@ -14877,6 +14967,11 @@ spec:
                         type: string
                       pairingApiUrl:
                         type: string
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                        type: object
                       realmManagementApiUrl:
                         type: string
                       replicas:
@@ -15367,6 +15462,11 @@ spec:
                       kind:
                         description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                         type: string
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                        type: object
                       prefetchCount:
                         description: Controls the prefetch count for Data Updater Plant. When fine-tuning Astarte, this parameter can make a difference for what concerns Data Updater Plant ingestion performance. However, it can also degrade performance significantly and/or increase risk of data loss when misconfigured. Configure this value only if you know what you're doing and you have experience with RabbitMQ. Defaults to 300
                         type: integer
@@ -15859,6 +15959,11 @@ spec:
                       kind:
                         description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                         type: string
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                        type: object
                       replicas:
                         format: int32
                         type: integer
@@ -16350,6 +16455,11 @@ spec:
                           kind:
                             description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -16839,6 +16949,11 @@ spec:
                           kind:
                             description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -17337,6 +17452,11 @@ spec:
                           kind:
                             description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -17826,6 +17946,11 @@ spec:
                           kind:
                             description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -18321,6 +18446,11 @@ spec:
                           kind:
                             description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -18810,6 +18940,11 @@ spec:
                           kind:
                             description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -19328,6 +19463,11 @@ spec:
                       kind:
                         description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                         type: string
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                        type: object
                       replicas:
                         format: int32
                         type: integer
@@ -19946,6 +20086,11 @@ spec:
                   kind:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
+                  podLabels:
+                    additionalProperties:
+                      type: string
+                    description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                    type: object
                   replicas:
                     format: int32
                     type: integer
@@ -21368,6 +21513,11 @@ spec:
                   persistentClientExpiration:
                     description: 'This option allows persistent clients ( = clean session set to false) to be removed if they do not reconnect within ''persistent_client_expiration''. This is a non-standard option. As far as the MQTT specification is concerned, persistent clients persist forever. The expiration period should be an integer followed by one of ''d'', ''w'', ''m'', ''y'' for day, week, month, and year. Default: 1 year'
                     type: string
+                  podLabels:
+                    additionalProperties:
+                      type: string
+                    description: Additional labels for this Component's pod(s). Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                    type: object
                   port:
                     type: integer
                   replicas:

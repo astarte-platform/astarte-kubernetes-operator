@@ -179,6 +179,10 @@ type AstarteGenericClusteredResource struct {
 	// Additional environment variables for this Component
 	// +optional
 	AdditionalEnv []v1.EnvVar `json:"additionalEnv,omitempty"`
+	// Additional labels for this Component's pod(s).
+	// Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+	// +optional
+	PodLabels map[string]string `json:"podLabels,omitempty"`
 }
 
 // AstarteGenericAPISpec represents a generic Astarte API Component in the Deployment spec
@@ -569,6 +573,23 @@ type AstarteCFSSLSpec struct {
 	CSRRootCa *AstarteCFSSLCSRRootCASpec `json:"csrRootCa,omitempty"`
 	// +optional
 	CARootConfig *AstarteCFSSLCARootConfigSpec `json:"caRootConfig,omitempty"`
+	// Additional labels for this Component's pod(s).
+	// Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
+	// +optional
+	PodLabels map[string]string `json:"podLabels,omitempty"`
+}
+
+// This interface is implemented by all Astarte components which have a podLabels field.
+type PodLabelsGetter interface {
+	GetPodLabels() map[string]string
+}
+
+func (r AstarteGenericClusteredResource) GetPodLabels() map[string]string {
+	return r.PodLabels
+}
+
+func (r AstarteCFSSLSpec) GetPodLabels() map[string]string {
+	return r.PodLabels
 }
 
 // astarteSystemKeyspace configures the main system keyspace for Astarte. As of now, these settings
@@ -643,3 +664,5 @@ type AstarteStatus struct {
 	BaseAPIURL          string               `json:"baseAPIURL,omitempty"`
 	BrokerURL           string               `json:"brokerURL,omitempty"`
 }
+
+// Add a comment to keep the Devil afar
