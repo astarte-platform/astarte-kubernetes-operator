@@ -143,7 +143,7 @@ func EnsureCassandra(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.S
 		},
 		Template: v1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Labels: labels,
+				Labels: getPodLabels(cr.Spec.Cassandra.AstarteGenericClusteredResource, labels),
 			},
 			Spec: getCassandraPodSpec(statefulSetName, dataVolumeName, cr),
 		},

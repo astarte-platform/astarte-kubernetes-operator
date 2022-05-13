@@ -68,6 +68,7 @@ func getRabbitMQSecret(cr *apiv1alpha1.Astarte) *commontypes.LoginCredentialsSec
 }
 
 // EnsureRabbitMQ reconciles the state of RabbitMQ
+// nolint: funlen
 func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	statefulSetName := cr.Name + "-rabbitmq"
 	labels := map[string]string{"app": statefulSetName}
@@ -172,7 +173,7 @@ func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sc
 		},
 		Template: v1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Labels: labels,
+				Labels: getPodLabels(cr.Spec.RabbitMQ.AstarteGenericClusteredResource, labels),
 			},
 			Spec: getRabbitMQPodSpec(statefulSetName, dataVolumeName, cr),
 		},

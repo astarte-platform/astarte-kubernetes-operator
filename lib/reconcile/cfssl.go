@@ -176,7 +176,7 @@ func ensureCFSSLStatefulSet(cr *apiv1alpha1.Astarte, c client.Client, scheme *ru
 		},
 		Template: v1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Labels: labels,
+				Labels: getCFSSLPodLabels(labels, cr),
 			},
 			Spec: getCFSSLPodSpec(statefulSetName, dataVolumeName, "", cr),
 		},
@@ -369,6 +369,18 @@ func getCFSSLPodSpec(statefulSetName, dataVolumeName, secretName string, cr *api
 	}
 
 	return ps
+}
+
+func getCFSSLPodLabels(labels map[string]string, cr *apiv1alpha1.Astarte) map[string]string {
+	// Validating webhook guarantees that custom user labels won't interfere with operator's.
+	podLabels := map[string]string{}
+	for k, v := range labels {
+		podLabels[k] = v
+	}
+	for k, v := range cr.Spec.CFSSL.PodLabels {
+		podLabels[k] = v
+	}
+	return podLabels
 }
 
 func getCFSSLConfigMapData(cr *apiv1alpha1.Astarte) (map[string]string, error) {

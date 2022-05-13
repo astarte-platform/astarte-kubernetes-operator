@@ -21,6 +21,8 @@ package v1alpha1
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -33,6 +35,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/openlyinc/pointy"
+
+	"github.com/astarte-platform/astarte-kubernetes-operator/apis/api/commontypes"
 )
 
 // log is for logging in this package.
@@ -128,6 +132,44 @@ func (r *Astarte) validateAstarte() error {
 		}
 	}
 
+	if err := validatePodLabelsForAstarteClusteredResources(r); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validatePodLabelsForAstarteClusteredResources(r *Astarte) error {
+	resources := []commontypes.AstarteGenericClusteredResource{r.Spec.VerneMQ.AstarteGenericClusteredResource,
+		r.Spec.Cassandra.AstarteGenericClusteredResource, r.Spec.RabbitMQ.AstarteGenericClusteredResource,
+		r.Spec.Components.Flow.AstarteGenericClusteredResource, r.Spec.Components.Housekeeping.Backend,
+		r.Spec.Components.Housekeeping.API.AstarteGenericClusteredResource, r.Spec.Components.RealmManagement.Backend,
+		r.Spec.Components.RealmManagement.API.AstarteGenericClusteredResource, r.Spec.Components.Pairing.Backend,
+		r.Spec.Components.Pairing.API.AstarteGenericClusteredResource, r.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource,
+		r.Spec.Components.TriggerEngine.AstarteGenericClusteredResource, r.Spec.Components.Dashboard.AstarteGenericClusteredResource}
+	for _, v := range resources {
+		if err := validatePodLabelsForAstarteClusteredResource(v); err != nil {
+			return err
+		}
+	}
+
+	// special case for CFSSL which does not include an AstarteGenericClusteredResource
+	for k := range r.Spec.CFSSL.PodLabels {
+		if k == "component" || k == "app" || strings.HasPrefix(k, "astarte-") || strings.HasPrefix(k, "flow-") {
+			return fmt.Errorf("Invalid label key %s: can't be any of 'app', 'component', 'astarte-*', 'flow-*'", k)
+		}
+	}
+
+	return nil
+
+}
+
+func validatePodLabelsForAstarteClusteredResource(r commontypes.AstarteGenericClusteredResource) error {
+	for k := range r.PodLabels {
+		if k == "component" || k == "app" || strings.HasPrefix(k, "astarte-") || strings.HasPrefix(k, "flow-") {
+			return fmt.Errorf("Invalid label key %s: can't be any of 'app', 'component', 'astarte-*', 'flow-*'", k)
+		}
+	}
 	return nil
 }
 
