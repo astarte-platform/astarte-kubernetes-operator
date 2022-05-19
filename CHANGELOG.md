@@ -6,7 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [1.0.3] - Unreleased
 ### Added
-- Add `podLabels` field to components spec to set custom labels for Astarte pods.
+- Add `podLabels` field to Astarte components specs to set custom labels for Astarte pods.
+- Add `serviceAnnotations` field to ADI broker specs to set custom annotations
+  for the exposed broker service.
 
 ### Changed
 - Add Kubernetes 1.22 and 1.23 to the supported list. Remove tests for Kubernetes 1.19.
