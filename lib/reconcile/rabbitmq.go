@@ -220,15 +220,17 @@ func validateRabbitMQDefinition(rmq commontypes.AstarteRabbitMQSpec) error {
 	return nil
 }
 
-func getRabbitMQInitContainers() []v1.Container {
+func getRabbitMQInitContainers(dataVolumeName string) []v1.Container {
 	return []v1.Container{
 		{
-			Name:  "copy-rabbitmq-config",
+			Name:  "setup-rabbitmq",
 			Image: "busybox",
 			Command: []string{
 				"sh",
 				"-c",
-				"cp /configmap/* /etc/rabbitmq",
+				"cp /configmap/* /etc/rabbitmq " +
+					"&& cp /erlang-cookie-secret/.erlang.cookie /var/lib/rabbitmq/.erlang.cookie " +
+					"&& chmod 400 /var/lib/rabbitmq/.erlang.cookie",
 			},
 			VolumeMounts: []v1.VolumeMount{
 				{
@@ -238,6 +240,14 @@ func getRabbitMQInitContainers() []v1.Container {
 				{
 					Name:      "config",
 					MountPath: "/etc/rabbitmq",
+				},
+				{
+					Name:      dataVolumeName,
+					MountPath: "/var/lib/rabbitmq",
+				},
+				{
+					Name:      "erlang-cookie-secret",
+					MountPath: "/erlang-cookie-secret",
 				},
 			},
 		},
@@ -304,13 +314,6 @@ func getRabbitMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.En
 				Key:                  userCredentialsSecretPasswordKey,
 			}},
 		},
-		{
-			Name: "RABBITMQ_ERLANG_COOKIE",
-			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-				LocalObjectReference: v1.LocalObjectReference{Name: statefulSetName + "-cookie"},
-				Key:                  "erlang-cookie",
-			}},
-		},
 	}
 
 	// Add any explicit additional env
@@ -335,7 +338,7 @@ func getRabbitMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.
 	ps := v1.PodSpec{
 		TerminationGracePeriodSeconds: pointy.Int64(30),
 		ServiceAccountName:            serviceAccountName,
-		InitContainers:                getRabbitMQInitContainers(),
+		InitContainers:                getRabbitMQInitContainers(dataVolumeName),
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
 		Affinity:                      getAffinityForClusteredResource(statefulSetName, cr.Spec.RabbitMQ.AstarteGenericClusteredResource),
 		Containers: []v1.Container{
@@ -383,6 +386,20 @@ func getRabbitMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.
 							{
 								Key:  "enabled_plugins",
 								Path: "enabled_plugins",
+							},
+						},
+					},
+				},
+			},
+			{
+				Name: "erlang-cookie-secret",
+				VolumeSource: v1.VolumeSource{
+					Secret: &v1.SecretVolumeSource{
+						SecretName: statefulSetName + "-cookie",
+						Items: []v1.KeyToPath{
+							{
+								Key:  "erlang-cookie",
+								Path: ".erlang.cookie",
 							},
 						},
 					},
