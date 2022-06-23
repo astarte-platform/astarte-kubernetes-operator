@@ -58,6 +58,7 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api commont
 		"component":         "astarte",
 		"astarte-component": component.DashedString(),
 	}
+
 	matchLabels := map[string]string{"app": deploymentName}
 
 	// Ok. Shall we deploy?
@@ -90,7 +91,7 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api commont
 		Strategy: getDeploymentStrategyForClusteredResource(cr, api.AstarteGenericClusteredResource, component),
 		Template: v1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Labels: labels,
+				Labels: computePodLabels(api.AstarteGenericClusteredResource, labels),
 			},
 			Spec: getAstarteGenericAPIPodSpec(deploymentName, cr, api, component, customProbe),
 		},

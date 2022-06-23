@@ -725,3 +725,15 @@ func createOrUpdateService(cr *apiv1alpha1.Astarte, c client.Client, serviceName
 	misc.LogCreateOrUpdateOperationResult(log, result, cr, service)
 	return err
 }
+
+func computePodLabels(r commontypes.PodLabelsGetter, labels map[string]string) map[string]string {
+	// Validating webhook guarantees that custom user labels won't interfere with operator's.
+	podLabels := map[string]string{}
+	for k, v := range labels {
+		podLabels[k] = v
+	}
+	for k, v := range r.GetPodLabels() {
+		podLabels[k] = v
+	}
+	return podLabels
+}

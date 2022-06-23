@@ -83,6 +83,11 @@ spec:
                   loadBalancerIP:
                     description: Set the LoadBalancerIP if and only if the broker service is of type "LoadBalancer". This feature depends on whether the cloud provider supports specifying the LoadBalancerIP when a load balancer is created.
                     type: string
+                  serviceAnnotations:
+                    additionalProperties:
+                      type: string
+                    description: Additional annotations for the service exposing this broker.
+                    type: object
                   serviceType:
                     description: 'Set the type of service employed to expose the broker. Supported values are "NodePort" and "LoadBalancer". The AstarteDefaultIngress handles TLS termination at VerneMQ level and, as such, no TLSSecret is needed to configure the broker service. Default: "LoadBalancer"'
                     type: string
