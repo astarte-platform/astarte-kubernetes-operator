@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Add Kubernetes 1.22 and 1.23 to the supported list. Remove tests for Kubernetes 1.19.
 
+### Fixed
+- Force HTTPS for API and dashboard when SSL is enabled.
+
 ## [1.0.2] - 2022-04-01
 
 ## [1.0.1] - 2021-12-17
