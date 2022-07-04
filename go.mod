@@ -6,6 +6,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/cloudflare/cfssl v1.5.0
 	github.com/go-logr/logr v0.3.0
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/imdario/mergo v0.3.11
 	github.com/jmoiron/sqlx v1.2.1-0.20190826204134-d7d95172beb5 // indirect
@@ -17,7 +18,7 @@ require (
 	github.com/sykesm/zap-logfmt v0.0.4
 	go.uber.org/zap v1.16.0
 	golang.org/x/mod v0.4.0 // indirect
-	golang.org/x/tools v0.0.0-20210105210202-9ed45478a130 // indirect
+	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	honnef.co/go/tools v0.0.1-2020.1.6 // indirect
