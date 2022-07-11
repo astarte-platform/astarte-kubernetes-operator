@@ -132,7 +132,7 @@ func EnsureVerneMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sch
 		},
 		Template: v1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Labels: labels,
+				Labels: computePodLabels(cr.Spec.VerneMQ.AstarteGenericClusteredResource, labels),
 			},
 			Spec: getVerneMQPodSpec(statefulSetName, dataVolumeName, cr),
 		},

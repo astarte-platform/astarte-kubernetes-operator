@@ -80,7 +80,7 @@ func EnsureAPIIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1al
 	misc.LogCreateOrUpdateOperationResult(log, result, cr, configMap)
 
 	// Start with the Ingress Annotations
-	annotations := getAPIIngressAnnotations(cr)
+	annotations := getAPIIngressAnnotations(cr, parent)
 
 	// Then build the Ingress Spec
 	ingressSpec := getAPIIngressSpec(cr, parent)
@@ -112,9 +112,10 @@ func getConfigMapName(cr *ingressv1alpha1.AstarteDefaultIngress) string {
 	return cr.Name + "-api-ingress-config"
 }
 
-func getAPIIngressAnnotations(cr *ingressv1alpha1.AstarteDefaultIngress) map[string]string {
+func getAPIIngressAnnotations(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha1.Astarte) map[string]string {
+	apiSslRedirect := pointy.BoolValue(parent.Spec.API.SSL, true) || pointy.BoolValue(cr.Spec.Dashboard.SSL, true)
 	annotations := map[string]string{
-		"nginx.ingress.kubernetes.io/ssl-redirect":   "false",
+		"nginx.ingress.kubernetes.io/ssl-redirect":   strconv.FormatBool(apiSslRedirect),
 		"nginx.ingress.kubernetes.io/use-regex":      "true",
 		"nginx.ingress.kubernetes.io/rewrite-target": "/$2",
 		"nginx.ingress.kubernetes.io/configuration-snippet": "more_set_headers \"X-Frame-Options: SAMEORIGIN\";\n" +

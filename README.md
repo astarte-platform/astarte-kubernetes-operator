@@ -1,6 +1,6 @@
 # Astarte Kubernetes Operator
 
-![CI](https://github.com/astarte-platform/astarte-kubernetes-operator/workflows/Operator%20e2e%20tests/badge.svg?branch=release-0.11)
+![CI](https://github.com/astarte-platform/astarte-kubernetes-operator/workflows/Operator%20e2e%20tests/badge.svg?branch=release-1.0)
 [![Go Report Card](https://goreportcard.com/badge/github.com/astarte-platform/astarte-kubernetes-operator)](https://goreportcard.com/report/github.com/astarte-platform/astarte-kubernetes-operator)
 [![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 ![Docker Pulls](https://img.shields.io/docker/pulls/astarte/astarte-kubernetes-operator)
@@ -19,9 +19,9 @@ and how to use it once installed in the
 The preferred way to install and manage Astarte Operator leverages its [Helm
 chart](https://artifacthub.io/packages/helm/astarte/astarte-operator).
 
-Astarte Operator requires [`cert-manager`](https://cert-manager.io/) (`>= v1.1`) to be installed in the
-cluster in its default configuration. If you are using `cert-manager` in your cluster already you
-don't need to take any action - otherwise, you will need to install it. A complete overview on
+Astarte Operator requires [`cert-manager`](https://cert-manager.io/) (`v1.7+`) to be installed in
+the cluster in its default configuration. If you are using `cert-manager` in your cluster already
+you don't need to take any action - otherwise, you will need to install it. A complete overview on
 prerequisites can be found
 [here](https://docs.astarte-platform.org/1.0/020-prerequisites.html#content).
 
@@ -33,7 +33,7 @@ kubectl create namespace cert-manager
 helm install \
   cert-manager jetstack/cert-manager \
   --namespace cert-manager \
-  --version v1.1.0 \
+  --version v1.7.0 \
   --set installCRDs=true
 ```
 
@@ -66,24 +66,28 @@ Astarte's Documentation.
 
 ## Kubernetes support
 
-| Kubernetes Version | Supported | Tested by CI |
-| --- | --- | --- |
-| v1.17.x  | :x: | :x: |
-| v1.18.x  | :x: | :x: |
-| v1.19.x  | :white_check_mark: | :white_check_mark: |
-| v1.20.x  | :white_check_mark: | :white_check_mark: |
-| v1.21.x  | :white_check_mark: | :white_check_mark: |
+| Kubernetes Version | Supported                        | Tested by CI                     |
+| ------------------ | -------------------------------- | -------------------------------- |
+| v1.18.x            | :x:                              | :x:                              |
+| v1.19.x            | :large_orange_diamond: :warning: | :large_orange_diamond: :warning: |
+| v1.20.x            | :white_check_mark: :warning:     | :white_check_mark: :warning:     |
+| v1.21.x            | :white_check_mark: :warning:     | :white_check_mark: :warning:     |
+| v1.22.x            | :white_check_mark:               | :white_check_mark:               |
+| v1.23.x            | :white_check_mark:               | :white_check_mark:               |
 
 Key:
 
-* :white_check_mark: : Supported and stable
-* :large_orange_diamond: : Partially supported / known to run in production, but not being targeted by the release.
-* :x: : Not supported. Run at your own risk
+* :white_check_mark: : Supported and stable.
+* :large_orange_diamond: : Partially supported / known to run in production, but not being targeted
+  by the release.
+* :x: : Not supported. Run at your own risk.
+* :warning: : Kubernetes version supporting AstarteVoyagerIngress. Please, be aware that the
+  AstarteVoyagerIngress is deprecated and the new AstarteDefaultIngress should be used.
 
 ## Development
 
 Astarte's Operator is written in Go and built upon [Operator
 SDK](https://github.com/operator-framework/operator-sdk). It depends on Go 1.17.x, requires Go
-Modules and Kubernetes >= v1.19.
+Modules and Kubernetes v1.20+.
 
 The project is built with kustomize v3.8.7, controller-gen v0.8.0 and conversion-gen v0.19.16.

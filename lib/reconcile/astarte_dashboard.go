@@ -106,7 +106,7 @@ func EnsureAstarteDashboard(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.Astar
 		Strategy: getDeploymentStrategyForClusteredResource(cr, dashboard.AstarteGenericClusteredResource, apiv1alpha1.Dashboard),
 		Template: v1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Labels: labels,
+				Labels: computePodLabels(dashboard.AstarteGenericClusteredResource, labels),
 			},
 			Spec: getAstarteDashboardPodSpec(cr, dashboard),
 		},

@@ -175,7 +175,7 @@ func ensureCFSSLStatefulSet(cr *apiv1alpha1.Astarte, c client.Client, scheme *ru
 		},
 		Template: v1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Labels: labels,
+				Labels: computePodLabels(cr.Spec.CFSSL, labels),
 			},
 			Spec: getCFSSLPodSpec(statefulSetName, dataVolumeName, "", cr),
 		},

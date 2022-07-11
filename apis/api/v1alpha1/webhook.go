@@ -21,6 +21,8 @@ package v1alpha1
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -128,6 +130,37 @@ func (r *Astarte) validateAstarte() error {
 		}
 	}
 
+	if err := validatePodLabelsForClusteredResources(r); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validatePodLabelsForClusteredResources(r *Astarte) error {
+	resources := []PodLabelsGetter{r.Spec.VerneMQ.AstarteGenericClusteredResource,
+		r.Spec.Cassandra.AstarteGenericClusteredResource, r.Spec.RabbitMQ.AstarteGenericClusteredResource,
+		r.Spec.Components.Flow.AstarteGenericClusteredResource, r.Spec.Components.Housekeeping.Backend,
+		r.Spec.Components.Housekeeping.API.AstarteGenericClusteredResource, r.Spec.Components.RealmManagement.Backend,
+		r.Spec.Components.RealmManagement.API.AstarteGenericClusteredResource, r.Spec.Components.Pairing.Backend,
+		r.Spec.Components.Pairing.API.AstarteGenericClusteredResource, r.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource,
+		r.Spec.Components.TriggerEngine.AstarteGenericClusteredResource, r.Spec.Components.Dashboard.AstarteGenericClusteredResource, r.Spec.CFSSL}
+	for _, v := range resources {
+		if err := validatePodLabelsForClusteredResource(v); err != nil {
+			return err
+		}
+	}
+
+	return nil
+
+}
+
+func validatePodLabelsForClusteredResource(r PodLabelsGetter) error {
+	for k := range r.GetPodLabels() {
+		if k == "component" || k == "app" || strings.HasPrefix(k, "astarte-") || strings.HasPrefix(k, "flow-") {
+			return fmt.Errorf("Invalid label key %s: can't be any of 'app', 'component', 'astarte-*', 'flow-*'", k)
+		}
+	}
 	return nil
 }
 
