@@ -570,6 +570,7 @@ type AstarteCFSSLSpec struct {
 }
 
 // This interface is implemented by all Astarte components which have a podLabels field.
+// +k8s:deepcopy-gen=false
 type PodLabelsGetter interface {
 	GetPodLabels() map[string]string
 }
