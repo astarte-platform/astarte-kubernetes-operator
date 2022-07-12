@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - Add Kubernetes 1.22 and 1.23 to the supported list. Remove tests for Kubernetes 1.19.
+- Upgrade OperatorSDK to v1.9.0.
 
 ### Fixed
 - Force HTTPS for API and dashboard when SSL is enabled.
