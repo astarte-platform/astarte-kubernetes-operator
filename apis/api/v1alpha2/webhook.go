@@ -134,6 +134,10 @@ func (r *Astarte) validateAstarte() error {
 		return err
 	}
 
+	if err := validateAutoscalerForClusteredResources(r); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -159,6 +163,28 @@ func validatePodLabelsForClusteredResource(r PodLabelsGetter) error {
 	for k := range r.GetPodLabels() {
 		if k == "component" || k == "app" || strings.HasPrefix(k, "astarte-") || strings.HasPrefix(k, "flow-") {
 			return fmt.Errorf("Invalid label key %s: can't be any of 'app', 'component', 'astarte-*', 'flow-*'", k)
+		}
+	}
+	return nil
+}
+
+func validateAutoscalerForClusteredResources(r *Astarte) error {
+	// We have no constraints on autoscaling except for these components
+	excludedResources := []AstarteGenericClusteredResource{
+		r.Spec.RabbitMQ.AstarteGenericClusteredResource,
+		r.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource,
+		r.Spec.Cassandra.AstarteGenericClusteredResource,
+	}
+
+	return validateAutoscalerForClusteredResourcesExcluding(r, excludedResources)
+}
+
+func validateAutoscalerForClusteredResourcesExcluding(r *Astarte, excluded []AstarteGenericClusteredResource) error {
+	if r.Spec.Features.Autoscaling {
+		for _, v := range excluded {
+			if v.Autoscale.Horizontal != "" {
+				return fmt.Errorf("invalid autoscaler: cannot autoscale horizontally RabbitMQ, DataUpdaterPlant or Cassandra")
+			}
 		}
 	}
 	return nil

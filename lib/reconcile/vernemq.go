@@ -152,7 +152,7 @@ func EnsureVerneMQ(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Sch
 		// Assign the Spec.
 		vmqStatefulSet.ObjectMeta.Labels = map[string]string{"component": "astarte"}
 		vmqStatefulSet.Spec = statefulSetSpec
-		vmqStatefulSet.Spec.Replicas = cr.Spec.VerneMQ.Replicas
+		vmqStatefulSet.Spec.Replicas = getReplicaCountForResource(&cr.Spec.VerneMQ.AstarteGenericClusteredResource, cr, c, log)
 
 		return nil
 	})

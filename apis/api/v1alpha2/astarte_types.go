@@ -203,6 +203,18 @@ type AstarteGenericClusteredResource struct {
 	// Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
 	// +optional
 	PodLabels map[string]string `json:"podLabels,omitempty"`
+	// Autoscaling resources for this deployment/statefulset.
+	// If autoscaling is enabled, this will take precedence over the "Replicas" field.
+	// +optional
+	Autoscale AstarteGenericClusteredResourceAutoscalerSpec `json:"autoscaler,omitempty"`
+}
+
+type AstarteGenericClusteredResourceAutoscalerSpec struct {
+	// Name of the HorizontalPodAutoscaler for this deployment/statefulset.
+	// This will take precedence over the "Replicas" field of the parent Astarte component.
+	// +optional
+	Horizontal string `json:"horizontal,omitempty"`
+	// TODO: Vertical string `json:"vertical,omitempty"`
 }
 
 // AstarteGenericAPISpec represents a generic Astarte API Component in the Deployment spec
@@ -598,6 +610,8 @@ type AstarteFeatures struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
 	RealmDeletion bool `json:"realmDeletion,omitempty"`
+	// +optional
+	Autoscaling bool `json:"autoscaling,omitempty"`
 }
 
 // AstarteSpec defines the desired state of Astarte
