@@ -101,6 +101,7 @@ func createIndexedDataUpdaterPlantDeployment(replicaIndex, replicas int, cr *api
 		"astarte-component":     component.DashedString(),
 		"astarte-instance-name": cr.Name,
 	}
+
 	matchLabels := map[string]string{"app": deploymentName}
 
 	// First of all, check if we need to regenerate the cookie.
@@ -115,7 +116,7 @@ func createIndexedDataUpdaterPlantDeployment(replicaIndex, replicas int, cr *api
 		Strategy: getDeploymentStrategyForClusteredResource(cr, dup.AstarteGenericClusteredResource, component),
 		Template: v1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Labels: labels,
+				Labels: computePodLabels(dup.AstarteGenericClusteredResource, labels),
 			},
 			Spec: getAstarteGenericBackendPodSpec(deploymentName, replicaIndex, replicas, cr, dup.AstarteGenericClusteredResource, component, nil),
 		},

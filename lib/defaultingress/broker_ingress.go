@@ -61,6 +61,7 @@ func EnsureBrokerIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv
 			return e
 		}
 		brokerService.Spec.Selector = map[string]string{"app": fmt.Sprintf("%s-vernemq", cr.Spec.Astarte)}
+		brokerService.Annotations = cr.Spec.Broker.ServiceAnnotations
 		brokerService.Spec.Ports = []v1.ServicePort{
 			{
 				Port:       int32(pointy.Int16Value(parent.Spec.VerneMQ.Port, 8883)),

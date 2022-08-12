@@ -28,7 +28,7 @@ import (
 	"github.com/astarte-platform/astarte-kubernetes-operator/test/utils"
 )
 
-var target10Version string = "1.0.2"
+var target10Version string = "1.0.3"
 
 var _ = Describe("Astarte controller", func() {
 	Context("When deploying an Astarte resource", func() {

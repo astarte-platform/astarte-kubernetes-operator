@@ -16,6 +16,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add API reference docs generation.
 - Add status fields to AstarteDefaultIngress.
 
+## [1.0.3] - 2022-07-04
+### Added
+- Add `podLabels` field to Astarte components specs to set custom labels for Astarte pods.
+- Add `serviceAnnotations` field to ADI broker specs to set custom annotations
+  for the exposed broker service.
+
+### Changed
+- Add Kubernetes 1.22 and 1.23 to the supported list. Remove tests for Kubernetes 1.19.
+- Upgrade OperatorSDK to v1.9.0.
+- Update CFSSL to 1.5.0-astarte.3.
+- Update rabbitmq to 3.8.34.
+
+### Fixed
+- Force HTTPS for API and dashboard when SSL is enabled.
+
+## [1.0.2] - 2022-04-01
+
 ## [1.0.1] - 2021-12-17
 ### Changed
 - Implement DUP scalability correctly by distributing multiple deployments and managing queue

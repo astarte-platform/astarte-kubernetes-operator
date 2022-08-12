@@ -90,6 +90,9 @@ type AstarteDefaultIngressBrokerSpec struct {
 	// whether the cloud provider supports specifying the LoadBalancerIP when a load balancer is created.
 	// +optional
 	LoadBalancerIP string `json:"loadBalancerIP,omitempty"`
+	// Additional annotations for the service exposing this broker.
+	// +optional
+	ServiceAnnotations map[string]string `json:"serviceAnnotations,omitempty"`
 }
 
 // AstarteDefaultIngressSpec defines the desired state of the AstarteDefaultIngress resource

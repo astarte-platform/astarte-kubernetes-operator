@@ -898,6 +898,7 @@ func autoConvert_v1alpha2_AstarteCFSSLSpec_To_v1alpha1_AstarteCFSSLSpec(in *Asta
 	out.Storage = (*v1alpha1.AstartePersistentStorageSpec)(unsafe.Pointer(in.Storage))
 	out.CSRRootCa = (*v1alpha1.AstarteCFSSLCSRRootCASpec)(unsafe.Pointer(in.CSRRootCa))
 	out.CARootConfig = (*v1alpha1.AstarteCFSSLCARootConfigSpec)(unsafe.Pointer(in.CARootConfig))
+	out.PodLabels = *(*map[string]string)(unsafe.Pointer(&in.PodLabels))
 	return nil
 }
 
@@ -919,6 +920,7 @@ func autoConvert_v1alpha1_AstarteCFSSLSpec_To_v1alpha2_AstarteCFSSLSpec(in *v1al
 	out.Storage = (*AstartePersistentStorageSpec)(unsafe.Pointer(in.Storage))
 	out.CSRRootCa = (*AstarteCFSSLCSRRootCASpec)(unsafe.Pointer(in.CSRRootCa))
 	out.CARootConfig = (*AstarteCFSSLCARootConfigSpec)(unsafe.Pointer(in.CARootConfig))
+	out.PodLabels = *(*map[string]string)(unsafe.Pointer(&in.PodLabels))
 	return nil
 }
 
@@ -1257,6 +1259,7 @@ func autoConvert_v1alpha2_AstarteGenericClusteredResource_To_v1alpha1_AstarteGen
 	out.Image = in.Image
 	out.Resources = (*v1.ResourceRequirements)(unsafe.Pointer(in.Resources))
 	out.AdditionalEnv = *(*[]v1.EnvVar)(unsafe.Pointer(&in.AdditionalEnv))
+	out.PodLabels = *(*map[string]string)(unsafe.Pointer(&in.PodLabels))
 	return nil
 }
 
@@ -1275,6 +1278,7 @@ func autoConvert_v1alpha1_AstarteGenericClusteredResource_To_v1alpha2_AstarteGen
 	out.Image = in.Image
 	out.Resources = (*v1.ResourceRequirements)(unsafe.Pointer(in.Resources))
 	out.AdditionalEnv = *(*[]v1.EnvVar)(unsafe.Pointer(&in.AdditionalEnv))
+	out.PodLabels = *(*map[string]string)(unsafe.Pointer(&in.PodLabels))
 	return nil
 }
 

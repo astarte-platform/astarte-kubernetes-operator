@@ -1214,6 +1214,12 @@ spec:
                     type: string
                   nodes:
                     type: string
+                  podLabels:
+                    additionalProperties:
+                      type: string
+                    description: Additional labels for this Component's pod(s). Label
+                      keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                    type: object
                   replicas:
                     format: int32
                     type: integer
@@ -3063,6 +3069,12 @@ spec:
                       the client submits requests to. Cannot be updated. In CamelCase.
                       More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
+                  podLabels:
+                    additionalProperties:
+                      type: string
+                    description: Additional labels for this Component's pod(s). Label
+                      keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                    type: object
                   resources:
                     description: Compute Resources for this Component.
                     properties:
@@ -5777,6 +5789,13 @@ spec:
                       maxResultsLimit:
                         minimum: 100
                         type: integer
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Additional labels for this Component's pod(s).
+                          Label keys can't be of the form "app", "component", "astarte-*",
+                          "flow-*"
+                        type: object
                       replicas:
                         format: int32
                         type: integer
@@ -6944,6 +6963,13 @@ spec:
                         type: string
                       pairingApiUrl:
                         type: string
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Additional labels for this Component's pod(s).
+                          Label keys can't be of the form "app", "component", "astarte-*",
+                          "flow-*"
+                        type: object
                       realmManagementApiUrl:
                         type: string
                       replicas:
@@ -8069,6 +8095,13 @@ spec:
                           from the endpoint the client submits requests to. Cannot
                           be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                         type: string
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Additional labels for this Component's pod(s).
+                          Label keys can't be of the form "app", "component", "astarte-*",
+                          "flow-*"
+                        type: object
                       prefetchCount:
                         description: Controls the prefetch count for Data Updater
                           Plant. When fine-tuning Astarte, this parameter can make
@@ -9203,6 +9236,13 @@ spec:
                           from the endpoint the client submits requests to. Cannot
                           be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                         type: string
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Additional labels for this Component's pod(s).
+                          Label keys can't be of the form "app", "component", "astarte-*",
+                          "flow-*"
+                        type: object
                       replicas:
                         format: int32
                         type: integer
@@ -10398,6 +10438,13 @@ spec:
                               this from the endpoint the client submits requests to.
                               Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s).
+                              Label keys can't be of the form "app", "component",
+                              "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -11593,6 +11640,13 @@ spec:
                               this from the endpoint the client submits requests to.
                               Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s).
+                              Label keys can't be of the form "app", "component",
+                              "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -12801,6 +12855,13 @@ spec:
                               this from the endpoint the client submits requests to.
                               Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s).
+                              Label keys can't be of the form "app", "component",
+                              "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -13996,6 +14057,13 @@ spec:
                               this from the endpoint the client submits requests to.
                               Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s).
+                              Label keys can't be of the form "app", "component",
+                              "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -15198,6 +15266,13 @@ spec:
                               this from the endpoint the client submits requests to.
                               Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s).
+                              Label keys can't be of the form "app", "component",
+                              "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -16393,6 +16468,13 @@ spec:
                               this from the endpoint the client submits requests to.
                               Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s).
+                              Label keys can't be of the form "app", "component",
+                              "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -17561,6 +17643,13 @@ spec:
                           from the endpoint the client submits requests to. Cannot
                           be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                         type: string
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Additional labels for this Component's pod(s).
+                          Label keys can't be of the form "app", "component", "astarte-*",
+                          "flow-*"
+                        type: object
                       replicas:
                         format: int32
                         type: integer
@@ -18838,6 +18927,12 @@ spec:
                       the client submits requests to. Cannot be updated. In CamelCase.
                       More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
+                  podLabels:
+                    additionalProperties:
+                      type: string
+                    description: Additional labels for this Component's pod(s). Label
+                      keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                    type: object
                   replicas:
                     format: int32
                     type: integer
@@ -21533,6 +21628,12 @@ spec:
                       integer followed by one of ''d'', ''w'', ''m'', ''y'' for day,
                       week, month, and year. Default: 1 year'
                     type: string
+                  podLabels:
+                    additionalProperties:
+                      type: string
+                    description: Additional labels for this Component's pod(s). Label
+                      keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                    type: object
                   port:
                     type: integer
                   replicas:
@@ -24404,6 +24505,12 @@ spec:
                     type: string
                   nodes:
                     type: string
+                  podLabels:
+                    additionalProperties:
+                      type: string
+                    description: Additional labels for this Component's pod(s). Label
+                      keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                    type: object
                   replicas:
                     format: int32
                     type: integer
@@ -26253,6 +26360,12 @@ spec:
                       the client submits requests to. Cannot be updated. In CamelCase.
                       More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
+                  podLabels:
+                    additionalProperties:
+                      type: string
+                    description: Additional labels for this Component's pod(s). Label
+                      keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                    type: object
                   resources:
                     description: Compute Resources for this Component.
                     properties:
@@ -28967,6 +29080,13 @@ spec:
                       maxResultsLimit:
                         minimum: 100
                         type: integer
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Additional labels for this Component's pod(s).
+                          Label keys can't be of the form "app", "component", "astarte-*",
+                          "flow-*"
+                        type: object
                       replicas:
                         format: int32
                         type: integer
@@ -30134,6 +30254,13 @@ spec:
                         type: string
                       pairingApiUrl:
                         type: string
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Additional labels for this Component's pod(s).
+                          Label keys can't be of the form "app", "component", "astarte-*",
+                          "flow-*"
+                        type: object
                       realmManagementApiUrl:
                         type: string
                       replicas:
@@ -31259,6 +31386,13 @@ spec:
                           from the endpoint the client submits requests to. Cannot
                           be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                         type: string
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Additional labels for this Component's pod(s).
+                          Label keys can't be of the form "app", "component", "astarte-*",
+                          "flow-*"
+                        type: object
                       prefetchCount:
                         description: Controls the prefetch count for Data Updater
                           Plant. When fine-tuning Astarte, this parameter can make
@@ -32393,6 +32527,13 @@ spec:
                           from the endpoint the client submits requests to. Cannot
                           be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                         type: string
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Additional labels for this Component's pod(s).
+                          Label keys can't be of the form "app", "component", "astarte-*",
+                          "flow-*"
+                        type: object
                       replicas:
                         format: int32
                         type: integer
@@ -33588,6 +33729,13 @@ spec:
                               this from the endpoint the client submits requests to.
                               Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s).
+                              Label keys can't be of the form "app", "component",
+                              "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -34783,6 +34931,13 @@ spec:
                               this from the endpoint the client submits requests to.
                               Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s).
+                              Label keys can't be of the form "app", "component",
+                              "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -35991,6 +36146,13 @@ spec:
                               this from the endpoint the client submits requests to.
                               Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s).
+                              Label keys can't be of the form "app", "component",
+                              "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -37186,6 +37348,13 @@ spec:
                               this from the endpoint the client submits requests to.
                               Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s).
+                              Label keys can't be of the form "app", "component",
+                              "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -38388,6 +38557,13 @@ spec:
                               this from the endpoint the client submits requests to.
                               Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s).
+                              Label keys can't be of the form "app", "component",
+                              "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -39583,6 +39759,13 @@ spec:
                               this from the endpoint the client submits requests to.
                               Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          podLabels:
+                            additionalProperties:
+                              type: string
+                            description: Additional labels for this Component's pod(s).
+                              Label keys can't be of the form "app", "component",
+                              "astarte-*", "flow-*"
+                            type: object
                           replicas:
                             format: int32
                             type: integer
@@ -40751,6 +40934,13 @@ spec:
                           from the endpoint the client submits requests to. Cannot
                           be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                         type: string
+                      podLabels:
+                        additionalProperties:
+                          type: string
+                        description: Additional labels for this Component's pod(s).
+                          Label keys can't be of the form "app", "component", "astarte-*",
+                          "flow-*"
+                        type: object
                       replicas:
                         format: int32
                         type: integer
@@ -42028,6 +42218,12 @@ spec:
                       the client submits requests to. Cannot be updated. In CamelCase.
                       More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
+                  podLabels:
+                    additionalProperties:
+                      type: string
+                    description: Additional labels for this Component's pod(s). Label
+                      keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                    type: object
                   replicas:
                     format: int32
                     type: integer
@@ -44723,6 +44919,12 @@ spec:
                       integer followed by one of ''d'', ''w'', ''m'', ''y'' for day,
                       week, month, and year. Default: 1 year'
                     type: string
+                  podLabels:
+                    additionalProperties:
+                      type: string
+                    description: Additional labels for this Component's pod(s). Label
+                      keys can't be of the form "app", "component", "astarte-*", "flow-*"
+                    type: object
                   port:
                     type: integer
                   replicas:
