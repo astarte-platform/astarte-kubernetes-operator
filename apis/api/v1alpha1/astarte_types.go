@@ -33,7 +33,7 @@ import (
 
 // Astarte is the Schema for the astartes API
 // +kubebuilder:subresource:status
-// +kubebuilder:storageversion
+// +kubebuilder:deprecatedversion:warning="The Astarte v1alpha1 version is deprecated, will be removed in Astarte Operator v1.2+"
 type Astarte struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

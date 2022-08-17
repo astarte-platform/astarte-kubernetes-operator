@@ -33,11 +33,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 )
 
-func EnsureBlock(cr *apiv1alpha1.Flow, block apiv1alpha1.ContainerBlockSpec, astarte *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
+func EnsureBlock(cr *apiv1alpha2.Flow, block apiv1alpha2.ContainerBlockSpec, astarte *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
 	// In this, we'll have to orchestrate all workers, including bringing them up/down on demand
 	baseLabels := map[string]string{
 		"component":  "astarte-flow",
@@ -142,8 +142,8 @@ func EnsureBlock(cr *apiv1alpha1.Flow, block apiv1alpha1.ContainerBlockSpec, ast
 	return nil
 }
 
-func getFlowWorkerContainers(existingWorkerSecrets map[string]v1.Secret, baseLabels map[string]string, defaultRmqConfig apiv1alpha1.RabbitMQConfig,
-	cr *apiv1alpha1.Flow, block apiv1alpha1.ContainerBlockSpec, astarte *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) (map[string]v1.Secret, []v1.Container, error) {
+func getFlowWorkerContainers(existingWorkerSecrets map[string]v1.Secret, baseLabels map[string]string, defaultRmqConfig apiv1alpha2.RabbitMQConfig,
+	cr *apiv1alpha2.Flow, block apiv1alpha2.ContainerBlockSpec, astarte *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) (map[string]v1.Secret, []v1.Container, error) {
 	workerContainers := []v1.Container{}
 	for _, w := range block.Workers {
 		workerName := generateWorkerName(cr, block, w, astarte)
@@ -172,7 +172,7 @@ func getFlowWorkerContainers(existingWorkerSecrets map[string]v1.Secret, baseLab
 	return existingWorkerSecrets, workerContainers, nil
 }
 
-func ensureWorkerContainer(block apiv1alpha1.ContainerBlockSpec, worker apiv1alpha1.BlockWorker) v1.Container {
+func ensureWorkerContainer(block apiv1alpha2.ContainerBlockSpec, worker apiv1alpha2.BlockWorker) v1.Container {
 	// Set up a Deployment and reconcile.
 	return v1.Container{
 		// The worker ID, pretty simple
@@ -206,7 +206,7 @@ func ensureWorkerContainer(block apiv1alpha1.ContainerBlockSpec, worker apiv1alp
 	}
 }
 
-func generateVolumesFor(cr *apiv1alpha1.Flow, block apiv1alpha1.ContainerBlockSpec, astarte *apiv1alpha1.Astarte) []v1.Volume {
+func generateVolumesFor(cr *apiv1alpha2.Flow, block apiv1alpha2.ContainerBlockSpec, astarte *apiv1alpha2.Astarte) []v1.Volume {
 	// Start with the block-config volume
 	ret := []v1.Volume{
 		{
@@ -234,7 +234,7 @@ func generateVolumesFor(cr *apiv1alpha1.Flow, block apiv1alpha1.ContainerBlockSp
 	return ret
 }
 
-func generateWorkerConfigurationFor(worker apiv1alpha1.BlockWorker, defaultRmqConfig apiv1alpha1.RabbitMQConfig) (map[string]string, error) {
+func generateWorkerConfigurationFor(worker apiv1alpha2.BlockWorker, defaultRmqConfig apiv1alpha2.RabbitMQConfig) (map[string]string, error) {
 	ret := map[string]string{}
 
 	// Check and configure all Data Providers
@@ -258,7 +258,7 @@ func generateWorkerConfigurationFor(worker apiv1alpha1.BlockWorker, defaultRmqCo
 	return ret, nil
 }
 
-func GenerateBlockName(cr *apiv1alpha1.Flow, block apiv1alpha1.ContainerBlockSpec, astarte *apiv1alpha1.Astarte) string {
+func GenerateBlockName(cr *apiv1alpha2.Flow, block apiv1alpha2.ContainerBlockSpec, astarte *apiv1alpha2.Astarte) string {
 	workerName := fmt.Sprintf("%s-flow-%s-block-%s", astarte.Name, cr.Name, block.BlockID)
 
 	// 253 is the "magic limit" for names in Kubernetes. Ensure we're not past that.
@@ -271,7 +271,7 @@ func GenerateBlockName(cr *apiv1alpha1.Flow, block apiv1alpha1.ContainerBlockSpe
 	return workerName
 }
 
-func generateWorkerName(cr *apiv1alpha1.Flow, block apiv1alpha1.ContainerBlockSpec, worker apiv1alpha1.BlockWorker, astarte *apiv1alpha1.Astarte) string {
+func generateWorkerName(cr *apiv1alpha2.Flow, block apiv1alpha2.ContainerBlockSpec, worker apiv1alpha2.BlockWorker, astarte *apiv1alpha2.Astarte) string {
 	workerName := fmt.Sprintf("%s-flow-%s-block-%s-%s", astarte.Name, cr.Name, block.BlockID, worker.WorkerID)
 
 	// 253 is the "magic limit" for names in Kubernetes. Ensure we're not past that.
@@ -284,14 +284,14 @@ func generateWorkerName(cr *apiv1alpha1.Flow, block apiv1alpha1.ContainerBlockSp
 	return workerName
 }
 
-func generateDefaultRabbitMQConfiguration(astarte *apiv1alpha1.Astarte, c client.Client) (apiv1alpha1.RabbitMQConfig, error) {
+func generateDefaultRabbitMQConfiguration(astarte *apiv1alpha2.Astarte, c client.Client) (apiv1alpha2.RabbitMQConfig, error) {
 	_, _, username, password, err := misc.GetRabbitMQCredentialsFor(astarte, c)
 	if err != nil {
-		return apiv1alpha1.RabbitMQConfig{}, err
+		return apiv1alpha2.RabbitMQConfig{}, err
 	}
 	host, port := misc.GetRabbitMQHostnameAndPort(astarte)
 
-	return apiv1alpha1.RabbitMQConfig{
+	return apiv1alpha2.RabbitMQConfig{
 		Host: host,
 		Port: port,
 		// TODO: Change when we start supporting SSL connections to RabbitMQ

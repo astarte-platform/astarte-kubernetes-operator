@@ -16,7 +16,7 @@
   limitations under the License.
 */
 
-package v1alpha1
+package v1alpha2
 
 import (
 	"context"
@@ -63,7 +63,7 @@ func (r *Flow) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // TODO: Right now, our tools do *not* support AdmissionReview v1. As such, we're forcing only v1beta1. This needs to change to support v1 or v1;v1beta1 as soon
 // as controller-runtime does to be future proof when AdmissionReview v1beta1 will be removed from future Kubernetes versions.
 
-// +kubebuilder:webhook:path=/mutate-api-astarte-platform-org-v1alpha1-astarte,mutating=true,sideEffects=None,failurePolicy=fail,groups=api.astarte-platform.org,resources=astartes,verbs=create;update,versions=v1alpha1,name=mastarte.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-api-astarte-platform-org-v1alpha2-astarte,mutating=true,sideEffects=None,failurePolicy=fail,groups=api.astarte-platform.org,resources=astartes,verbs=create;update,versions=v1alpha2,name=mastarte.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &Astarte{}
 
@@ -75,7 +75,7 @@ func (r *Astarte) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-api-astarte-platform-org-v1alpha1-astarte,mutating=false,sideEffects=None,failurePolicy=fail,groups=api.astarte-platform.org,resources=astartes,versions=v1alpha1,name=vastarte.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:verbs=create;update,path=/validate-api-astarte-platform-org-v1alpha2-astarte,mutating=false,sideEffects=None,failurePolicy=fail,groups=api.astarte-platform.org,resources=astartes,versions=v1alpha2,name=vastarte.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &Astarte{}
 
@@ -164,7 +164,7 @@ func validatePodLabelsForClusteredResource(r PodLabelsGetter) error {
 	return nil
 }
 
-// +kubebuilder:webhook:path=/mutate-api-astarte-platform-org-v1alpha1-astartevoyageringress,mutating=true,sideEffects=None,failurePolicy=fail,groups=api.astarte-platform.org,resources=astartevoyageringresses,verbs=create;update,versions=v1alpha1,name=mastartevoyageringress.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-api-astarte-platform-org-v1alpha2-astartevoyageringress,mutating=true,sideEffects=None,failurePolicy=fail,groups=api.astarte-platform.org,resources=astartevoyageringresses,verbs=create;update,versions=v1alpha2,name=mastartevoyageringress.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &AstarteVoyagerIngress{}
 
@@ -176,7 +176,7 @@ func (r *AstarteVoyagerIngress) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-api-astarte-platform-org-v1alpha1-astartevoyageringress,mutating=false,sideEffects=None,failurePolicy=fail,groups=api.astarte-platform.org,resources=astartevoyageringresses,versions=v1alpha1,name=vastartevoyageringress.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:verbs=create;update,path=/validate-api-astarte-platform-org-v1alpha2-astartevoyageringress,mutating=false,sideEffects=None,failurePolicy=fail,groups=api.astarte-platform.org,resources=astartevoyageringresses,versions=v1alpha2,name=vastartevoyageringress.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &AstarteVoyagerIngress{}
 
@@ -204,7 +204,7 @@ func (r *AstarteVoyagerIngress) ValidateDelete() error {
 	return nil
 }
 
-// +kubebuilder:webhook:path=/mutate-api-astarte-platform-org-v1alpha1-flow,mutating=true,sideEffects=None,failurePolicy=fail,groups=api.astarte-platform.org,resources=flows,verbs=create;update,versions=v1alpha1,name=mflow.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-api-astarte-platform-org-v1alpha2-flow,mutating=true,sideEffects=None,failurePolicy=fail,groups=api.astarte-platform.org,resources=flows,verbs=create;update,versions=v1alpha2,name=mflow.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &Flow{}
 
@@ -216,7 +216,7 @@ func (r *Flow) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-api-astarte-platform-org-v1alpha1-flow,mutating=false,sideEffects=None,failurePolicy=fail,groups=api.astarte-platform.org,resources=flows,versions=v1alpha1,name=vflow.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:verbs=create;update,path=/validate-api-astarte-platform-org-v1alpha2-flow,mutating=false,sideEffects=None,failurePolicy=fail,groups=api.astarte-platform.org,resources=flows,versions=v1alpha2,name=vflow.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &Flow{}
 

@@ -33,12 +33,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 	voyager "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 )
 
-func EnsureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
+func EnsureAPIIngress(cr *apiv1alpha2.AstarteVoyagerIngress, parent *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
 	ingressName := getAPIIngressName(cr)
 	if !pointy.BoolValue(cr.Spec.API.Deploy, true) {
 		// We're not deploying the Ingress, so we're stopping here.
@@ -68,12 +68,12 @@ func EnsureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 	// Now start with the paths
 	apiPaths := []voyager.HTTPIngressPath{}
 	// Create rules for all Astarte components
-	astarteComponents := []apiv1alpha1.AstarteComponent{apiv1alpha1.AppEngineAPI, apiv1alpha1.FlowComponent, apiv1alpha1.HousekeepingAPI, apiv1alpha1.PairingAPI, apiv1alpha1.RealmManagementAPI}
+	astarteComponents := []apiv1alpha2.AstarteComponent{apiv1alpha2.AppEngineAPI, apiv1alpha2.FlowComponent, apiv1alpha2.HousekeepingAPI, apiv1alpha2.PairingAPI, apiv1alpha2.RealmManagementAPI}
 	// Should we serve /metrics?
 	serveMetrics := pointy.BoolValue(cr.Spec.API.ServeMetrics, false)
 	// Is the Dashboard deployed without a host?
-	if misc.IsAstarteComponentDeployed(parent, apiv1alpha1.Dashboard) && cr.Spec.Dashboard.Host == "" {
-		astarteComponents = append(astarteComponents, apiv1alpha1.Dashboard)
+	if misc.IsAstarteComponentDeployed(parent, apiv1alpha2.Dashboard) && cr.Spec.Dashboard.Host == "" {
+		astarteComponents = append(astarteComponents, apiv1alpha2.Dashboard)
 	}
 	for _, component := range astarteComponents {
 		if misc.IsAstarteComponentDeployed(parent, component) {
@@ -102,7 +102,7 @@ func EnsureAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 	return err
 }
 
-func makeIngressRules(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte, apiPaths []voyager.HTTPIngressPath) []voyager.IngressRule {
+func makeIngressRules(cr *apiv1alpha2.AstarteVoyagerIngress, parent *apiv1alpha2.Astarte, apiPaths []voyager.HTTPIngressPath) []voyager.IngressRule {
 	rules := []voyager.IngressRule{}
 	rules = append(rules, voyager.IngressRule{
 		Host:             parent.Spec.API.Host,
@@ -110,7 +110,7 @@ func makeIngressRules(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 	})
 
 	// Is the Dashboard deployed on a separate host?
-	if misc.IsAstarteComponentDeployed(parent, apiv1alpha1.Dashboard) && cr.Spec.Dashboard.Host != "" {
+	if misc.IsAstarteComponentDeployed(parent, apiv1alpha2.Dashboard) && cr.Spec.Dashboard.Host != "" {
 		rules = append(rules, voyager.IngressRule{
 			Host: cr.Spec.Dashboard.Host,
 			IngressRuleValue: voyager.IngressRuleValue{HTTP: &voyager.HTTPIngressRuleValue{
@@ -148,7 +148,7 @@ func makeIngressRules(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1
 	return rules
 }
 
-func getAPIIngressAnnotations(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte) (map[string]string, error) {
+func getAPIIngressAnnotations(cr *apiv1alpha2.AstarteVoyagerIngress, parent *apiv1alpha2.Astarte) (map[string]string, error) {
 	annotations := map[string]string{
 		// Always use this so Astarte can behave correctly
 		voyager.KeepSourceIP: strconv.FormatBool(true),
@@ -191,7 +191,7 @@ func getAPIIngressAnnotations(cr *apiv1alpha1.AstarteVoyagerIngress, parent *api
 	return annotations, nil
 }
 
-func getAPIIngressSpec(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte, c client.Client) (voyager.IngressSpec, error) {
+func getAPIIngressSpec(cr *apiv1alpha2.AstarteVoyagerIngress, parent *apiv1alpha2.Astarte, c client.Client) (voyager.IngressSpec, error) {
 	// Ok - build the Ingress Spec
 	ingressSpec := voyager.IngressSpec{}
 	// TLS first
@@ -238,7 +238,7 @@ func getAPIIngressSpec(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha
 	return ingressSpec, nil
 }
 
-func getLEFixupForAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte,
+func getLEFixupForAPIIngress(cr *apiv1alpha2.AstarteVoyagerIngress, parent *apiv1alpha2.Astarte,
 	c client.Client, apiProcessed, dashboardProcessed bool) (*voyager.IngressTLS, error) {
 	if (!apiProcessed || !dashboardProcessed) && pointy.BoolValue(cr.Spec.Letsencrypt.Use, true) {
 		// Are we bootstrapping?
@@ -269,12 +269,12 @@ func getLEFixupForAPIIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv
 	return nil, nil
 }
 
-func getHTTPIngressPathForAstarteComponent(parent *apiv1alpha1.Astarte, component apiv1alpha1.AstarteComponent,
+func getHTTPIngressPathForAstarteComponent(parent *apiv1alpha2.Astarte, component apiv1alpha2.AstarteComponent,
 	serveMetrics bool, serveMetricsToSubnet string) voyager.HTTPIngressPath {
 	return getHTTPIngressWithPath(parent, component.ServiceRelativePath(), component.ServiceName(), serveMetrics, serveMetricsToSubnet)
 }
 
-func getHTTPIngressWithPath(parent *apiv1alpha1.Astarte, relativePath, serviceName string, serveMetrics bool, serveMetricsToSubnet string) voyager.HTTPIngressPath {
+func getHTTPIngressWithPath(parent *apiv1alpha2.Astarte, relativePath, serviceName string, serveMetrics bool, serveMetricsToSubnet string) voyager.HTTPIngressPath {
 	// Safe HTTP headers to add in responses.
 	backendSSLRules := []string{
 		"http-response add-header X-Frame-Options SAMEORIGIN",
@@ -311,10 +311,10 @@ func getHTTPIngressWithPath(parent *apiv1alpha1.Astarte, relativePath, serviceNa
 	}
 }
 
-func getAPIIngressName(cr *apiv1alpha1.AstarteVoyagerIngress) string {
+func getAPIIngressName(cr *apiv1alpha2.AstarteVoyagerIngress) string {
 	return cr.Name + "-api-ingress"
 }
 
-func isAPIIngressReady(cr *apiv1alpha1.AstarteVoyagerIngress, c client.Client) bool {
+func isAPIIngressReady(cr *apiv1alpha2.AstarteVoyagerIngress, c client.Client) bool {
 	return isIngressReady(getAPIIngressName(cr), cr, c)
 }

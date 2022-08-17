@@ -35,7 +35,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 )
 
 // log is for logging in this package.
@@ -139,11 +139,11 @@ func (r *AstarteDefaultIngress) validateBrokerServiceType() *field.Error {
 	return nil
 }
 
-func (r *AstarteDefaultIngress) validateReferencedAstarte(c client.Client) (*apiv1alpha1.Astarte, *field.Error) {
+func (r *AstarteDefaultIngress) validateReferencedAstarte(c client.Client) (*apiv1alpha2.Astarte, *field.Error) {
 	fldPath := field.NewPath("spec").Child("astarte")
 
 	// ensure that the referenced Astarte instance exists
-	theAstarte := &apiv1alpha1.Astarte{}
+	theAstarte := &apiv1alpha2.Astarte{}
 	if err := c.Get(context.Background(), types.NamespacedName{Name: r.Spec.Astarte, Namespace: r.Namespace}, theAstarte); err != nil {
 		astartedefaultingresslog.Error(err, "Could not find the referenced Astarte.")
 		return nil, field.NotFound(fldPath, r.Spec.Astarte)
@@ -151,7 +151,7 @@ func (r *AstarteDefaultIngress) validateReferencedAstarte(c client.Client) (*api
 	return theAstarte, nil
 }
 
-func (r *AstarteDefaultIngress) validateBrokerTLSConfig(astarte *apiv1alpha1.Astarte) *field.Error {
+func (r *AstarteDefaultIngress) validateBrokerTLSConfig(astarte *apiv1alpha2.Astarte) *field.Error {
 	if !pointy.BoolValue(astarte.Spec.VerneMQ.SSLListener, false) && pointy.BoolValue(r.Spec.Broker.Deploy, true) {
 		fldPath := field.NewPath("spec").Child("broker").Child("deploy")
 		return field.Invalid(fldPath, astarte.Spec.VerneMQ.SSLListenerCertSecretName,
@@ -170,7 +170,7 @@ func (r *AstarteDefaultIngress) validateDashboardTLSConfig() *field.Error {
 	return nil
 }
 
-func (r *AstarteDefaultIngress) validateAPITLSConfig(astarte *apiv1alpha1.Astarte) *field.Error {
+func (r *AstarteDefaultIngress) validateAPITLSConfig(astarte *apiv1alpha2.Astarte) *field.Error {
 	if pointy.BoolValue(astarte.Spec.API.SSL, true) && r.Spec.TLSSecret == "" &&
 		r.Spec.API.TLSSecret == "" && pointy.BoolValue(r.Spec.API.Deploy, true) {
 		fldPath := field.NewPath("spec").Child("api").Child("tlsSecret")

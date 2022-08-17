@@ -23,13 +23,13 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/controllerutils"
 )
 
 const astarteFinalizer = "astarte.astarte-platform.org/finalizer"
 
-func (r *AstarteReconciler) handleFinalization(instance *v1alpha1.Astarte) (ctrl.Result, error) {
+func (r *AstarteReconciler) handleFinalization(instance *v1alpha2.Astarte) (ctrl.Result, error) {
 	if contains(instance.GetFinalizers(), astarteFinalizer) {
 		// Run finalization logic for astarteFinalizer. If the
 		// finalization logic fails, don't remove the finalizer so
@@ -49,7 +49,7 @@ func (r *AstarteReconciler) handleFinalization(instance *v1alpha1.Astarte) (ctrl
 	return ctrl.Result{}, nil
 }
 
-func (r *AstarteReconciler) addFinalizer(cr *v1alpha1.Astarte) error {
+func (r *AstarteReconciler) addFinalizer(cr *v1alpha2.Astarte) error {
 	reqLogger := r.Log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name)
 	reqLogger.Info("Adding Astarte Finalizer")
 	cr.SetFinalizers(append(cr.GetFinalizers(), astarteFinalizer))

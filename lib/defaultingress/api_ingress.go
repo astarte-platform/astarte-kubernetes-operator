@@ -34,12 +34,12 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/openlyinc/pointy"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/ingress/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 )
 
-func EnsureAPIIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
+func EnsureAPIIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
 	ingressName := getAPIIngressName(cr)
 	if !pointy.BoolValue(cr.Spec.API.Deploy, true) {
 		// We're not deploying the Ingress, so we're stopping here.
@@ -112,7 +112,7 @@ func getConfigMapName(cr *ingressv1alpha1.AstarteDefaultIngress) string {
 	return cr.Name + "-api-ingress-config"
 }
 
-func getAPIIngressAnnotations(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha1.Astarte) map[string]string {
+func getAPIIngressAnnotations(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte) map[string]string {
 	apiSslRedirect := pointy.BoolValue(parent.Spec.API.SSL, true) || pointy.BoolValue(cr.Spec.Dashboard.SSL, true)
 	annotations := map[string]string{
 		"nginx.ingress.kubernetes.io/ssl-redirect":   strconv.FormatBool(apiSslRedirect),
@@ -148,7 +148,7 @@ func getAPIIngressAnnotations(cr *ingressv1alpha1.AstarteDefaultIngress, parent 
 	return annotations
 }
 
-func getAPIIngressSpec(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha1.Astarte) networkingv1.IngressSpec {
+func getAPIIngressSpec(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte) networkingv1.IngressSpec {
 	ingressSpec := networkingv1.IngressSpec{
 		// define which ingress controller will implement the ingress
 		IngressClassName: getIngressClassName(cr),
@@ -167,7 +167,7 @@ func getIngressClassName(cr *ingressv1alpha1.AstarteDefaultIngress) *string {
 	return pointy.String(cr.Spec.IngressClass)
 }
 
-func getAPIIngressTLS(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha1.Astarte) []networkingv1.IngressTLS {
+func getAPIIngressTLS(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte) []networkingv1.IngressTLS {
 	ingressTLSs := []networkingv1.IngressTLS{}
 
 	// Check API
@@ -200,16 +200,16 @@ func getAPIIngressTLS(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1al
 	return ingressTLSs
 }
 
-func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha1.Astarte) []networkingv1.IngressRule {
+func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte) []networkingv1.IngressRule {
 	ingressRules := []networkingv1.IngressRule{}
 	pathTypePrefix := networkingv1.PathTypePrefix
 
 	// Create rules for all Astarte components
-	astarteComponents := []apiv1alpha1.AstarteComponent{apiv1alpha1.AppEngineAPI, apiv1alpha1.FlowComponent, apiv1alpha1.PairingAPI, apiv1alpha1.RealmManagementAPI}
+	astarteComponents := []apiv1alpha2.AstarteComponent{apiv1alpha2.AppEngineAPI, apiv1alpha2.FlowComponent, apiv1alpha2.PairingAPI, apiv1alpha2.RealmManagementAPI}
 
 	// are we supposed to expose housekeeping?
 	if pointy.BoolValue(cr.Spec.API.ExposeHousekeeping, true) {
-		astarteComponents = append(astarteComponents, apiv1alpha1.HousekeepingAPI)
+		astarteComponents = append(astarteComponents, apiv1alpha2.HousekeepingAPI)
 	}
 
 	for _, component := range astarteComponents {
@@ -238,8 +238,8 @@ func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1
 
 	// and handle the Dashboard, if needed
 	if pointy.BoolValue(cr.Spec.Dashboard.Deploy, true) {
-		theDashboard := apiv1alpha1.Dashboard
-		if misc.IsAstarteComponentDeployed(parent, apiv1alpha1.Dashboard) {
+		theDashboard := apiv1alpha2.Dashboard
+		if misc.IsAstarteComponentDeployed(parent, apiv1alpha2.Dashboard) {
 			ingressRules = append(ingressRules, networkingv1.IngressRule{
 				Host: getDashboardHost(cr, parent),
 				IngressRuleValue: networkingv1.IngressRuleValue{
@@ -265,7 +265,7 @@ func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1
 	return ingressRules
 }
 
-func getDashboardHost(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha1.Astarte) string {
+func getDashboardHost(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte) string {
 	// Is the Dashboard deployed without a host?
 	if cr.Spec.Dashboard.Host == "" {
 		return parent.Spec.API.Host
@@ -275,7 +275,7 @@ func getDashboardHost(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1al
 
 func getDashboardServiceRelativePath(cr *ingressv1alpha1.AstarteDefaultIngress) string {
 	// Is the Dashboard deployed without a host?
-	theDashboard := apiv1alpha1.Dashboard
+	theDashboard := apiv1alpha2.Dashboard
 	if cr.Spec.Dashboard.Host == "" {
 		return fmt.Sprintf("/%s(/|$)(.*)", theDashboard.ServiceRelativePath())
 	}

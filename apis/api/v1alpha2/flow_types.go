@@ -24,6 +24,7 @@ import (
 )
 
 // +kubebuilder:object:root=true
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 
 // Flow is the Schema for the flows API

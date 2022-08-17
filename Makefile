@@ -79,7 +79,7 @@ manifests: controller-gen kustomize ## Generate manifests e.g. CRD, RBAC etc.
 
 .PHONY: generate ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 generate: controller-gen conversion-gen
-	$(CONVERSION_GEN) --go-header-file "./hack/boilerplate.go.txt" --input-dirs "./apis/api/v1alpha2" \
+	$(CONVERSION_GEN) --go-header-file "./hack/boilerplate.go.txt" --input-dirs "./apis/api/v1alpha1" \
 		-O zz_generated.conversion --output-base "."
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="$(GOPATHS)"
 

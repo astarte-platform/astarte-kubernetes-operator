@@ -32,12 +32,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 	voyager "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 )
 
-func EnsureBrokerIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
+func EnsureBrokerIngress(cr *apiv1alpha2.AstarteVoyagerIngress, parent *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
 	ingressName := getBrokerIngressName(cr)
 	if !pointy.BoolValue(cr.Spec.Broker.Deploy, true) {
 		// We're not deploying the Ingress, so we're stopping here.
@@ -129,7 +129,7 @@ func EnsureBrokerIngress(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alp
 	return err
 }
 
-func getBrokerIngressAnnotations(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte) (map[string]string, error) {
+func getBrokerIngressAnnotations(cr *apiv1alpha2.AstarteVoyagerIngress, parent *apiv1alpha2.Astarte) (map[string]string, error) {
 	annotations := map[string]string{
 		// Always use this so Astarte can behave correctly
 		voyager.KeepSourceIP:        strconv.FormatBool(true),
@@ -166,7 +166,7 @@ func getBrokerIngressAnnotations(cr *apiv1alpha1.AstarteVoyagerIngress, parent *
 	return annotations, nil
 }
 
-func getBrokerIngressSpec(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte, c client.Client) (voyager.IngressSpec, error) {
+func getBrokerIngressSpec(cr *apiv1alpha2.AstarteVoyagerIngress, parent *apiv1alpha2.Astarte, c client.Client) (voyager.IngressSpec, error) {
 	// Build the Ingress Spec
 	ingressSpec := voyager.IngressSpec{}
 	var ingressTLS *voyager.IngressTLS
@@ -197,10 +197,10 @@ func getBrokerIngressSpec(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1al
 	return ingressSpec, nil
 }
 
-func getBrokerIngressName(cr *apiv1alpha1.AstarteVoyagerIngress) string {
+func getBrokerIngressName(cr *apiv1alpha2.AstarteVoyagerIngress) string {
 	return cr.Name + "-vernemq-ingress"
 }
 
-func isBrokerIngressReady(cr *apiv1alpha1.AstarteVoyagerIngress, c client.Client) bool {
+func isBrokerIngressReady(cr *apiv1alpha2.AstarteVoyagerIngress, c client.Client) bool {
 	return isIngressReady(getBrokerIngressName(cr), cr, c)
 }

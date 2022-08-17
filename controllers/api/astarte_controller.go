@@ -38,7 +38,7 @@ import (
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/controllerutils"
 	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 )
 
 // AstarteReconciler reconciles a Astarte object
@@ -65,7 +65,7 @@ func (r *AstarteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	reqLogger := r.Log.WithValues("astarte", req.NamespacedName)
 
 	// Fetch the Astarte instance
-	instance := &apiv1alpha1.Astarte{}
+	instance := &apiv1alpha2.Astarte{}
 	if err := r.Client.Get(ctx, req.NamespacedName, instance); err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -88,7 +88,7 @@ func (r *AstarteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if instance.Spec.ManualMaintenanceMode {
 		// If that is so, compute the status and quit.
 		if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			instance = &apiv1alpha1.Astarte{}
+			instance = &apiv1alpha2.Astarte{}
 			if err := r.Client.Get(ctx, req.NamespacedName, instance); err != nil {
 				return err
 			}
@@ -113,7 +113,7 @@ func (r *AstarteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	newAstarteSemVersion, err := version.GetAstarteSemanticVersionFrom(instance.Spec.Version)
 	if err != nil {
 		// Reconcile every minute if we're here
-		r.Recorder.Eventf(instance, "Warning", apiv1alpha1.AstarteResourceEventInconsistentVersion.String(),
+		r.Recorder.Eventf(instance, "Warning", apiv1alpha2.AstarteResourceEventInconsistentVersion.String(),
 			err.Error(), instance.Spec.Version)
 		return ctrl.Result{RequeueAfter: time.Minute}, err
 	}
@@ -140,7 +140,7 @@ func (r *AstarteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	switch {
 	case instance.Status.AstarteVersion == "":
 		reqLogger.Info("Could not determine an existing Astarte version for this Resource. Assuming this is a new installation.")
-		r.Recorder.Event(instance, "Normal", apiv1alpha1.AstarteResourceEventStatus.String(), "Starting a brand new Astarte Cluster setup")
+		r.Recorder.Event(instance, "Normal", apiv1alpha2.AstarteResourceEventStatus.String(), "Starting a brand new Astarte Cluster setup")
 	case instance.Status.AstarteVersion == version.SnapshotVersion:
 		reqLogger.Info("You are running an Astarte snapshot. Any upgrade phase will be skipped, you hopefully know what you're doing")
 	case instance.Status.AstarteVersion != instance.Spec.Version:
@@ -158,7 +158,7 @@ func (r *AstarteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// Update the status
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		instance := &apiv1alpha1.Astarte{}
+		instance := &apiv1alpha2.Astarte{}
 		if err := r.Client.Get(ctx, req.NamespacedName, instance); err != nil {
 			return err
 		}
@@ -208,7 +208,7 @@ func (r *AstarteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&apiv1alpha1.Astarte{}, builder.WithPredicates(pred)).
+		For(&apiv1alpha2.Astarte{}, builder.WithPredicates(pred)).
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&batchv1.Job{}).

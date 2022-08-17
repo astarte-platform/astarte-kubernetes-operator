@@ -36,19 +36,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/deps"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 )
 
-func getCassandraUserAndPassword(conn *apiv1alpha1.AstarteCassandraConnectionSpec) (string, string) {
+func getCassandraUserAndPassword(conn *apiv1alpha2.AstarteCassandraConnectionSpec) (string, string) {
 	if conn != nil {
 		return conn.Username, conn.Password
 	}
 	return "", ""
 }
 
-func getCassandraUserAndPasswordKeys(conn *apiv1alpha1.AstarteCassandraConnectionSpec) (string, string) {
+func getCassandraUserAndPasswordKeys(conn *apiv1alpha2.AstarteCassandraConnectionSpec) (string, string) {
 	if conn != nil {
 		if conn.Secret != nil {
 			return conn.Secret.UsernameKey, conn.Secret.PasswordKey
@@ -57,7 +57,7 @@ func getCassandraUserAndPasswordKeys(conn *apiv1alpha1.AstarteCassandraConnectio
 	return misc.CassandraDefaultUserCredentialsUsernameKey, misc.CassandraDefaultUserCredentialsPasswordKey
 }
 
-func getCassandraSecret(cr *apiv1alpha1.Astarte) *apiv1alpha1.LoginCredentialsSecret {
+func getCassandraSecret(cr *apiv1alpha2.Astarte) *apiv1alpha2.LoginCredentialsSecret {
 	if cr.Spec.Cassandra.Connection != nil {
 		return cr.Spec.Cassandra.Connection.Secret
 	}
@@ -65,7 +65,7 @@ func getCassandraSecret(cr *apiv1alpha1.Astarte) *apiv1alpha1.LoginCredentialsSe
 }
 
 // EnsureCassandra reconciles Cassandra
-func EnsureCassandra(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func EnsureCassandra(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	//reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name)
 	statefulSetName := cr.Name + "-cassandra"
 	labels := map[string]string{"app": statefulSetName}
@@ -173,7 +173,7 @@ func EnsureCassandra(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.S
 	return nil
 }
 
-func validateCassandraDefinition(cassandra apiv1alpha1.AstarteCassandraSpec) error {
+func validateCassandraDefinition(cassandra apiv1alpha2.AstarteCassandraSpec) error {
 	if !pointy.BoolValue(cassandra.Deploy, true) && cassandra.Nodes == "" {
 		return errors.New("When not deploying Cassandra, the 'nodes' must be specified")
 	}
@@ -193,7 +193,7 @@ func getCassandraProbe() *v1.Probe {
 	}
 }
 
-func getCassandraEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.EnvVar {
+func getCassandraEnvVars(statefulSetName string, cr *apiv1alpha2.Astarte) []v1.EnvVar {
 	maxHeapSize := "1024M"
 	heapNewSize := "256M"
 	if cr.Spec.Cassandra.MaxHeapSize != "" {
@@ -246,7 +246,7 @@ func getCassandraEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.E
 	return envVars
 }
 
-func getCassandraPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.Astarte) v1.PodSpec {
+func getCassandraPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha2.Astarte) v1.PodSpec {
 	resources := v1.ResourceRequirements{}
 	if cr.Spec.Cassandra.Resources != nil {
 		resources = *cr.Spec.Cassandra.Resources
@@ -290,7 +290,7 @@ func getCassandraPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1
 }
 
 // This stuff is useful for other components which need to interact with Cassandra
-func getCassandraNodes(cr *apiv1alpha1.Astarte) string {
+func getCassandraNodes(cr *apiv1alpha2.Astarte) string {
 	replicas := cr.Spec.Cassandra.Replicas
 	if cr.Spec.Cassandra.Nodes != "" {
 		return cr.Spec.Cassandra.Nodes

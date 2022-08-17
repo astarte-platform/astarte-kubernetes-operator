@@ -33,12 +33,12 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/openlyinc/pointy"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/ingress/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 )
 
-func EnsureBrokerIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
+func EnsureBrokerIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
 	// we actually don't have an ingress, but a service which exposes the broker
 	brokerServiceName := getBrokerServiceName(cr)
 	if !pointy.BoolValue(cr.Spec.Broker.Deploy, true) {

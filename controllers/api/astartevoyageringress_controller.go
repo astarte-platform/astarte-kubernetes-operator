@@ -37,7 +37,7 @@ import (
 	voyagercrd "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/voyager"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 )
 
 // AstarteVoyagerIngressReconciler reconciles a AstarteVoyagerIngress object
@@ -62,7 +62,7 @@ func (r *AstarteVoyagerIngressReconciler) Reconcile(ctx context.Context, req ctr
 	reqLogger.Info("Reconciling AstarteVoyagerIngress")
 
 	// Fetch the AstarteVoyagerIngress instance
-	instance := &apiv1alpha1.AstarteVoyagerIngress{}
+	instance := &apiv1alpha2.AstarteVoyagerIngress{}
 	err := r.Client.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -76,7 +76,7 @@ func (r *AstarteVoyagerIngressReconciler) Reconcile(ctx context.Context, req ctr
 	}
 
 	// Get the Astarte instance
-	astarte := &apiv1alpha1.Astarte{}
+	astarte := &apiv1alpha2.Astarte{}
 	if err := r.Client.Get(ctx, types.NamespacedName{Name: instance.Spec.Astarte, Namespace: instance.Namespace}, astarte); err != nil {
 		if errors.IsNotFound(err) {
 			d, _ := time.ParseDuration("30s")
@@ -131,7 +131,7 @@ func (r *AstarteVoyagerIngressReconciler) SetupWithManager(mgr ctrl.Manager) err
 		}
 
 		return ctrl.NewControllerManagedBy(mgr).
-			For(&apiv1alpha1.AstarteVoyagerIngress{}).
+			For(&apiv1alpha2.AstarteVoyagerIngress{}).
 			Complete(r)
 	}
 
@@ -149,7 +149,7 @@ func (r *AstarteVoyagerIngressReconciler) SetupWithManager(mgr ctrl.Manager) err
 
 	// Watch for changes to secondary resource Ingress and requeue the owner AstarteVoyagerIngress
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&apiv1alpha1.AstarteVoyagerIngress{}, builder.WithPredicates(pred)).
+		For(&apiv1alpha2.AstarteVoyagerIngress{}, builder.WithPredicates(pred)).
 		Owns(&voyagercrd.Certificate{}).
 		Owns(&voyagercrd.Ingress{}).
 		Complete(r)

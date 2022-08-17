@@ -32,13 +32,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 )
 
 // EnsureAstarteDashboard reconciles Astarte Dashboard
-func EnsureAstarteDashboard(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.AstarteDashboardSpec, c client.Client, scheme *runtime.Scheme) error {
+func EnsureAstarteDashboard(cr *apiv1alpha2.Astarte, dashboard apiv1alpha2.AstarteDashboardSpec, c client.Client, scheme *runtime.Scheme) error {
 	reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name, "Astarte.Component", "dashboard")
 	deploymentName := cr.Name + "-dashboard"
 	serviceName := cr.Name + "-dashboard"
@@ -103,7 +103,7 @@ func EnsureAstarteDashboard(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.Astar
 		Selector: &metav1.LabelSelector{
 			MatchLabels: matchLabels,
 		},
-		Strategy: getDeploymentStrategyForClusteredResource(cr, dashboard.AstarteGenericClusteredResource, apiv1alpha1.Dashboard),
+		Strategy: getDeploymentStrategyForClusteredResource(cr, dashboard.AstarteGenericClusteredResource, apiv1alpha2.Dashboard),
 		Template: v1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: computePodLabels(dashboard.AstarteGenericClusteredResource, labels),
@@ -134,8 +134,8 @@ func EnsureAstarteDashboard(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.Astar
 	return nil
 }
 
-func getAstarteDashboardPodSpec(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.AstarteDashboardSpec) v1.PodSpec {
-	component := apiv1alpha1.Dashboard
+func getAstarteDashboardPodSpec(cr *apiv1alpha2.Astarte, dashboard apiv1alpha2.AstarteDashboardSpec) v1.PodSpec {
+	component := apiv1alpha2.Dashboard
 	ps := v1.PodSpec{
 		TerminationGracePeriodSeconds: pointy.Int64(30),
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
@@ -158,7 +158,7 @@ func getAstarteDashboardPodSpec(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.A
 	return ps
 }
 
-func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard apiv1alpha1.AstarteDashboardSpec) map[string]string {
+func getAstarteDashboardConfigMapData(cr *apiv1alpha2.Astarte, dashboard apiv1alpha2.AstarteDashboardSpec) map[string]string {
 	dashboardConfig := make(map[string]interface{})
 
 	isAstarte10 := version.CheckConstraintAgainstAstarteComponentVersion(">= 1.0.0", dashboard.Version, cr.Spec.Version) == nil
@@ -166,7 +166,7 @@ func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard apiv1al
 	if isAstarte10 {
 		// Astarte 1.0+ just needs astarte_api_url, and single API urls only if they're explicit
 		dashboardConfig["astarte_api_url"] = getBaseAstarteAPIURL(cr)
-		dashboardConfig["enable_flow_preview"] = misc.IsAstarteComponentDeployed(cr, apiv1alpha1.FlowComponent)
+		dashboardConfig["enable_flow_preview"] = misc.IsAstarteComponentDeployed(cr, apiv1alpha2.FlowComponent)
 	} else {
 		// secure_connection is needed only for Astarte pre-1.0
 		dashboardConfig["secure_connection"] = pointy.BoolValue(cr.Spec.API.SSL, true)
@@ -209,7 +209,7 @@ func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard apiv1al
 	if len(dashboard.Config.Auth) > 0 {
 		dashboardConfig["auth"] = dashboard.Config.Auth
 	} else {
-		dashboardConfig["auth"] = []apiv1alpha1.AstarteDashboardConfigAuthSpec{{Type: "token"}}
+		dashboardConfig["auth"] = []apiv1alpha2.AstarteDashboardConfigAuthSpec{{Type: "token"}}
 	}
 
 	configJSON, _ := json.Marshal(dashboardConfig)
@@ -219,7 +219,7 @@ func getAstarteDashboardConfigMapData(cr *apiv1alpha1.Astarte, dashboard apiv1al
 	}
 }
 
-func getAstarteDashboardVolumes(cr *apiv1alpha1.Astarte) []v1.Volume {
+func getAstarteDashboardVolumes(cr *apiv1alpha2.Astarte) []v1.Volume {
 	return []v1.Volume{
 		{
 			Name: "config",

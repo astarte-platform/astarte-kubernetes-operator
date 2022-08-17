@@ -30,12 +30,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 	voyager "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 )
 
-func EnsureCertificate(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
+func EnsureCertificate(cr *apiv1alpha2.AstarteVoyagerIngress, parent *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
 	acmeSecretName := cr.Name + "-voyager-acme-account"
 	certificateName := getCertificateName(cr)
 	if !pointy.BoolValue(cr.Spec.Letsencrypt.Use, true) {
@@ -105,7 +105,7 @@ func EnsureCertificate(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha
 	return err
 }
 
-func getCertificateDomains(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1alpha1.Astarte) []string {
+func getCertificateDomains(cr *apiv1alpha2.AstarteVoyagerIngress, parent *apiv1alpha2.Astarte) []string {
 	domains := cr.Spec.Letsencrypt.Domains
 	if len(domains) == 0 {
 		// Compute the domains list based on the parent Astarte resource
@@ -122,11 +122,11 @@ func getCertificateDomains(cr *apiv1alpha1.AstarteVoyagerIngress, parent *apiv1a
 	return domains
 }
 
-func getCertificateName(cr *apiv1alpha1.AstarteVoyagerIngress) string {
+func getCertificateName(cr *apiv1alpha2.AstarteVoyagerIngress) string {
 	return cr.Name + "-ingress-certificate"
 }
 
-func isBootstrappingLEChallenge(cr *apiv1alpha1.AstarteVoyagerIngress, c client.Client) (bool, error) {
+func isBootstrappingLEChallenge(cr *apiv1alpha2.AstarteVoyagerIngress, c client.Client) (bool, error) {
 	// If we're not using Let's Encrypt, that's pretty easy
 	if !pointy.BoolValue(cr.Spec.Letsencrypt.Use, true) {
 		return false, nil

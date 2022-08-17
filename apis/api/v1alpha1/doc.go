@@ -18,5 +18,6 @@
 
 // Package v1alpha1 contains API Schema definitions for the api v1alpha1 API group
 // +kubebuilder:object:generate=true
+// +k8s:conversion-gen=github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2
 // +groupName=api.astarte-platform.org
 package v1alpha1
