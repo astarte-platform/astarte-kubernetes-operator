@@ -11,14 +11,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-api-astarte-platform-org-v1alpha1-astarte
+      path: /mutate-api-astarte-platform-org-v1alpha2-astarte
   failurePolicy: Fail
   name: mastarte.kb.io
   rules:
   - apiGroups:
     - api.astarte-platform.org
     apiVersions:
-    - v1alpha1
+    - v1alpha2
     operations:
     - CREATE
     - UPDATE
@@ -31,14 +31,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-api-astarte-platform-org-v1alpha1-astartevoyageringress
+      path: /mutate-api-astarte-platform-org-v1alpha2-astartevoyageringress
   failurePolicy: Fail
   name: mastartevoyageringress.kb.io
   rules:
   - apiGroups:
     - api.astarte-platform.org
     apiVersions:
-    - v1alpha1
+    - v1alpha2
     operations:
     - CREATE
     - UPDATE
@@ -51,14 +51,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-api-astarte-platform-org-v1alpha1-flow
+      path: /mutate-api-astarte-platform-org-v1alpha2-flow
   failurePolicy: Fail
   name: mflow.kb.io
   rules:
   - apiGroups:
     - api.astarte-platform.org
     apiVersions:
-    - v1alpha1
+    - v1alpha2
     operations:
     - CREATE
     - UPDATE
@@ -98,14 +98,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-api-astarte-platform-org-v1alpha1-astarte
+      path: /validate-api-astarte-platform-org-v1alpha2-astarte
   failurePolicy: Fail
   name: vastarte.kb.io
   rules:
   - apiGroups:
     - api.astarte-platform.org
     apiVersions:
-    - v1alpha1
+    - v1alpha2
     operations:
     - CREATE
     - UPDATE
@@ -118,14 +118,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-api-astarte-platform-org-v1alpha1-astartevoyageringress
+      path: /validate-api-astarte-platform-org-v1alpha2-astartevoyageringress
   failurePolicy: Fail
   name: vastartevoyageringress.kb.io
   rules:
   - apiGroups:
     - api.astarte-platform.org
     apiVersions:
-    - v1alpha1
+    - v1alpha2
     operations:
     - CREATE
     - UPDATE
@@ -138,14 +138,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-api-astarte-platform-org-v1alpha1-flow
+      path: /validate-api-astarte-platform-org-v1alpha2-flow
   failurePolicy: Fail
   name: vflow.kb.io
   rules:
   - apiGroups:
     - api.astarte-platform.org
     apiVersions:
-    - v1alpha1
+    - v1alpha2
     operations:
     - CREATE
     - UPDATE

@@ -15,7 +15,10 @@ spec:
     singular: flow
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - deprecated: true
+    deprecationWarning: The AstarteFlow v1alpha1 version is deprecated, will be removed
+      in Astarte Operator v1.2+
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Flow is the Schema for the flows API
@@ -510,7 +513,7 @@ spec:
             type: object
         type: object
     served: true
-    storage: true
+    storage: false
     subresources:
       status: {}
   - name: v1alpha2
@@ -1008,7 +1011,7 @@ spec:
             type: object
         type: object
     served: true
-    storage: false
+    storage: true
     subresources:
       status: {}
 status:
