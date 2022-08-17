@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Remove common types. Automate CRD conversion functions generation.
 - Reconcile AstarteDefaultIngress when the Astarte CR changes.
 - Upgrade OperatorSDK to v1.21.0.
+- Add deprecation notice for v1alpha1 resources in the api.astarte-platform.org group: i.e. Astarte,
+  AstarteFlow and AstarteVoyagerIngresses will be unavailable starting from Astarte Operator v1.2+.
+- v1alpha2 is the storage version for resources in the api.astarte-platform.org group.
 
 ### Added
 - Add API reference docs generation.
