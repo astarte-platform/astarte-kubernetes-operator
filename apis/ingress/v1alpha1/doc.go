@@ -17,6 +17,6 @@
 */
 
 // Package v1alpha1 contains API Schema definitions for the ingress v1alpha1 API group
-//+kubebuilder:object:generate=true
-//+groupName=ingress.astarte-platform.org
+// +kubebuilder:object:generate=true
+// +groupName=ingress.astarte-platform.org
 package v1alpha1
