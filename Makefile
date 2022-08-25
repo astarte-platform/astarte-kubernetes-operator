@@ -2,6 +2,17 @@
 VERSION ?= 1.1.0-dev
 # Default bundle image tag
 BUNDLE_IMG ?= astarte/astarte-kubernetes-operator:$(VERSION)
+# BUNDLE_GEN_FLAGS are the flags passed to the operator-sdk generate bundle command
+BUNDLE_GEN_FLAGS ?= -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+
+# USE_IMAGE_DIGESTS defines if images are resolved via tags or digests
+# You can enable this value if you would like to use SHA Based Digests
+# To enable set flag to true
+USE_IMAGE_DIGESTS ?= false
+ifeq ($(USE_IMAGE_DIGESTS), true)
+    BUNDLE_GEN_FLAGS += --use-image-digests
+endif
+
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
@@ -10,17 +21,6 @@ ifneq ($(origin DEFAULT_CHANNEL), undefined)
 BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
-
-# Tools versions
-CONTROLLER_GEN_VERSION = v0.8.0
-CONTROLLER_RUNTIME_VERSION = v0.11.0 # This must be coincident with the version set in go.mod
-GOLANGCI_VERSION = v1.35.2
-KUSTOMIZE_VERSION = v3.8.7
-# Conversion-gen version should match the older k8s version supported by the operator.
-# Note: the major lags behind by one (see https://github.com/kubernetes/code-generator#where-does-it-come-from).
-CONVERSION_GEN_VERSION = v0.19.16
-CRD_REF_DOCS_VERSION=v0.0.8
-HELM_DOCS_GEN_VERSION = v1.7.0
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.23
@@ -143,106 +143,84 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
-.PHONY: controller-gen
-controller-gen: ## Download controller-gen locally if necessary.
-ifeq (, $(shell which controller-gen))
-	@{ \
-	set -e ;\
-	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$CONTROLLER_GEN_TMP_DIR ;\
-	go mod init tmp ;\
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@${CONTROLLER_GEN_VERSION} ;\
-	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
-	}
-CONTROLLER_GEN=$(GOBIN)/controller-gen
-else
-CONTROLLER_GEN=$(shell which controller-gen)
-endif
-
-.PHONY: kustomize
-kustomize: ## Download kustomize locally if necessary.
-ifeq (, $(shell which kustomize))
-	@{ \
-	set -e ;\
-	KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$KUSTOMIZE_GEN_TMP_DIR ;\
-	go mod init tmp ;\
-	go get sigs.k8s.io/kustomize/kustomize/v3@${KUSTOMIZE_VERSION} ;\
-	rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
-	}
-KUSTOMIZE=$(GOBIN)/kustomize
-else
-KUSTOMIZE=$(shell which kustomize)
-endif
-
-.PHONY: conversion-gen
-conversion-gen: ## Download conversion-gen locally if necessary.
-ifeq (, $(shell which conversion-gen))
-	@{ \
-	set -e ;\
-	CONVERSION_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$CONVERSION_GEN_TMP_DIR ;\
-	go mod init tmp ;\
-	go get k8s.io/code-generator/cmd/conversion-gen@${CONVERSION_GEN_VERSION} ;\
-	rm -rf $$CONVERSION_GEN_TMP_DIR ;\
-	}
-CONVERSION_GEN=$(GOBIN)/conversion-gen
-else
-CONVERSION_GEN=$(shell which conversion-gen)
-endif
-
 .PHONY: bundle
 bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.
 	operator-sdk generate kustomize manifests -q
-	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle $(BUNDLE_GEN_FLAGS)
 	operator-sdk bundle validate ./bundle
 
 .PHONY: bundle-build
 bundle-build: ## Build the bundle image.
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
+##@ Build Dependencies
+
+## Location to install dependencies to
+LOCALBIN ?= $(shell pwd)/bin
+$(LOCALBIN):
+	mkdir -p $(LOCALBIN)
+	
+## Tool Binaries
+KUSTOMIZE ?= $(LOCALBIN)/kustomize
+CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
+ENVTEST ?= $(LOCALBIN)/setup-envtest
+CONVERSION_GEN ?= $(LOCALBIN)/conversion-gen
+CRD_REF_DOCS ?= $(LOCALBIN)/crd-ref-docs
+HELM_DOCS ?= $(LOCALBIN)/helm-docs
+GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
+
+## Tool Versions
+KUSTOMIZE_VERSION ?= v3.8.7
+CONTROLLER_TOOLS_VERSION ?= v0.8.0
+# Conversion-gen version should match the older k8s version supported by the operator.
+# Note: the major lags behind by one (see https://github.com/kubernetes/code-generator#where-does-it-come-from).
+CONVERSION_GEN_VERSION = v0.19.16
+CONTROLLER_RUNTIME_VERSION = v0.12.1 # This must be coincident with the version set in go.mod
+GOLANGCI_VERSION = v1.35.2
+CRD_REF_DOCS_VERSION=v0.0.8
+HELM_DOCS_VERSION = v1.7.0
+
+KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
+.PHONY: kustomize
+kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
+$(KUSTOMIZE): $(LOCALBIN)
+	curl -s $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN)
+
+.PHONY: controller-gen
+controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
+$(CONTROLLER_GEN): $(LOCALBIN)
+	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
+
+.PHONY: envtest
+envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
+$(ENVTEST): $(LOCALBIN)
+	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+.PHONY: conversion-gen
+conversion-gen: $(CONVERSION_GEN) ## Download conversion-gen locally if necessary.
+$(CONVERSION_GEN): $(LOCALBIN)
+	GOBIN=$(LOCALBIN) go install k8s.io/code-generator/cmd/conversion-gen@${CONVERSION_GEN_VERSION}
+
 ##@ Docs
 
 .PHONY: crd-ref-docs
-crd-ref-docs: ## Download crd-ref-docs locally if necessary.
-ifeq (, $(shell which crd-ref-docs))
-	@{ \
-	set -e ;\
-	CRD_REF_DOCS_TMP_DIR=$$(mktemp -d) ;\
-	cd $$CRD_REF_DOCS_TMP_DIR ;\
-	go mod init tmp ;\
-	go get github.com/elastic/crd-ref-docs@${CRD_REF_DOCS_VERSION};\
-	rm -rf $$CRD_REF_DOCS_TMP_DIR ;\
-	}
-CRD_REF_DOCS=$(GOBIN)/crd-ref-docs
-else
-CRD_REF_DOCS=$(shell crd-ref-docs)
-endif
+crd-ref-docs: $(CRD_REF_DOCS) ## Download crd-ref-docs locally if necessary.
+$(CRD_REF_DOCS): $(LOCALBIN)
+	GOBIN=$(LOCALBIN) go install github.com/elastic/crd-ref-docs@${CRD_REF_DOCS_VERSION}
 
 .PHONY: crd-docs
 crd-docs: crd-ref-docs ## Generate API reference documentation from code.
-	$(CRD_REF_DOCS) --config="docs/autogen/config.yaml" --renderer=markdown --max-depth=10 \
-		--source-path="apis" --output-path="docs/content/index.md"
+	mkdir -p docs/content && $(CRD_REF_DOCS) --config="docs/autogen/config.yaml" --renderer=markdown \
+		--max-depth=10 --source-path="apis" --output-path="docs/content/index.md"
 
 .PHONY: norwoodj-helm-docs
-norwoodj-helm-docs: ## Download helm-docs locally if necessary.
-ifeq (, $(shell which helm-docs))
-	@{ \
-	set -e ;\
-    HELM_DOCS_TMP_DIR=$$(mktemp -d) ;\
-    cd $$HELM_DOCS_TMP_DIR ;\
-    go mod init tmp ;\
-    go get github.com/norwoodj/helm-docs/cmd/helm-docs@${HELM_DOCS_GEN_VERSION} ;\
-    rm -rf $$HELM_DOCS_TMP_DIR ;\
-    }
-HELM_DOCS_GEN=$(GOBIN)/helm-docs
-else
-HELM_DOCS_GEN=$(shell which helm-docs)
-endif
+norwoodj-helm-docs: $(HELM_DOCS) ## Download norwoodj/helm-docs locally if necessary.
+$(HELM_DOCS): $(LOCALBIN)
+	GOBIN=$(LOCALBIN) go install github.com/norwoodj/helm-docs/cmd/helm-docs@${HELM_DOCS_VERSION}
 
 .PHONY: chart-docs
 chart-docs: norwoodj-helm-docs ## Generate Helm Chart docs.
-	$(HELM_DOCS_GEN) --chart-search-root charts \
+	$(HELM_DOCS) --chart-search-root charts \
 		-t ../docs/autogen/templates/helm-chart/README.md.gotmpl
 
 .PHONY: docs
@@ -254,11 +232,8 @@ docs: crd-docs chart-docs ## Generate docs for CRDs and Helm Chart.
 lint: golangci-lint ## Run linter.
 	GOGC=10 $(GOLANGCI_LINT) run -v --timeout 10m
 
+
 .PHONY: golangci-lint
-golangci-lint: ## Download golangci-lint if needed.
-ifeq (, $(shell which golangci-lint))
-	go get github.com/golangci/golangci-lint/cmd/golangci-lint@${GOLANGCI_VERSION}
-GOLANGCI_LINT=$(shell go env GOPATH)/bin/golangci-lint
-else
-GOLANGCI_LINT=$(shell which golangci-lint)
-endif
+golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
+$(GOLANGCI_LINT): $(LOCALBIN)
+	GOBIN=$(LOCALBIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint@${GOLANGCI_VERSION}
