@@ -32,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -243,14 +244,27 @@ func (r *ReconcileHelper) EnsureStatusCoherency(reqLogger logr.Logger, instance 
 				fmt.Errorf("Could not parse Astarte version from Housekeeping Image tag %s. Refusing to proceed", hkImage)
 		}
 
-		instance.Status.AstarteVersion = hkImageTokens[1]
 		// Update the status
-		if e := r.Client.Status().Update(context.TODO(), instance); e != nil {
-			r.Recorder.Event(instance, "Warning", apiv1alpha1.AstarteResourceEventReconciliationFailed.String(),
-				"Failed to update Astarte status - will retry reconciliation")
-			reqLogger.Error(e, "Failed to update Astarte status.")
-			return ctrl.Result{}, e
+		if err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			instance = &apiv1alpha1.Astarte{}
+			if err = r.Client.Get(context.TODO(), request.NamespacedName, instance); err != nil {
+				// Error reading the object - requeue the request.
+				return err
+			}
+
+			instance.Status.AstarteVersion = hkImageTokens[1]
+
+			if err = r.Client.Status().Update(context.TODO(), instance); err != nil {
+				r.Recorder.Event(instance, "Warning", apiv1alpha1.AstarteResourceEventReconciliationFailed.String(),
+					"Failed to update Astarte status - will retry reconciliation")
+				reqLogger.Error(err, "Failed to update Astarte status.")
+				return err
+			}
+			return nil
+		}); err != nil {
+			return ctrl.Result{}, err
 		}
+
 		r.Recorder.Eventf(instance, "Normal", apiv1alpha1.AstarteResourceEventMigration.String(),
 			"Resource version reconciled to %v from Housekeeping", hkImageTokens[1])
 
