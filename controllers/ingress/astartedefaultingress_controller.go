@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -101,9 +102,20 @@ func (r *AstarteDefaultIngressReconciler) Reconcile(ctx context.Context, req ctr
 		Scheme: r.Scheme,
 	}
 
-	instance.Status = reconciler.ComputeADIStatusResource(reqLogger, instance)
-	if err := r.Client.Status().Update(ctx, instance); err != nil {
-		reqLogger.Error(err, "Failed to update AstarteDefaultIngress status.")
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		instance := &ingressv1alpha1.AstarteDefaultIngress{}
+		if err := r.Client.Get(ctx, req.NamespacedName, instance); err != nil {
+			return err
+		}
+
+		instance.Status = reconciler.ComputeADIStatusResource(reqLogger, instance)
+
+		if err := r.Client.Status().Update(ctx, instance); err != nil {
+			reqLogger.Error(err, "Failed to update AstarteDefaultIngress status.")
+			return err
+		}
+		return nil
+	}); err != nil {
 		return ctrl.Result{}, err
 	}
 
