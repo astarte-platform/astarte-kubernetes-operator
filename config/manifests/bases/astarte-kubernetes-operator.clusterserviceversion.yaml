@@ -1,0 +1,79 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: astarte-kubernetes-operator.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: AstarteDefaultIngress is the Schema for the astartedefaultingresses
+        API
+      displayName: Astarte Default Ingress
+      kind: AstarteDefaultIngress
+      name: astartedefaultingresses.ingress.astarte-platform.org
+      version: v1alpha1
+    - description: Astarte is the Schema for the astartes API
+      displayName: Astarte
+      kind: Astarte
+      name: astartes.api.astarte-platform.org
+      version: v1alpha2
+    - description: Astarte is the Schema for the astartes API
+      displayName: Astarte
+      kind: Astarte
+      name: astartes.api.astarte-platform.org
+      version: v1alpha1
+    - description: AstarteVoyagerIngress is the Schema for the astartevoyageringresses
+        API
+      displayName: Astarte Voyager Ingress
+      kind: AstarteVoyagerIngress
+      name: astartevoyageringresses.api.astarte-platform.org
+      version: v1alpha2
+    - description: AstarteVoyagerIngress is the Schema for the astartevoyageringresses
+        API
+      displayName: Astarte Voyager Ingress
+      kind: AstarteVoyagerIngress
+      name: astartevoyageringresses.api.astarte-platform.org
+      version: v1alpha1
+    - description: Flow is the Schema for the flows API
+      displayName: Flow
+      kind: Flow
+      name: flows.api.astarte-platform.org
+      version: v1alpha2
+    - description: Flow is the Schema for the flows API
+      displayName: Flow
+      kind: Flow
+      name: flows.api.astarte-platform.org
+      version: v1alpha1
+  description: l
+  displayName: l
+  icon:
+  - base64data: wdqwdqwdqwdaqdx
+    mediatype: image/svg+xml
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - l
+  links:
+  - name: Astarte Kubernetes Operator
+    url: https://astarte-kubernetes-operator.domain
+  maturity: alpha
+  minKubeVersion: 1.20.0
+  provider:
+    name: l
+    url: ll
+  version: 0.0.0
