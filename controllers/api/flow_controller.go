@@ -30,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -89,34 +90,56 @@ func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		}
 	}
 
-	// Compute the Status by fetching the Block Deployments, after the cleanup.
-	blockList, err := r.getAllBlocksDeploymentsForFlow(instance)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	instance.Status.TotalContainerBlocks, instance.Status.ReadyContainerBlocks, instance.Status.FailingContainerBlocks,
-		instance.Status.Resources, instance.Status.UnrecoverableFailures = r.computeBlocksState(reqLogger, blockList, instance)
-
-	switch {
-	case instance.Status.TotalContainerBlocks == 0:
-		instance.Status.State = apiv1alpha1.FlowStateUnknown
-	case instance.Status.FailingContainerBlocks > 0:
-		instance.Status.State = apiv1alpha1.FlowStateUnhealthy
-	case instance.Status.TotalContainerBlocks != instance.Status.ReadyContainerBlocks:
-		instance.Status.State = apiv1alpha1.FlowStateUnstable
-	case instance.Status.TotalContainerBlocks == instance.Status.ReadyContainerBlocks:
-		instance.Status.State = apiv1alpha1.FlowStateFlowing
-	}
-
 	// Update the Status and finish the reconciliation
-	if err := r.Client.Status().Update(ctx, instance); err != nil {
-		reqLogger.Error(err, "Failed to update Flow status.")
-		return reconcile.Result{}, err
+	if err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		instance = &apiv1alpha1.Flow{}
+		if err = r.Client.Get(ctx, req.NamespacedName, instance); err != nil {
+			return err
+		}
+
+		instance.Status, err = r.computeFlowStatusResource(reqLogger, instance)
+		if err != nil {
+			reqLogger.Error(err, "Failed to compute Flow status.")
+			return err
+		}
+
+		if err = r.Client.Status().Update(ctx, instance); err != nil {
+			reqLogger.Error(err, "Failed to update Flow status.")
+			return err
+		}
+		return nil
+	}); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	reqLogger.Info("Flow Reconciled successfully")
 	return ctrl.Result{}, nil
+}
+
+func (r *FlowReconciler) computeFlowStatusResource(reqLogger logr.Logger, instance *apiv1alpha1.Flow) (apiv1alpha1.FlowStatus, error) {
+	newStatus := instance.Status
+
+	// Compute the Status by fetching the Block Deployments, after the cleanup.
+	blockList, err := r.getAllBlocksDeploymentsForFlow(instance)
+	if err != nil {
+		return apiv1alpha1.FlowStatus{}, err
+	}
+
+	newStatus.TotalContainerBlocks, newStatus.ReadyContainerBlocks, newStatus.FailingContainerBlocks,
+		newStatus.Resources, newStatus.UnrecoverableFailures = r.computeBlocksState(reqLogger, blockList, instance)
+
+	switch {
+	case newStatus.TotalContainerBlocks == 0:
+		newStatus.State = apiv1alpha1.FlowStateUnknown
+	case newStatus.FailingContainerBlocks > 0:
+		newStatus.State = apiv1alpha1.FlowStateUnhealthy
+	case newStatus.TotalContainerBlocks != newStatus.ReadyContainerBlocks:
+		newStatus.State = apiv1alpha1.FlowStateUnstable
+	case newStatus.TotalContainerBlocks == newStatus.ReadyContainerBlocks:
+		newStatus.State = apiv1alpha1.FlowStateFlowing
+	}
+
+	return newStatus, nil
 }
 
 func (r *FlowReconciler) getResourcesForReconciliationFor(instance *apiv1alpha1.Flow) (*apiv1alpha1.Astarte, map[string]appsv1.Deployment, reconcile.Result, error) {
