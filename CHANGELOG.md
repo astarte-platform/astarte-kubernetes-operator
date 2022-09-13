@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add API reference docs generation.
 - Add status fields to AstarteDefaultIngress.
 
+### Fixed
+- Makefile: fix `make bundle` target. Generate a valid OLM bundle.
+
 ## [1.0.3] - 2022-07-04
 ### Added
 - Add `podLabels` field to Astarte components specs to set custom labels for Astarte pods.

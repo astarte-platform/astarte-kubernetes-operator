@@ -29,7 +29,7 @@ IMAGE_TAG_BASE ?= astarte/astarte-kubernetes-operator
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
-BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
+BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:$(VERSION)
 
 # BUNDLE_GEN_FLAGS are the flags passed to the operator-sdk generate bundle command
 BUNDLE_GEN_FLAGS ?= -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
@@ -92,8 +92,8 @@ manifests: controller-gen kustomize ## Generate manifests e.g. CRD, RBAC etc.
 	$(KUSTOMIZE) build config/helm-manager > charts/astarte-operator/templates/manager.yaml
 	$(KUSTOMIZE) build config/helm-webhook > charts/astarte-operator/templates/webhook.yaml
 
-.PHONY: generate ## Generate code containing DeepCopy, DeepCopyInto, DeepCopyObject and conversion methods implementations.
-generate: controller-gen conversion-gen
+.PHONY: generate
+generate: controller-gen conversion-gen ## Generate code containing DeepCopy, DeepCopyInto, DeepCopyObject and conversion methods implementations.
 	$(CONVERSION_GEN) --go-header-file "./hack/boilerplate.go.txt" --input-dirs "./apis/api/v1alpha1" \
 		-O zz_generated.conversion --output-base "."
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="$(GOPATHS)"
@@ -209,10 +209,9 @@ $(CONVERSION_GEN): $(LOCALBIN)
 	GOBIN=$(LOCALBIN) go install k8s.io/code-generator/cmd/conversion-gen@${CONVERSION_GEN_VERSION}
 
 .PHONY: bundle
-#TODO CHANGE
 bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.
 	operator-sdk generate kustomize manifests -q
-	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle $(BUNDLE_GEN_FLAGS)
 	sed -i "s@image: controller:latest@image: $(IMG)@g" bundle/manifests/astarte-kubernetes-operator.clusterserviceversion.yaml
 	operator-sdk bundle validate ./bundle
 

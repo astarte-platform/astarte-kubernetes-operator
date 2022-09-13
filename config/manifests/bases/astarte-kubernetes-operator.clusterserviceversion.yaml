@@ -48,10 +48,10 @@ spec:
       kind: Flow
       name: flows.api.astarte-platform.org
       version: v1alpha1
-  description: l
-  displayName: l
+  description: The Astarte Kubernetes Operator bundle.
+  displayName: astarte-kubernetes-operator
   icon:
-  - base64data: wdqwdqwdqwdaqdx
+  - base64data: ""
     mediatype: image/svg+xml
   install:
     spec:
@@ -67,13 +67,19 @@ spec:
   - supported: true
     type: AllNamespaces
   keywords:
-  - l
+  - astarte
+  - operator
+  - iot
+  - dataorchestration
   links:
   - name: Astarte Kubernetes Operator
-    url: https://astarte-kubernetes-operator.domain
+    url: https://github.com/astarte-platform/astarte-kubernetes-operator
+  maintainers:
+  - email: dario.freddi@ispirata.com
+    name: drf
   maturity: alpha
-  minKubeVersion: 1.20.0
+  minKubeVersion: 1.19.0
   provider:
-    name: l
-    url: ll
+    name: Astarte Platform
+    url: https://github.com/astarte-platform
   version: 0.0.0
