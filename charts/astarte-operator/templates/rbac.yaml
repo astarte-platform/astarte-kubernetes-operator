@@ -153,7 +153,6 @@ rules:
   resources:
   - configmaps
   - endpoints
-  - events
   - persistentvolumeclaims
   - pods
   - secrets
@@ -181,6 +180,16 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - get
+  - list
+  - patch
   - watch
 - apiGroups:
   - ingress.astarte-platform.org
@@ -218,7 +227,7 @@ rules:
 - apiGroups:
   - networking.k8s.io
   resources:
-  - '*'
+  - ingresses
   verbs:
   - create
   - delete

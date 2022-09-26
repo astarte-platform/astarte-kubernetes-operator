@@ -55,7 +55,7 @@ type AstarteDefaultIngressReconciler struct {
 //+kubebuilder:rbac:groups=ingress.astarte-platform.org,resources=astartedefaultingresses,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=ingress.astarte-platform.org,resources=astartedefaultingresses/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=ingress.astarte-platform.org,resources=astartedefaultingresses/finalizers,verbs=update
-//+kubebuilder:rbac:groups=networking.k8s.io,resources=*,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=services;services/finalizers;configmaps,verbs=get;list;watch;create;update;patch;delete
 
 func (r *AstarteDefaultIngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
