@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -85,9 +86,20 @@ func (r *AstarteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// Are we in manual maintenance mode?
 	if instance.Spec.ManualMaintenanceMode {
 		// If that is so, compute the status and quit.
-		instance.Status = reconciler.ComputeAstarteStatusResource(reqLogger, instance)
-		if err := r.Client.Status().Update(ctx, instance); err != nil {
-			reqLogger.Error(err, "Failed to update Astarte status.")
+		if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			instance = &apiv1alpha1.Astarte{}
+			if err := r.Client.Get(ctx, req.NamespacedName, instance); err != nil {
+				return err
+			}
+
+			instance.Status = reconciler.ComputeAstarteStatusResource(reqLogger, instance)
+
+			if err := r.Client.Status().Update(ctx, instance); err != nil {
+				reqLogger.Error(err, "Failed to update Astarte status.")
+				return err
+			}
+			return nil
+		}); err != nil {
 			return ctrl.Result{}, err
 		}
 
@@ -144,9 +156,20 @@ func (r *AstarteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	// Update the status
-	instance.Status = reconciler.ComputeAstarteStatusResource(reqLogger, instance)
-	if err := r.Client.Status().Update(ctx, instance); err != nil {
-		reqLogger.Error(err, "Failed to update Astarte status.")
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		instance := &apiv1alpha1.Astarte{}
+		if err := r.Client.Get(ctx, req.NamespacedName, instance); err != nil {
+			return err
+		}
+
+		instance.Status = reconciler.ComputeAstarteStatusResource(reqLogger, instance)
+
+		if err := r.Client.Status().Update(ctx, instance); err != nil {
+			reqLogger.Error(err, "Failed to update Astarte status.")
+			return err
+		}
+		return nil
+	}); err != nil {
 		return ctrl.Result{}, err
 	}
 
