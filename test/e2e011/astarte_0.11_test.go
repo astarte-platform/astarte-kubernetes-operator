@@ -26,7 +26,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	operator "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	operator "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 	"github.com/astarte-platform/astarte-kubernetes-operator/test/utils"
 )
 

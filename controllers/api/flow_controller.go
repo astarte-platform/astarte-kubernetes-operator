@@ -37,7 +37,7 @@ import (
 
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/flow"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 )
 
 // FlowReconciler reconciles a Flow object
@@ -55,7 +55,7 @@ func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	reqLogger.Info("Reconciling Flow")
 
 	// Fetch the Flow instance
-	instance := &apiv1alpha1.Flow{}
+	instance := &apiv1alpha2.Flow{}
 	if err := r.Client.Get(ctx, req.NamespacedName, instance); err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -92,7 +92,7 @@ func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 	// Update the Status and finish the reconciliation
 	if err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		instance = &apiv1alpha1.Flow{}
+		instance = &apiv1alpha2.Flow{}
 		if err = r.Client.Get(ctx, req.NamespacedName, instance); err != nil {
 			return err
 		}
@@ -116,35 +116,35 @@ func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	return ctrl.Result{}, nil
 }
 
-func (r *FlowReconciler) computeFlowStatusResource(reqLogger logr.Logger, instance *apiv1alpha1.Flow) (apiv1alpha1.FlowStatus, error) {
+func (r *FlowReconciler) computeFlowStatusResource(reqLogger logr.Logger, instance *apiv1alpha2.Flow) (apiv1alpha2.FlowStatus, error) {
 	newStatus := instance.Status
 
 	// Compute the Status by fetching the Block Deployments, after the cleanup.
 	blockList, err := r.getAllBlocksDeploymentsForFlow(instance)
 	if err != nil {
-		return apiv1alpha1.FlowStatus{}, err
+		return apiv1alpha2.FlowStatus{}, err
 	}
 
 	newStatus.TotalContainerBlocks, newStatus.ReadyContainerBlocks, newStatus.FailingContainerBlocks,
 		newStatus.Resources, newStatus.UnrecoverableFailures = r.computeBlocksState(reqLogger, blockList, instance)
 
 	switch {
-	case newStatus.TotalContainerBlocks == 0:
-		newStatus.State = apiv1alpha1.FlowStateUnknown
-	case newStatus.FailingContainerBlocks > 0:
-		newStatus.State = apiv1alpha1.FlowStateUnhealthy
-	case newStatus.TotalContainerBlocks != newStatus.ReadyContainerBlocks:
-		newStatus.State = apiv1alpha1.FlowStateUnstable
-	case newStatus.TotalContainerBlocks == newStatus.ReadyContainerBlocks:
-		newStatus.State = apiv1alpha1.FlowStateFlowing
+	case instance.Status.TotalContainerBlocks == 0:
+		instance.Status.State = apiv1alpha2.FlowStateUnknown
+	case instance.Status.FailingContainerBlocks > 0:
+		instance.Status.State = apiv1alpha2.FlowStateUnhealthy
+	case instance.Status.TotalContainerBlocks != instance.Status.ReadyContainerBlocks:
+		instance.Status.State = apiv1alpha2.FlowStateUnstable
+	case instance.Status.TotalContainerBlocks == instance.Status.ReadyContainerBlocks:
+		instance.Status.State = apiv1alpha2.FlowStateFlowing
 	}
 
 	return newStatus, nil
 }
 
-func (r *FlowReconciler) getResourcesForReconciliationFor(instance *apiv1alpha1.Flow) (*apiv1alpha1.Astarte, map[string]appsv1.Deployment, reconcile.Result, error) {
+func (r *FlowReconciler) getResourcesForReconciliationFor(instance *apiv1alpha2.Flow) (*apiv1alpha2.Astarte, map[string]appsv1.Deployment, reconcile.Result, error) {
 	// Get the Astarte instance for the Flow
-	astarte := &apiv1alpha1.Astarte{}
+	astarte := &apiv1alpha2.Astarte{}
 	if err := r.Client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.Astarte.Name, Namespace: instance.Namespace}, astarte); err != nil {
 		if errors.IsNotFound(err) {
 			d, _ := time.ParseDuration("30s")
@@ -164,7 +164,7 @@ func (r *FlowReconciler) getResourcesForReconciliationFor(instance *apiv1alpha1.
 	return astarte, existingBlocks, reconcile.Result{}, err
 }
 
-func (r *FlowReconciler) getAllBlocksForFlow(instance *apiv1alpha1.Flow) (map[string]appsv1.Deployment, error) {
+func (r *FlowReconciler) getAllBlocksForFlow(instance *apiv1alpha2.Flow) (map[string]appsv1.Deployment, error) {
 	blockList, err := r.getAllBlocksDeploymentsForFlow(instance)
 	if err != nil {
 		return nil, err
@@ -178,7 +178,7 @@ func (r *FlowReconciler) getAllBlocksForFlow(instance *apiv1alpha1.Flow) (map[st
 	return existingBlocks, nil
 }
 
-func (r *FlowReconciler) getAllBlocksDeploymentsForFlow(instance *apiv1alpha1.Flow) (appsv1.DeploymentList, error) {
+func (r *FlowReconciler) getAllBlocksDeploymentsForFlow(instance *apiv1alpha2.Flow) (appsv1.DeploymentList, error) {
 	blockLabels := map[string]string{
 		"component":      "astarte-flow",
 		"flow-component": "block",
@@ -190,7 +190,7 @@ func (r *FlowReconciler) getAllBlocksDeploymentsForFlow(instance *apiv1alpha1.Fl
 	return blockList, err
 }
 
-func (r *FlowReconciler) computeBlocksState(reqLogger logr.Logger, blockList appsv1.DeploymentList, instance *apiv1alpha1.Flow) (int, int, int, v1.ResourceList, []v1.ContainerState) {
+func (r *FlowReconciler) computeBlocksState(reqLogger logr.Logger, blockList appsv1.DeploymentList, instance *apiv1alpha2.Flow) (int, int, int, v1.ResourceList, []v1.ContainerState) {
 	var totalBlocks, readyBlocks, failingBlocks int
 	cpuResources := instance.Spec.NativeBlocksResources.Cpu().DeepCopy()
 	memoryResources := instance.Spec.NativeBlocksResources.Memory().DeepCopy()
@@ -258,7 +258,7 @@ func computePodsFailureForBlock(podList *v1.PodList) (bool, []v1.ContainerState)
 
 func (r *FlowReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&apiv1alpha1.Flow{}).
+		For(&apiv1alpha2.Flow{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&v1.Secret{}).

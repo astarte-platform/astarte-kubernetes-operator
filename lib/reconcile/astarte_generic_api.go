@@ -35,19 +35,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 )
 
 // EnsureAstarteGenericAPI reconciles any component compatible with AstarteGenericAPISpec with a custom Probe
-func EnsureAstarteGenericAPI(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec, component apiv1alpha1.AstarteComponent,
+func EnsureAstarteGenericAPI(cr *apiv1alpha2.Astarte, api apiv1alpha2.AstarteGenericAPISpec, component apiv1alpha2.AstarteComponent,
 	c client.Client, scheme *runtime.Scheme) error {
 	return EnsureAstarteGenericAPIWithCustomProbe(cr, api, component, c, scheme, nil)
 }
 
 // EnsureAstarteGenericAPIWithCustomProbe reconciles any component compatible with AstarteGenericAPISpec with a custom Probe
-func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec, component apiv1alpha1.AstarteComponent,
+func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha2.Astarte, api apiv1alpha2.AstarteGenericAPISpec, component apiv1alpha2.AstarteComponent,
 	c client.Client, scheme *runtime.Scheme, customProbe *v1.Probe) error {
 	reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name, "Astarte.Component", component)
 	deploymentName := cr.Name + "-" + component.DashedString()
@@ -77,7 +77,7 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api apiv1al
 	}
 
 	// Service Account?
-	if component == apiv1alpha1.FlowComponent {
+	if component == apiv1alpha2.FlowComponent {
 		if err := reconcileRBACForFlow(cr.Name+"-"+component.ServiceName(), cr, c, scheme); err != nil {
 			return err
 		}
@@ -118,11 +118,11 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha1.Astarte, api apiv1al
 	return nil
 }
 
-func checkShouldDeployAPI(reqLogger logr.Logger, deploymentName string, cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec,
-	component apiv1alpha1.AstarteComponent, c client.Client) bool {
+func checkShouldDeployAPI(reqLogger logr.Logger, deploymentName string, cr *apiv1alpha2.Astarte, api apiv1alpha2.AstarteGenericAPISpec,
+	component apiv1alpha2.AstarteComponent, c client.Client) bool {
 	defaultDeployValue := true
 	// Flow should be deployed only if explicitly requested
-	if component == apiv1alpha1.FlowComponent {
+	if component == apiv1alpha2.FlowComponent {
 		defaultDeployValue = false
 	}
 
@@ -144,7 +144,7 @@ func checkShouldDeployAPI(reqLogger logr.Logger, deploymentName string, cr *apiv
 	}
 
 	// If we do need to deploy, check any constraints
-	if component == apiv1alpha1.FlowComponent && version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", api.Version, cr.Spec.Version) == nil {
+	if component == apiv1alpha2.FlowComponent && version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", api.Version, cr.Spec.Version) == nil {
 		reqLogger.V(1).Info("Skipping Flow Deployment - not supported by this Astarte version")
 		return false
 	}
@@ -152,8 +152,8 @@ func checkShouldDeployAPI(reqLogger logr.Logger, deploymentName string, cr *apiv
 	return true
 }
 
-func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec,
-	component apiv1alpha1.AstarteComponent, customProbe *v1.Probe) v1.PodSpec {
+func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha2.Astarte, api apiv1alpha2.AstarteGenericAPISpec,
+	component apiv1alpha2.AstarteComponent, customProbe *v1.Probe) v1.PodSpec {
 	ps := v1.PodSpec{
 		TerminationGracePeriodSeconds: pointy.Int64(30),
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
@@ -176,18 +176,18 @@ func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha1.Astarte,
 		Volumes: getAstarteGenericAPIVolumes(cr, component),
 	}
 
-	if component == apiv1alpha1.FlowComponent {
+	if component == apiv1alpha2.FlowComponent {
 		ps.ServiceAccountName = cr.Name + "-" + component.ServiceName()
 	}
 
 	return ps
 }
 
-func getAstarteGenericAPIVolumes(cr *apiv1alpha1.Astarte, component apiv1alpha1.AstarteComponent) []v1.Volume {
+func getAstarteGenericAPIVolumes(cr *apiv1alpha2.Astarte, component apiv1alpha2.AstarteComponent) []v1.Volume {
 	ret := getAstarteCommonVolumes(cr)
 
 	// Depending on the component, we might need to add some more stuff.
-	if component == apiv1alpha1.HousekeepingAPI {
+	if component == apiv1alpha2.HousekeepingAPI {
 		ret = append(ret, v1.Volume{
 			Name: "jwtpubkey",
 			VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{
@@ -199,11 +199,11 @@ func getAstarteGenericAPIVolumes(cr *apiv1alpha1.Astarte, component apiv1alpha1.
 	return ret
 }
 
-func getAstarteGenericAPIVolumeMounts(cr *apiv1alpha1.Astarte, component apiv1alpha1.AstarteComponent) []v1.VolumeMount {
+func getAstarteGenericAPIVolumeMounts(cr *apiv1alpha2.Astarte, component apiv1alpha2.AstarteComponent) []v1.VolumeMount {
 	ret := getAstarteCommonVolumeMounts(cr)
 
 	// Depending on the component, we might need to add some more stuff.
-	if component == apiv1alpha1.HousekeepingAPI {
+	if component == apiv1alpha2.HousekeepingAPI {
 		ret = append(ret, v1.VolumeMount{
 			Name:      "jwtpubkey",
 			MountPath: "/jwtpubkey",
@@ -214,7 +214,7 @@ func getAstarteGenericAPIVolumeMounts(cr *apiv1alpha1.Astarte, component apiv1al
 	return ret
 }
 
-func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec, component apiv1alpha1.AstarteComponent) []v1.EnvVar {
+func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha2.Astarte, api apiv1alpha2.AstarteGenericAPISpec, component apiv1alpha2.AstarteComponent) []v1.EnvVar {
 	ret := getAstarteCommonEnvVars(deploymentName, cr, api.AstarteGenericClusteredResource, component)
 
 	// Should we disable authentication?
@@ -227,7 +227,7 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte,
 
 	// Depending on the component, we might need to add some more stuff.
 	switch component {
-	case apiv1alpha1.AppEngineAPI:
+	case apiv1alpha2.AppEngineAPI:
 		cassandraPrefix := ""
 		if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", cr.Spec.Components.AppengineAPI.Version, cr.Spec.Version) == nil {
 			cassandraPrefix = oldAstartePrefix
@@ -267,20 +267,20 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha1.Astarte,
 					Value: cr.Spec.Components.AppengineAPI.RoomEventsExchangeName,
 				})
 		}
-	case apiv1alpha1.HousekeepingAPI:
+	case apiv1alpha2.HousekeepingAPI:
 		// Add Public Key Information
 		ret = append(ret, v1.EnvVar{
 			Name:  "HOUSEKEEPING_API_JWT_PUBLIC_KEY_PATH",
 			Value: "/jwtpubkey/public-key",
 		})
-	case apiv1alpha1.FlowComponent:
+	case apiv1alpha2.FlowComponent:
 		ret = append(ret, getAstarteFlowEnvVars(cr)...)
 	}
 
 	return ret
 }
 
-func getAstarteFlowEnvVars(cr *apiv1alpha1.Astarte) []v1.EnvVar {
+func getAstarteFlowEnvVars(cr *apiv1alpha2.Astarte) []v1.EnvVar {
 	// TODO: This assumes Flow runs paired with the rest of Astarte. Handle other cases.
 	ret := []v1.EnvVar{
 		{
@@ -310,13 +310,13 @@ func getAstarteFlowEnvVars(cr *apiv1alpha1.Astarte) []v1.EnvVar {
 	return appendRabbitMQConnectionEnvVars(ret, "FLOW_DEFAULT_AMQP_CONNECTION", cr)
 }
 
-func getAstarteAPIProbe(cr *apiv1alpha1.Astarte, api apiv1alpha1.AstarteGenericAPISpec, component apiv1alpha1.AstarteComponent, customProbe *v1.Probe) *v1.Probe {
+func getAstarteAPIProbe(cr *apiv1alpha2.Astarte, api apiv1alpha2.AstarteGenericAPISpec, component apiv1alpha2.AstarteComponent, customProbe *v1.Probe) *v1.Probe {
 	if customProbe != nil {
 		return customProbe
 	}
 
 	if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", api.Version, cr.Spec.Version) == nil {
-		if component == apiv1alpha1.FlowComponent {
+		if component == apiv1alpha2.FlowComponent {
 			return nil
 		}
 	}

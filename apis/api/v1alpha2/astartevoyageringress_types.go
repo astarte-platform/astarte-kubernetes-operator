@@ -28,6 +28,9 @@ import (
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=avi
 // +kubebuilder:subresource:status
+// +kubebuilder:storageversion
+// +kubebuilder:deprecatedversion:warning="The AstarteVoyagerIngress is deprecated, will be removed in Astarte Operator v1.2+"
+
 // AstarteVoyagerIngress is the Schema for the astartevoyageringresses API
 type AstarteVoyagerIngress struct {
 	Status AstarteVoyagerIngressStatus `json:"status,omitempty"`

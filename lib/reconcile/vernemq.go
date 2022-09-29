@@ -36,13 +36,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 )
 
 // EnsureVerneMQ reconciles VerneMQ
-func EnsureVerneMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func EnsureVerneMQ(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	//reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name)
 	statefulSetName := cr.Name + "-vernemq"
 	labels := map[string]string{"app": statefulSetName}
@@ -164,7 +164,7 @@ func EnsureVerneMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sch
 	return nil
 }
 
-func validateVerneMQDefinition(vmq *apiv1alpha1.AstarteVerneMQSpec) error {
+func validateVerneMQDefinition(vmq *apiv1alpha2.AstarteVerneMQSpec) error {
 	if vmq == nil {
 		return nil
 	}
@@ -183,7 +183,7 @@ func getVerneMQProbe() *v1.Probe {
 	}
 }
 
-func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.EnvVar {
+func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha2.Astarte) []v1.EnvVar {
 	dataQueueCount := getDataQueueCount(cr)
 	mirrorQueue := getMirrorQueue(cr)
 
@@ -291,7 +291,7 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.Env
 	return envVars
 }
 
-func getVerneMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.Astarte) v1.PodSpec {
+func getVerneMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha2.Astarte) v1.PodSpec {
 	serviceAccountName := statefulSetName
 	if pointy.BoolValue(cr.Spec.RBAC, false) {
 		serviceAccountName = ""
@@ -345,7 +345,7 @@ func getVerneMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.A
 	return ps
 }
 
-func getVerneMQVolumes(cr *apiv1alpha1.Astarte) []v1.Volume {
+func getVerneMQVolumes(cr *apiv1alpha2.Astarte) []v1.Volume {
 	theVolumes := []v1.Volume{}
 
 	// if SSL termination must be handled at VerneMQ level, create the volume to store the certificates
@@ -375,7 +375,7 @@ func getVerneMQVolumes(cr *apiv1alpha1.Astarte) []v1.Volume {
 	return theVolumes
 }
 
-func getVerneMQVolumeMounts(dataVolumeName string, cr *apiv1alpha1.Astarte) []v1.VolumeMount {
+func getVerneMQVolumeMounts(dataVolumeName string, cr *apiv1alpha2.Astarte) []v1.VolumeMount {
 	theVolumeMounts := []v1.VolumeMount{
 		{
 			Name:      dataVolumeName,
@@ -407,6 +407,6 @@ func getVerneMQPolicyRules() []rbacv1.PolicyRule {
 	}
 }
 
-func getMirrorQueue(cr *apiv1alpha1.Astarte) string {
+func getMirrorQueue(cr *apiv1alpha2.Astarte) string {
 	return cr.Spec.VerneMQ.MirrorQueue
 }

@@ -33,11 +33,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 )
 
 // EnsureCFSSLCASecret reconciles CFSSL's CA Secret
-func EnsureCFSSLCASecret(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func EnsureCFSSLCASecret(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	jobName := cr.Name + "-cfssl-ca-secret-job"
 	secretName := cr.Name + "-cfssl-ca"
 	serviceAccountName := jobName

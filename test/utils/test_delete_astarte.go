@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	operator "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	operator "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 )
 
 // AstarteDeleteTest deletes an Astarte instance and tests whether it was deleted and cleaned up

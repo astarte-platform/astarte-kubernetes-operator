@@ -30,14 +30,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 )
 
 // EnsureAstarteDataUpdaterPlant manages multiple deployments for Astarte Data Updater Plant based on scalability requirements
-func EnsureAstarteDataUpdaterPlant(cr *apiv1alpha1.Astarte, dup apiv1alpha1.AstarteDataUpdaterPlantSpec, c client.Client, scheme *runtime.Scheme) error {
+func EnsureAstarteDataUpdaterPlant(cr *apiv1alpha2.Astarte, dup apiv1alpha2.AstarteDataUpdaterPlantSpec, c client.Client, scheme *runtime.Scheme) error {
 	replicas := pointy.Int32Value(dup.AstarteGenericClusteredResource.Replicas, 1)
-	component := apiv1alpha1.DataUpdaterPlant
+	component := apiv1alpha2.DataUpdaterPlant
 
 	// Let's list the existing deployments labeled DUP
 	currentDUPDeployments := &appsv1.DeploymentList{}
@@ -87,8 +87,8 @@ func EnsureAstarteDataUpdaterPlant(cr *apiv1alpha1.Astarte, dup apiv1alpha1.Asta
 	return nil
 }
 
-func createIndexedDataUpdaterPlantDeployment(replicaIndex, replicas int, cr *apiv1alpha1.Astarte, dup apiv1alpha1.AstarteDataUpdaterPlantSpec, c client.Client, scheme *runtime.Scheme) error {
-	component := apiv1alpha1.DataUpdaterPlant
+func createIndexedDataUpdaterPlantDeployment(replicaIndex, replicas int, cr *apiv1alpha2.Astarte, dup apiv1alpha2.AstarteDataUpdaterPlantSpec, c client.Client, scheme *runtime.Scheme) error {
+	component := apiv1alpha2.DataUpdaterPlant
 
 	deploymentName := cr.Name + "-" + component.DashedString()
 	if replicaIndex > 0 {

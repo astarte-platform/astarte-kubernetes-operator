@@ -38,14 +38,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/deps"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 )
 
 // EnsureCFSSL reconciles CFSSL
-func EnsureCFSSL(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func EnsureCFSSL(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	// Validate where necessary
 	if err := validateCFSSLDefinition(cr.Spec.CFSSL); err != nil {
 		return err
@@ -60,7 +60,7 @@ func EnsureCFSSL(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Schem
 	return ensureCFSSLDeployment(cr, c, scheme)
 }
 
-func ensureCFSSLDeployment(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func ensureCFSSLDeployment(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	deploymentName := cr.Name + "-cfssl"
 	labels := map[string]string{"app": deploymentName}
 
@@ -135,7 +135,7 @@ func ensureCFSSLDeployment(cr *apiv1alpha1.Astarte, c client.Client, scheme *run
 	return nil
 }
 
-func ensureCFSSLStatefulSet(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func ensureCFSSLStatefulSet(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	statefulSetName := cr.Name + "-cfssl"
 	labels := map[string]string{"app": statefulSetName}
 
@@ -206,7 +206,7 @@ func ensureCFSSLStatefulSet(cr *apiv1alpha1.Astarte, c client.Client, scheme *ru
 	return nil
 }
 
-func ensureCFSSLCommonSidecars(resourceName string, labels map[string]string, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func ensureCFSSLCommonSidecars(resourceName string, labels map[string]string, cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	// Good. Now, reconcile the service first of all.
 	service := &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: resourceName, Namespace: cr.Namespace}}
 	if result, err := controllerutil.CreateOrUpdate(context.TODO(), c, service, func() error {
@@ -244,7 +244,7 @@ func ensureCFSSLCommonSidecars(resourceName string, labels map[string]string, cr
 	return nil
 }
 
-func validateCFSSLDefinition(cfssl apiv1alpha1.AstarteCFSSLSpec) error {
+func validateCFSSLDefinition(cfssl apiv1alpha2.AstarteCFSSLSpec) error {
 	if !pointy.BoolValue(cfssl.Deploy, true) && cfssl.URL == "" {
 		return errors.New("When not deploying CFSSL, the 'url' must be specified")
 	}
@@ -265,7 +265,7 @@ func getCFSSLProbe() *v1.Probe {
 }
 
 // TODO: Deprecate dataVolumeName and all the jargon when we won't support < 1.0 anymore
-func getCFSSLPodSpec(statefulSetName, dataVolumeName, secretName string, cr *apiv1alpha1.Astarte) v1.PodSpec {
+func getCFSSLPodSpec(statefulSetName, dataVolumeName, secretName string, cr *apiv1alpha2.Astarte) v1.PodSpec {
 	// Defaults to the custom image built in Astarte
 	cfsslImage := getAstarteImageFromChannel("cfssl", deps.GetDefaultVersionForCFSSL(cr.Spec.Version), cr)
 	if cr.Spec.CFSSL.Image != "" {
@@ -359,7 +359,7 @@ func getCFSSLPodSpec(statefulSetName, dataVolumeName, secretName string, cr *api
 	return ps
 }
 
-func getCFSSLConfigMapData(cr *apiv1alpha1.Astarte) (map[string]string, error) {
+func getCFSSLConfigMapData(cr *apiv1alpha2.Astarte) (map[string]string, error) {
 	// First of all, build the default maps.
 	caRootConfig, csrRootCa, e := getCFSSLConfigMapDataDefaults()
 	if e != nil {
@@ -413,7 +413,7 @@ func getCFSSLConfigMapData(cr *apiv1alpha1.Astarte) (map[string]string, error) {
 	return configMapData, nil
 }
 
-func getCFSSLDBConfig(cr *apiv1alpha1.Astarte) (map[string]interface{}, error) {
+func getCFSSLDBConfig(cr *apiv1alpha2.Astarte) (map[string]interface{}, error) {
 	// By default, this one has to be nil...
 	var dbConfig map[string]interface{}
 
@@ -493,7 +493,7 @@ func getCFSSLConfigMapDataDefaults() (map[string]interface{}, map[string]interfa
 }
 
 // This stuff is useful for other components which need to interact with CFSSL
-func getCFSSLURL(cr *apiv1alpha1.Astarte) string {
+func getCFSSLURL(cr *apiv1alpha2.Astarte) string {
 	if cr.Spec.CFSSL.URL != "" {
 		return cr.Spec.CFSSL.URL
 	}
@@ -502,7 +502,7 @@ func getCFSSLURL(cr *apiv1alpha1.Astarte) string {
 	return fmt.Sprintf("http://%s-cfssl.%s.svc.cluster.local", cr.Name, cr.Namespace)
 }
 
-func ensureCFSSLCAProxySecret(secretName, proxySecretName string, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func ensureCFSSLCAProxySecret(secretName, proxySecretName string, cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	// Grab the real secret (the TLS one)
 	s := &v1.Secret{}
 	if err := c.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: cr.Namespace}, s); err != nil {
@@ -514,7 +514,7 @@ func ensureCFSSLCAProxySecret(secretName, proxySecretName string, cr *apiv1alpha
 	return err
 }
 
-func ensureCFSSLCASecret(secretName string, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func ensureCFSSLCASecret(secretName string, cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	// We want to ensure that we create / update the secret ONLY if it doesn't exist. So check that first.
 	s := &v1.Secret{}
 	if err := c.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: cr.Namespace}, s); err == nil {
@@ -529,7 +529,7 @@ func ensureCFSSLCASecret(secretName string, cr *apiv1alpha1.Astarte, c client.Cl
 	return createCFSSLCASecret(secretName, cr, c, scheme)
 }
 
-func createCFSSLCASecret(secretName string, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func createCFSSLCASecret(secretName string, cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	// Get our configuration
 	cfsslConfig, err := getCFSSLConfigMapData(cr)
 	if err != nil {

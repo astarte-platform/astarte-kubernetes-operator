@@ -18,7 +18,50 @@
 
 package v1alpha1
 
-// Hub marks this type as a conversion hub.
-func (*Astarte) Hub()               {}
-func (*AstarteVoyagerIngress) Hub() {}
-func (*Flow) Hub()                  {}
+import (
+	"sigs.k8s.io/controller-runtime/pkg/conversion"
+
+	"github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
+)
+
+// ConvertTo converts this Astarte to the Hub version (v1alpha2).
+func (src *Astarte) ConvertTo(dstRaw conversion.Hub) error {
+	dst := dstRaw.(*v1alpha2.Astarte)
+
+	return Convert_v1alpha1_Astarte_To_v1alpha2_Astarte(src, dst, nil)
+}
+
+// ConvertFrom converts from the Hub version (v1alpha2) to this version.
+func (dst *Astarte) ConvertFrom(srcRaw conversion.Hub) error {
+	src := srcRaw.(*v1alpha2.Astarte)
+
+	return Convert_v1alpha2_Astarte_To_v1alpha1_Astarte(src, dst, nil)
+}
+
+// ConvertTo converts this AstarteVoyagerIngress to the Hub version (v1alpha2).
+func (src *AstarteVoyagerIngress) ConvertTo(dstRaw conversion.Hub) error {
+	dst := dstRaw.(*v1alpha2.AstarteVoyagerIngress)
+
+	return Convert_v1alpha1_AstarteVoyagerIngress_To_v1alpha2_AstarteVoyagerIngress(src, dst, nil)
+}
+
+// ConvertFrom converts from the Hub version (v1alpha2) to this version.
+func (dst *AstarteVoyagerIngress) ConvertFrom(srcRaw conversion.Hub) error {
+	src := srcRaw.(*v1alpha2.AstarteVoyagerIngress)
+
+	return Convert_v1alpha2_AstarteVoyagerIngress_To_v1alpha1_AstarteVoyagerIngress(src, dst, nil)
+}
+
+// ConvertTo converts this Flow to the Hub version (v1alpha2).
+func (src *Flow) ConvertTo(dstRaw conversion.Hub) error {
+	dst := dstRaw.(*v1alpha2.Flow)
+
+	return Convert_v1alpha1_Flow_To_v1alpha2_Flow(src, dst, nil)
+}
+
+// ConvertFrom converts from the Hub version (v1alpha2) to this version.
+func (dst *Flow) ConvertFrom(srcRaw conversion.Hub) error {
+	src := srcRaw.(*v1alpha2.Flow)
+
+	return Convert_v1alpha2_Flow_To_v1alpha1_Flow(src, dst, nil)
+}

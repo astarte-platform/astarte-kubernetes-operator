@@ -44,7 +44,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 )
@@ -59,7 +59,7 @@ func encodePEMBlockToEncodedBytes(block *pem.Block) string {
 	return string(pem.EncodeToMemory(block))
 }
 
-func storePublicKeyInSecret(name string, publicKey *rsa.PublicKey, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func storePublicKeyInSecret(name string, publicKey *rsa.PublicKey, cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	pkixBytes, err := x509.MarshalPKIXPublicKey(publicKey)
 	if err != nil {
 		return err
@@ -80,7 +80,7 @@ func storePublicKeyInSecret(name string, publicKey *rsa.PublicKey, cr *apiv1alph
 	return err
 }
 
-func storePrivateKeyInSecret(name string, privateKey *rsa.PrivateKey, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func storePrivateKeyInSecret(name string, privateKey *rsa.PrivateKey, cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	var privateKeyPEM = &pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
@@ -125,7 +125,7 @@ func getStandardAntiAffinityForAppLabel(app string) *v1.Affinity {
 	}
 }
 
-func reconcileStandardRBACForClusteringForApp(name string, policyRules []rbacv1.PolicyRule, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func reconcileStandardRBACForClusteringForApp(name string, policyRules []rbacv1.PolicyRule, cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	// Service Account
 	serviceAccount := &v1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: cr.Namespace}}
 	if result, err := controllerutil.CreateOrUpdate(context.TODO(), c, serviceAccount, func() error {
@@ -183,7 +183,7 @@ func reconcileStandardRBACForClusteringForApp(name string, policyRules []rbacv1.
 	return nil
 }
 
-func reconcileRBACForFlow(name string, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func reconcileRBACForFlow(name string, cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	// Service Account
 	serviceAccount := &v1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: cr.Namespace}}
 	if result, err := controllerutil.CreateOrUpdate(context.TODO(), c, serviceAccount, func() error {
@@ -247,7 +247,7 @@ func reconcileRBACForFlow(name string, cr *apiv1alpha1.Astarte, c client.Client,
 	return nil
 }
 
-func getAstarteImageFromChannel(name, tag string, cr *apiv1alpha1.Astarte) string {
+func getAstarteImageFromChannel(name, tag string, cr *apiv1alpha2.Astarte) string {
 	distributionChannel := "astarte"
 	if cr.Spec.DistributionChannel != "" {
 		distributionChannel = cr.Spec.DistributionChannel
@@ -256,7 +256,7 @@ func getAstarteImageFromChannel(name, tag string, cr *apiv1alpha1.Astarte) strin
 	return fmt.Sprintf("%s/%s:%s", distributionChannel, name, tag)
 }
 
-func getImagePullPolicy(cr *apiv1alpha1.Astarte) v1.PullPolicy {
+func getImagePullPolicy(cr *apiv1alpha2.Astarte) v1.PullPolicy {
 	if cr.Spec.ImagePullPolicy != nil {
 		return *cr.Spec.ImagePullPolicy
 	}
@@ -264,7 +264,7 @@ func getImagePullPolicy(cr *apiv1alpha1.Astarte) v1.PullPolicy {
 	return v1.PullIfNotPresent
 }
 
-func ensureErlangCookieSecret(secretName string, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func ensureErlangCookieSecret(secretName string, cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name)
 	theCookie := &v1.Secret{}
 	if err := c.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: cr.Namespace}, theCookie); err != nil {
@@ -301,8 +301,8 @@ func ensureErlangCookieSecret(secretName string, cr *apiv1alpha1.Astarte, c clie
 	return nil
 }
 
-func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quantity, storageSpec *apiv1alpha1.AstartePersistentStorageSpec,
-	cr *apiv1alpha1.Astarte) (string, *v1.PersistentVolumeClaim) {
+func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quantity, storageSpec *apiv1alpha2.AstartePersistentStorageSpec,
+	cr *apiv1alpha2.Astarte) (string, *v1.PersistentVolumeClaim) {
 	var storageClassName string
 	dataVolumeSize := defaultSize
 	dataVolumeName := defaultName
@@ -336,7 +336,7 @@ func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quan
 	}
 }
 
-func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, backend apiv1alpha1.AstarteGenericClusteredResource, component apiv1alpha1.AstarteComponent) []v1.EnvVar {
+func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha2.Astarte, backend apiv1alpha2.AstarteGenericClusteredResource, component apiv1alpha2.AstarteComponent) []v1.EnvVar {
 	rpcPrefix := ""
 	if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", backend.Version, cr.Spec.Version) == nil {
 		rpcPrefix = oldAstartePrefix
@@ -383,7 +383,7 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha1.Astarte, bac
 	return appendRabbitMQConnectionEnvVars(ret, rpcPrefix+"RPC_AMQP_CONNECTION", cr)
 }
 
-func appendCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv1alpha1.Astarte) []v1.EnvVar {
+func appendCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv1alpha2.Astarte) []v1.EnvVar {
 	spec := cr.Spec.Cassandra.Connection
 	if spec != nil {
 		// pool size
@@ -463,7 +463,7 @@ func appendCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv1alpha1.Astarte) 
 	return ret
 }
 
-func appendRabbitMQConnectionEnvVars(ret []v1.EnvVar, prefix string, cr *apiv1alpha1.Astarte) []v1.EnvVar {
+func appendRabbitMQConnectionEnvVars(ret []v1.EnvVar, prefix string, cr *apiv1alpha2.Astarte) []v1.EnvVar {
 	spec := cr.Spec.RabbitMQ.Connection
 
 	// Let's verify Virtualhost and default to "/" where needed. Al
@@ -547,7 +547,7 @@ func appendRabbitMQConnectionEnvVars(ret []v1.EnvVar, prefix string, cr *apiv1al
 	return ret
 }
 
-func getAstarteCommonVolumes(cr *apiv1alpha1.Astarte) []v1.Volume {
+func getAstarteCommonVolumes(cr *apiv1alpha2.Astarte) []v1.Volume {
 	ret := []v1.Volume{
 		{
 			Name: "beam-config",
@@ -574,7 +574,7 @@ func getAstarteCommonVolumes(cr *apiv1alpha1.Astarte) []v1.Volume {
 	return ret
 }
 
-func getAstarteCommonVolumeMounts(cr *apiv1alpha1.Astarte) []v1.VolumeMount {
+func getAstarteCommonVolumeMounts(cr *apiv1alpha2.Astarte) []v1.VolumeMount {
 	ret := []v1.VolumeMount{
 		{
 			Name:      "beam-config",
@@ -597,7 +597,7 @@ func getAstarteCommonVolumeMounts(cr *apiv1alpha1.Astarte) []v1.VolumeMount {
 	return ret
 }
 
-func getAffinityForClusteredResource(appLabel string, resource apiv1alpha1.AstarteGenericClusteredResource) *v1.Affinity {
+func getAffinityForClusteredResource(appLabel string, resource apiv1alpha2.AstarteGenericClusteredResource) *v1.Affinity {
 	affinity := resource.CustomAffinity
 	if affinity == nil && pointy.BoolValue(resource.AntiAffinity, true) {
 		affinity = getStandardAntiAffinityForAppLabel(appLabel)
@@ -605,7 +605,7 @@ func getAffinityForClusteredResource(appLabel string, resource apiv1alpha1.Astar
 	return affinity
 }
 
-func getAstarteImageForClusteredResource(defaultImageName string, resource apiv1alpha1.AstarteGenericClusteredResource, cr *apiv1alpha1.Astarte) string {
+func getAstarteImageForClusteredResource(defaultImageName string, resource apiv1alpha2.AstarteGenericClusteredResource, cr *apiv1alpha2.Astarte) string {
 	if resource.Image != "" {
 		return resource.Image
 	}
@@ -613,7 +613,7 @@ func getAstarteImageForClusteredResource(defaultImageName string, resource apiv1
 	return getAstarteImageFromChannel(defaultImageName, version.GetVersionForAstarteComponent(cr.Spec.Version, resource.Version), cr)
 }
 
-func getImageForClusteredResource(defaultImageName, defaultImageTag string, resource apiv1alpha1.AstarteGenericClusteredResource) string {
+func getImageForClusteredResource(defaultImageName, defaultImageTag string, resource apiv1alpha2.AstarteGenericClusteredResource) string {
 	image := fmt.Sprintf("%s:%s", defaultImageName, defaultImageTag)
 	if resource.Image != "" {
 		image = resource.Image
@@ -624,10 +624,10 @@ func getImageForClusteredResource(defaultImageName, defaultImageTag string, reso
 	return image
 }
 
-func getDeploymentStrategyForClusteredResource(cr *apiv1alpha1.Astarte, resource apiv1alpha1.AstarteGenericClusteredResource, component apiv1alpha1.AstarteComponent) appsv1.DeploymentStrategy {
+func getDeploymentStrategyForClusteredResource(cr *apiv1alpha2.Astarte, resource apiv1alpha2.AstarteGenericClusteredResource, component apiv1alpha2.AstarteComponent) appsv1.DeploymentStrategy {
 	switch {
-	case component == apiv1alpha1.DataUpdaterPlant, component == apiv1alpha1.TriggerEngine,
-		component == apiv1alpha1.FlowComponent:
+	case component == apiv1alpha2.DataUpdaterPlant, component == apiv1alpha2.TriggerEngine,
+		component == apiv1alpha2.FlowComponent:
 		return appsv1.DeploymentStrategy{
 			Type: appsv1.RecreateDeploymentStrategyType,
 		}
@@ -642,15 +642,15 @@ func getDeploymentStrategyForClusteredResource(cr *apiv1alpha1.Astarte, resource
 	}
 }
 
-func getDataQueueCount(cr *apiv1alpha1.Astarte) int {
+func getDataQueueCount(cr *apiv1alpha2.Astarte) int {
 	return pointy.IntValue(cr.Spec.Components.DataUpdaterPlant.DataQueueCount, 128)
 }
 
-func getAppEngineAPIMaxResultslimit(cr *apiv1alpha1.Astarte) int {
+func getAppEngineAPIMaxResultslimit(cr *apiv1alpha2.Astarte) int {
 	return pointy.IntValue(cr.Spec.Components.AppengineAPI.MaxResultsLimit, 10000)
 }
 
-func getBaseAstarteAPIURL(cr *apiv1alpha1.Astarte) string {
+func getBaseAstarteAPIURL(cr *apiv1alpha2.Astarte) string {
 	scheme := "https"
 	if !pointy.BoolValue(cr.Spec.API.SSL, true) {
 		scheme = "http"
@@ -660,7 +660,7 @@ func getBaseAstarteAPIURL(cr *apiv1alpha1.Astarte) string {
 }
 
 func handleGenericUserCredentialsSecret(username, password, usernameKey, passwordKey, secretName string, forceCredentialsCreation bool,
-	secret *apiv1alpha1.LoginCredentialsSecret, cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+	secret *apiv1alpha2.LoginCredentialsSecret, cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	secretExists := false
 	resource := &v1.Secret{}
 	if err := c.Get(context.TODO(), types.NamespacedName{Namespace: cr.Namespace, Name: secretName}, resource); err == nil {
@@ -698,7 +698,7 @@ func handleGenericUserCredentialsSecret(username, password, usernameKey, passwor
 	return nil
 }
 
-func createOrUpdateService(cr *apiv1alpha1.Astarte, c client.Client, serviceName string, scheme *runtime.Scheme,
+func createOrUpdateService(cr *apiv1alpha2.Astarte, c client.Client, serviceName string, scheme *runtime.Scheme,
 	matchLabels, labels map[string]string) error {
 	service := &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: serviceName, Namespace: cr.Namespace}}
 	result, err := controllerutil.CreateOrUpdate(context.TODO(), c, service, func() error {
@@ -725,7 +725,7 @@ func createOrUpdateService(cr *apiv1alpha1.Astarte, c client.Client, serviceName
 	return err
 }
 
-func computePodLabels(r apiv1alpha1.PodLabelsGetter, labels map[string]string) map[string]string {
+func computePodLabels(r apiv1alpha2.PodLabelsGetter, labels map[string]string) map[string]string {
 	// Validating webhook guarantees that custom user labels won't interfere with operator's.
 	podLabels := map[string]string{}
 	for k, v := range labels {

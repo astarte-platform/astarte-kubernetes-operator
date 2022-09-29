@@ -38,19 +38,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/deps"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 )
 
-func getRabbitMQUserAndPassword(conn *apiv1alpha1.AstarteRabbitMQConnectionSpec) (string, string) {
+func getRabbitMQUserAndPassword(conn *apiv1alpha2.AstarteRabbitMQConnectionSpec) (string, string) {
 	if conn != nil {
 		return conn.Username, conn.Password
 	}
 	return "", ""
 }
 
-func getRabbitMQUserAndPasswordKeys(conn *apiv1alpha1.AstarteRabbitMQConnectionSpec) (string, string) {
+func getRabbitMQUserAndPasswordKeys(conn *apiv1alpha2.AstarteRabbitMQConnectionSpec) (string, string) {
 	if conn != nil {
 		if conn.Secret != nil {
 			return conn.Secret.UsernameKey, conn.Secret.PasswordKey
@@ -59,7 +59,7 @@ func getRabbitMQUserAndPasswordKeys(conn *apiv1alpha1.AstarteRabbitMQConnectionS
 	return misc.RabbitMQDefaultUserCredentialsUsernameKey, misc.RabbitMQDefaultUserCredentialsPasswordKey
 }
 
-func getRabbitMQSecret(cr *apiv1alpha1.Astarte) *apiv1alpha1.LoginCredentialsSecret {
+func getRabbitMQSecret(cr *apiv1alpha2.Astarte) *apiv1alpha2.LoginCredentialsSecret {
 	if cr.Spec.RabbitMQ.Connection != nil {
 		return cr.Spec.RabbitMQ.Connection.Secret
 	}
@@ -68,7 +68,7 @@ func getRabbitMQSecret(cr *apiv1alpha1.Astarte) *apiv1alpha1.LoginCredentialsSec
 
 // EnsureRabbitMQ reconciles the state of RabbitMQ
 // nolint: funlen
-func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func EnsureRabbitMQ(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	statefulSetName := cr.Name + "-rabbitmq"
 	labels := map[string]string{"app": statefulSetName}
 
@@ -203,7 +203,7 @@ func EnsureRabbitMQ(cr *apiv1alpha1.Astarte, c client.Client, scheme *runtime.Sc
 	return nil
 }
 
-func validateRabbitMQDefinition(rmq apiv1alpha1.AstarteRabbitMQSpec) error {
+func validateRabbitMQDefinition(rmq apiv1alpha2.AstarteRabbitMQSpec) error {
 	if !pointy.BoolValue(rmq.Deploy, true) {
 		// We need to make sure that we have all needed components
 		if rmq.Connection == nil {
@@ -280,7 +280,7 @@ func getRabbitMQReadinessProbe() *v1.Probe {
 	}
 }
 
-func getRabbitMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.EnvVar {
+func getRabbitMQEnvVars(statefulSetName string, cr *apiv1alpha2.Astarte) []v1.EnvVar {
 	userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetRabbitMQUserCredentialsSecret(cr)
 
 	ret := []v1.EnvVar{
@@ -324,7 +324,7 @@ func getRabbitMQEnvVars(statefulSetName string, cr *apiv1alpha1.Astarte) []v1.En
 	return ret
 }
 
-func getRabbitMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.Astarte) v1.PodSpec {
+func getRabbitMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha2.Astarte) v1.PodSpec {
 	serviceAccountName := statefulSetName
 	if pointy.BoolValue(cr.Spec.RBAC, false) {
 		serviceAccountName = ""
@@ -411,7 +411,7 @@ func getRabbitMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha1.
 	return ps
 }
 
-func getRabbitMQConfigMapData(statefulSetName string, cr *apiv1alpha1.Astarte) map[string]string {
+func getRabbitMQConfigMapData(statefulSetName string, cr *apiv1alpha2.Astarte) map[string]string {
 	rmqPlugins := []string{"rabbitmq_management", "rabbitmq_peer_discovery_k8s"}
 	if len(cr.Spec.RabbitMQ.AdditionalPlugins) > 0 {
 		rmqPlugins = append(rmqPlugins, cr.Spec.RabbitMQ.AdditionalPlugins...)
@@ -448,7 +448,7 @@ func getRabbitMQPolicyRules() []rbacv1.PolicyRule {
 	}
 }
 
-func getCommonRabbitMQObjectMeta(statefulSetName string, cr *apiv1alpha1.Astarte) metav1.ObjectMeta {
+func getCommonRabbitMQObjectMeta(statefulSetName string, cr *apiv1alpha2.Astarte) metav1.ObjectMeta {
 	labels := map[string]string{"app": statefulSetName}
 	return metav1.ObjectMeta{
 		Name:      statefulSetName,

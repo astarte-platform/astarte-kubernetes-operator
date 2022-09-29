@@ -31,6 +31,7 @@ import (
 // +kubebuilder:object:root=true
 
 // Astarte is the Schema for the astartes API
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 type Astarte struct {
 	metav1.TypeMeta   `json:",inline"`

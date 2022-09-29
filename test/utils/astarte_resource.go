@@ -19,7 +19,7 @@
 package utils
 
 import (
-	operator "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	operator "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"

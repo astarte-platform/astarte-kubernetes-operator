@@ -128,15 +128,15 @@ func main() {
 	// When testing the operator locally, we may want not to run webhooks. Thus, put them behind
 	// an environment variable
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&apiv1alpha1.Astarte{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&apiv1alpha2.Astarte{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Astarte")
 			os.Exit(1)
 		}
-		if err = (&apiv1alpha1.AstarteVoyagerIngress{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&apiv1alpha2.AstarteVoyagerIngress{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "AstarteVoyagerIngress")
 			os.Exit(1)
 		}
-		if err = (&apiv1alpha1.Flow{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = (&apiv1alpha2.Flow{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Flow")
 			os.Exit(1)
 		}

@@ -35,7 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 )
 
 // The purpose of this package is solely the migration of the old operator's flaky CR to the shiny new, stable,
@@ -44,7 +44,7 @@ import (
 
 // ToNewCR takes a flaky, existing Astarte instance already on the Kubernetes Cluster and reconciles it with
 // the new format and right specifications without losing data.
-func ToNewCR(cr *v1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func ToNewCR(cr *v1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	oldAstarteObjectSpec, err := getOldSpec(cr, c)
 	if err != nil {
 		return err
@@ -101,7 +101,7 @@ func ToNewCR(cr *v1alpha1.Astarte, c client.Client, scheme *runtime.Scheme) erro
 	return nil
 }
 
-func normalizeResourcesForAstarteComponents(cr *v1alpha1.Astarte, oldAstarteObjectSpec map[string]interface{}) (*v1alpha1.Astarte, error) {
+func normalizeResourcesForAstarteComponents(cr *v1alpha2.Astarte, oldAstarteObjectSpec map[string]interface{}) (*v1alpha2.Astarte, error) {
 	var err error
 
 	// All Components
@@ -164,14 +164,14 @@ func normalizeResourcesForAstarteComponents(cr *v1alpha1.Astarte, oldAstarteObje
 	return cr, nil
 }
 
-func getOldSpec(cr *v1alpha1.Astarte, c client.Client) (map[string]interface{}, error) {
+func getOldSpec(cr *v1alpha2.Astarte, c client.Client) (map[string]interface{}, error) {
 	// Given we know that inconsistencies are around, we want to Get from the client an unstructured Object to make sure
 	// we can inspect individual fields in the Spec map.
 	oldAstarteObject := &unstructured.Unstructured{}
 	oldAstarteObject.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "api.astarte-platform.org",
 		Kind:    "Astarte",
-		Version: "v1alpha1",
+		Version: "v1alpha2",
 	})
 	if err := c.Get(context.TODO(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, oldAstarteObject); err != nil {
 		return nil, err
