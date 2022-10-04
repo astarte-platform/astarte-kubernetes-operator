@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Add API reference docs generation.
 - Add status fields to AstarteDefaultIngress.
+- Add the `autoscaling` feature gate to allow autoscaling Astarte resources using
+  third-party tools such as, e.g. HPA.
+- Add `autoscaler.horizontal` field to AstarteGenericClusteredResource to support HPA
+  integration.
 
 ## [1.0.3] - 2022-07-04
 ### Added

@@ -30,8 +30,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-logr/logr"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -735,4 +737,23 @@ func computePodLabels(r apiv1alpha2.PodLabelsGetter, labels map[string]string) m
 		podLabels[k] = v
 	}
 	return podLabels
+}
+
+func getReplicaCountForResource(resource *apiv1alpha2.AstarteGenericClusteredResource, cr *apiv1alpha2.Astarte, c client.Client, log logr.Logger) *int32 {
+	if cr.Spec.Features.Autoscaling {
+		if hpaStatus, err := getHPAStatusForResource(resource.Autoscale.Horizontal, cr, c, log); err == nil {
+			log.Info("Getting replica count from HPA", "value", hpaStatus.DesiredReplicas)
+			return &hpaStatus.DesiredReplicas
+		}
+	}
+	return resource.Replicas
+}
+
+func getHPAStatusForResource(autoscalerName string, cr *apiv1alpha2.Astarte, c client.Client, log logr.Logger) (autoscalingv2.HorizontalPodAutoscalerStatus, error) {
+	hpa := &autoscalingv2.HorizontalPodAutoscaler{}
+	if err := c.Get(context.Background(), types.NamespacedName{Name: autoscalerName, Namespace: cr.Namespace}, hpa); err != nil {
+		log.Info("Could not get HPA", "name", autoscalerName, "namespace", cr.Namespace)
+		return autoscalingv2.HorizontalPodAutoscalerStatus{}, fmt.Errorf("not found")
+	}
+	return hpa.Status, nil
 }

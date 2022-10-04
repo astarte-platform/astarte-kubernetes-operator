@@ -106,7 +106,7 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha2.Astarte, api apiv1al
 		// Assign the Spec.
 		deployment.ObjectMeta.Labels = labels
 		deployment.Spec = deploymentSpec
-		deployment.Spec.Replicas = api.Replicas
+		deployment.Spec.Replicas = getReplicaCountForResource(&api.AstarteGenericClusteredResource, cr, c, reqLogger)
 
 		return nil
 	})

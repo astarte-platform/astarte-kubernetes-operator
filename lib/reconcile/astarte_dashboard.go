@@ -122,7 +122,7 @@ func EnsureAstarteDashboard(cr *apiv1alpha2.Astarte, dashboard apiv1alpha2.Astar
 		// Assign the Spec.
 		deployment.ObjectMeta.Labels = labels
 		deployment.Spec = deploymentSpec
-		deployment.Spec.Replicas = dashboard.Replicas
+		deployment.Spec.Replicas = getReplicaCountForResource(&dashboard.AstarteGenericClusteredResource, cr, c, reqLogger)
 
 		return nil
 	})

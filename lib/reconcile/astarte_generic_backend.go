@@ -109,7 +109,7 @@ func EnsureAstarteGenericBackendWithCustomProbe(cr *apiv1alpha2.Astarte, backend
 		// Assign the Spec.
 		deployment.ObjectMeta.Labels = labels
 		deployment.Spec = deploymentSpec
-		deployment.Spec.Replicas = backend.Replicas
+		deployment.Spec.Replicas = getReplicaCountForResource(&backend, cr, c, reqLogger)
 
 		return nil
 	})
