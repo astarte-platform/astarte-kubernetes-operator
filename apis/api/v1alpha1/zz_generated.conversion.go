@@ -1286,9 +1286,7 @@ func autoConvert_v1alpha1_AstarteGenericClusteredResource_To_v1alpha2_AstarteGen
 	out.Resources = (*v1.ResourceRequirements)(unsafe.Pointer(in.Resources))
 	out.AdditionalEnv = *(*[]v1.EnvVar)(unsafe.Pointer(&in.AdditionalEnv))
 	out.PodLabels = *(*map[string]string)(unsafe.Pointer(&in.PodLabels))
-	if err := Convert_v1alpha1_AstarteGenericClusteredResourceAutoscalerSpec_To_v1alpha2_AstarteGenericClusteredResourceAutoscalerSpec(&in.Autoscale, &out.Autoscale, s); err != nil {
-		return err
-	}
+	out.Autoscale = (*v1alpha2.AstarteGenericClusteredResourceAutoscalerSpec)(unsafe.Pointer(in.Autoscale))
 	out.PriorityClass = in.PriorityClass
 	return nil
 }
@@ -1309,9 +1307,7 @@ func autoConvert_v1alpha2_AstarteGenericClusteredResource_To_v1alpha1_AstarteGen
 	out.Resources = (*v1.ResourceRequirements)(unsafe.Pointer(in.Resources))
 	out.AdditionalEnv = *(*[]v1.EnvVar)(unsafe.Pointer(&in.AdditionalEnv))
 	out.PodLabels = *(*map[string]string)(unsafe.Pointer(&in.PodLabels))
-	if err := Convert_v1alpha2_AstarteGenericClusteredResourceAutoscalerSpec_To_v1alpha1_AstarteGenericClusteredResourceAutoscalerSpec(&in.Autoscale, &out.Autoscale, s); err != nil {
-		return err
-	}
+	out.Autoscale = (*AstarteGenericClusteredResourceAutoscalerSpec)(unsafe.Pointer(in.Autoscale))
 	out.PriorityClass = in.PriorityClass
 	return nil
 }

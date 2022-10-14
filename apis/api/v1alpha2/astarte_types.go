@@ -206,7 +206,7 @@ type AstarteGenericClusteredResource struct {
 	// Autoscaling resources for this deployment/statefulset.
 	// If autoscaling is enabled, this will take precedence over the "Replicas" field.
 	// +optional
-	Autoscale AstarteGenericClusteredResourceAutoscalerSpec `json:"autoscaler,omitempty"`
+	Autoscale *AstarteGenericClusteredResourceAutoscalerSpec `json:"autoscaler,omitempty"`
 	// The PriorityClass for this component.
 	// Must be one of "high", "mid", "low" or unspecified.
 	// Ignored if astartePodPriorities is not enabled.
