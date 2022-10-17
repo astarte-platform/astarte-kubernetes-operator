@@ -13,7 +13,11 @@ run:
 
   # Don't check generated files. We don't care.
   skip-files:
-    - api/v1alpha1/zz_generated.deepcopy.go
+    - apis/api/v1alpha1/zz_generated.deepcopy.go
+    - apis/api/v1alpha1/zz_generated.conversion.go
+    - apis/api/v1alpha2/zz_generated.deepcopy.go
+    - apis/api/v1alpha2/zz_generated.conversion.go
+    - apis/ingress/v1alpha1/zz_generated.deepcopy.go
 
 
 # output configuration options
@@ -87,6 +91,9 @@ linters-settings:
     # report about shadowed variables
     check-shadowing: true
     enable-all: true
+    disable:
+    # do not fail lint job if CRD fields are logically ordered rather than ordered for structure size minimization
+      - fieldalignment
   depguard:
   lll:
     # max line length, lines longer will be reported. Default is 120.
@@ -94,9 +101,6 @@ linters-settings:
     line-length: 120
     # tab width in spaces. Default to 1.
     tab-width: 1
-  maligned:
-    # print struct with more effective memory layout or not, false by default
-    suggest-new: true
   misspell:
     # Correct spellings using locale preferences for US or UK.
     # Default is to use a neutral variety of English.
@@ -143,10 +147,10 @@ linters:
     - goprintffuncname
     - gosec
     #- lll
-    - maligned
+    #- maligned # deprecated
     - unconvert
     - unparam
-  
+
   fast: false
 
   # Excluding configuration per-path, per-linter, per-text and per-source
