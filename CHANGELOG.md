@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2022-10-26
+### Changed
+- From the next release, we will use the [CalVer](https://calver.org/) versioning scheme instead of
+  [SemVer](https://semver.org). This is the last release following the SemVer scheme.
+  See https://github.com/astarte-platform/astarte-kubernetes-operator/issues/306.
+
 ## [1.0.3] - 2022-07-04
 ### Added
 - Add `podLabels` field to Astarte components specs to set custom labels for Astarte pods.
