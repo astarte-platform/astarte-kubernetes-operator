@@ -1,5 +1,5 @@
 # Current Operator version
-VERSION ?= 1.0.3
+VERSION ?= 1.0.4
 # Default bundle image tag
 BUNDLE_IMG ?= astarte/astarte-kubernetes-operator:$(VERSION)
 # Options for 'bundle-build'
