@@ -78,3 +78,8 @@ tags
 # End of https://www.gitignore.io/api/go,vim,emacs,visualstudiocode
 # Binaries for programs and plugins
 testbin/*
+### Elixir artifacts ###
+docs/documentation/_build
+docs/documentation/deps
+docs/documentation/doc
+*.beam
