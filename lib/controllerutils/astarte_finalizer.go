@@ -24,9 +24,12 @@ import (
 
 	"github.com/go-logr/logr"
 	v1 "k8s.io/api/core/v1"
+	scheduling "k8s.io/api/scheduling/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/astarte-platform/astarte-kubernetes-operator/lib/reconcile"
 )
 
 // FinalizeAstarte handles the finalization logic for Astarte
@@ -72,7 +75,36 @@ func FinalizeAstarte(c client.Client, name, namespace string, reqLogger logr.Log
 		return err
 	}
 
+	// Last but not least, we remove the PriorityClasses introduced by Astarte.
+	if err := finalizePriorityClasses(c, reqLogger); err != nil {
+		return err
+	}
+
 	// That's it. So long, and thanks for all the fish.
 	reqLogger.Info("Successfully finalized astarte")
+	return nil
+}
+
+func finalizePriorityClasses(c client.Client, reqLogger logr.Logger) error {
+	priorityClasses := &scheduling.PriorityClassList{}
+	err := c.List(context.TODO(), priorityClasses)
+	if err == nil {
+		// Iterate and delete
+		for _, priorityClass := range priorityClasses.Items {
+			if priorityClass.GetName() == reconcile.AstarteHighPriorityName ||
+				priorityClass.GetName() == reconcile.AstarteMidPriorityName ||
+				priorityClass.GetName() == reconcile.AstarteLowPriorityName {
+				priorityClassCopy := priorityClass
+				if err2 := c.Delete(context.TODO(), &priorityClassCopy); err2 != nil {
+					reqLogger.Error(err2, "Error while finalizing Astarte. A PriorityClass will need to be manually removed.", "PriorityClass", priorityClass)
+					return err2
+				}
+			}
+		}
+	} else if !errors.IsNotFound(err) {
+		// Notify
+		return err
+	}
+	// All good
 	return nil
 }

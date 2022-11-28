@@ -180,6 +180,21 @@ func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha2.Astarte,
 		ps.ServiceAccountName = cr.Name + "-" + component.ServiceName()
 	}
 
+	// do we want priorities?
+	if cr.Spec.Features.AstartePodPriorities.IsEnabled() {
+		//is a priorityClass specified in the Astarte CR?
+		switch api.PriorityClass {
+		case highPriority:
+			ps.PriorityClassName = AstarteHighPriorityName
+		case midPriority:
+			ps.PriorityClassName = AstarteMidPriorityName
+		case lowPriority:
+			ps.PriorityClassName = AstarteLowPriorityName
+		default:
+			ps.PriorityClassName = GetDefaultAstartePriorityClassNameForComponent(component)
+		}
+	}
+
 	return ps
 }
 

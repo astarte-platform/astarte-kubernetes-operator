@@ -1230,6 +1230,16 @@ spec:
                     description: Additional labels for this Component's pod(s). Label
                       keys can't be of the form "app", "component", "astarte-*", "flow-*"
                     type: object
+                  priorityClass:
+                    description: The PriorityClass for this component. Must be one
+                      of "high", "mid", "low" or unspecified. Ignored if astartePodPriorities
+                      is not enabled.
+                    enum:
+                    - high
+                    - mid
+                    - low
+                    - ""
+                    type: string
                   replicas:
                     format: int32
                     type: integer
@@ -3085,6 +3095,16 @@ spec:
                     description: Additional labels for this Component's pod(s). Label
                       keys can't be of the form "app", "component", "astarte-*", "flow-*"
                     type: object
+                  priorityClass:
+                    description: The PriorityClass for this component. Must be one
+                      of "high", "mid", "low" or unspecified. Ignored if astartePodPriorities
+                      is not enabled.
+                    enum:
+                    - high
+                    - mid
+                    - low
+                    - ""
+                    type: string
                   resources:
                     description: Compute Resources for this Component.
                     properties:
@@ -5813,6 +5833,16 @@ spec:
                           Label keys can't be of the form "app", "component", "astarte-*",
                           "flow-*"
                         type: object
+                      priorityClass:
+                        description: The PriorityClass for this component. Must be
+                          one of "high", "mid", "low" or unspecified. Ignored if astartePodPriorities
+                          is not enabled.
+                        enum:
+                        - high
+                        - mid
+                        - low
+                        - ""
+                        type: string
                       replicas:
                         format: int32
                         type: integer
@@ -6994,6 +7024,16 @@ spec:
                           Label keys can't be of the form "app", "component", "astarte-*",
                           "flow-*"
                         type: object
+                      priorityClass:
+                        description: The PriorityClass for this component. Must be
+                          one of "high", "mid", "low" or unspecified. Ignored if astartePodPriorities
+                          is not enabled.
+                        enum:
+                        - high
+                        - mid
+                        - low
+                        - ""
+                        type: string
                       realmManagementApiUrl:
                         type: string
                       replicas:
@@ -8142,6 +8182,16 @@ spec:
                           this value only if you know what you're doing and you have
                           experience with RabbitMQ. Defaults to 300
                         type: integer
+                      priorityClass:
+                        description: The PriorityClass for this component. Must be
+                          one of "high", "mid", "low" or unspecified. Ignored if astartePodPriorities
+                          is not enabled.
+                        enum:
+                        - high
+                        - mid
+                        - low
+                        - ""
+                        type: string
                       replicas:
                         format: int32
                         type: integer
@@ -9281,6 +9331,16 @@ spec:
                           Label keys can't be of the form "app", "component", "astarte-*",
                           "flow-*"
                         type: object
+                      priorityClass:
+                        description: The PriorityClass for this component. Must be
+                          one of "high", "mid", "low" or unspecified. Ignored if astartePodPriorities
+                          is not enabled.
+                        enum:
+                        - high
+                        - mid
+                        - low
+                        - ""
+                        type: string
                       replicas:
                         format: int32
                         type: integer
@@ -10490,6 +10550,16 @@ spec:
                               Label keys can't be of the form "app", "component",
                               "astarte-*", "flow-*"
                             type: object
+                          priorityClass:
+                            description: The PriorityClass for this component. Must
+                              be one of "high", "mid", "low" or unspecified. Ignored
+                              if astartePodPriorities is not enabled.
+                            enum:
+                            - high
+                            - mid
+                            - low
+                            - ""
+                            type: string
                           replicas:
                             format: int32
                             type: integer
@@ -11699,6 +11769,16 @@ spec:
                               Label keys can't be of the form "app", "component",
                               "astarte-*", "flow-*"
                             type: object
+                          priorityClass:
+                            description: The PriorityClass for this component. Must
+                              be one of "high", "mid", "low" or unspecified. Ignored
+                              if astartePodPriorities is not enabled.
+                            enum:
+                            - high
+                            - mid
+                            - low
+                            - ""
+                            type: string
                           replicas:
                             format: int32
                             type: integer
@@ -12921,6 +13001,16 @@ spec:
                               Label keys can't be of the form "app", "component",
                               "astarte-*", "flow-*"
                             type: object
+                          priorityClass:
+                            description: The PriorityClass for this component. Must
+                              be one of "high", "mid", "low" or unspecified. Ignored
+                              if astartePodPriorities is not enabled.
+                            enum:
+                            - high
+                            - mid
+                            - low
+                            - ""
+                            type: string
                           replicas:
                             format: int32
                             type: integer
@@ -14130,6 +14220,16 @@ spec:
                               Label keys can't be of the form "app", "component",
                               "astarte-*", "flow-*"
                             type: object
+                          priorityClass:
+                            description: The PriorityClass for this component. Must
+                              be one of "high", "mid", "low" or unspecified. Ignored
+                              if astartePodPriorities is not enabled.
+                            enum:
+                            - high
+                            - mid
+                            - low
+                            - ""
+                            type: string
                           replicas:
                             format: int32
                             type: integer
@@ -15346,6 +15446,16 @@ spec:
                               Label keys can't be of the form "app", "component",
                               "astarte-*", "flow-*"
                             type: object
+                          priorityClass:
+                            description: The PriorityClass for this component. Must
+                              be one of "high", "mid", "low" or unspecified. Ignored
+                              if astartePodPriorities is not enabled.
+                            enum:
+                            - high
+                            - mid
+                            - low
+                            - ""
+                            type: string
                           replicas:
                             format: int32
                             type: integer
@@ -16555,6 +16665,16 @@ spec:
                               Label keys can't be of the form "app", "component",
                               "astarte-*", "flow-*"
                             type: object
+                          priorityClass:
+                            description: The PriorityClass for this component. Must
+                              be one of "high", "mid", "low" or unspecified. Ignored
+                              if astartePodPriorities is not enabled.
+                            enum:
+                            - high
+                            - mid
+                            - low
+                            - ""
+                            type: string
                           replicas:
                             format: int32
                             type: integer
@@ -17737,6 +17857,16 @@ spec:
                           Label keys can't be of the form "app", "component", "astarte-*",
                           "flow-*"
                         type: object
+                      priorityClass:
+                        description: The PriorityClass for this component. Must be
+                          one of "high", "mid", "low" or unspecified. Ignored if astartePodPriorities
+                          is not enabled.
+                        enum:
+                        - high
+                        - mid
+                        - low
+                        - ""
+                        type: string
                       replicas:
                         format: int32
                         type: integer
@@ -17831,6 +17961,44 @@ spec:
                       schemas to the latest internal value, and may reject unrecognized
                       values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                     type: string
+                  astartePodPriorities:
+                    description: AstartePodPriorities allows to set different priorityClasses
+                      for Astarte pods. Note that enabling this feature might generate
+                      some counter-intuitive scheduling beahaviour if not done properly.
+                    properties:
+                      apiVersion:
+                        description: 'APIVersion defines the versioned schema of this
+                          representation of an object. Servers should convert recognized
+                          schemas to the latest internal value, and may reject unrecognized
+                          values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                        type: string
+                      astarteHighPriority:
+                        default: 1000
+                        description: The value of the highest PriorityClass for Astarte
+                          pods. Once the value is set, updating it will not have effect.
+                        minimum: 0
+                        type: integer
+                      astarteLowPriority:
+                        default: 10
+                        description: The value of the least PriorityClass for Astarte
+                          pods. Once the value is set, updating it will not have effect.
+                        minimum: 0
+                        type: integer
+                      astarteMidPriority:
+                        default: 100
+                        description: The value of the medium PriorityClass for Astarte
+                          pods. Once the value is set, updating it will not have effect.
+                        minimum: 0
+                        type: integer
+                      enabled:
+                        type: boolean
+                      kind:
+                        description: 'Kind is a string value representing the REST
+                          resource this object represents. Servers may infer this
+                          from the endpoint the client submits requests to. Cannot
+                          be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                        type: string
+                    type: object
                   autoscaling:
                     type: boolean
                   kind:
@@ -19029,6 +19197,16 @@ spec:
                     description: Additional labels for this Component's pod(s). Label
                       keys can't be of the form "app", "component", "astarte-*", "flow-*"
                     type: object
+                  priorityClass:
+                    description: The PriorityClass for this component. Must be one
+                      of "high", "mid", "low" or unspecified. Ignored if astartePodPriorities
+                      is not enabled.
+                    enum:
+                    - high
+                    - mid
+                    - low
+                    - ""
+                    type: string
                   replicas:
                     format: int32
                     type: integer
@@ -21739,6 +21917,16 @@ spec:
                     type: object
                   port:
                     type: integer
+                  priorityClass:
+                    description: The PriorityClass for this component. Must be one
+                      of "high", "mid", "low" or unspecified. Ignored if astartePodPriorities
+                      is not enabled.
+                    enum:
+                    - high
+                    - mid
+                    - low
+                    - ""
+                    type: string
                   replicas:
                     format: int32
                     type: integer
@@ -24625,6 +24813,16 @@ spec:
                     description: Additional labels for this Component's pod(s). Label
                       keys can't be of the form "app", "component", "astarte-*", "flow-*"
                     type: object
+                  priorityClass:
+                    description: The PriorityClass for this component. Must be one
+                      of "high", "mid", "low" or unspecified. Ignored if astartePodPriorities
+                      is not enabled.
+                    enum:
+                    - high
+                    - mid
+                    - low
+                    - ""
+                    type: string
                   replicas:
                     format: int32
                     type: integer
@@ -26480,6 +26678,16 @@ spec:
                     description: Additional labels for this Component's pod(s). Label
                       keys can't be of the form "app", "component", "astarte-*", "flow-*"
                     type: object
+                  priorityClass:
+                    description: The PriorityClass for this component. Must be one
+                      of "high", "mid", "low" or unspecified. Ignored if astartePodPriorities
+                      is not enabled.
+                    enum:
+                    - high
+                    - mid
+                    - low
+                    - ""
+                    type: string
                   resources:
                     description: Compute Resources for this Component.
                     properties:
@@ -29212,6 +29420,16 @@ spec:
                           Label keys can't be of the form "app", "component", "astarte-*",
                           "flow-*"
                         type: object
+                      priorityClass:
+                        description: The PriorityClass for this component. Must be
+                          one of "high", "mid", "low" or unspecified. Ignored if astartePodPriorities
+                          is not enabled.
+                        enum:
+                        - high
+                        - mid
+                        - low
+                        - ""
+                        type: string
                       replicas:
                         format: int32
                         type: integer
@@ -30397,6 +30615,16 @@ spec:
                           Label keys can't be of the form "app", "component", "astarte-*",
                           "flow-*"
                         type: object
+                      priorityClass:
+                        description: The PriorityClass for this component. Must be
+                          one of "high", "mid", "low" or unspecified. Ignored if astartePodPriorities
+                          is not enabled.
+                        enum:
+                        - high
+                        - mid
+                        - low
+                        - ""
+                        type: string
                       realmManagementApiUrl:
                         type: string
                       replicas:
@@ -31549,6 +31777,16 @@ spec:
                           this value only if you know what you're doing and you have
                           experience with RabbitMQ. Defaults to 300
                         type: integer
+                      priorityClass:
+                        description: The PriorityClass for this component. Must be
+                          one of "high", "mid", "low" or unspecified. Ignored if astartePodPriorities
+                          is not enabled.
+                        enum:
+                        - high
+                        - mid
+                        - low
+                        - ""
+                        type: string
                       replicas:
                         format: int32
                         type: integer
@@ -32692,6 +32930,16 @@ spec:
                           Label keys can't be of the form "app", "component", "astarte-*",
                           "flow-*"
                         type: object
+                      priorityClass:
+                        description: The PriorityClass for this component. Must be
+                          one of "high", "mid", "low" or unspecified. Ignored if astartePodPriorities
+                          is not enabled.
+                        enum:
+                        - high
+                        - mid
+                        - low
+                        - ""
+                        type: string
                       replicas:
                         format: int32
                         type: integer
@@ -33906,6 +34154,16 @@ spec:
                               Label keys can't be of the form "app", "component",
                               "astarte-*", "flow-*"
                             type: object
+                          priorityClass:
+                            description: The PriorityClass for this component. Must
+                              be one of "high", "mid", "low" or unspecified. Ignored
+                              if astartePodPriorities is not enabled.
+                            enum:
+                            - high
+                            - mid
+                            - low
+                            - ""
+                            type: string
                           replicas:
                             format: int32
                             type: integer
@@ -35120,6 +35378,16 @@ spec:
                               Label keys can't be of the form "app", "component",
                               "astarte-*", "flow-*"
                             type: object
+                          priorityClass:
+                            description: The PriorityClass for this component. Must
+                              be one of "high", "mid", "low" or unspecified. Ignored
+                              if astartePodPriorities is not enabled.
+                            enum:
+                            - high
+                            - mid
+                            - low
+                            - ""
+                            type: string
                           replicas:
                             format: int32
                             type: integer
@@ -36347,6 +36615,16 @@ spec:
                               Label keys can't be of the form "app", "component",
                               "astarte-*", "flow-*"
                             type: object
+                          priorityClass:
+                            description: The PriorityClass for this component. Must
+                              be one of "high", "mid", "low" or unspecified. Ignored
+                              if astartePodPriorities is not enabled.
+                            enum:
+                            - high
+                            - mid
+                            - low
+                            - ""
+                            type: string
                           replicas:
                             format: int32
                             type: integer
@@ -37561,6 +37839,16 @@ spec:
                               Label keys can't be of the form "app", "component",
                               "astarte-*", "flow-*"
                             type: object
+                          priorityClass:
+                            description: The PriorityClass for this component. Must
+                              be one of "high", "mid", "low" or unspecified. Ignored
+                              if astartePodPriorities is not enabled.
+                            enum:
+                            - high
+                            - mid
+                            - low
+                            - ""
+                            type: string
                           replicas:
                             format: int32
                             type: integer
@@ -38782,6 +39070,16 @@ spec:
                               Label keys can't be of the form "app", "component",
                               "astarte-*", "flow-*"
                             type: object
+                          priorityClass:
+                            description: The PriorityClass for this component. Must
+                              be one of "high", "mid", "low" or unspecified. Ignored
+                              if astartePodPriorities is not enabled.
+                            enum:
+                            - high
+                            - mid
+                            - low
+                            - ""
+                            type: string
                           replicas:
                             format: int32
                             type: integer
@@ -39996,6 +40294,16 @@ spec:
                               Label keys can't be of the form "app", "component",
                               "astarte-*", "flow-*"
                             type: object
+                          priorityClass:
+                            description: The PriorityClass for this component. Must
+                              be one of "high", "mid", "low" or unspecified. Ignored
+                              if astartePodPriorities is not enabled.
+                            enum:
+                            - high
+                            - mid
+                            - low
+                            - ""
+                            type: string
                           replicas:
                             format: int32
                             type: integer
@@ -41182,6 +41490,16 @@ spec:
                           Label keys can't be of the form "app", "component", "astarte-*",
                           "flow-*"
                         type: object
+                      priorityClass:
+                        description: The PriorityClass for this component. Must be
+                          one of "high", "mid", "low" or unspecified. Ignored if astartePodPriorities
+                          is not enabled.
+                        enum:
+                        - high
+                        - mid
+                        - low
+                        - ""
+                        type: string
                       replicas:
                         format: int32
                         type: integer
@@ -41276,6 +41594,44 @@ spec:
                       schemas to the latest internal value, and may reject unrecognized
                       values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                     type: string
+                  astartePodPriorities:
+                    description: AstartePodPriorities allows to set different priorityClasses
+                      for Astarte pods. Note that enabling this feature might generate
+                      some counter-intuitive scheduling beahaviour if not done properly.
+                    properties:
+                      apiVersion:
+                        description: 'APIVersion defines the versioned schema of this
+                          representation of an object. Servers should convert recognized
+                          schemas to the latest internal value, and may reject unrecognized
+                          values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                        type: string
+                      astarteHighPriority:
+                        default: 1000
+                        description: The value of the highest PriorityClass for Astarte
+                          pods. Once the value is set, updating it will not have effect.
+                        minimum: 0
+                        type: integer
+                      astarteLowPriority:
+                        default: 10
+                        description: The value of the least PriorityClass for Astarte
+                          pods. Once the value is set, updating it will not have effect.
+                        minimum: 0
+                        type: integer
+                      astarteMidPriority:
+                        default: 100
+                        description: The value of the medium PriorityClass for Astarte
+                          pods. Once the value is set, updating it will not have effect.
+                        minimum: 0
+                        type: integer
+                      enabled:
+                        type: boolean
+                      kind:
+                        description: 'Kind is a string value representing the REST
+                          resource this object represents. Servers may infer this
+                          from the endpoint the client submits requests to. Cannot
+                          be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                        type: string
+                    type: object
                   autoscaling:
                     type: boolean
                   kind:
@@ -42478,6 +42834,16 @@ spec:
                     description: Additional labels for this Component's pod(s). Label
                       keys can't be of the form "app", "component", "astarte-*", "flow-*"
                     type: object
+                  priorityClass:
+                    description: The PriorityClass for this component. Must be one
+                      of "high", "mid", "low" or unspecified. Ignored if astartePodPriorities
+                      is not enabled.
+                    enum:
+                    - high
+                    - mid
+                    - low
+                    - ""
+                    type: string
                   replicas:
                     format: int32
                     type: integer
@@ -45192,6 +45558,16 @@ spec:
                     type: object
                   port:
                     type: integer
+                  priorityClass:
+                    description: The PriorityClass for this component. Must be one
+                      of "high", "mid", "low" or unspecified. Ignored if astartePodPriorities
+                      is not enabled.
+                    enum:
+                    - high
+                    - mid
+                    - low
+                    - ""
+                    type: string
                   replicas:
                     format: int32
                     type: integer

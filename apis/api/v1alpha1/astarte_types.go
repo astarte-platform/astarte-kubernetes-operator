@@ -207,6 +207,12 @@ type AstarteGenericClusteredResource struct {
 	// Autoscaling resources for this deployment/statefulset.
 	// +optional
 	Autoscale AstarteGenericClusteredResourceAutoscalerSpec `json:"autoscaler,omitempty"`
+	// The PriorityClass for this component.
+	// Must be one of "high", "mid", "low" or unspecified.
+	// Ignored if astartePodPriorities is not enabled.
+	// +kubebuilder:validation:Enum:=high;mid;low;""
+	// +optional
+	PriorityClass string `json:"priorityClass,omitempty"`
 }
 
 type AstarteGenericClusteredResourceAutoscalerSpec struct {
@@ -579,6 +585,12 @@ type AstarteCFSSLSpec struct {
 	// Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
 	// +optional
 	PodLabels map[string]string `json:"podLabels,omitempty"`
+	// The PriorityClass for this component.
+	// Must be one of "high", "mid", "low" or unspecified.
+	// Ignored if astartePodPriorities is not enabled.
+	// +kubebuilder:validation:Enum:=high;mid;low;""
+	// +optional
+	PriorityClass string `json:"priorityClass,omitempty"`
 }
 
 // This interface is implemented by all Astarte components which have a podLabels field.
@@ -604,6 +616,37 @@ type AstarteSystemKeyspaceSpec struct {
 	ReplicationFactor int `json:"replicationFactor,omitempty"`
 }
 
+// AstartePodPriorities allows to set different priorityClasses for Astarte pods.
+// Note that enabling this feature might generate some counter-intuitive
+// scheduling beahaviour if not done properly.
+type AstartePodPrioritiesSpec struct {
+	metav1.TypeMeta `json:",inline"`
+	// +optional
+	Enabled bool `json:"enabled,omitempty"`
+	// The value of the highest PriorityClass for Astarte pods.
+	// Once the value is set, updating it will not have effect.
+	// +optional
+	// +kubebuilder:default:=1000
+	// +kubebuilder:validation:Minimum:=0
+	AstarteHighPriority *int `json:"astarteHighPriority,omitempty"`
+	// The value of the medium PriorityClass for Astarte pods.
+	// Once the value is set, updating it will not have effect.
+	// +optional
+	// +kubebuilder:default:=100
+	// +kubebuilder:validation:Minimum:=0
+	AstarteMidPriority *int `json:"astarteMidPriority,omitempty"`
+	// The value of the least PriorityClass for Astarte pods.
+	// Once the value is set, updating it will not have effect.
+	// +optional
+	// +kubebuilder:default:=10
+	// +kubebuilder:validation:Minimum:=0
+	AstarteLowPriority *int `json:"astarteLowPriority,omitempty"`
+}
+
+func (a *AstartePodPrioritiesSpec) IsEnabled() bool {
+	return a != nil && a.Enabled
+}
+
 // AstarteFeatures enables/disables selectively a set of global features in Astarte
 type AstarteFeatures struct {
 	metav1.TypeMeta `json:",inline"`
@@ -611,6 +654,8 @@ type AstarteFeatures struct {
 	RealmDeletion bool `json:"realmDeletion,omitempty"`
 	// +optional
 	Autoscaling bool `json:"autoscaling,omitempty"`
+	// +optional
+	AstartePodPriorities *AstartePodPrioritiesSpec `json:"astartePodPriorities,omitempty"`
 }
 
 // AstarteSpec defines the desired state of Astarte

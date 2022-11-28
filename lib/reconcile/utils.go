@@ -55,6 +55,9 @@ const (
 	astarteServicesPort int32  = 4000
 	oldAstartePrefix    string = "ASTARTE_"
 	noneClusterIP       string = "None"
+	highPriority        string = "high"
+	midPriority         string = "mid"
+	lowPriority         string = "low"
 )
 
 func encodePEMBlockToEncodedBytes(block *pem.Block) string {

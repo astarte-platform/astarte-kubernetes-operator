@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   third-party tools such as, e.g. HPA.
 - Add `autoscaler.horizontal` field to AstarteGenericClusteredResource to support HPA
   integration.
+- Add `astartePodPriorities` field to `features`, allowing to use 3 PriorityClasses for Astarte
+  pods. The priority value is customizable.
 
 ### Fixed
 - Makefile: fix `make bundle` target. Generate a valid OLM bundle.

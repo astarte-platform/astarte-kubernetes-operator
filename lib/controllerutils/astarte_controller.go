@@ -328,6 +328,11 @@ func (r *ReconcileHelper) ReconcileAstarteResources(instance *apiv1alpha2.Astart
 		return err
 	}
 
+	// Give priority to PriorityClasses
+	if err := recon.EnsureAstartePriorityClasses(instance, r.Client, r.Scheme); err != nil {
+		return err
+	}
+
 	// Dependencies Dance!
 	// RabbitMQ, first and foremost
 	if err := recon.EnsureRabbitMQ(instance, r.Client, r.Scheme); err != nil {
