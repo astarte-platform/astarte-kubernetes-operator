@@ -186,7 +186,7 @@ func validateAutoscalerForClusteredResources(r *Astarte) error {
 func validateAutoscalerForClusteredResourcesExcluding(r *Astarte, excluded []AstarteGenericClusteredResource) error {
 	if r.Spec.Features.Autoscaling {
 		for _, v := range excluded {
-			if v.Autoscale.Horizontal != "" {
+			if v.Autoscale != nil && v.Autoscale.Horizontal != "" {
 				return fmt.Errorf("invalid autoscaler: cannot autoscale horizontally RabbitMQ, DataUpdaterPlant or Cassandra")
 			}
 		}

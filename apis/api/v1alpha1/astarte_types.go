@@ -206,7 +206,7 @@ type AstarteGenericClusteredResource struct {
 	PodLabels map[string]string `json:"podLabels,omitempty"`
 	// Autoscaling resources for this deployment/statefulset.
 	// +optional
-	Autoscale AstarteGenericClusteredResourceAutoscalerSpec `json:"autoscaler,omitempty"`
+	Autoscale *AstarteGenericClusteredResourceAutoscalerSpec `json:"autoscaler,omitempty"`
 	// The PriorityClass for this component.
 	// Must be one of "high", "mid", "low" or unspecified.
 	// Ignored if astartePodPriorities is not enabled.

@@ -743,7 +743,7 @@ func computePodLabels(r apiv1alpha2.PodLabelsGetter, labels map[string]string) m
 }
 
 func getReplicaCountForResource(resource *apiv1alpha2.AstarteGenericClusteredResource, cr *apiv1alpha2.Astarte, c client.Client, log logr.Logger) *int32 {
-	if cr.Spec.Features.Autoscaling {
+	if cr.Spec.Features.Autoscaling && resource.Autoscale != nil {
 		if hpaStatus, err := getHPAStatusForResource(resource.Autoscale.Horizontal, cr, c, log); err == nil {
 			log.Info("Getting replica count from HPA", "value", hpaStatus.DesiredReplicas)
 			return &hpaStatus.DesiredReplicas
