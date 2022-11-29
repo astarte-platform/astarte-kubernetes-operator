@@ -21,11 +21,11 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     # Checkout the source
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         path: astarte-kubernetes-operator
     # Checkout the docs repository
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         repository: astarte-platform/docs
         ssh-key: ${{ secrets.DOCS_DEPLOY_KEY }}
@@ -33,7 +33,7 @@ jobs:
     # Setup Go for crd-ref-docs (ubuntu-20.04 defaults to go 1.15)
     # see https://github.com/actions/virtual-environments/issues/2447
     - name: Setup Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v3
       with:
         go-version: '1.18.x'
     # Generate CRD docs directory for Hugo
@@ -49,7 +49,7 @@ jobs:
       working-directory: astarte-kubernetes-operator
     # Checkout the hugo-book theme
     - name: Checkout hugo-book
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: recursive
         repository: alex-shpak/hugo-book

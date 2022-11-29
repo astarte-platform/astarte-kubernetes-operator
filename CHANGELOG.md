@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - v1alpha2 is the storage version for resources in the api.astarte-platform.org group.
 - Upgrade go to v1.18.
 - Upgrade OperatorSDK to v1.23.0.
+- Add Kubernetes 1.24 and 1.25 to the supported list. Remove tests for Kubernetes 1.20 and 1.21.
 
 ### Added
 - Add API reference docs generation.

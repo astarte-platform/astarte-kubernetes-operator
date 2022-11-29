@@ -25,11 +25,11 @@ jobs:
   test:
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Fetch history
       run: git fetch --prune --unshallow
     - name: Setup Helm
-      uses: azure/setup-helm@v1
+      uses: azure/setup-helm@v3
       with:
         version: v3.4.2
     - name: Setup chart-testing
@@ -59,10 +59,10 @@ jobs:
       # see https://github.com/kubernetes-sigs/kind/issues/2240#issuecomment-838510890
       run: |
         sudo sysctl net/netfilter/nf_conntrack_max=131072
-    - uses: container-tools/kind-action@v1
+    - uses: container-tools/kind-action@v2
       with:
-        version: "v0.11.1"
-        node_image: "kindest/node:v1.21.1@sha256:69860bda5563ac81e3c0057d654b5253219618a22ec3a346306239bba8cfa1a6"
+        version: "v0.17.0"
+        node_image: "kindest/node:v1.25.3@sha256:f52781bc0d7a19fb6c405c2af83abfeb311f130707a0e219175677e366cc45d1"
     - name: Build test image
       run: |
         docker build -t astarte-operator-ci:test -f Dockerfile .
@@ -84,7 +84,7 @@ jobs:
         kubectl create namespace cert-manager
         helm repo add jetstack https://charts.jetstack.io
         helm repo update
-        helm install cert-manager jetstack/cert-manager --namespace cert-manager --version v1.1.0 --set installCRDs=true
+        helm install cert-manager jetstack/cert-manager --namespace cert-manager --version v1.10.0 --set installCRDs=true
     - name: Sleep for 20 seconds (wait for cert-manager to come up)
       uses: jakejarvis/wait-action@master
       with:
