@@ -30,11 +30,11 @@ jobs:
   check-chart:
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Fetch history
       run: git fetch --prune --unshallow
     - name: Setup Helm
-      uses: azure/setup-helm@v1
+      uses: azure/setup-helm@v3
       with:
         version: v3.4.2
     - name: Setup chart-testing
@@ -59,17 +59,17 @@ jobs:
     runs-on: ubuntu-20.04
     needs: check-chart
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         path: operator
     # Setup Go for helm-docs (ubuntu-20.04 defaults to go 1.15)
     # see https://github.com/actions/virtual-environments/issues/2447
     - name: Setup Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v3
       with:
         go-version: '1.18.x'
     # Checkout the Helm repository
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         repository: astarte-platform/helm
         path: helm

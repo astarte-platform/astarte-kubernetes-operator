@@ -36,8 +36,8 @@ jobs:
         - "kindest/node:v1.25.3@sha256:f52781bc0d7a19fb6c405c2af83abfeb311f130707a0e219175677e366cc45d1"
       fail-fast: false
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-go@v2
+    - uses: actions/checkout@v3
+    - uses: actions/setup-go@v3
       with:
         # Ensure we're on Go 1.18
         go-version: '1.18.x'
