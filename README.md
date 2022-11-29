@@ -68,12 +68,12 @@ Astarte's Documentation.
 
 | Kubernetes Version | Supported                        | Tested by CI                     |
 | ------------------ | -------------------------------- | -------------------------------- |
-| v1.18.x            | :x:                              | :x:                              |
-| v1.19.x            | :large_orange_diamond: :warning: | :large_orange_diamond: :warning: |
-| v1.20.x            | :white_check_mark: :warning:     | :white_check_mark: :warning:     |
-| v1.21.x            | :white_check_mark: :warning:     | :white_check_mark: :warning:     |
+| v1.20.x            | :large_orange_diamond: :warning: | :x:                              |
+| v1.21.x            | :large_orange_diamond: :warning: | :x:                              |
 | v1.22.x            | :white_check_mark:               | :white_check_mark:               |
 | v1.23.x            | :white_check_mark:               | :white_check_mark:               |
+| v1.24.x            | :white_check_mark:               | :white_check_mark:               |
+| v1.25.x            | :white_check_mark:               | :white_check_mark:               |
 
 Key:
 
