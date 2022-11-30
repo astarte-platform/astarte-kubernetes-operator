@@ -42,6 +42,12 @@ const (
 	DefaultCleanupTimeout time.Duration = time.Second * 5
 )
 
+// EnsureAstarteServicesReadinessUpTo11 ensures all existing Astarte components up to 1.1
+func EnsureAstarteServicesReadinessUpTo11(namespace string, c client.Client) error {
+	// No changes in components deployment, just check the previous stuff
+	return EnsureAstarteServicesReadinessUpTo10(namespace, c)
+}
+
 // EnsureAstarteServicesReadinessUpTo10 ensures all existing Astarte components up to 1.0
 func EnsureAstarteServicesReadinessUpTo10(namespace string, c client.Client) error {
 	// The previous stuff
