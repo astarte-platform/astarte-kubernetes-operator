@@ -30,6 +30,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   integration.
 - Add `astartePodPriorities` field to `features`, allowing to use 3 PriorityClasses for Astarte
   pods. The priority value is customizable.
+- Add documentation to the Operator's repository. See
+  [#308](https://github.com/astarte-platform/astarte-kubernetes-operator/issues/308).
 
 ### Fixed
 - Makefile: fix `make bundle` target. Generate a valid OLM bundle.
