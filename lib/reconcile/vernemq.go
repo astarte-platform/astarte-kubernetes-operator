@@ -44,7 +44,7 @@ import (
 // EnsureVerneMQ reconciles VerneMQ
 func EnsureVerneMQ(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	//reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name)
-	statefulSetName := cr.Name + "-vernemq"
+	statefulSetName := GetVerneMQStatefulSetName(cr)
 	labels := map[string]string{"app": statefulSetName}
 
 	// Validate where necessary
@@ -124,6 +124,15 @@ func EnsureVerneMQ(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Sch
 	dataVolumeName, persistentVolumeClaim := computePersistentVolumeClaim(statefulSetName+"-data", resource.NewScaledQuantity(4, resource.Giga),
 		cr.Spec.VerneMQ.Storage, cr)
 
+	// If the SSL certificate changed, we should restart VerneMQ pods
+	// Note that we don't restart pods if the secret is modified, but
+	// just on secret deletion/creation.
+	if shouldVerneHandleSSLTermination(cr) {
+		if err := maybeDeleteVerneMQPods(cr, c); err != nil {
+			return err
+		}
+	}
+
 	// Compute and prepare all data for building the StatefulSet
 	statefulSetSpec := appsv1.StatefulSetSpec{
 		ServiceName: statefulSetName,
@@ -162,6 +171,10 @@ func EnsureVerneMQ(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Sch
 
 	misc.LogCreateOrUpdateOperationResult(log, result, cr, service)
 	return nil
+}
+
+func GetVerneMQStatefulSetName(cr *apiv1alpha2.Astarte) string {
+	return cr.Name + "-vernemq"
 }
 
 func validateVerneMQDefinition(vmq *apiv1alpha2.AstarteVerneMQSpec) error {
@@ -399,7 +412,7 @@ func getVerneMQVolumeMounts(dataVolumeName string, cr *apiv1alpha2.Astarte) []v1
 	}
 
 	// if SSL termination must be handled at VerneMQ level, we have to mount the certificates
-	if pointy.BoolValue(cr.Spec.VerneMQ.SSLListener, false) && cr.Spec.VerneMQ.SSLListenerCertSecretName != "" {
+	if shouldVerneHandleSSLTermination(cr) {
 		// If we need to expose VerneMQ, let's append the secret as a volume in the pod.
 		// The key and cert in the secret are copied to /opt/vernemq/etc according to
 		// this script: https://github.com/astarte-platform/astarte_vmq_plugin/blob/master/docker/bin/vernemq.sh#L137
@@ -424,4 +437,36 @@ func getVerneMQPolicyRules() []rbacv1.PolicyRule {
 
 func getMirrorQueue(cr *apiv1alpha2.Astarte) string {
 	return cr.Spec.VerneMQ.MirrorQueue
+}
+
+func shouldVerneHandleSSLTermination(cr *apiv1alpha2.Astarte) bool {
+	return pointy.BoolValue(cr.Spec.VerneMQ.SSLListener, false) && cr.Spec.VerneMQ.SSLListenerCertSecretName != ""
+}
+
+func maybeDeleteVerneMQPods(cr *apiv1alpha2.Astarte, c client.Client) error {
+	// List all secrets
+	secretList := &v1.SecretList{}
+	if err := c.List(context.Background(), secretList, client.InNamespace(cr.GetNamespace())); err != nil {
+		return err
+	}
+
+	// And check if the SSL listener certificate is present
+	found := false
+	for _, v := range secretList.Items {
+		if v.GetName() == cr.Spec.VerneMQ.SSLListenerCertSecretName {
+			found = true
+		}
+	}
+
+	if !found {
+		// Poor pod hearts can't handle the pain
+		log.Info("Deleting VMQ pods: SSLListener Secret was not found", "SSLListener", cr.Spec.VerneMQ.SSLListener, "Secret", cr.Spec.VerneMQ.SSLListenerCertSecretName)
+
+		if err := c.DeleteAllOf(context.Background(), &v1.Pod{}, client.InNamespace(cr.Namespace),
+			client.MatchingLabels{"app": GetVerneMQStatefulSetName(cr)}); err != nil {
+			return err
+		}
+	}
+	return nil
+
 }

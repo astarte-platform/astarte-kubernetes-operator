@@ -25,15 +25,20 @@ import (
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/controllerutils"
 	"github.com/astarte-platform/astarte-kubernetes-operator/version"
@@ -215,5 +220,32 @@ func (r *AstarteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&batchv1.Job{}).
+		Watches(
+			&source.Kind{Type: &v1.Secret{}},
+			handler.EnqueueRequestsFromMapFunc(tlsSecretToAstarteReconcileRequestFn(r.Client)),
+		).
 		Complete(r)
+}
+
+func tlsSecretToAstarteReconcileRequestFn(c client.Client) func(obj client.Object) []reconcile.Request {
+	return func(obj client.Object) []reconcile.Request {
+		ret := []reconcile.Request{}
+		astarteList := &apiv1alpha2.AstarteList{}
+		_ = c.List(context.Background(), astarteList, client.InNamespace(obj.GetNamespace()))
+
+		if len(astarteList.Items) == 0 {
+			return ret
+		}
+
+		for _, item := range astarteList.Items {
+			ret = append(ret, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      item.GetName(),
+					Namespace: item.GetNamespace(),
+				},
+			})
+		}
+
+		return ret
+	}
 }
