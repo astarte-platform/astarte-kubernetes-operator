@@ -51,7 +51,8 @@ type AstarteReconciler struct {
 
 // +kubebuilder:rbac:groups=api.astarte-platform.org,resources=astartes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=api.astarte-platform.org,resources=astartes/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=core,resources=pods;services;services/finalizers;endpoints;persistentvolumeclaims;configmaps;secrets;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=services;services/finalizers;endpoints;persistentvolumeclaims;configmaps;secrets;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete;deletecollection
 // +kubebuilder:rbac:groups=core,resources=events,verbs=get;list;watch;create;patch
 // +kubebuilder:rbac:groups=apps,resources=deployments;daemonsets;replicasets;statefulsets,verbs=get;list;watch;create;update;patch;delete;deletecollection
 // +kubebuilder:rbac:groups=apps,resourceNames=astarte-operator,resources=deployments/finalizers,verbs=update

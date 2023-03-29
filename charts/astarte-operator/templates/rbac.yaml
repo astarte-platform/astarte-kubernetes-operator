@@ -162,7 +162,6 @@ rules:
   - configmaps
   - endpoints
   - persistentvolumeclaims
-  - pods
   - secrets
   - serviceaccounts
   - services
@@ -198,6 +197,19 @@ rules:
   - get
   - list
   - patch
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - ingress.astarte-platform.org
