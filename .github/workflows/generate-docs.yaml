@@ -60,7 +60,7 @@ jobs:
         echo "DOCS_DIRNAME=$DOCS_DIRNAME" >> $GITHUB_ENV
     - name: Apply docs dirname to Hugo config
       run: |
-          echo "baseURL: https://docs.astarte-platform.org/$DOCS_DIRNAME" >> docs/hugo/config.yaml
+          echo "baseURL: https://docs.astarte-platform.org/$DOCS_DIRNAME/crds" >> docs/hugo/config.yaml
       working-directory: astarte-kubernetes-operator
     # Run hugo to build docs page
     - name: Build CRD docs
