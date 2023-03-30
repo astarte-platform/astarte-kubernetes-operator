@@ -79,10 +79,12 @@ jobs:
     - name: Copy Docs
       run: |
         rm -rf docs/$DOCS_DIRNAME
-        mkdir -p docs/$DOCS_DIRNAME
         mkdir -p docs/$DOCS_DIRNAME/crds
         cp -r astarte-kubernetes-operator/docs/generated/* docs/$DOCS_DIRNAME/crds
         cp -r astarte-kubernetes-operator/docs/documentation/doc/* docs/$DOCS_DIRNAME
+    - name: Enforce the usage of CalVer in the generated doc pages
+      run: |
+        sed -i 's/22\.11\.0\b/22.11.00/g' docs/$DOCS_DIRNAME/*.html
     - name: Commit files
       working-directory: ./docs
       run: |
