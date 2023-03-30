@@ -4,7 +4,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [22.11.00] - 2022-11-30
+
+## [22.11.00-rc.0] - 2022-11-30
 ### Changed
 - Removed support for Astarte 0.10
 - Upgrade OperatorSDK to v1.17.0.
@@ -28,6 +30,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   integration.
 - Add `astartePodPriorities` field to `features`, allowing to use 3 PriorityClasses for Astarte
   pods. The priority value is customizable.
+- Add documentation to the Operator's repository. See
+  [#308](https://github.com/astarte-platform/astarte-kubernetes-operator/issues/308).
 
 ### Fixed
 - Makefile: fix `make bundle` target. Generate a valid OLM bundle.
