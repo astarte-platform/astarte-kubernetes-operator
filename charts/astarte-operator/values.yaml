@@ -12,7 +12,7 @@ image:
   repository: astarte/astarte-kubernetes-operator
   pullPolicy: IfNotPresent
   # -- Overrides the image tag whose default is the chart appVersion.
-  tag: "22.11.00"
+  tag: "snapshot"
 
 # -- Resources to assign to each Astarte Operator instance.
 resources:
