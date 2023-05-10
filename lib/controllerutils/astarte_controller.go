@@ -40,7 +40,6 @@ import (
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/migrate"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
 	recon "github.com/astarte-platform/astarte-kubernetes-operator/lib/reconcile"
-	"github.com/astarte-platform/astarte-kubernetes-operator/lib/upgrade"
 	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 )
 
@@ -78,20 +77,6 @@ func (r *ReconcileHelper) CheckAndPerformUpgrade(reqLogger logr.Logger, instance
 		reqLogger.Info("You are running a Release snapshot. This is generally not a good idea in production. Assuming a Release version", "Version", versionString)
 		r.Recorder.Eventf(instance, "Normal", apiv1alpha2.AstarteResourceEventUpgrade.String(),
 			"Requested an upgrade from a Release snapshot. Assuming the base Release version is %v", versionString)
-	}
-
-	// Build the semantic version
-	oldAstarteSemVersion, err := version.GetAstarteSemanticVersionFrom(versionString)
-	if err != nil {
-		// Reconcile every minute if we're here
-		r.Recorder.Eventf(instance, "Warning", apiv1alpha2.AstarteResourceEventCriticalError.String(),
-			err.Error(), versionString)
-		return ctrl.Result{RequeueAfter: time.Minute}, err
-	}
-
-	// Ok! Let's try and upgrade (if needed)
-	if e := upgrade.EnsureAstarteUpgrade(oldAstarteSemVersion, newAstarteSemVersion, instance, r.Client, r.Scheme, r.Recorder); e != nil {
-		return ctrl.Result{}, e
 	}
 
 	// All good!
