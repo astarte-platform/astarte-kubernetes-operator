@@ -21,7 +21,7 @@ package e2e10
 import (
 	"context"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
