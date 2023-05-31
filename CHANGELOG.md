@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Restart the broker when its SSLListener secret changes. See
   [#317](https://github.com/astarte-platform/astarte-kubernetes-operator/issues/317).
+- Upgrade OperatorSDK to v1.27.0.
+
 ### Removed
 - Remove support for Astarte <= 0.11.
 

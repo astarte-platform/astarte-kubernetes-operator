@@ -94,7 +94,7 @@ Key:
 ## Development
 
 Astarte's Operator is written in Go and built upon [Operator
-SDK](https://github.com/operator-framework/operator-sdk). It depends on Go 1.17.x, requires Go
+SDK](https://github.com/operator-framework/operator-sdk). It depends on Go 1.19, requires Go
 Modules and Kubernetes v1.20+.
 
-The project is built with kustomize v3.8.7, controller-gen v0.8.0 and conversion-gen v0.19.16.
+The project is built with kustomize v3.8.7, controller-gen v0.10.0 and conversion-gen v0.19.16.
