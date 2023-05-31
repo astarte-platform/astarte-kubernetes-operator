@@ -38,7 +38,6 @@ import (
 
 	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
-	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 )
 
 // EnsureVerneMQ reconciles VerneMQ
@@ -238,63 +237,60 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha2.Astarte) []v1.Env
 		})
 	}
 
-	// 1.0+ variables
-	if version.CheckConstraintAgainstAstarteComponentVersion(">= 1.0.0", cr.Spec.VerneMQ.Version, cr.Spec.Version) == nil {
-		if cr.Spec.VerneMQ.DeviceHeartbeatSeconds > 0 {
-			envVars = append(envVars,
-				v1.EnvVar{
-					Name:  "DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__DEVICE_HEARTBEAT_INTERVAL_MS",
-					Value: strconv.Itoa(cr.Spec.VerneMQ.DeviceHeartbeatSeconds * 1000),
-				})
-		}
-
-		if pointy.BoolValue(cr.Spec.VerneMQ.SSLListener, false) && cr.Spec.VerneMQ.SSLListenerCertSecretName != "" {
-			// if we are here, SSL termination must be handled at VMQ level
-			// thus, append the proper env variables
-			envVars = append(envVars, v1.EnvVar{
-				Name:  "VERNEMQ_ENABLE_SSL_LISTENER",
-				Value: strconv.FormatBool(true),
-			})
-
-			envVars = append(envVars, v1.EnvVar{
-				// to check where ca.pem comes from, have a look at this script
-				// https://github.com/astarte-platform/astarte_vmq_plugin/blob/master/docker/bin/vernemq.sh#L141
-				Name:  "DOCKER_VERNEMQ_LISTENER__SSL__DEFAULT__CAFILE",
-				Value: "/opt/vernemq/etc/ca.pem",
-			})
-
-			envVars = append(envVars, v1.EnvVar{
-				Name:  "DOCKER_VERNEMQ_LISTENER__SSL__DEFAULT__CERTFILE",
-				Value: "/opt/vernemq/etc/cert.pem",
-			})
-
-			envVars = append(envVars, v1.EnvVar{
-				Name:  "DOCKER_VERNEMQ_LISTENER__SSL__DEFAULT__KEYFILE",
-				Value: "/opt/vernemq/etc/privkey.pem",
-			})
-
-			envVars = append(envVars, v1.EnvVar{
-				Name:  "CFSSL_URL",
-				Value: fmt.Sprintf("http://%s-cfssl.%s.svc.cluster.local", cr.Name, cr.Namespace),
-			})
-		}
-
-		persistentClientExpiration := cr.Spec.VerneMQ.PersistentClientExpiration
-		if persistentClientExpiration == "" {
-			// Defaults to 1 year
-			persistentClientExpiration = "1y"
-		}
-
+	if cr.Spec.VerneMQ.DeviceHeartbeatSeconds > 0 {
 		envVars = append(envVars,
 			v1.EnvVar{
-				Name:  "DOCKER_VERNEMQ_PERSISTENT_CLIENT_EXPIRATION",
-				Value: persistentClientExpiration,
-			},
-			v1.EnvVar{
-				Name:  "DOCKER_VERNEMQ_MAX_OFFLINE_MESSAGES",
-				Value: strconv.Itoa(pointy.IntValue(cr.Spec.VerneMQ.MaxOfflineMessages, 1000000)),
+				Name:  "DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__DEVICE_HEARTBEAT_INTERVAL_MS",
+				Value: strconv.Itoa(cr.Spec.VerneMQ.DeviceHeartbeatSeconds * 1000),
 			})
 	}
+
+	if pointy.BoolValue(cr.Spec.VerneMQ.SSLListener, false) && cr.Spec.VerneMQ.SSLListenerCertSecretName != "" {
+		// if we are here, SSL termination must be handled at VMQ level
+		// thus, append the proper env variables
+		envVars = append(envVars, v1.EnvVar{
+			Name:  "VERNEMQ_ENABLE_SSL_LISTENER",
+			Value: strconv.FormatBool(true),
+		})
+
+		envVars = append(envVars, v1.EnvVar{
+			// to check where ca.pem comes from, have a look at this script
+			// https://github.com/astarte-platform/astarte_vmq_plugin/blob/master/docker/bin/vernemq.sh#L141
+			Name:  "DOCKER_VERNEMQ_LISTENER__SSL__DEFAULT__CAFILE",
+			Value: "/opt/vernemq/etc/ca.pem",
+		})
+
+		envVars = append(envVars, v1.EnvVar{
+			Name:  "DOCKER_VERNEMQ_LISTENER__SSL__DEFAULT__CERTFILE",
+			Value: "/opt/vernemq/etc/cert.pem",
+		})
+
+		envVars = append(envVars, v1.EnvVar{
+			Name:  "DOCKER_VERNEMQ_LISTENER__SSL__DEFAULT__KEYFILE",
+			Value: "/opt/vernemq/etc/privkey.pem",
+		})
+
+		envVars = append(envVars, v1.EnvVar{
+			Name:  "CFSSL_URL",
+			Value: fmt.Sprintf("http://%s-cfssl.%s.svc.cluster.local", cr.Name, cr.Namespace),
+		})
+	}
+
+	persistentClientExpiration := cr.Spec.VerneMQ.PersistentClientExpiration
+	if persistentClientExpiration == "" {
+		// Defaults to 1 year
+		persistentClientExpiration = "1y"
+	}
+
+	envVars = append(envVars,
+		v1.EnvVar{
+			Name:  "DOCKER_VERNEMQ_PERSISTENT_CLIENT_EXPIRATION",
+			Value: persistentClientExpiration,
+		},
+		v1.EnvVar{
+			Name:  "DOCKER_VERNEMQ_MAX_OFFLINE_MESSAGES",
+			Value: strconv.Itoa(pointy.IntValue(cr.Spec.VerneMQ.MaxOfflineMessages, 1000000)),
+		})
 
 	// Add any explicit additional env
 	if len(cr.Spec.VerneMQ.AdditionalEnv) > 0 {

@@ -86,10 +86,11 @@ Key:
 ## Compatibility Matrix
 
 | Astarte Operator Version | Astarte Version | Kubernetes Version |
-| :-:                      | :-:             | :-:                |
+|:------------------------:|:---------------:|:------------------:|
 | v1.0.0                   | v0.11 - v1.0    | v1.19+             |
 | v1.0.x                   | v0.11 - v1.0    | v1.19+             |
 | v22.11                   | v1.0+           | v1.22+             |
+| v23.5                    | v1.0+           | v1.22+             |
 
 ## Development
 
