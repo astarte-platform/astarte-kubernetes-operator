@@ -10,7 +10,7 @@ defmodule Doc.MixProject do
       app: :doc,
       # Elixir's Version does not support CalVer. Then, we set a SemVer compatible version
       # that will be properly modified in the docs workflow.
-      version: "22.11.0",
+      version: "22.11.1",
       elixir: "~> 1.4",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
