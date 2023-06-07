@@ -84,7 +84,7 @@ jobs:
         cp -r astarte-kubernetes-operator/docs/documentation/doc/* docs/$DOCS_DIRNAME
     - name: Enforce the usage of CalVer in the generated doc pages
       run: |
-        sed -i 's/22\.11\.0\b/22.11.00/g' docs/$DOCS_DIRNAME/*.html
+        sed -i 's/22\.11\.1\b/22.11.01/g' docs/$DOCS_DIRNAME/*.html
     - name: Commit files
       working-directory: ./docs
       run: |
