@@ -9,10 +9,12 @@
 ## Supported Versions
 
 | Version | Supported          |
-| ------- | ------------------ |
+|---------|--------------------|
 | 0.10.x  | :x:                |
 | 0.11.x  | :x:                |
-| 1.0.x   | :white_check_mark: |
+| 1.0.x   | :x:                |
+| 22.11.x | :white_check_mark: |
+| 23.5.x  | :white_check_mark: |
 
 ## Reporting a Vulnerability
 
