@@ -65,14 +65,15 @@ Cluster](https://docs.astarte-platform.org/astarte-kubernetes-operator/snapshot/
 
 ## Kubernetes support
 
-| Kubernetes Version | Supported                        | Tested by CI                     |
-| ------------------ | -------------------------------- | -------------------------------- |
-| v1.20.x            | :large_orange_diamond: :warning: | :x:                              |
-| v1.21.x            | :large_orange_diamond: :warning: | :x:                              |
-| v1.22.x            | :white_check_mark:               | :white_check_mark:               |
-| v1.23.x            | :white_check_mark:               | :white_check_mark:               |
-| v1.24.x            | :white_check_mark:               | :white_check_mark:               |
-| v1.25.x            | :white_check_mark:               | :white_check_mark:               |
+| Kubernetes Version | Supported                        | Tested by CI       |
+|--------------------|----------------------------------|--------------------|
+| v1.21.x            | :large_orange_diamond: :warning: | :x:                |
+| v1.22.x            | :large_orange_diamond:           | :x:                |
+| v1.23.x            | :large_orange_diamond:           | :white_check_mark: |
+| v1.24.x            | :white_check_mark:               | :white_check_mark: |
+| v1.25.x            | :white_check_mark:               | :white_check_mark: |
+| v1.26.x            | :white_check_mark:               | :white_check_mark: |
+| v1.27.x            | :white_check_mark:               | :white_check_mark: |
 
 Key:
 
