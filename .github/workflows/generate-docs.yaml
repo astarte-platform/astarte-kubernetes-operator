@@ -84,10 +84,10 @@ jobs:
     - name: Build CRD docs
       run: ./hugo --config docs/hugo/config.yaml --contentDir docs/content --themesDir ../themes --destination docs/generated --verbose --verboseLog
       working-directory: astarte-kubernetes-operator
-    - uses: erlef/setup-beam@v1.7.0
+    - uses: erlef/setup-beam@v1.15
       with:
-        otp-version: "23.2"
-        elixir-version: "1.11.4"
+        otp-version: "25.3.2"
+        elixir-version: "1.14.5"
     - name: Install Dependencies
       working-directory: astarte-kubernetes-operator/docs/documentation
       run: mix deps.get
