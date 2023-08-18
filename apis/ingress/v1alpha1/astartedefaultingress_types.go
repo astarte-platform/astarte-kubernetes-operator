@@ -42,7 +42,8 @@ type AstarteDefaultIngressAPISpec struct {
 	// When true, the housekeeping endpoint is publicly exposed. Default: true.
 	// +optional
 	ExposeHousekeeping *bool `json:"exposeHousekeeping,omitempty"`
-	// When true, all /metrics endpoints for Astarte services will be served by the Ingress.
+	// When true, all /metrics endpoints for Astarte services will be served by a dedicated metrics ingress.
+	// Metrics can be gathered by querying the /metrics/<service-name> path.
 	// Beware this might be a security hole. You can control which IPs can access /metrics
 	// with serveMetricsToSubnet. Default: false.
 	// +optional

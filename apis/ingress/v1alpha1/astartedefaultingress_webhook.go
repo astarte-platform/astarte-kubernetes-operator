@@ -110,6 +110,9 @@ func (r *AstarteDefaultIngress) validateAstarteDefaultIngress() error {
 	if err := r.validateDashboardTLSConfig(); err != nil {
 		allErrors = append(allErrors, err)
 	}
+	if err := r.validateMetricsIngressSetup(); err != nil {
+		allErrors = append(allErrors, err)
+	}
 
 	allErrors = append(allErrors, r.validateTLSSecretExistence(c)...)
 
@@ -175,6 +178,14 @@ func (r *AstarteDefaultIngress) validateAPITLSConfig(astarte *apiv1alpha2.Astart
 		r.Spec.API.TLSSecret == "" && pointy.BoolValue(r.Spec.API.Deploy, true) {
 		fldPath := field.NewPath("spec").Child("api").Child("tlsSecret")
 		return field.Required(fldPath, "Requested SSL support for API, but no TLS Secret provided")
+	}
+	return nil
+}
+
+func (r *AstarteDefaultIngress) validateMetricsIngressSetup() *field.Error {
+	if !pointy.BoolValue(r.Spec.API.ServeMetrics, false) && r.Spec.API.ServeMetricsToSubnet != "" {
+		fldPath := field.NewPath("spec").Child("api").Child("serveMetricsToSubnet")
+		return field.Forbidden(fldPath, "serveMetricsToSubnet must not be set when serveMetrics is set to false.")
 	}
 	return nil
 }
