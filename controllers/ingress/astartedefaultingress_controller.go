@@ -96,6 +96,10 @@ func (r *AstarteDefaultIngressReconciler) Reconcile(ctx context.Context, req ctr
 	if err := defaultingress.EnsureBrokerIngress(instance, astarte, r.Client, r.Scheme, reqLogger); err != nil {
 		return ctrl.Result{}, err
 	}
+	// And eventually reconcile the Metrics Ingress
+	if err := defaultingress.EnsureMetricsIngress(instance, astarte, r.Client, r.Scheme, reqLogger); err != nil {
+		return ctrl.Result{}, err
+	}
 
 	reconciler := controllerutils.ReconcileHelper{
 		Client: r.Client,
