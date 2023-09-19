@@ -22,10 +22,12 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	semver "github.com/Masterminds/semver/v3"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -292,12 +294,46 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha2.Astarte) []v1.Env
 			Value: strconv.Itoa(pointy.IntValue(cr.Spec.VerneMQ.MaxOfflineMessages, 1000000)),
 		})
 
+	// and, starting from Astarte 1.2, add cassandra/scylla env vars
+	c, _ := semver.NewConstraint(">= 1.2.0-0")
+	v, _ := semver.NewVersion(cr.Spec.Version)
+	if c.Check(v) {
+		envVars = appendVerneMQCassandraConnectionEnvVars(envVars, cr)
+	}
+
 	// Add any explicit additional env
 	if len(cr.Spec.VerneMQ.AdditionalEnv) > 0 {
 		envVars = append(envVars, cr.Spec.VerneMQ.AdditionalEnv...)
 	}
 
 	return envVars
+}
+
+func appendVerneMQCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv1alpha2.Astarte) []v1.EnvVar {
+	theCassandraEnv := []v1.EnvVar{}
+	theCassandraEnv = appendCassandraConnectionEnvVars(theCassandraEnv, cr)
+
+	for _, v := range theCassandraEnv {
+		// starting from Astarte  v1.2 the CASSANDRA_AUTODISCOVERY_ENABLED env is deprecated
+		// and it is not employed within VerneMQ. Thus, simply ignore it in case it is present
+		// in the list of env vars.
+		if v.Name == "CASSANDRA_AUTODISCOVERY_ENABLED" {
+			continue
+		}
+
+		newName := strings.Replace(v.Name, "CASSANDRA_", "CASSANDRA__", 1)
+		newName = fmt.Sprintf("DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__%s", newName)
+
+		ret = append(ret, v1.EnvVar{Name: newName, Value: v.Value})
+	}
+
+	// and finally add Cassandra nodes
+	ret = append(ret, v1.EnvVar{
+		Name:  "DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__CASSANDRA__NODES",
+		Value: getCassandraNodes(cr),
+	})
+
+	return ret
 }
 
 func getVerneMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha2.Astarte) v1.PodSpec {

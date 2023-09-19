@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Upgrade OperatorSDK to v1.27.0.
 - Upgrade go to v1.19.
 - Add Kubernetes 1.26 and 1.27 to the supported list. Remove tests for Kubernetes 1.22.
+- Support VerneMQ connection to Cassandra/ScyllaDB when handling Astarte v1.2+.
 
 ### Removed
 - Remove support for Astarte <= 0.11.
