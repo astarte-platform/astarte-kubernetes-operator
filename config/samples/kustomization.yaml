@@ -8,4 +8,5 @@ resources:
 - api_v1alpha2_flow.yaml
 - ingress_v1alpha1_astartedefaultingress.yaml
 - api_v1alpha3_astarte.yaml
+- api_v1alpha3_flow.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
