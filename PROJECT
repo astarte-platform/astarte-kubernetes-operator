@@ -113,6 +113,9 @@ resources:
   kind: Astarte
   path: github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha3
   version: v1alpha3
+  webhooks:
+    conversion: true
+    webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true
