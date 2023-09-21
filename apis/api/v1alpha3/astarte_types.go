@@ -60,7 +60,3 @@ type AstarteList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Astarte `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&Astarte{}, &AstarteList{})
-}
