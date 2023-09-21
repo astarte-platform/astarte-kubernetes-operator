@@ -1,7 +1,7 @@
 /*
   This file is part of Astarte.
 
-  Copyright 2021 Ispirata Srl
+  Copyright 2021-23 SECO Mind Srl
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ func EnsureAPIIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1al
 	misc.LogCreateOrUpdateOperationResult(log, result, cr, configMap)
 
 	// Start with the Ingress Annotations
-	annotations := getAPIIngressAnnotations(cr, parent)
+	annotations := getCommonIngressAnnotations(cr, parent)
 
 	// Then build the Ingress Spec
 	ingressSpec := getAPIIngressSpec(cr, parent)
@@ -112,92 +112,15 @@ func getConfigMapName(cr *ingressv1alpha1.AstarteDefaultIngress) string {
 	return cr.Name + "-api-ingress-config"
 }
 
-func getAPIIngressAnnotations(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte) map[string]string {
-	apiSslRedirect := pointy.BoolValue(parent.Spec.API.SSL, true) || pointy.BoolValue(cr.Spec.Dashboard.SSL, true)
-	annotations := map[string]string{
-		"nginx.ingress.kubernetes.io/ssl-redirect":   strconv.FormatBool(apiSslRedirect),
-		"nginx.ingress.kubernetes.io/use-regex":      "true",
-		"nginx.ingress.kubernetes.io/rewrite-target": "/$2",
-		"nginx.ingress.kubernetes.io/configuration-snippet": "more_set_headers \"X-Frame-Options: SAMEORIGIN\";\n" +
-			"more_set_headers \"X-XSS-Protection: 1; mode=block\";\n" +
-			"more_set_headers \"X-Content-Type-Options: nosniff\";\n" +
-			"more_set_headers \"Referrer-Policy: no-referrer-when-downgrade\";",
-	}
-
-	// Should we serve /metrics?
-	if !pointy.BoolValue(cr.Spec.API.ServeMetrics, false) {
-		allowSubnetAnnotation := ""
-		if cr.Spec.API.ServeMetricsToSubnet != "" {
-			allowSubnetAnnotation = fmt.Sprintf("allow %s;\n", cr.Spec.API.ServeMetricsToSubnet)
-		}
-
-		serverSnippetValue := fmt.Sprintf("location ~* \"/(appengine|flow|housekeeping|pairing|realmmanagement)/metrics\" {\n"+
-			"%s"+
-			"  deny all;\n"+
-			"  return 404;\n"+
-			"}", allowSubnetAnnotation)
-
-		annotations["nginx.ingress.kubernetes.io/server-snippet"] = serverSnippetValue
-	}
-
-	// Should we enable cors?
-	if pointy.BoolValue(cr.Spec.API.Cors, false) {
-		annotations["nginx.ingress.kubernetes.io/enable-cors"] = strconv.FormatBool(true)
-	}
-
-	return annotations
-}
-
 func getAPIIngressSpec(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte) networkingv1.IngressSpec {
 	ingressSpec := networkingv1.IngressSpec{
 		// define which ingress controller will implement the ingress
 		IngressClassName: getIngressClassName(cr),
-		TLS:              getAPIIngressTLS(cr, parent),
+		TLS:              getIngressTLS(cr, parent, true),
 		Rules:            getAPIIngressRules(cr, parent),
 	}
 
 	return ingressSpec
-}
-
-// TODO handle with kubebuilder defaults
-func getIngressClassName(cr *ingressv1alpha1.AstarteDefaultIngress) *string {
-	if cr.Spec.IngressClass == "" {
-		return pointy.String("nginx")
-	}
-	return pointy.String(cr.Spec.IngressClass)
-}
-
-func getAPIIngressTLS(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte) []networkingv1.IngressTLS {
-	ingressTLSs := []networkingv1.IngressTLS{}
-
-	// Check API
-	if pointy.BoolValue(parent.Spec.API.SSL, true) || pointy.BoolValue(cr.Spec.Dashboard.SSL, true) {
-		secretName := cr.Spec.TLSSecret
-		if cr.Spec.API.TLSSecret != "" {
-			secretName = cr.Spec.API.TLSSecret
-		}
-		// Other cases are rejected by validation webhooks
-
-		ingressTLSs = append(ingressTLSs, networkingv1.IngressTLS{
-			Hosts:      []string{parent.Spec.API.Host},
-			SecretName: secretName,
-		})
-	}
-
-	// Then check the dashboard, if needed
-	if pointy.BoolValue(cr.Spec.Dashboard.Deploy, true) && pointy.BoolValue(cr.Spec.Dashboard.SSL, true) && cr.Spec.Dashboard.Host != "" {
-		secretName := cr.Spec.TLSSecret
-		if cr.Spec.Dashboard.TLSSecret != "" {
-			secretName = cr.Spec.Dashboard.TLSSecret
-		}
-		// Other cases are rejected by validation webhooks
-
-		ingressTLSs = append(ingressTLSs, networkingv1.IngressTLS{
-			Hosts:      []string{cr.Spec.Dashboard.Host},
-			SecretName: secretName,
-		})
-	}
-	return ingressTLSs
 }
 
 func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte) []networkingv1.IngressRule {

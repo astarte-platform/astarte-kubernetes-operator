@@ -1,6 +1,6 @@
 # Astarte Kubernetes Operator
 
-![CI](https://github.com/astarte-platform/astarte-kubernetes-operator/workflows/Operator%20e2e%20tests/badge.svg?branch=master)
+![CI](https://github.com/astarte-platform/astarte-kubernetes-operator/workflows/Operator%20e2e%20tests/badge.svg?branch=release-23.5)
 [![Go Report Card](https://goreportcard.com/badge/github.com/astarte-platform/astarte-kubernetes-operator)](https://goreportcard.com/report/github.com/astarte-platform/astarte-kubernetes-operator)
 [![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 ![Docker Pulls](https://img.shields.io/docker/pulls/astarte/astarte-kubernetes-operator)
@@ -65,14 +65,15 @@ Cluster](https://docs.astarte-platform.org/astarte-kubernetes-operator/snapshot/
 
 ## Kubernetes support
 
-| Kubernetes Version | Supported                        | Tested by CI                     |
-| ------------------ | -------------------------------- | -------------------------------- |
-| v1.20.x            | :large_orange_diamond: :warning: | :x:                              |
-| v1.21.x            | :large_orange_diamond: :warning: | :x:                              |
-| v1.22.x            | :white_check_mark:               | :white_check_mark:               |
-| v1.23.x            | :white_check_mark:               | :white_check_mark:               |
-| v1.24.x            | :white_check_mark:               | :white_check_mark:               |
-| v1.25.x            | :white_check_mark:               | :white_check_mark:               |
+| Kubernetes Version | Supported                        | Tested by CI       |
+|--------------------|----------------------------------|--------------------|
+| v1.21.x            | :large_orange_diamond: :warning: | :x:                |
+| v1.22.x            | :large_orange_diamond:           | :x:                |
+| v1.23.x            | :large_orange_diamond:           | :white_check_mark: |
+| v1.24.x            | :white_check_mark:               | :white_check_mark: |
+| v1.25.x            | :white_check_mark:               | :white_check_mark: |
+| v1.26.x            | :white_check_mark:               | :white_check_mark: |
+| v1.27.x            | :white_check_mark:               | :white_check_mark: |
 
 Key:
 
@@ -86,10 +87,11 @@ Key:
 ## Compatibility Matrix
 
 | Astarte Operator Version | Astarte Version | Kubernetes Version |
-| :-:                      | :-:             | :-:                |
+|:------------------------:|:---------------:|:------------------:|
 | v1.0.0                   | v0.11 - v1.0    | v1.19+             |
 | v1.0.x                   | v0.11 - v1.0    | v1.19+             |
 | v22.11                   | v1.0+           | v1.22+             |
+| v23.5                    | v1.0+           | v1.22+             |
 
 ## Development
 

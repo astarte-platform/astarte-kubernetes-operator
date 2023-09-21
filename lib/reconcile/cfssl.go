@@ -1,7 +1,7 @@
 /*
   This file is part of Astarte.
 
-  Copyright 2020 Ispirata Srl
+  Copyright 2020-23 SECO Mind Srl
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -41,7 +40,6 @@ import (
 	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/deps"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
-	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 )
 
 // EnsureCFSSL reconciles CFSSL
@@ -51,12 +49,7 @@ func EnsureCFSSL(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Schem
 		return err
 	}
 
-	if version.CheckConstraintAgainstAstarteVersion("< 1.0.0", cr.Spec.Version) == nil {
-		// Then it's a statefulset
-		return ensureCFSSLStatefulSet(cr, c, scheme)
-	}
-
-	// Otherwise, reconcile the deployment
+	// And reconcile the deployment
 	return ensureCFSSLDeployment(cr, c, scheme)
 }
 
@@ -110,7 +103,7 @@ func ensureCFSSLDeployment(cr *apiv1alpha2.Astarte, c client.Client, scheme *run
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: labels,
 			},
-			Spec: getCFSSLPodSpec(deploymentName, "", caSecretName, cr),
+			Spec: getCFSSLPodSpec(deploymentName, caSecretName, cr),
 		},
 	}
 
@@ -132,77 +125,6 @@ func ensureCFSSLDeployment(cr *apiv1alpha2.Astarte, c client.Client, scheme *run
 	}
 
 	misc.LogCreateOrUpdateOperationResult(log, result, cr, cfsslDeployment)
-	return nil
-}
-
-func ensureCFSSLStatefulSet(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
-	statefulSetName := cr.Name + "-cfssl"
-	labels := map[string]string{"app": statefulSetName}
-
-	// Ok. Shall we deploy?
-	if !pointy.BoolValue(cr.Spec.CFSSL.Deploy, true) {
-		log.Info("Skipping CFSSL Deployment")
-		// Before returning - check if we shall clean up the StatefulSet.
-		// It is the only thing actually requiring resources, the rest will be cleaned up eventually when the
-		// Astarte resource is deleted.
-		theStatefulSet := &appsv1.StatefulSet{}
-		err := c.Get(context.TODO(), types.NamespacedName{Name: statefulSetName, Namespace: cr.Namespace}, theStatefulSet)
-		if err == nil {
-			log.Info("Deleting previously existing CFSSL StatefulSet, which is no longer needed")
-			if err = c.Delete(context.TODO(), theStatefulSet); err != nil {
-				return err
-			}
-		}
-
-		// That would be all for today.
-		return nil
-	}
-
-	// Add common sidecars
-	if err := ensureCFSSLCommonSidecars(statefulSetName, labels, cr, c, scheme); err != nil {
-		return err
-	}
-
-	// Let's check upon Storage now.
-	dataVolumeName, persistentVolumeClaim := computePersistentVolumeClaim(statefulSetName+"-data", resource.NewScaledQuantity(4, resource.Giga),
-		cr.Spec.CFSSL.Storage, cr)
-
-	// Compute and prepare all data for building the StatefulSet
-	statefulSetSpec := appsv1.StatefulSetSpec{
-		ServiceName: statefulSetName,
-		Selector: &metav1.LabelSelector{
-			MatchLabels: labels,
-		},
-		Template: v1.PodTemplateSpec{
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: computePodLabels(cr.Spec.CFSSL, labels),
-			},
-			Spec: getCFSSLPodSpec(statefulSetName, dataVolumeName, "", cr),
-		},
-	}
-
-	if persistentVolumeClaim != nil {
-		statefulSetSpec.VolumeClaimTemplates = []v1.PersistentVolumeClaim{*persistentVolumeClaim}
-	}
-
-	// Build the StatefulSet
-	cfsslStatefulSet := &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: statefulSetName, Namespace: cr.Namespace}}
-	result, err := controllerutil.CreateOrUpdate(context.TODO(), c, cfsslStatefulSet, func() error {
-		if e := controllerutil.SetControllerReference(cr, cfsslStatefulSet, scheme); e != nil {
-			return e
-		}
-
-		// Assign the Spec.
-		cfsslStatefulSet.Spec = statefulSetSpec
-		cfsslStatefulSet.Spec.Replicas = pointy.Int32(1)
-
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
-	misc.LogCreateOrUpdateOperationResult(log, result, cr, cfsslStatefulSet)
 	return nil
 }
 
@@ -264,8 +186,7 @@ func getCFSSLProbe() *v1.Probe {
 	}
 }
 
-// TODO: Deprecate dataVolumeName and all the jargon when we won't support < 1.0 anymore
-func getCFSSLPodSpec(statefulSetName, dataVolumeName, secretName string, cr *apiv1alpha2.Astarte) v1.PodSpec {
+func getCFSSLPodSpec(deploymentName, secretName string, cr *apiv1alpha2.Astarte) v1.PodSpec {
 	// Defaults to the custom image built in Astarte
 	cfsslImage := getAstarteImageFromChannel("cfssl", deps.GetDefaultVersionForCFSSL(cr.Spec.Version), cr)
 	if cr.Spec.CFSSL.Image != "" {
@@ -290,49 +211,42 @@ func getCFSSLPodSpec(statefulSetName, dataVolumeName, secretName string, cr *api
 			Name: "config",
 			VolumeSource: v1.VolumeSource{
 				ConfigMap: &v1.ConfigMapVolumeSource{
-					LocalObjectReference: v1.LocalObjectReference{Name: statefulSetName + "-config"},
+					LocalObjectReference: v1.LocalObjectReference{Name: deploymentName + "-config"},
 				},
 			},
 		},
 	}
 	env := []v1.EnvVar{}
 
-	if dataVolumeName != "" {
-		volumeMounts = append(volumeMounts, v1.VolumeMount{
-			Name:      dataVolumeName,
-			MountPath: "/data",
-		})
-	} else {
-		volumeMounts = append(volumeMounts, v1.VolumeMount{
-			Name:      "devices-ca",
-			MountPath: "/devices-ca",
-			ReadOnly:  true,
-		})
-		volumes = append(volumes, v1.Volume{
-			Name: "devices-ca",
-			VolumeSource: v1.VolumeSource{
-				Secret: &v1.SecretVolumeSource{
-					SecretName: secretName,
-				},
+	volumeMounts = append(volumeMounts, v1.VolumeMount{
+		Name:      "devices-ca",
+		MountPath: "/devices-ca",
+		ReadOnly:  true,
+	})
+	volumes = append(volumes, v1.Volume{
+		Name: "devices-ca",
+		VolumeSource: v1.VolumeSource{
+			Secret: &v1.SecretVolumeSource{
+				SecretName: secretName,
 			},
-		})
-		env = append(env, v1.EnvVar{
-			Name:  "KUBERNETES",
-			Value: "1",
-		}, v1.EnvVar{
-			Name:  "CFSSL_CA_CERTIFICATE",
-			Value: "/devices-ca/" + v1.TLSCertKey,
-		}, v1.EnvVar{
-			Name:  "CFSSL_CA_PRIVATE_KEY",
-			Value: "/devices-ca/" + v1.TLSPrivateKeyKey,
-		})
+		},
+	})
+	env = append(env, v1.EnvVar{
+		Name:  "KUBERNETES",
+		Value: "1",
+	}, v1.EnvVar{
+		Name:  "CFSSL_CA_CERTIFICATE",
+		Value: "/devices-ca/" + v1.TLSCertKey,
+	}, v1.EnvVar{
+		Name:  "CFSSL_CA_PRIVATE_KEY",
+		Value: "/devices-ca/" + v1.TLSPrivateKeyKey,
+	})
 
-		if cr.Spec.CFSSL.DBConfig != nil {
-			env = append(env, v1.EnvVar{
-				Name:  "CFSSL_USE_DB",
-				Value: "1",
-			})
-		}
+	if cr.Spec.CFSSL.DBConfig != nil {
+		env = append(env, v1.EnvVar{
+			Name:  "CFSSL_USE_DB",
+			Value: "1",
+		})
 	}
 
 	ps := v1.PodSpec{
@@ -429,14 +343,8 @@ func getCFSSLConfigMapData(cr *apiv1alpha2.Astarte) (map[string]string, error) {
 }
 
 func getCFSSLDBConfig(cr *apiv1alpha2.Astarte) (map[string]interface{}, error) {
-	// By default, this one has to be nil...
+	// By default, this one has to be nil
 	var dbConfig map[string]interface{}
-
-	// ...unless we're < 1.0.0.
-	if version.CheckConstraintAgainstAstarteVersion("< 1.0.0", cr.Spec.Version) == nil {
-		// Then it's a statefulset
-		dbConfig = map[string]interface{}{"data_source": "/data/certs.db", "driver": "sqlite3"}
-	}
 
 	// DB Configuration
 	if overriddenDBConfig, err := getCFSSLFullOverride(cr.Spec.CFSSL.DBConfig); err == nil && overriddenDBConfig != nil {

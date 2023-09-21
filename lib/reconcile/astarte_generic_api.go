@@ -1,7 +1,7 @@
 /*
   This file is part of Astarte.
 
-  Copyright 2020 Ispirata Srl
+  Copyright 2020-23 SECO Mind Srl
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ import (
 
 	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
-	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 )
 
 // EnsureAstarteGenericAPI reconciles any component compatible with AstarteGenericAPISpec with a custom Probe
@@ -143,12 +142,6 @@ func checkShouldDeployAPI(reqLogger logr.Logger, deploymentName string, cr *apiv
 		return false
 	}
 
-	// If we do need to deploy, check any constraints
-	if component == apiv1alpha2.FlowComponent && version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", api.Version, cr.Spec.Version) == nil {
-		reqLogger.V(1).Info("Skipping Flow Deployment - not supported by this Astarte version")
-		return false
-	}
-
 	return true
 }
 
@@ -169,8 +162,8 @@ func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha2.Astarte,
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Resources:       misc.GetResourcesForAstarteComponent(cr, api.Resources, component),
 				Env:             getAstarteGenericAPIEnvVars(deploymentName, cr, api, component),
-				ReadinessProbe:  getAstarteAPIProbe(cr, api, component, customProbe),
-				LivenessProbe:   getAstarteAPIProbe(cr, api, component, customProbe),
+				ReadinessProbe:  getAstarteAPIProbe(customProbe),
+				LivenessProbe:   getAstarteAPIProbe(customProbe),
 			},
 		},
 		Volumes: getAstarteGenericAPIVolumes(cr, component),
@@ -243,17 +236,11 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha2.Astarte,
 	// Depending on the component, we might need to add some more stuff.
 	switch component {
 	case apiv1alpha2.AppEngineAPI:
-		cassandraPrefix := ""
-		if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", cr.Spec.Components.AppengineAPI.Version, cr.Spec.Version) == nil {
-			cassandraPrefix = oldAstartePrefix
-		} else {
-			// Append Cassandra connection env vars only if version >= 1.0.0
-			ret = appendCassandraConnectionEnvVars(ret, cr)
-		}
+		ret = appendCassandraConnectionEnvVars(ret, cr)
 
 		// Add Cassandra Nodes
 		ret = append(ret, v1.EnvVar{
-			Name:  cassandraPrefix + "CASSANDRA_NODES",
+			Name:  "CASSANDRA_NODES",
 			Value: getCassandraNodes(cr),
 		})
 
@@ -310,7 +297,6 @@ func getAstarteFlowEnvVars(cr *apiv1alpha2.Astarte) []v1.EnvVar {
 			Name:  "FLOW_PIPELINES_DIR",
 			Value: "/pipelines",
 		},
-		// We don't have cassandraPrefix as if we're here, we're >= 1.0.0
 		{
 			Name:  "CASSANDRA_NODES",
 			Value: getCassandraNodes(cr),
@@ -325,15 +311,9 @@ func getAstarteFlowEnvVars(cr *apiv1alpha2.Astarte) []v1.EnvVar {
 	return appendRabbitMQConnectionEnvVars(ret, "FLOW_DEFAULT_AMQP_CONNECTION", cr)
 }
 
-func getAstarteAPIProbe(cr *apiv1alpha2.Astarte, api apiv1alpha2.AstarteGenericAPISpec, component apiv1alpha2.AstarteComponent, customProbe *v1.Probe) *v1.Probe {
+func getAstarteAPIProbe(customProbe *v1.Probe) *v1.Probe {
 	if customProbe != nil {
 		return customProbe
-	}
-
-	if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", api.Version, cr.Spec.Version) == nil {
-		if component == apiv1alpha2.FlowComponent {
-			return nil
-		}
 	}
 
 	// The rest are generic probes on /health

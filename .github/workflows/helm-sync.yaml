@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2020 Ispirata Srl
+# Copyright 2020-23 SECO Mind Srl
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,17 +28,17 @@ on:
 
 jobs:
   check-chart:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
     - name: Fetch history
       run: git fetch --prune --unshallow
-    - name: Setup Helm
-      uses: azure/setup-helm@v3
+    - uses: alexellis/setup-arkade@v3
+    - uses: alexellis/arkade-get@master
       with:
-        version: v3.4.2
+        helm: v3.4.2
     - name: Setup chart-testing
-      uses: helm/chart-testing-action@v2.1.0
+      uses: helm/chart-testing-action@v2
     - name: Set env variable for ct target branch
       run: echo "CT_TARGET_BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
     - name: Set env variable to prevent chart bump errors
@@ -56,7 +56,7 @@ jobs:
           echo "::set-output name=changed::true"
         fi
   release:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: check-chart
     steps:
     - uses: actions/checkout@v3
@@ -67,7 +67,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v3
       with:
-        go-version: '1.18.x'
+        go-version: '1.19.x'
     # Checkout the Helm repository
     - uses: actions/checkout@v3
       with:

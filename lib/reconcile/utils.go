@@ -1,7 +1,7 @@
 /*
   This file is part of Astarte.
 
-  Copyright 2020 Ispirata Srl
+  Copyright 2020-23 SECO Mind Srl
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -53,7 +53,6 @@ import (
 
 const (
 	astarteServicesPort int32  = 4000
-	oldAstartePrefix    string = "ASTARTE_"
 	noneClusterIP       string = "None"
 	highPriority        string = "high"
 	midPriority         string = "mid"
@@ -342,11 +341,6 @@ func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quan
 }
 
 func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha2.Astarte, backend apiv1alpha2.AstarteGenericClusteredResource, component apiv1alpha2.AstarteComponent) []v1.EnvVar {
-	rpcPrefix := ""
-	if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", backend.Version, cr.Spec.Version) == nil {
-		rpcPrefix = oldAstartePrefix
-	}
-
 	ret := []v1.EnvVar{
 		{
 			Name:  "RELEASE_CONFIG_DIR",
@@ -385,7 +379,7 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha2.Astarte, bac
 	}
 
 	// Return with the RabbitMQ variables appended
-	return appendRabbitMQConnectionEnvVars(ret, rpcPrefix+"RPC_AMQP_CONNECTION", cr)
+	return appendRabbitMQConnectionEnvVars(ret, "RPC_AMQP_CONNECTION", cr)
 }
 
 func appendCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv1alpha2.Astarte) []v1.EnvVar {

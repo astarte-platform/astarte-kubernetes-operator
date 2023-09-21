@@ -1,7 +1,7 @@
 /*
   This file is part of Astarte.
 
-  Copyright 2020 Ispirata Srl
+  Copyright 2020-23 SECO Mind Srl
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import (
 
 	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 	"github.com/astarte-platform/astarte-kubernetes-operator/lib/misc"
-	"github.com/astarte-platform/astarte-kubernetes-operator/version"
 )
 
 // EnsureAstarteGenericBackend reconciles any component compatible with AstarteGenericClusteredResource
@@ -179,17 +178,11 @@ func getAstarteGenericBackendVolumeMounts(cr *apiv1alpha2.Astarte) []v1.VolumeMo
 func getAstarteGenericBackendEnvVars(deploymentName string, replicaIndex, replicas int, cr *apiv1alpha2.Astarte, backend apiv1alpha2.AstarteGenericClusteredResource, component apiv1alpha2.AstarteComponent) []v1.EnvVar {
 	ret := getAstarteCommonEnvVars(deploymentName, cr, backend, component)
 
-	cassandraPrefix := ""
-	if version.CheckConstraintAgainstAstarteComponentVersion("< 1.0.0", backend.Version, cr.Spec.Version) == nil {
-		cassandraPrefix = oldAstartePrefix
-	} else {
-		// Append Cassandra connection env vars only if version >= 1.0.0
-		ret = appendCassandraConnectionEnvVars(ret, cr)
-	}
+	ret = appendCassandraConnectionEnvVars(ret, cr)
 
 	// Add Cassandra Nodes
 	ret = append(ret, v1.EnvVar{
-		Name:  cassandraPrefix + "CASSANDRA_NODES",
+		Name:  "CASSANDRA_NODES",
 		Value: getCassandraNodes(cr),
 	})
 
@@ -223,7 +216,7 @@ func getAstarteGenericBackendEnvVars(deploymentName string, replicaIndex, replic
 				Value: misc.GetVerneMQBrokerURL(cr),
 			})
 	case apiv1alpha2.DataUpdaterPlant:
-		ret = append(ret, getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas, eventsExchangeName, cr, backend)...)
+		ret = append(ret, getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas, eventsExchangeName, cr)...)
 	case apiv1alpha2.TriggerEngine:
 		// Add RabbitMQ variables
 		ret = appendRabbitMQConnectionEnvVars(ret, "TRIGGER_ENGINE_AMQP_CONSUMER", cr)
@@ -256,7 +249,7 @@ func getAstarteGenericBackendEnvVars(deploymentName string, replicaIndex, replic
 	return ret
 }
 
-func getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas int, eventsExchangeName string, cr *apiv1alpha2.Astarte, backend apiv1alpha2.AstarteGenericClusteredResource) []v1.EnvVar {
+func getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas int, eventsExchangeName string, cr *apiv1alpha2.Astarte) []v1.EnvVar {
 	ret := []v1.EnvVar{}
 
 	// Append RabbitMQ variables for both Consumer and Producer
@@ -282,15 +275,12 @@ func getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas int, events
 	// Add the data queue count
 	ret = append(ret, getAstarteDataUpdaterPlantQueuesEnvVars(replicaIndex, replicas, cr)...)
 
-	// 0.11.1+ variables
-	if version.CheckConstraintAgainstAstarteComponentVersion(">= 0.11.1", backend.Version, cr.Spec.Version) == nil {
-		ret = append(ret,
-			v1.EnvVar{
-				Name: "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_TOTAL_COUNT",
-				// This must always hold the total data queue count, not just the one this specific replica of DUP is using
-				Value: strconv.Itoa(getDataQueueCount(cr)),
-			})
-	}
+	ret = append(ret,
+		v1.EnvVar{
+			Name: "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_TOTAL_COUNT",
+			// This must always hold the total data queue count, not just the one this specific replica of DUP is using
+			Value: strconv.Itoa(getDataQueueCount(cr)),
+		})
 
 	if cr.Spec.RabbitMQ.DataQueuesPrefix != "" {
 		ret = append(ret,
@@ -300,15 +290,12 @@ func getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas int, events
 			})
 	}
 
-	// 1.0+ variables
-	if version.CheckConstraintAgainstAstarteComponentVersion(">= 1.0.0", backend.Version, cr.Spec.Version) == nil {
-		if cr.Spec.VerneMQ.DeviceHeartbeatSeconds > 0 {
-			ret = append(ret,
-				v1.EnvVar{
-					Name:  "DATA_UPDATER_PLANT_DEVICE_HEARTBEAT_INTERVAL_MS",
-					Value: strconv.Itoa(cr.Spec.VerneMQ.DeviceHeartbeatSeconds * 1000),
-				})
-		}
+	if cr.Spec.VerneMQ.DeviceHeartbeatSeconds > 0 {
+		ret = append(ret,
+			v1.EnvVar{
+				Name:  "DATA_UPDATER_PLANT_DEVICE_HEARTBEAT_INTERVAL_MS",
+				Value: strconv.Itoa(cr.Spec.VerneMQ.DeviceHeartbeatSeconds * 1000),
+			})
 	}
 
 	return ret
