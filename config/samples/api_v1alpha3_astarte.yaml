@@ -1,0 +1,12 @@
+apiVersion: api.astarte-platform.org/v1alpha3
+kind: Astarte
+metadata:
+  labels:
+    app.kubernetes.io/name: astarte
+    app.kubernetes.io/instance: astarte-sample
+    app.kubernetes.io/part-of: astarte-kubernetes-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: astarte-kubernetes-operator
+  name: astarte-sample
+spec:
+  # TODO(user): Add fields here
