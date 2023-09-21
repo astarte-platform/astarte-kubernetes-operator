@@ -51,7 +51,7 @@ spec:
                     description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
                   serveMetrics:
-                    description: 'When true, all /metrics endpoints for Astarte services will be served by the Ingress. Beware this might be a security hole. You can control which IPs can access /metrics with serveMetricsToSubnet. Default: false.'
+                    description: 'When true, all /metrics endpoints for Astarte services will be served by a dedicated metrics ingress. Metrics can be gathered by querying the /metrics/<service-name> path. Beware this might be a security hole. You can control which IPs can access /metrics with serveMetricsToSubnet. Default: false.'
                     type: boolean
                   serveMetricsToSubnet:
                     description: 'When specified and when serveMetrics is true, /metrics endpoints will be served only to IPs in the provided subnet range. The subnet has to be compatible with the HAProxy ACL src syntax (e.g.: "10.0.0.0/16"). Default: "".'

@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2020 Ispirata Srl
+# Copyright 2020-23 SECO Mind Srl
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,14 +23,14 @@ on:
 
 jobs:
   golangci-lint:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
     # Since v3, golangci-lint needs explicit go-setup
     - uses: actions/setup-go@v3
       with:
-        go-version: v1.18.x
+        go-version: v1.19.x
     # Run golint-ci
     - uses: golangci/golangci-lint-action@v3
       with:
-          version: v1.50
+          version: v1.52

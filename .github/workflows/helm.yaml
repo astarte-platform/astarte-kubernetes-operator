@@ -1,7 +1,7 @@
 #
 # This file is part of Astarte.
 #
-# Copyright 2020 Ispirata Srl
+# Copyright 2020-23 SECO Mind Srl
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,17 +23,17 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
     - name: Fetch history
       run: git fetch --prune --unshallow
-    - name: Setup Helm
-      uses: azure/setup-helm@v3
+    - uses: alexellis/setup-arkade@v3
+    - uses: alexellis/arkade-get@master
       with:
-        version: v3.4.2
+        helm: v3.4.2
     - name: Setup chart-testing
-      uses: helm/chart-testing-action@v2.1.0
+      uses: helm/chart-testing-action@v2
     - name: Set env variable for ct target branch
       run: echo "CT_TARGET_BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
       if: ${{ github.event_name == 'push' }}
@@ -61,8 +61,8 @@ jobs:
         sudo sysctl net/netfilter/nf_conntrack_max=131072
     - uses: container-tools/kind-action@v2
       with:
-        version: "v0.17.0"
-        node_image: "kindest/node:v1.25.3@sha256:f52781bc0d7a19fb6c405c2af83abfeb311f130707a0e219175677e366cc45d1"
+        version: "v0.19.0"
+        node_image: "kindest/node:v1.27.1@sha256:b7d12ed662b873bd8510879c1846e87c7e676a79fefc93e17b2a52989d3ff42b"
     - name: Build test image
       run: |
         docker build -t astarte-operator-ci:test -f Dockerfile .

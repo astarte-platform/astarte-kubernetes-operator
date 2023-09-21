@@ -1,7 +1,7 @@
 /*
   This file is part of Astarte.
 
-  Copyright 2020 Ispirata Srl
+  Copyright 2020-23 SECO Mind Srl
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -130,44 +130,28 @@ func (r *ReconcileHelper) ComputeClusterHealth(reqLogger logr.Logger, instance *
 	return apiv1alpha2.AstarteClusterHealthRed
 }
 
+// nolint:dupl
 func (r *ReconcileHelper) computeCFSSLHealth(reqLogger logr.Logger, instance *apiv1alpha2.Astarte) bool {
 	if !pointy.BoolValue(instance.Spec.CFSSL.Deploy, true) {
 		return true
 	}
 
-	// Statefulset or Deployment?
-	switch version.CheckConstraintAgainstAstarteVersion("< 1.0.0", instance.Spec.Version) {
-	case nil:
-		cfsslStatefulSet := &appsv1.StatefulSet{}
-		if err := r.Client.Get(context.TODO(), types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name + "-cfssl"},
-			cfsslStatefulSet); err == nil {
-			if cfsslStatefulSet.Status.ReadyReplicas == 0 {
-				return false
-			}
-		} else {
-			// Just increase the count - it might be a temporary error as the StatefulSet is being created.
-			reqLogger.V(1).Info("Could not Get Astarte CFSSL StatefulSet to compute health.")
+	cfsslDeployment := &appsv1.Deployment{}
+	if err := r.Client.Get(context.TODO(), types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name + "-cfssl"},
+		cfsslDeployment); err == nil {
+		if cfsslDeployment.Status.ReadyReplicas == 0 {
 			return false
 		}
-	case version.ErrConstraintNotSatisfied:
-		cfsslDeployment := &appsv1.Deployment{}
-		if err := r.Client.Get(context.TODO(), types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name + "-cfssl"},
-			cfsslDeployment); err == nil {
-			if cfsslDeployment.Status.ReadyReplicas == 0 {
-				return false
-			}
-		} else {
-			// Just increase the count - it might be a temporary error as the Deployment is being created.
-			reqLogger.V(1).Info("Could not Get Astarte CFSSL Deployment to compute health.")
-			return false
-		}
-	default:
+	} else {
+		// Just increase the count - it might be a temporary error as the Deployment is being created.
+		reqLogger.V(1).Info("Could not Get Astarte CFSSL Deployment to compute health.")
 		return false
 	}
 
 	return true
 }
 
+// nolint:dupl
 func (r *ReconcileHelper) computeRabbitMQHealth(reqLogger logr.Logger, instance *apiv1alpha2.Astarte) bool {
 	if !pointy.BoolValue(instance.Spec.RabbitMQ.Deploy, true) {
 		return true
@@ -332,13 +316,6 @@ func (r *ReconcileHelper) ReconcileAstarteResources(instance *apiv1alpha2.Astart
 	// CFSSL
 	if err := recon.EnsureCFSSL(instance, r.Client, r.Scheme); err != nil {
 		return err
-	}
-
-	// CFSSL CA Secret - if we're < 1.0.0
-	if version.CheckConstraintAgainstAstarteVersion("< 1.0.0", instance.Spec.Version) == nil {
-		if err := recon.EnsureCFSSLCASecret(instance, r.Client, r.Scheme); err != nil {
-			return err
-		}
 	}
 
 	// OK! Now it's time to reconcile all of Astarte Services

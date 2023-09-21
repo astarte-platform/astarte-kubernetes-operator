@@ -1,7 +1,7 @@
 /*
   This file is part of Astarte.
 
-  Copyright 2020 Ispirata Srl
+  Copyright 2020-23 SECO Mind Srl
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -94,6 +94,10 @@ func (r *AstarteDefaultIngressReconciler) Reconcile(ctx context.Context, req ctr
 	}
 	// Reconcile the Broker Ingress
 	if err := defaultingress.EnsureBrokerIngress(instance, astarte, r.Client, r.Scheme, reqLogger); err != nil {
+		return ctrl.Result{}, err
+	}
+	// And eventually reconcile the Metrics Ingress
+	if err := defaultingress.EnsureMetricsIngress(instance, astarte, r.Client, r.Scheme, reqLogger); err != nil {
 		return ctrl.Result{}, err
 	}
 

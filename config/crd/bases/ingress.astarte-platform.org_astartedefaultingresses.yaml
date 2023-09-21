@@ -68,9 +68,10 @@ spec:
                     type: string
                   serveMetrics:
                     description: 'When true, all /metrics endpoints for Astarte services
-                      will be served by the Ingress. Beware this might be a security
-                      hole. You can control which IPs can access /metrics with serveMetricsToSubnet.
-                      Default: false.'
+                      will be served by a dedicated metrics ingress. Metrics can be
+                      gathered by querying the /metrics/<service-name> path. Beware
+                      this might be a security hole. You can control which IPs can
+                      access /metrics with serveMetricsToSubnet. Default: false.'
                     type: boolean
                   serveMetricsToSubnet:
                     description: 'When specified and when serveMetrics is true, /metrics

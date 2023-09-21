@@ -1,7 +1,7 @@
 /*
   This file is part of Astarte.
 
-  Copyright 2021 Ispirata Srl
+  Copyright 2021-23 SECO Mind Srl
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -42,7 +42,8 @@ type AstarteDefaultIngressAPISpec struct {
 	// When true, the housekeeping endpoint is publicly exposed. Default: true.
 	// +optional
 	ExposeHousekeeping *bool `json:"exposeHousekeeping,omitempty"`
-	// When true, all /metrics endpoints for Astarte services will be served by the Ingress.
+	// When true, all /metrics endpoints for Astarte services will be served by a dedicated metrics ingress.
+	// Metrics can be gathered by querying the /metrics/<service-name> path.
 	// Beware this might be a security hole. You can control which IPs can access /metrics
 	// with serveMetricsToSubnet. Default: false.
 	// +optional

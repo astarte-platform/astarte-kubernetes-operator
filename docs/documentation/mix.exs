@@ -8,8 +8,8 @@ defmodule Doc.MixProject do
   def project do
     [
       app: :doc,
-      version: "23.5.0-dev",
-      elixir: "~> 1.4",
+      version: "23.11.0-dev",
+      elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       name: "Astarte Operator",

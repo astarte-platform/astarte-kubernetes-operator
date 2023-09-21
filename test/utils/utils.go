@@ -1,7 +1,7 @@
 /*
   This file is part of Astarte.
 
-  Copyright 2020 Ispirata Srl
+  Copyright 2020-23 SECO Mind Srl
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -50,30 +50,6 @@ func EnsureAstarteServicesReadinessUpTo11(namespace string, c client.Client) err
 
 // EnsureAstarteServicesReadinessUpTo10 ensures all existing Astarte components up to 1.0
 func EnsureAstarteServicesReadinessUpTo10(namespace string, c client.Client) error {
-	// The previous stuff
-	if err := EnsureAstarteServicesReadinessUpTo011(namespace, c, false); err != nil {
-		return err
-	}
-
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-cfssl", c); err != nil {
-		return err
-	}
-
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-flow", c); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// EnsureAstarteServicesReadinessUpTo011 ensures all existing Astarte components up to 0.11
-func EnsureAstarteServicesReadinessUpTo011(namespace string, c client.Client, checkCFSSL bool) error {
-	// Check all the StatefulSets
-	if checkCFSSL {
-		if err := EnsureStatefulSetReadiness(namespace, "example-astarte-cfssl", c); err != nil {
-			return err
-		}
-	}
 	if err := EnsureStatefulSetReadiness(namespace, "example-astarte-cassandra", c); err != nil {
 		return err
 	}
@@ -110,8 +86,15 @@ func EnsureAstarteServicesReadinessUpTo011(namespace string, c client.Client, ch
 		return err
 	}
 
-	// Check VerneMQ last thing
 	if err := EnsureStatefulSetReadiness(namespace, "example-astarte-vernemq", c); err != nil {
+		return err
+	}
+
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-cfssl", c); err != nil {
+		return err
+	}
+
+	if err := EnsureDeploymentReadiness(namespace, "example-astarte-flow", c); err != nil {
 		return err
 	}
 
