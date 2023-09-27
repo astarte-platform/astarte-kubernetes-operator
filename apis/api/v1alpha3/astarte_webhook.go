@@ -20,11 +20,7 @@ package v1alpha3
 
 import (
 	ctrl "sigs.k8s.io/controller-runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
-
-// log is for logging in this package.
-var astartelog = logf.Log.WithName("astarte-resource")
 
 func (r *Astarte) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).

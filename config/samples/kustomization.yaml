@@ -1,10 +1,7 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
-- api_v1alpha1_astarte.yaml
 - api_v1alpha2_astarte.yaml
-- api_v1alpha1_astartevoyageringress.yaml
 - api_v1alpha2_astartevoyageringress.yaml
-- api_v1alpha1_flow.yaml
 - api_v1alpha2_flow.yaml
 - ingress_v1alpha1_astartedefaultingress.yaml
 - api_v1alpha3_astarte.yaml

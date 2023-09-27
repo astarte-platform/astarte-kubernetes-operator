@@ -36,7 +36,6 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	zapcr "sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
 	apiv1alpha3 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha3"
 	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/ingress/v1alpha1"
@@ -58,7 +57,6 @@ func init() {
 	utilruntime.Must(voyagercrd.AddToScheme(scheme))
 	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
 
-	utilruntime.Must(apiv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(apiv1alpha2.AddToScheme(scheme))
 	utilruntime.Must(ingressv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(apiv1alpha3.AddToScheme(scheme))
@@ -130,26 +128,9 @@ func main() {
 	// When testing the operator locally, we may want not to run webhooks. Thus, put them behind
 	// an environment variable
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&apiv1alpha2.Astarte{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Astarte")
+		if err := setupWebhooks(mgr); err != nil {
 			os.Exit(1)
 		}
-		if err = (&apiv1alpha2.AstarteVoyagerIngress{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "AstarteVoyagerIngress")
-			os.Exit(1)
-		}
-		if err = (&apiv1alpha2.Flow{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Flow")
-			os.Exit(1)
-		}
-		if err = (&ingressv1alpha1.AstarteDefaultIngress{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "AstarteDefaultIngress")
-			os.Exit(1)
-		}
-	}
-	if err = (&apiv1alpha3.Astarte{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Astarte")
-		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
 
@@ -158,6 +139,30 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func setupWebhooks(mgr ctrl.Manager) error {
+	if err := (&apiv1alpha2.Astarte{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Astarte")
+		return err
+	}
+	if err := (&apiv1alpha2.AstarteVoyagerIngress{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "AstarteVoyagerIngress")
+		return err
+	}
+	if err := (&apiv1alpha2.Flow{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Flow")
+		return err
+	}
+	if err := (&ingressv1alpha1.AstarteDefaultIngress{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "AstarteDefaultIngress")
+		return err
+	}
+	if err := (&apiv1alpha3.Astarte{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Astarte")
+		return err
+	}
+	return nil
 }
 
 func setupLogger() logr.Logger {

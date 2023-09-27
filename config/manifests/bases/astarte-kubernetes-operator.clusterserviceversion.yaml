@@ -25,19 +25,13 @@ spec:
       displayName: Astarte
       kind: Astarte
       name: astartes.api.astarte-platform.org
-      version: v1alpha1
+      version: v1alpha3
     - description: AstarteVoyagerIngress is the Schema for the astartevoyageringresses
         API
       displayName: Astarte Voyager Ingress
       kind: AstarteVoyagerIngress
       name: astartevoyageringresses.api.astarte-platform.org
       version: v1alpha2
-    - description: AstarteVoyagerIngress is the Schema for the astartevoyageringresses
-        API
-      displayName: Astarte Voyager Ingress
-      kind: AstarteVoyagerIngress
-      name: astartevoyageringresses.api.astarte-platform.org
-      version: v1alpha1
     - description: Flow is the Schema for the flows API
       displayName: Flow
       kind: Flow
@@ -47,7 +41,7 @@ spec:
       displayName: Flow
       kind: Flow
       name: flows.api.astarte-platform.org
-      version: v1alpha1
+      version: v1alpha3
   description: The Astarte Kubernetes Operator bundle.
   displayName: astarte-kubernetes-operator
   icon:
