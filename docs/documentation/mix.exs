@@ -8,7 +8,7 @@ defmodule Doc.MixProject do
   def project do
     [
       app: :doc,
-      version: "23.5.0-dev",
+      version: "23.5.0",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
