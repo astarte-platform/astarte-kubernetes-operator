@@ -58,11 +58,19 @@ jobs:
     - run: mkdir docs/content
       working-directory: astarte-kubernetes-operator
     # Generate CRD docs
-    - run: make crd-docs
+    - run: |
+        make crd-docs
+        echo $(ls docs/content)
+        echo $(wc -l docs/content/index.md)
+      working-directory: astarte-kubernetes-operator
+    - name: Check generated crd-docs
+      run: |
+        echo $(ls docs/content)
+        echo $(wc -l docs/content/index.md)
       working-directory: astarte-kubernetes-operator
     # Install Hugo
     - run: |
-        curl -Lo hugo.tar.gz https://github.com/gohugoio/hugo/releases/download/v0.95.0/hugo_extended_0.95.0_Linux-64bit.tar.gz
+        curl -Lo hugo.tar.gz https://github.com/gohugoio/hugo/releases/download/v0.121.1/hugo_extended_0.121.1_Linux-64bit.tar.gz
         tar -zxvf hugo.tar.gz hugo
       working-directory: astarte-kubernetes-operator
     # Checkout the hugo-book theme
@@ -72,6 +80,7 @@ jobs:
         submodules: recursive
         repository: alex-shpak/hugo-book
         path: themes/hugo-book
+      working-directory: astarte-kubernetes-operator
     - name: Set docs dirname
       run: |
         DOCS_DIRNAME="astarte-kubernetes-operator/$(echo ${{ github.ref }} | sed 's,refs/heads/,,' | sed 's/master/snapshot/g' | sed 's/release-//g')"
@@ -82,7 +91,7 @@ jobs:
       working-directory: astarte-kubernetes-operator
     # Run hugo to build docs page
     - name: Build CRD docs
-      run: ./hugo --config docs/hugo/config.yaml --contentDir docs/content --themesDir ../themes --destination docs/generated --verbose --verboseLog
+      run: ./hugo --config docs/hugo/config.yaml --contentDir docs/content --destination docs/generated --logLevel debug
       working-directory: astarte-kubernetes-operator
     - uses: erlef/setup-beam@v1.15
       with:
