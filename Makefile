@@ -85,9 +85,9 @@ help: ## Display this help.
 ##@ Development
 
 .PHONY: manifests
-manifests: controller-gen kustomize ## Generate manifests e.g. CRD, RBAC etc.
+manifests: controller-gen kustomize yq ## Generate manifests e.g. CRD, RBAC etc.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-	$(KUSTOMIZE) build config/helm-crd > charts/astarte-operator/templates/crds.yaml
+	$(KUSTOMIZE) build config/helm-crd | yq --split-exp '"charts/astarte-operator/crds/" + .metadata.name + ".yaml"' --no-doc
 	$(KUSTOMIZE) build config/helm-rbac > charts/astarte-operator/templates/rbac.yaml
 	$(KUSTOMIZE) build config/helm-manager > charts/astarte-operator/templates/manager.yaml
 	$(KUSTOMIZE) build config/helm-webhook > charts/astarte-operator/templates/webhook.yaml

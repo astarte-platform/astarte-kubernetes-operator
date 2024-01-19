@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Changed
 - Do not inject the CA in CRDs managed by the Operator.
+- Do not template CRDs in Helm chart.
 
 ## [23.5.1] - 2024-01-16
 ### Changed
