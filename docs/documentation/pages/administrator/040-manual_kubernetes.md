@@ -4,7 +4,7 @@ In case you do not want to use `helm` to manage the Operator, this guide will ru
 all the steps needed to set up Astarte Kubernetes.
 
 To come along with this guide, the following components are required:
-+ [`operator-sdk`](https://sdk.operatorframework.io/docs/installation/install-operator-sdk/)
++ [`operator-sdk`](https://sdk.operatorframework.io/docs/installation/)
 + [`kustomize`](https://kubectl.docs.kubernetes.io/installation/kustomize/)
 
 Please make sure that the version of `operator-sdk` matches the version used by the Astarte
@@ -71,13 +71,5 @@ make run ENABLE_WEBHOOKS=false
 This will bring up the Operator (with all the webhooks disabled) and connect it to your current
 Kubernetes context.
 
-In case you need to run the Operator with webhooks, please refer to the [Operator-SDK
-documentation](https://v0-19-x.sdk.operatorframework.io/docs/golang/webhooks/#run-locally).
-
-### Caveats
-
-When running the Operator locally, you're bound to a single namespace, and to all limitations of
-`operator-sdk run`. This is out of the scope of this guide, and you should be confident with
-[`operator-sdk`'s User
-Guide](https://github.com/operator-framework/operator-sdk/blob/master/doc/user-guide.md) if you plan
-on running the Operator outside the Cluster.
+Please, refer to the [OperatorSDK documentation](https://sdk.operatorframework.io/docs/) to have
+further insights on this scenario.
