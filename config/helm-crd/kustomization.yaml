@@ -8,3 +8,6 @@ namePrefix: "{{ .Release.Name }}-"
 
 bases:
 - ../crd
+
+commonAnnotations:
+  helm.sh/resource-policy: keep
