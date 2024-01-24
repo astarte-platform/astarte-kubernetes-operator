@@ -10,7 +10,7 @@ This gives you an high degree of customization, allowing you to tweak any single
 Astarte setup.
 
 The main Astarte CRD is extensively documented and the available fields can be inspected
-[here](https://docs.astarte-platform.org/astarte-kubernetes-operator/latest/crds/index.html).
+[here](https://docs.astarte-platform.org/astarte-kubernetes-operator/snapshot/crds/index.html).
 
 To create your Astarte resource, just create your Astarte Custom Resource, which will look something
 like this:
