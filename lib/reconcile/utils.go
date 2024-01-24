@@ -570,6 +570,19 @@ func getAstarteCommonVolumes(cr *apiv1alpha2.Astarte) []v1.Volume {
 		}
 	}
 
+	if cr.Spec.Cassandra.Connection != nil {
+		if cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name != "" {
+			// Mount the secret!
+			ret = append(ret, v1.Volume{
+				Name: "cassandra-ssl-ca",
+				VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{
+					SecretName: cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name,
+					Items:      []v1.KeyToPath{{Key: "ca.crt", Path: "ca.crt"}},
+				}},
+			})
+		}
+	}
+
 	return ret
 }
 
@@ -588,6 +601,17 @@ func getAstarteCommonVolumeMounts(cr *apiv1alpha2.Astarte) []v1.VolumeMount {
 			ret = append(ret, v1.VolumeMount{
 				Name:      "rabbitmq-ssl-ca",
 				MountPath: "/rabbitmq-ssl",
+				ReadOnly:  true,
+			})
+		}
+	}
+
+	if cr.Spec.Cassandra.Connection != nil {
+		if cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name != "" {
+			// Mount the secret!
+			ret = append(ret, v1.VolumeMount{
+				Name:      "cassandra-ssl-ca",
+				MountPath: "/cassandra-ssl",
 				ReadOnly:  true,
 			})
 		}

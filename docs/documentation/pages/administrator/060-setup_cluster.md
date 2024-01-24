@@ -10,7 +10,7 @@ This gives you an high degree of customization, allowing you to tweak any single
 Astarte setup.
 
 The main Astarte CRD is extensively documented and the available fields can be inspected
-[here](https://docs.astarte-platform.org/snapshot/astarte-kubernetes-operator/).
+[here](https://docs.astarte-platform.org/astarte-kubernetes-operator/snapshot/crds/index.html).
 
 To create your Astarte resource, just create your Astarte Custom Resource, which will look something
 like this:
@@ -24,7 +24,7 @@ metadata:
 spec:
   # This is the most minimal set of reasonable configuration to spin up an Astarte
   # instance with reasonable defaults and enough control over the deployment.
-  version: 1.0.1
+  version: 1.1.1
   api:
     host: "api.astarte.yourdomain.com" # MANDATORY
   rabbitmq:
