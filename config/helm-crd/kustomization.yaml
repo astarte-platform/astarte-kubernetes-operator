@@ -9,11 +9,5 @@ namePrefix: "{{ .Release.Name }}-"
 bases:
 - ../crd
 
-patchesStrategicMerge:
-  - service-name-helm_patch.yaml
-
-# This is needed due to the fact we don't have access to the full kustomization, hence we cannot replace
-# variables. On the other hand, all our resources are CRDs, so we can rely on commonAnnotations, which will
-# still take precedence over the other patches.
 commonAnnotations:
-  cert-manager.io/inject-ca-from: '{{ .Release.Namespace }}/{{ .Release.Name }}-manager-webhook'
+  helm.sh/resource-policy: keep

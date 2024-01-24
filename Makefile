@@ -85,9 +85,9 @@ help: ## Display this help.
 ##@ Development
 
 .PHONY: manifests
-manifests: controller-gen kustomize ## Generate manifests e.g. CRD, RBAC etc.
+manifests: controller-gen kustomize yq ## Generate manifests e.g. CRD, RBAC etc.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-	$(KUSTOMIZE) build config/helm-crd > charts/astarte-operator/templates/crds.yaml
+	$(KUSTOMIZE) build config/helm-crd | yq --split-exp '"charts/astarte-operator/crds/" + .metadata.name + ".yaml"' --no-doc
 	$(KUSTOMIZE) build config/helm-rbac > charts/astarte-operator/templates/rbac.yaml
 	$(KUSTOMIZE) build config/helm-manager > charts/astarte-operator/templates/manager.yaml
 	$(KUSTOMIZE) build config/helm-webhook > charts/astarte-operator/templates/webhook.yaml
@@ -191,6 +191,7 @@ CONVERSION_GEN ?= $(LOCALBIN)/conversion-gen
 CRD_REF_DOCS ?= $(LOCALBIN)/crd-ref-docs
 HELM_DOCS ?= $(LOCALBIN)/helm-docs
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
+YQ ?= $(LOCALBIN)/yq
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v3.8.7
@@ -201,6 +202,7 @@ CONVERSION_GEN_VERSION = v0.19.16
 GOLANGCI_VERSION = v1.52.2
 CRD_REF_DOCS_VERSION=v0.0.9
 HELM_DOCS_VERSION = v1.7.0
+YQ_VERSION = v4.30.8
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
@@ -223,6 +225,11 @@ $(ENVTEST): $(LOCALBIN)
 conversion-gen: $(CONVERSION_GEN) ## Download conversion-gen locally if necessary.
 $(CONVERSION_GEN): $(LOCALBIN)
 	test -s $(LOCALBIN)/conversion-gen || GOBIN=$(LOCALBIN) go install k8s.io/code-generator/cmd/conversion-gen@${CONVERSION_GEN_VERSION}
+
+.PHONY: yq
+yq: $(YQ) ## Download yq locally if necessary.
+$(YQ): $(LOCALBIN)
+	test -s $(LOCALBIN)/yq || GOBIN=$(LOCALBIN) go install github.com/mikefarah/yq/v4@${YQ_VERSION}
 
 .PHONY: bundle
 bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.
