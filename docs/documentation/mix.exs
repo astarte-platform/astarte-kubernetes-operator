@@ -1,7 +1,7 @@
 defmodule Doc.MixProject do
   use Mix.Project
 
-  @source_ref "release-23.5"
+  @source_ref "release-23.11"
   @source_version String.replace_prefix(@source_ref, "release-", "")
                   |> String.replace("master", "snapshot")
 
