@@ -18,4 +18,8 @@ keywords:
 maintainers:
   - name: drf
     email: dario.freddi@ispirata.com
+  - name: matt-mazzucato
+    email: mattia.mazzucato@secomind.com
+  - name: annopaolo
+    email: arnaldo.cesco@secomind.com
 icon: https://github.com/astarte-platform/astarte-kubernetes-operator/blob/master/mascotte.svg
