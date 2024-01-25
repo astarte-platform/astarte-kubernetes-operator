@@ -77,6 +77,10 @@ spec:
   maintainers:
   - email: dario.freddi@ispirata.com
     name: drf
+  - email: mattia.mazzucato@secomind.com
+    name: matt-mazzucato
+  - email: arnaldo.cesco@secomind.com
+    name: annopaolo
   maturity: alpha
   minKubeVersion: 1.19.0
   provider:
