@@ -200,7 +200,7 @@ CONTROLLER_TOOLS_VERSION ?= v0.11.3
 # Note: the major lags behind by one (see https://github.com/kubernetes/code-generator#where-does-it-come-from).
 CONVERSION_GEN_VERSION = v0.19.16
 GOLANGCI_VERSION = v1.52.2
-CRD_REF_DOCS_VERSION=v0.0.9
+CRD_REF_DOCS_VERSION=v0.0.10
 HELM_DOCS_VERSION = v1.7.0
 YQ_VERSION = v4.30.8
 
