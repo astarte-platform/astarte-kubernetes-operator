@@ -34,7 +34,7 @@ kubectl create namespace cert-manager
 helm install \
   cert-manager jetstack/cert-manager \
   --namespace cert-manager \
-  --version v1.7.0 \
+  --version v1.13.3 \
   --set installCRDs=true
 ```
 
@@ -65,15 +65,14 @@ Cluster](https://docs.astarte-platform.org/astarte-kubernetes-operator/snapshot/
 
 ## Kubernetes support
 
-| Kubernetes Version | Supported                        | Tested by CI       |
-|--------------------|----------------------------------|--------------------|
-| v1.21.x            | :large_orange_diamond: :warning: | :x:                |
-| v1.22.x            | :large_orange_diamond:           | :x:                |
-| v1.23.x            | :large_orange_diamond:           | :white_check_mark: |
-| v1.24.x            | :white_check_mark:               | :white_check_mark: |
-| v1.25.x            | :white_check_mark:               | :white_check_mark: |
-| v1.26.x            | :white_check_mark:               | :white_check_mark: |
-| v1.27.x            | :white_check_mark:               | :white_check_mark: |
+| Kubernetes Version | Supported              | Tested by CI       |
+|--------------------|------------------------|--------------------|
+| v1.24.x            | :large_orange_diamond: | :x:                |
+| v1.25.x            | :white_check_mark:     | :white_check_mark: |
+| v1.26.x            | :white_check_mark:     | :white_check_mark: |
+| v1.27.x            | :white_check_mark:     | :white_check_mark: |
+| v1.28.x            | :white_check_mark:     | :white_check_mark: |
+| v1.29.x            | :white_check_mark:     | :white_check_mark: |
 
 Key:
 
@@ -81,8 +80,6 @@ Key:
 * :large_orange_diamond: : Partially supported / known to run in production, but not being targeted
   by the release.
 * :x: : Not supported. Run at your own risk.
-* :warning: : Kubernetes version supporting AstarteVoyagerIngress. Please, be aware that the
-  AstarteVoyagerIngress is deprecated and the new AstarteDefaultIngress should be used.
 
 ## Compatibility Matrix
 
@@ -92,12 +89,12 @@ Key:
 | v1.0.x                   | v0.11 - v1.0    | v1.19+             |
 | v22.11                   | v1.0+           | v1.22+             |
 | v23.5                    | v1.0+           | v1.22+             |
-| v23.11                   | v1.0+           | v1.22+             |
+| v23.11                   | v1.0+           | v1.24+             |
 
 ## Development
 
 Astarte's Operator is written in Go and built upon [Operator
 SDK](https://github.com/operator-framework/operator-sdk). It depends on Go 1.19, requires Go
-Modules and Kubernetes v1.20+.
+Modules and Kubernetes v1.24+.
 
 The project is built with kustomize v3.8.7, controller-gen v0.10.0 and conversion-gen v0.19.16.
