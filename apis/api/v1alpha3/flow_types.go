@@ -19,29 +19,12 @@
 package v1alpha3
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
-// FlowSpec defines the desired state of Flow
-type FlowSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of Flow. Edit flow_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
-}
-
-// FlowStatus defines the observed state of Flow
-type FlowStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-}
-
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // Flow is the Schema for the flows API
 type Flow struct {
@@ -52,7 +35,7 @@ type Flow struct {
 	Status FlowStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // FlowList contains a list of Flow
 type FlowList struct {
@@ -61,6 +44,134 @@ type FlowList struct {
 	Items           []Flow `json:"items"`
 }
 
-func init() {
-	SchemeBuilder.Register(&Flow{}, &FlowList{})
+// FlowState describes the global state of a Flow
+type FlowState string
+
+const (
+	// FlowStateUnknown represents an Unknown State of the Flow. When in this state, it might
+	// have never been reconciled.
+	FlowStateUnknown FlowState = ""
+	// FlowStateUnstable means the Flow is either reconciling or restarting some of its blocks.
+	// It usually transitions to this State before moving to Flowing.
+	FlowStateUnstable FlowState = "Unstable"
+	// FlowStateUnhealthy means the Flow is currently having some non-transient or unrecoverable errors.
+	// Manual intervention might be required.
+	FlowStateUnhealthy FlowState = "Unhealthy"
+	// FlowStateFlowing means the Flow is currently active and all of its blocks are stable. A healthy flow should stay
+	// in this state for most of its lifecycle.
+	FlowStateFlowing FlowState = "Flowing"
+)
+
+// RabbitMQConfig represents configuration for RabbitMQ
+type RabbitMQConfig struct {
+	metav1.TypeMeta `json:",inline"`
+	Host            string `json:"host"`
+	// +optional
+	Port int16 `json:"port,omitempty"`
+	// +optional
+	SSL      *bool  `json:"ssl,omitempty"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+// RabbitMQExchange is a representation of a RabbitMQ Exchange
+type RabbitMQExchange struct {
+	metav1.TypeMeta `json:",inline"`
+	Name            string `json:"name"`
+	RoutingKey      string `json:"routingKey"`
+}
+
+// RabbitMQDataProvider is a representation of a Data Provider based upon RabbitMQ
+type RabbitMQDataProvider struct {
+	metav1.TypeMeta `json:",inline"`
+	// +optional
+	Queues []string `json:"queues,omitempty"`
+	// +optional
+	Exchange *RabbitMQExchange `json:"exchange,omitempty"`
+	// RabbitMQConfig is an optional field which allows to specify configuration for an external RabbitMQ
+	// broker. If not specified, Astarte's main Broker will be used.
+	// +optional
+	RabbitMQConfig *RabbitMQConfig `json:"rabbitmq,omitempty"`
+}
+
+// Type returns the type of the Data Provider
+func (r *RabbitMQDataProvider) Type() string {
+	return "rabbitmq"
+}
+
+// IsProducer returns whether the Data Provider has a Producer stage
+func (r *RabbitMQDataProvider) IsProducer() bool {
+	return r.Exchange != nil
+}
+
+// IsConsumer returns whether the Data Provider has a Consumer stage
+func (r *RabbitMQDataProvider) IsConsumer() bool {
+	return len(r.Queues) > 0
+}
+
+// DataProvider is a struct which defines which Data Providers (e.g. Brokers) are available for a
+// Worker
+type DataProvider struct {
+	metav1.TypeMeta `json:",inline"`
+	// +optional
+	RabbitMQ *RabbitMQDataProvider `json:"rabbitmq,omitempty"`
+}
+
+// BlockWorker defines a Worker for a Container Block
+type BlockWorker struct {
+	metav1.TypeMeta `json:",inline"`
+	WorkerID        string       `json:"id"`
+	DataProvider    DataProvider `json:"dataProvider"`
+}
+
+// ContainerBlockSpec defines a Container Block in a Flow
+type ContainerBlockSpec struct {
+	metav1.TypeMeta `json:",inline"`
+	BlockID         string `json:"id"`
+	Image           string `json:"image"`
+	// +optional
+	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	// +optional
+	Environment []v1.EnvVar `json:"environment"`
+	// +optional
+	Resources v1.ResourceRequirements `json:"resources"`
+	// Configuration represents the JSON string carrying the user configuration for this block
+	Configuration string `json:"config"`
+	//+kubebuilder:validation:MinItems:=1
+	Workers []BlockWorker `json:"workers"`
+}
+
+// FlowSpec defines the desired state of Flow
+type FlowSpec struct {
+	metav1.TypeMeta `json:",inline"`
+	Astarte         v1.LocalObjectReference `json:"astarte"`
+	AstarteRealm    string                  `json:"astarteRealm"`
+	// Defines the amount of non-container blocks in the Flow
+	NativeBlocks int `json:"nativeBlocks"`
+	// Defines the overall resources consumed by Native Blocks
+	NativeBlocksResources v1.ResourceList `json:"nativeBlocksResources"`
+	// EE Only: Defines the Flow Pool in which the Flow will be allocated.
+	FlowPool        v1.LocalObjectReference `json:"flowPool,omitempty"`
+	ContainerBlocks []ContainerBlockSpec    `json:"blocks"`
+}
+
+// FlowStatus defines the observed state of Flow
+type FlowStatus struct {
+	metav1.TypeMeta `json:",inline"`
+	// State defines the overall state of the Flow
+	State FlowState `json:"state"`
+	// Represents the total number of the Container Blocks in the Flow
+	TotalContainerBlocks int `json:"totalContainerBlocks"`
+	// Represents the total number of Ready Container Blocks in the Flow. In a healthy Flow,
+	// this matches the number of Total Container Blocks.
+	ReadyContainerBlocks int `json:"readyContainerBlocks"`
+	// The overall resources allocated in the cluster for this Block
+	Resources v1.ResourceList `json:"resources"`
+	// Represents the total number of Container Blocks with non temporary failures. Present only
+	// if any of the Blocks is in such state. When present, manual intervention is most likely required.
+	// +optional
+	FailingContainerBlocks int `json:"failingContainerBlocks,omitempty"`
+	// UnrecoverableFailures lists all the ContainerStates of failing containers, for further inspection.
+	// +optional
+	UnrecoverableFailures []v1.ContainerState `json:"unrecoverableFailures,omitempty"`
 }

@@ -381,6 +381,36 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*BlockWorker)(nil), (*v1alpha2.BlockWorker)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha3_BlockWorker_To_v1alpha2_BlockWorker(a.(*BlockWorker), b.(*v1alpha2.BlockWorker), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*v1alpha2.BlockWorker)(nil), (*BlockWorker)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha2_BlockWorker_To_v1alpha3_BlockWorker(a.(*v1alpha2.BlockWorker), b.(*BlockWorker), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ContainerBlockSpec)(nil), (*v1alpha2.ContainerBlockSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha3_ContainerBlockSpec_To_v1alpha2_ContainerBlockSpec(a.(*ContainerBlockSpec), b.(*v1alpha2.ContainerBlockSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*v1alpha2.ContainerBlockSpec)(nil), (*ContainerBlockSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha2_ContainerBlockSpec_To_v1alpha3_ContainerBlockSpec(a.(*v1alpha2.ContainerBlockSpec), b.(*ContainerBlockSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*DataProvider)(nil), (*v1alpha2.DataProvider)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha3_DataProvider_To_v1alpha2_DataProvider(a.(*DataProvider), b.(*v1alpha2.DataProvider), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*v1alpha2.DataProvider)(nil), (*DataProvider)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha2_DataProvider_To_v1alpha3_DataProvider(a.(*v1alpha2.DataProvider), b.(*DataProvider), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*Flow)(nil), (*v1alpha2.Flow)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha3_Flow_To_v1alpha2_Flow(a.(*Flow), b.(*v1alpha2.Flow), scope)
 	}); err != nil {
@@ -428,6 +458,36 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*v1alpha2.LoginCredentialsSecret)(nil), (*LoginCredentialsSecret)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha2_LoginCredentialsSecret_To_v1alpha3_LoginCredentialsSecret(a.(*v1alpha2.LoginCredentialsSecret), b.(*LoginCredentialsSecret), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*RabbitMQConfig)(nil), (*v1alpha2.RabbitMQConfig)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha3_RabbitMQConfig_To_v1alpha2_RabbitMQConfig(a.(*RabbitMQConfig), b.(*v1alpha2.RabbitMQConfig), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*v1alpha2.RabbitMQConfig)(nil), (*RabbitMQConfig)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha2_RabbitMQConfig_To_v1alpha3_RabbitMQConfig(a.(*v1alpha2.RabbitMQConfig), b.(*RabbitMQConfig), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*RabbitMQDataProvider)(nil), (*v1alpha2.RabbitMQDataProvider)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha3_RabbitMQDataProvider_To_v1alpha2_RabbitMQDataProvider(a.(*RabbitMQDataProvider), b.(*v1alpha2.RabbitMQDataProvider), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*v1alpha2.RabbitMQDataProvider)(nil), (*RabbitMQDataProvider)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha2_RabbitMQDataProvider_To_v1alpha3_RabbitMQDataProvider(a.(*v1alpha2.RabbitMQDataProvider), b.(*RabbitMQDataProvider), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*RabbitMQExchange)(nil), (*v1alpha2.RabbitMQExchange)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha3_RabbitMQExchange_To_v1alpha2_RabbitMQExchange(a.(*RabbitMQExchange), b.(*v1alpha2.RabbitMQExchange), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*v1alpha2.RabbitMQExchange)(nil), (*RabbitMQExchange)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha2_RabbitMQExchange_To_v1alpha3_RabbitMQExchange(a.(*v1alpha2.RabbitMQExchange), b.(*RabbitMQExchange), scope)
 	}); err != nil {
 		return err
 	}
@@ -1626,6 +1686,84 @@ func Convert_v1alpha2_AstarteVerneMQSpec_To_v1alpha3_AstarteVerneMQSpec(in *v1al
 	return autoConvert_v1alpha2_AstarteVerneMQSpec_To_v1alpha3_AstarteVerneMQSpec(in, out, s)
 }
 
+func autoConvert_v1alpha3_BlockWorker_To_v1alpha2_BlockWorker(in *BlockWorker, out *v1alpha2.BlockWorker, s conversion.Scope) error {
+	out.WorkerID = in.WorkerID
+	if err := Convert_v1alpha3_DataProvider_To_v1alpha2_DataProvider(&in.DataProvider, &out.DataProvider, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v1alpha3_BlockWorker_To_v1alpha2_BlockWorker is an autogenerated conversion function.
+func Convert_v1alpha3_BlockWorker_To_v1alpha2_BlockWorker(in *BlockWorker, out *v1alpha2.BlockWorker, s conversion.Scope) error {
+	return autoConvert_v1alpha3_BlockWorker_To_v1alpha2_BlockWorker(in, out, s)
+}
+
+func autoConvert_v1alpha2_BlockWorker_To_v1alpha3_BlockWorker(in *v1alpha2.BlockWorker, out *BlockWorker, s conversion.Scope) error {
+	out.WorkerID = in.WorkerID
+	if err := Convert_v1alpha2_DataProvider_To_v1alpha3_DataProvider(&in.DataProvider, &out.DataProvider, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v1alpha2_BlockWorker_To_v1alpha3_BlockWorker is an autogenerated conversion function.
+func Convert_v1alpha2_BlockWorker_To_v1alpha3_BlockWorker(in *v1alpha2.BlockWorker, out *BlockWorker, s conversion.Scope) error {
+	return autoConvert_v1alpha2_BlockWorker_To_v1alpha3_BlockWorker(in, out, s)
+}
+
+func autoConvert_v1alpha3_ContainerBlockSpec_To_v1alpha2_ContainerBlockSpec(in *ContainerBlockSpec, out *v1alpha2.ContainerBlockSpec, s conversion.Scope) error {
+	out.BlockID = in.BlockID
+	out.Image = in.Image
+	out.ImagePullSecrets = *(*[]v1.LocalObjectReference)(unsafe.Pointer(&in.ImagePullSecrets))
+	out.Environment = *(*[]v1.EnvVar)(unsafe.Pointer(&in.Environment))
+	out.Resources = in.Resources
+	out.Configuration = in.Configuration
+	out.Workers = *(*[]v1alpha2.BlockWorker)(unsafe.Pointer(&in.Workers))
+	return nil
+}
+
+// Convert_v1alpha3_ContainerBlockSpec_To_v1alpha2_ContainerBlockSpec is an autogenerated conversion function.
+func Convert_v1alpha3_ContainerBlockSpec_To_v1alpha2_ContainerBlockSpec(in *ContainerBlockSpec, out *v1alpha2.ContainerBlockSpec, s conversion.Scope) error {
+	return autoConvert_v1alpha3_ContainerBlockSpec_To_v1alpha2_ContainerBlockSpec(in, out, s)
+}
+
+func autoConvert_v1alpha2_ContainerBlockSpec_To_v1alpha3_ContainerBlockSpec(in *v1alpha2.ContainerBlockSpec, out *ContainerBlockSpec, s conversion.Scope) error {
+	out.BlockID = in.BlockID
+	out.Image = in.Image
+	out.ImagePullSecrets = *(*[]v1.LocalObjectReference)(unsafe.Pointer(&in.ImagePullSecrets))
+	out.Environment = *(*[]v1.EnvVar)(unsafe.Pointer(&in.Environment))
+	out.Resources = in.Resources
+	out.Configuration = in.Configuration
+	out.Workers = *(*[]BlockWorker)(unsafe.Pointer(&in.Workers))
+	return nil
+}
+
+// Convert_v1alpha2_ContainerBlockSpec_To_v1alpha3_ContainerBlockSpec is an autogenerated conversion function.
+func Convert_v1alpha2_ContainerBlockSpec_To_v1alpha3_ContainerBlockSpec(in *v1alpha2.ContainerBlockSpec, out *ContainerBlockSpec, s conversion.Scope) error {
+	return autoConvert_v1alpha2_ContainerBlockSpec_To_v1alpha3_ContainerBlockSpec(in, out, s)
+}
+
+func autoConvert_v1alpha3_DataProvider_To_v1alpha2_DataProvider(in *DataProvider, out *v1alpha2.DataProvider, s conversion.Scope) error {
+	out.RabbitMQ = (*v1alpha2.RabbitMQDataProvider)(unsafe.Pointer(in.RabbitMQ))
+	return nil
+}
+
+// Convert_v1alpha3_DataProvider_To_v1alpha2_DataProvider is an autogenerated conversion function.
+func Convert_v1alpha3_DataProvider_To_v1alpha2_DataProvider(in *DataProvider, out *v1alpha2.DataProvider, s conversion.Scope) error {
+	return autoConvert_v1alpha3_DataProvider_To_v1alpha2_DataProvider(in, out, s)
+}
+
+func autoConvert_v1alpha2_DataProvider_To_v1alpha3_DataProvider(in *v1alpha2.DataProvider, out *DataProvider, s conversion.Scope) error {
+	out.RabbitMQ = (*RabbitMQDataProvider)(unsafe.Pointer(in.RabbitMQ))
+	return nil
+}
+
+// Convert_v1alpha2_DataProvider_To_v1alpha3_DataProvider is an autogenerated conversion function.
+func Convert_v1alpha2_DataProvider_To_v1alpha3_DataProvider(in *v1alpha2.DataProvider, out *DataProvider, s conversion.Scope) error {
+	return autoConvert_v1alpha2_DataProvider_To_v1alpha3_DataProvider(in, out, s)
+}
+
 func autoConvert_v1alpha3_Flow_To_v1alpha2_Flow(in *Flow, out *v1alpha2.Flow, s conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
 	if err := Convert_v1alpha3_FlowSpec_To_v1alpha2_FlowSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -1660,17 +1798,7 @@ func Convert_v1alpha2_Flow_To_v1alpha3_Flow(in *v1alpha2.Flow, out *Flow, s conv
 
 func autoConvert_v1alpha3_FlowList_To_v1alpha2_FlowList(in *FlowList, out *v1alpha2.FlowList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	if in.Items != nil {
-		in, out := &in.Items, &out.Items
-		*out = make([]v1alpha2.Flow, len(*in))
-		for i := range *in {
-			if err := Convert_v1alpha3_Flow_To_v1alpha2_Flow(&(*in)[i], &(*out)[i], s); err != nil {
-				return err
-			}
-		}
-	} else {
-		out.Items = nil
-	}
+	out.Items = *(*[]v1alpha2.Flow)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
@@ -1681,17 +1809,7 @@ func Convert_v1alpha3_FlowList_To_v1alpha2_FlowList(in *FlowList, out *v1alpha2.
 
 func autoConvert_v1alpha2_FlowList_To_v1alpha3_FlowList(in *v1alpha2.FlowList, out *FlowList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	if in.Items != nil {
-		in, out := &in.Items, &out.Items
-		*out = make([]Flow, len(*in))
-		for i := range *in {
-			if err := Convert_v1alpha2_Flow_To_v1alpha3_Flow(&(*in)[i], &(*out)[i], s); err != nil {
-				return err
-			}
-		}
-	} else {
-		out.Items = nil
-	}
+	out.Items = *(*[]Flow)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
@@ -1701,22 +1819,42 @@ func Convert_v1alpha2_FlowList_To_v1alpha3_FlowList(in *v1alpha2.FlowList, out *
 }
 
 func autoConvert_v1alpha3_FlowSpec_To_v1alpha2_FlowSpec(in *FlowSpec, out *v1alpha2.FlowSpec, s conversion.Scope) error {
-	// WARNING: in.Foo requires manual conversion: does not exist in peer-type
+	out.Astarte = in.Astarte
+	out.AstarteRealm = in.AstarteRealm
+	out.NativeBlocks = in.NativeBlocks
+	out.NativeBlocksResources = *(*v1.ResourceList)(unsafe.Pointer(&in.NativeBlocksResources))
+	out.FlowPool = in.FlowPool
+	out.ContainerBlocks = *(*[]v1alpha2.ContainerBlockSpec)(unsafe.Pointer(&in.ContainerBlocks))
 	return nil
+}
+
+// Convert_v1alpha3_FlowSpec_To_v1alpha2_FlowSpec is an autogenerated conversion function.
+func Convert_v1alpha3_FlowSpec_To_v1alpha2_FlowSpec(in *FlowSpec, out *v1alpha2.FlowSpec, s conversion.Scope) error {
+	return autoConvert_v1alpha3_FlowSpec_To_v1alpha2_FlowSpec(in, out, s)
 }
 
 func autoConvert_v1alpha2_FlowSpec_To_v1alpha3_FlowSpec(in *v1alpha2.FlowSpec, out *FlowSpec, s conversion.Scope) error {
-	// WARNING: in.TypeMeta requires manual conversion: does not exist in peer-type
-	// WARNING: in.Astarte requires manual conversion: does not exist in peer-type
-	// WARNING: in.AstarteRealm requires manual conversion: does not exist in peer-type
-	// WARNING: in.NativeBlocks requires manual conversion: does not exist in peer-type
-	// WARNING: in.NativeBlocksResources requires manual conversion: does not exist in peer-type
-	// WARNING: in.FlowPool requires manual conversion: does not exist in peer-type
-	// WARNING: in.ContainerBlocks requires manual conversion: does not exist in peer-type
+	out.Astarte = in.Astarte
+	out.AstarteRealm = in.AstarteRealm
+	out.NativeBlocks = in.NativeBlocks
+	out.NativeBlocksResources = *(*v1.ResourceList)(unsafe.Pointer(&in.NativeBlocksResources))
+	out.FlowPool = in.FlowPool
+	out.ContainerBlocks = *(*[]ContainerBlockSpec)(unsafe.Pointer(&in.ContainerBlocks))
 	return nil
 }
 
+// Convert_v1alpha2_FlowSpec_To_v1alpha3_FlowSpec is an autogenerated conversion function.
+func Convert_v1alpha2_FlowSpec_To_v1alpha3_FlowSpec(in *v1alpha2.FlowSpec, out *FlowSpec, s conversion.Scope) error {
+	return autoConvert_v1alpha2_FlowSpec_To_v1alpha3_FlowSpec(in, out, s)
+}
+
 func autoConvert_v1alpha3_FlowStatus_To_v1alpha2_FlowStatus(in *FlowStatus, out *v1alpha2.FlowStatus, s conversion.Scope) error {
+	out.State = v1alpha2.FlowState(in.State)
+	out.TotalContainerBlocks = in.TotalContainerBlocks
+	out.ReadyContainerBlocks = in.ReadyContainerBlocks
+	out.Resources = *(*v1.ResourceList)(unsafe.Pointer(&in.Resources))
+	out.FailingContainerBlocks = in.FailingContainerBlocks
+	out.UnrecoverableFailures = *(*[]v1.ContainerState)(unsafe.Pointer(&in.UnrecoverableFailures))
 	return nil
 }
 
@@ -1726,14 +1864,18 @@ func Convert_v1alpha3_FlowStatus_To_v1alpha2_FlowStatus(in *FlowStatus, out *v1a
 }
 
 func autoConvert_v1alpha2_FlowStatus_To_v1alpha3_FlowStatus(in *v1alpha2.FlowStatus, out *FlowStatus, s conversion.Scope) error {
-	// WARNING: in.TypeMeta requires manual conversion: does not exist in peer-type
-	// WARNING: in.State requires manual conversion: does not exist in peer-type
-	// WARNING: in.TotalContainerBlocks requires manual conversion: does not exist in peer-type
-	// WARNING: in.ReadyContainerBlocks requires manual conversion: does not exist in peer-type
-	// WARNING: in.Resources requires manual conversion: does not exist in peer-type
-	// WARNING: in.FailingContainerBlocks requires manual conversion: does not exist in peer-type
-	// WARNING: in.UnrecoverableFailures requires manual conversion: does not exist in peer-type
+	out.State = FlowState(in.State)
+	out.TotalContainerBlocks = in.TotalContainerBlocks
+	out.ReadyContainerBlocks = in.ReadyContainerBlocks
+	out.Resources = *(*v1.ResourceList)(unsafe.Pointer(&in.Resources))
+	out.FailingContainerBlocks = in.FailingContainerBlocks
+	out.UnrecoverableFailures = *(*[]v1.ContainerState)(unsafe.Pointer(&in.UnrecoverableFailures))
 	return nil
+}
+
+// Convert_v1alpha2_FlowStatus_To_v1alpha3_FlowStatus is an autogenerated conversion function.
+func Convert_v1alpha2_FlowStatus_To_v1alpha3_FlowStatus(in *v1alpha2.FlowStatus, out *FlowStatus, s conversion.Scope) error {
+	return autoConvert_v1alpha2_FlowStatus_To_v1alpha3_FlowStatus(in, out, s)
 }
 
 func autoConvert_v1alpha3_LoginCredentialsSecret_To_v1alpha2_LoginCredentialsSecret(in *LoginCredentialsSecret, out *v1alpha2.LoginCredentialsSecret, s conversion.Scope) error {
@@ -1758,4 +1900,78 @@ func autoConvert_v1alpha2_LoginCredentialsSecret_To_v1alpha3_LoginCredentialsSec
 // Convert_v1alpha2_LoginCredentialsSecret_To_v1alpha3_LoginCredentialsSecret is an autogenerated conversion function.
 func Convert_v1alpha2_LoginCredentialsSecret_To_v1alpha3_LoginCredentialsSecret(in *v1alpha2.LoginCredentialsSecret, out *LoginCredentialsSecret, s conversion.Scope) error {
 	return autoConvert_v1alpha2_LoginCredentialsSecret_To_v1alpha3_LoginCredentialsSecret(in, out, s)
+}
+
+func autoConvert_v1alpha3_RabbitMQConfig_To_v1alpha2_RabbitMQConfig(in *RabbitMQConfig, out *v1alpha2.RabbitMQConfig, s conversion.Scope) error {
+	out.Host = in.Host
+	out.Port = in.Port
+	out.SSL = (*bool)(unsafe.Pointer(in.SSL))
+	out.Username = in.Username
+	out.Password = in.Password
+	return nil
+}
+
+// Convert_v1alpha3_RabbitMQConfig_To_v1alpha2_RabbitMQConfig is an autogenerated conversion function.
+func Convert_v1alpha3_RabbitMQConfig_To_v1alpha2_RabbitMQConfig(in *RabbitMQConfig, out *v1alpha2.RabbitMQConfig, s conversion.Scope) error {
+	return autoConvert_v1alpha3_RabbitMQConfig_To_v1alpha2_RabbitMQConfig(in, out, s)
+}
+
+func autoConvert_v1alpha2_RabbitMQConfig_To_v1alpha3_RabbitMQConfig(in *v1alpha2.RabbitMQConfig, out *RabbitMQConfig, s conversion.Scope) error {
+	out.Host = in.Host
+	out.Port = in.Port
+	out.SSL = (*bool)(unsafe.Pointer(in.SSL))
+	out.Username = in.Username
+	out.Password = in.Password
+	return nil
+}
+
+// Convert_v1alpha2_RabbitMQConfig_To_v1alpha3_RabbitMQConfig is an autogenerated conversion function.
+func Convert_v1alpha2_RabbitMQConfig_To_v1alpha3_RabbitMQConfig(in *v1alpha2.RabbitMQConfig, out *RabbitMQConfig, s conversion.Scope) error {
+	return autoConvert_v1alpha2_RabbitMQConfig_To_v1alpha3_RabbitMQConfig(in, out, s)
+}
+
+func autoConvert_v1alpha3_RabbitMQDataProvider_To_v1alpha2_RabbitMQDataProvider(in *RabbitMQDataProvider, out *v1alpha2.RabbitMQDataProvider, s conversion.Scope) error {
+	out.Queues = *(*[]string)(unsafe.Pointer(&in.Queues))
+	out.Exchange = (*v1alpha2.RabbitMQExchange)(unsafe.Pointer(in.Exchange))
+	out.RabbitMQConfig = (*v1alpha2.RabbitMQConfig)(unsafe.Pointer(in.RabbitMQConfig))
+	return nil
+}
+
+// Convert_v1alpha3_RabbitMQDataProvider_To_v1alpha2_RabbitMQDataProvider is an autogenerated conversion function.
+func Convert_v1alpha3_RabbitMQDataProvider_To_v1alpha2_RabbitMQDataProvider(in *RabbitMQDataProvider, out *v1alpha2.RabbitMQDataProvider, s conversion.Scope) error {
+	return autoConvert_v1alpha3_RabbitMQDataProvider_To_v1alpha2_RabbitMQDataProvider(in, out, s)
+}
+
+func autoConvert_v1alpha2_RabbitMQDataProvider_To_v1alpha3_RabbitMQDataProvider(in *v1alpha2.RabbitMQDataProvider, out *RabbitMQDataProvider, s conversion.Scope) error {
+	out.Queues = *(*[]string)(unsafe.Pointer(&in.Queues))
+	out.Exchange = (*RabbitMQExchange)(unsafe.Pointer(in.Exchange))
+	out.RabbitMQConfig = (*RabbitMQConfig)(unsafe.Pointer(in.RabbitMQConfig))
+	return nil
+}
+
+// Convert_v1alpha2_RabbitMQDataProvider_To_v1alpha3_RabbitMQDataProvider is an autogenerated conversion function.
+func Convert_v1alpha2_RabbitMQDataProvider_To_v1alpha3_RabbitMQDataProvider(in *v1alpha2.RabbitMQDataProvider, out *RabbitMQDataProvider, s conversion.Scope) error {
+	return autoConvert_v1alpha2_RabbitMQDataProvider_To_v1alpha3_RabbitMQDataProvider(in, out, s)
+}
+
+func autoConvert_v1alpha3_RabbitMQExchange_To_v1alpha2_RabbitMQExchange(in *RabbitMQExchange, out *v1alpha2.RabbitMQExchange, s conversion.Scope) error {
+	out.Name = in.Name
+	out.RoutingKey = in.RoutingKey
+	return nil
+}
+
+// Convert_v1alpha3_RabbitMQExchange_To_v1alpha2_RabbitMQExchange is an autogenerated conversion function.
+func Convert_v1alpha3_RabbitMQExchange_To_v1alpha2_RabbitMQExchange(in *RabbitMQExchange, out *v1alpha2.RabbitMQExchange, s conversion.Scope) error {
+	return autoConvert_v1alpha3_RabbitMQExchange_To_v1alpha2_RabbitMQExchange(in, out, s)
+}
+
+func autoConvert_v1alpha2_RabbitMQExchange_To_v1alpha3_RabbitMQExchange(in *v1alpha2.RabbitMQExchange, out *RabbitMQExchange, s conversion.Scope) error {
+	out.Name = in.Name
+	out.RoutingKey = in.RoutingKey
+	return nil
+}
+
+// Convert_v1alpha2_RabbitMQExchange_To_v1alpha3_RabbitMQExchange is an autogenerated conversion function.
+func Convert_v1alpha2_RabbitMQExchange_To_v1alpha3_RabbitMQExchange(in *v1alpha2.RabbitMQExchange, out *RabbitMQExchange, s conversion.Scope) error {
+	return autoConvert_v1alpha2_RabbitMQExchange_To_v1alpha3_RabbitMQExchange(in, out, s)
 }

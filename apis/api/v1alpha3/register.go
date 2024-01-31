@@ -51,6 +51,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&Astarte{},
 		&AstarteList{},
+		&Flow{},
+		&FlowList{},
 	)
 
 	scheme.AddKnownTypes(SchemeGroupVersion,
