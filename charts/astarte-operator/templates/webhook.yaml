@@ -65,26 +65,6 @@ webhooks:
     service:
       name: '{{ .Release.Name }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
-      path: /mutate-api-astarte-platform-org-v1alpha2-astartevoyageringress
-  failurePolicy: Fail
-  name: mastartevoyageringress.kb.io
-  rules:
-  - apiGroups:
-    - api.astarte-platform.org
-    apiVersions:
-    - v1alpha2
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - astartevoyageringresses
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: '{{ .Release.Name }}-webhook-service'
-      namespace: '{{ .Release.Namespace }}'
       path: /mutate-api-astarte-platform-org-v1alpha2-flow
   failurePolicy: Fail
   name: mflow.kb.io
@@ -146,26 +126,6 @@ webhooks:
     - UPDATE
     resources:
     - astartes
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: '{{ .Release.Name }}-webhook-service'
-      namespace: '{{ .Release.Namespace }}'
-      path: /validate-api-astarte-platform-org-v1alpha2-astartevoyageringress
-  failurePolicy: Fail
-  name: vastartevoyageringress.kb.io
-  rules:
-  - apiGroups:
-    - api.astarte-platform.org
-    apiVersions:
-    - v1alpha2
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - astartevoyageringresses
   sideEffects: None
 - admissionReviewVersions:
   - v1

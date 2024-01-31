@@ -19,6 +19,5 @@
 package v1alpha2
 
 // Hub marks this type as a conversion hub.
-func (*Astarte) Hub()               {}
-func (*AstarteVoyagerIngress) Hub() {}
-func (*Flow) Hub()                  {}
+func (*Astarte) Hub() {}
+func (*Flow) Hub()    {}

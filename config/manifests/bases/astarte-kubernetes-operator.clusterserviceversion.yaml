@@ -26,18 +26,6 @@ spec:
       kind: Astarte
       name: astartes.api.astarte-platform.org
       version: v1alpha1
-    - description: AstarteVoyagerIngress is the Schema for the astartevoyageringresses
-        API
-      displayName: Astarte Voyager Ingress
-      kind: AstarteVoyagerIngress
-      name: astartevoyageringresses.api.astarte-platform.org
-      version: v1alpha2
-    - description: AstarteVoyagerIngress is the Schema for the astartevoyageringresses
-        API
-      displayName: Astarte Voyager Ingress
-      kind: AstarteVoyagerIngress
-      name: astartevoyageringresses.api.astarte-platform.org
-      version: v1alpha1
     - description: Flow is the Schema for the flows API
       displayName: Flow
       kind: Flow

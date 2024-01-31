@@ -3,7 +3,6 @@
 # It should be run by config/default
 resources:
 - bases/api.astarte-platform.org_astartes.yaml
-- bases/api.astarte-platform.org_astartevoyageringresses.yaml
 - bases/api.astarte-platform.org_flows.yaml
 - bases/ingress.astarte-platform.org_astartedefaultingresses.yaml
 # +kubebuilder:scaffold:crdkustomizeresource

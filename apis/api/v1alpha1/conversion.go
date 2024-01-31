@@ -38,20 +38,6 @@ func (dst *Astarte) ConvertFrom(srcRaw conversion.Hub) error {
 	return Convert_v1alpha2_Astarte_To_v1alpha1_Astarte(src, dst, nil)
 }
 
-// ConvertTo converts this AstarteVoyagerIngress to the Hub version (v1alpha2).
-func (src *AstarteVoyagerIngress) ConvertTo(dstRaw conversion.Hub) error {
-	dst := dstRaw.(*v1alpha2.AstarteVoyagerIngress)
-
-	return Convert_v1alpha1_AstarteVoyagerIngress_To_v1alpha2_AstarteVoyagerIngress(src, dst, nil)
-}
-
-// ConvertFrom converts from the Hub version (v1alpha2) to this version.
-func (dst *AstarteVoyagerIngress) ConvertFrom(srcRaw conversion.Hub) error {
-	src := srcRaw.(*v1alpha2.AstarteVoyagerIngress)
-
-	return Convert_v1alpha2_AstarteVoyagerIngress_To_v1alpha1_AstarteVoyagerIngress(src, dst, nil)
-}
-
 // ConvertTo converts this Flow to the Hub version (v1alpha2).
 func (src *Flow) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*v1alpha2.Flow)

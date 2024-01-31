@@ -53,8 +53,6 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&AstarteList{},
 		&Flow{},
 		&FlowList{},
-		&AstarteVoyagerIngress{},
-		&AstarteVoyagerIngressList{},
 	)
 
 	scheme.AddKnownTypes(SchemeGroupVersion,
