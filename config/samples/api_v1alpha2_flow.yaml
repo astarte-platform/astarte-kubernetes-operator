@@ -1,7 +1,13 @@
 apiVersion: api.astarte-platform.org/v1alpha2
 kind: Flow
 metadata:
-  name: example-flow
+  labels:
+    app.kubernetes.io/name: flow
+    app.kubernetes.io/instance: flow-sample
+    app.kubernetes.io/part-of: astarte-kubernetes-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: astarte-kubernetes-operator
+  name: flow-sample
   namespace: astarte
 spec:
   astarte:
