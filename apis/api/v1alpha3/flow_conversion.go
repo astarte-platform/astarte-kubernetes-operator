@@ -16,8 +16,24 @@
   limitations under the License.
 */
 
-package v1alpha2
+package v1alpha3
 
-// Hub marks this type as a conversion hub.
-func (*Astarte) Hub() {}
-func (*Flow) Hub()    {}
+import (
+	"sigs.k8s.io/controller-runtime/pkg/conversion"
+
+	"github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
+)
+
+// ConvertTo converts this Flow to the Hub version (v1alpha2).
+func (src *Flow) ConvertTo(dstRaw conversion.Hub) error {
+	dst := dstRaw.(*v1alpha2.Flow)
+
+	return Convert_v1alpha3_Flow_To_v1alpha2_Flow(src, dst, nil)
+}
+
+// ConvertFrom converts from the Hub version (v1alpha2) to this version.
+func (dst *Flow) ConvertFrom(srcRaw conversion.Hub) error {
+	src := srcRaw.(*v1alpha2.Flow)
+
+	return Convert_v1alpha2_Flow_To_v1alpha3_Flow(src, dst, nil)
+}

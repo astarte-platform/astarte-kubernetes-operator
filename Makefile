@@ -87,14 +87,14 @@ help: ## Display this help.
 .PHONY: manifests
 manifests: controller-gen kustomize yq ## Generate manifests e.g. CRD, RBAC etc.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-	$(KUSTOMIZE) build config/helm-crd | yq --split-exp '"charts/astarte-operator/crds/" + .metadata.name + ".yaml"' --no-doc
+	$(KUSTOMIZE) build config/helm-crd | yq --split-exp '"charts/astarte-operator/templates/crds/" + .metadata.name + ".yaml"' --no-doc
 	$(KUSTOMIZE) build config/helm-rbac > charts/astarte-operator/templates/rbac.yaml
 	$(KUSTOMIZE) build config/helm-manager > charts/astarte-operator/templates/manager.yaml
 	$(KUSTOMIZE) build config/helm-webhook > charts/astarte-operator/templates/webhook.yaml
 
 .PHONY: generate
 generate: controller-gen conversion-gen ## Generate code containing DeepCopy, DeepCopyInto, DeepCopyObject and conversion methods implementations.
-	$(CONVERSION_GEN) --go-header-file "./hack/boilerplate.go.txt" --input-dirs "./apis/api/v1alpha1" \
+	$(CONVERSION_GEN) --go-header-file "./hack/boilerplate.go.txt" --input-dirs "./apis/api/v1alpha3" \
 		-O zz_generated.conversion --output-base "."
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="$(GOPATHS)"
 

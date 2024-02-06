@@ -81,6 +81,7 @@ func EnsureVerneMQ(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Sch
 
 	// Good. Now, reconcile the service first of all.
 	service := &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: statefulSetName, Namespace: cr.Namespace}}
+	// nolint:dupl
 	if result, err := controllerutil.CreateOrUpdate(context.TODO(), c, service, func() error {
 		if err := controllerutil.SetControllerReference(cr, service, scheme); err != nil {
 			return err
@@ -109,11 +110,6 @@ func EnsureVerneMQ(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Sch
 			},
 		}
 		service.Spec.Selector = labels
-		// Add Annotations for Voyager (when deployed)
-		service.Annotations = map[string]string{
-			"ingress.appscode.com/send-proxy": "v2-ssl-cn",
-			"ingress.appscode.com/check":      strconv.FormatBool(true),
-		}
 		return nil
 	}); err == nil {
 		misc.LogCreateOrUpdateOperationResult(log, result, cr, service)

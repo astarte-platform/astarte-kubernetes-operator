@@ -69,26 +69,6 @@ rules:
 - apiGroups:
   - api.astarte-platform.org
   resources:
-  - astartevoyageringresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - api.astarte-platform.org
-  resources:
-  - astartevoyageringresses/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - api.astarte-platform.org
-  resources:
   - flows
   verbs:
   - create
@@ -278,18 +258,6 @@ rules:
   - delete
   - get
   - list
-  - watch
-- apiGroups:
-  - voyager.appscode.com
-  resources:
-  - '*'
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
   - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1

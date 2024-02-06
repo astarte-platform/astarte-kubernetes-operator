@@ -1,7 +1,7 @@
 /*
   This file is part of Astarte.
 
-  Copyright 2022-23 SECO Mind Srl
+  Copyright 2023 SECO Mind Srl
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
   limitations under the License.
 */
 
-package v1alpha2
+package v1alpha3
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-var SchemeGroupVersion = schema.GroupVersion{Group: "api.astarte-platform.org", Version: "v1alpha2"}
+var SchemeGroupVersion = schema.GroupVersion{Group: "api.astarte-platform.org", Version: "v1alpha3"}
 
 var (
 	// TODO: move SchemeBuilder with zz_generated.deepcopy.go to k8s.io/api.

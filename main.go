@@ -36,12 +36,11 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	zapcr "sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	apiv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha1"
 	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
+	apiv1alpha3 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha3"
 	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/apis/ingress/v1alpha1"
 	controllersapi "github.com/astarte-platform/astarte-kubernetes-operator/controllers/api"
 	ingresscontrollers "github.com/astarte-platform/astarte-kubernetes-operator/controllers/ingress"
-	voyagercrd "github.com/astarte-platform/astarte-kubernetes-operator/external/voyager/v1beta1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -54,12 +53,11 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	// Setup Scheme for other CRDs and the CRD themselves
-	utilruntime.Must(voyagercrd.AddToScheme(scheme))
 	utilruntime.Must(apiextensionsv1.AddToScheme(scheme))
 
-	utilruntime.Must(apiv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(apiv1alpha2.AddToScheme(scheme))
 	utilruntime.Must(ingressv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(apiv1alpha3.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -101,14 +99,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Astarte")
 		os.Exit(1)
 	}
-	if err = (&controllersapi.AstarteVoyagerIngressReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("AstarteVoyagerIngress"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "AstarteVoyagerIngress")
-		os.Exit(1)
-	}
 	if err = (&controllersapi.FlowReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Flow"),
@@ -130,10 +120,6 @@ func main() {
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = (&apiv1alpha2.Astarte{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Astarte")
-			os.Exit(1)
-		}
-		if err = (&apiv1alpha2.AstarteVoyagerIngress{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "AstarteVoyagerIngress")
 			os.Exit(1)
 		}
 		if err = (&apiv1alpha2.Flow{}).SetupWebhookWithManager(mgr); err != nil {

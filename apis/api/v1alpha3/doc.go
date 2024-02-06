@@ -1,7 +1,7 @@
 /*
   This file is part of Astarte.
 
-  Copyright 2020-23 SECO Mind Srl
+  Copyright 2022-23 SECO Mind Srl
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
   limitations under the License.
 */
 
-package v1alpha2
-
-// Hub marks this type as a conversion hub.
-func (*Astarte) Hub() {}
-func (*Flow) Hub()    {}
+// Package v1alpha3 contains API Schema definitions for the api v1alpha3 API group
+// +kubebuilder:object:generate=true
+// +k8s:conversion-gen=github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2
+// +groupName=api.astarte-platform.org
+package v1alpha3

@@ -120,6 +120,7 @@ func EnsureRabbitMQ(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Sc
 
 	// Good. Now, reconcile the service first of all.
 	service := &v1.Service{ObjectMeta: getCommonRabbitMQObjectMeta(statefulSetName, cr)}
+	// nolint:dupl
 	if result, err := controllerutil.CreateOrUpdate(context.TODO(), c, service, func() error {
 		if err := controllerutil.SetControllerReference(cr, service, scheme); err != nil {
 			return err

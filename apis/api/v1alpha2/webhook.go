@@ -39,16 +39,9 @@ import (
 
 // log is for logging in this package.
 var astartelog = logf.Log.WithName("astarte-resource")
-var avilog = logf.Log.WithName("astartevoyageringress-resource")
 var flowlog = logf.Log.WithName("flow-resource")
 
 func (r *Astarte) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
-
-func (r *AstarteVoyagerIngress) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
@@ -191,46 +184,6 @@ func validateAutoscalerForClusteredResourcesExcluding(r *Astarte, excluded []Ast
 			}
 		}
 	}
-	return nil
-}
-
-// +kubebuilder:webhook:path=/mutate-api-astarte-platform-org-v1alpha2-astartevoyageringress,mutating=true,sideEffects=None,failurePolicy=fail,groups=api.astarte-platform.org,resources=astartevoyageringresses,verbs=create;update,versions=v1alpha2,name=mastartevoyageringress.kb.io,admissionReviewVersions=v1
-
-var _ webhook.Defaulter = &AstarteVoyagerIngress{}
-
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *AstarteVoyagerIngress) Default() {
-	avilog.Info("default", "name", r.Name)
-
-	// TODO(user): fill in your defaulting logic.
-}
-
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-api-astarte-platform-org-v1alpha2-astartevoyageringress,mutating=false,sideEffects=None,failurePolicy=fail,groups=api.astarte-platform.org,resources=astartevoyageringresses,versions=v1alpha2,name=vastartevoyageringress.kb.io,admissionReviewVersions=v1
-
-var _ webhook.Validator = &AstarteVoyagerIngress{}
-
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *AstarteVoyagerIngress) ValidateCreate() error {
-	avilog.Info("validate create", "name", r.Name)
-
-	// TODO(user): fill in your validation logic upon object creation.
-	return nil
-}
-
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *AstarteVoyagerIngress) ValidateUpdate(old runtime.Object) error {
-	avilog.Info("validate update", "name", r.Name)
-
-	// TODO(user): fill in your validation logic upon object update.
-	return nil
-}
-
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *AstarteVoyagerIngress) ValidateDelete() error {
-	avilog.Info("validate delete", "name", r.Name)
-
-	// TODO(user): fill in your validation logic upon object deletion.
 	return nil
 }
 

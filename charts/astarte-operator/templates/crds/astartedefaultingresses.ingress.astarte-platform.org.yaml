@@ -1,0 +1,279 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: '{{ .Release.Namespace }}/{{ .Release.Name }}-manager-webhook'
+    controller-gen.kubebuilder.io/version: v0.11.3
+    helm.sh/resource-policy: keep
+  creationTimestamp: null
+  name: astartedefaultingresses.ingress.astarte-platform.org
+spec:
+  group: ingress.astarte-platform.org
+  names:
+    kind: AstarteDefaultIngress
+    listKind: AstarteDefaultIngressList
+    plural: astartedefaultingresses
+    shortNames:
+      - adi
+    singular: astartedefaultingress
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: AstarteDefaultIngress is the Schema for the astartedefaultingresses API
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: AstarteDefaultIngressSpec defines the desired state of the AstarteDefaultIngress resource
+              properties:
+                api:
+                  description: Define the desired state of the AstarteDefaultIngressAPISpec resource.
+                  properties:
+                    apiVersion:
+                      description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                      type: string
+                    cors:
+                      description: 'When true, enable Cross-Origin Resource Sharing (CORS). Default: false.'
+                      type: boolean
+                    deploy:
+                      description: When true, deploy the API ingress.
+                      type: boolean
+                    exposeHousekeeping:
+                      description: 'When true, the housekeeping endpoint is publicly exposed. Default: true.'
+                      type: boolean
+                    kind:
+                      description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                      type: string
+                    serveMetrics:
+                      description: 'When true, all /metrics endpoints for Astarte services will be served by a dedicated metrics ingress. Metrics can be gathered by querying the /metrics/<service-name> path. Beware this might be a security hole. You can control which IPs can access /metrics with serveMetricsToSubnet. Default: false.'
+                      type: boolean
+                    serveMetricsToSubnet:
+                      description: 'When specified and when serveMetrics is true, /metrics endpoints will be served only to IPs in the provided subnet range. The subnet has to be compatible with the HAProxy ACL src syntax (e.g.: "10.0.0.0/16"). Default: "".'
+                      type: string
+                    tlsSecret:
+                      description: The secret containing the TLS certificates and keys used to access the Astarte API. The secret must be present in the namespace in which Astarte resides. If set, this secret overrides the TLSSecret field contained in AstarteDefaultIngressSpec.
+                      type: string
+                  type: object
+                apiVersion:
+                  description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                  type: string
+                astarte:
+                  description: The name of the Astarte instance served by the AstarteDefaultIngress.
+                  type: string
+                broker:
+                  description: Define the desired state of the AstarteDefaultIngressBrokerSpec resource.
+                  properties:
+                    apiVersion:
+                      description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                      type: string
+                    deploy:
+                      description: When true, expose the Broker.
+                      type: boolean
+                    kind:
+                      description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                      type: string
+                    loadBalancerIP:
+                      description: Set the LoadBalancerIP if and only if the broker service is of type "LoadBalancer". This feature depends on whether the cloud provider supports specifying the LoadBalancerIP when a load balancer is created.
+                      type: string
+                    serviceAnnotations:
+                      additionalProperties:
+                        type: string
+                      description: Additional annotations for the service exposing this broker.
+                      type: object
+                    serviceType:
+                      description: 'Set the type of service employed to expose the broker. Supported values are "NodePort" and "LoadBalancer". The AstarteDefaultIngress handles TLS termination at VerneMQ level and, as such, no TLSSecret is needed to configure the broker service. Default: "LoadBalancer"'
+                      type: string
+                  type: object
+                dashboard:
+                  description: Define the desired state of the AstarteDefaultIngressDashboardSpec resource.
+                  properties:
+                    apiVersion:
+                      description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                      type: string
+                    deploy:
+                      description: When true, deploy the Ingress for the Dashboard.
+                      type: boolean
+                    host:
+                      description: 'The host handling requests addressed to the dashboard. When deploy is true and host is not set, the dashboard will be exposed at the following URL: https://<astarte-base-url>/dashboard.'
+                      type: string
+                    kind:
+                      description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                      type: string
+                    ssl:
+                      description: When true, enable TLS authentication for the Dashboard.
+                      type: boolean
+                    tlsSecret:
+                      description: The secret containing the TLS certificates and keys used to access the Astarte Dashboard. The secret must be present in the namespace in which Astarte resides. If set, this secret overrides the TLSSecret field contained in AstarteDefaultIngressSpec.
+                      type: string
+                  type: object
+                ingressClass:
+                  description: 'In clusters with more than one instance of the Ingress-NGINX controller, all instances of the controllers must be aware of which Ingress object they must serve. The ingressClass field of a ingress object is the way to let the controller know about that. Default: "nginx".'
+                  type: string
+                kind:
+                  description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                  type: string
+                tlsSecret:
+                  description: The secret containing the TLS certificates and keys used to connect to Astarte. The secret must be present in the namespace in which Astarte resides and it will be used to authenticate requests for API and Dashboard. If specific configurations are required, the TLSSecret can be overridden by setting the secret in any of AstarteDefaultIngressAPISpec and AstarteDefaultIngressDashboardSpec.
+                  type: string
+              required:
+                - astarte
+              type: object
+            status:
+              description: AstarteDefaultIngressStatus defines the observed state of AstarteDefaultIngress
+              properties:
+                api:
+                  description: IngressStatus describe the current state of the Ingress.
+                  properties:
+                    loadBalancer:
+                      description: LoadBalancer contains the current status of the load-balancer.
+                      properties:
+                        ingress:
+                          description: Ingress is a list containing ingress points for the load-balancer.
+                          items:
+                            description: IngressLoadBalancerIngress represents the status of a load-balancer ingress point.
+                            properties:
+                              hostname:
+                                description: Hostname is set for load-balancer ingress points that are DNS based.
+                                type: string
+                              ip:
+                                description: IP is set for load-balancer ingress points that are IP based.
+                                type: string
+                              ports:
+                                description: Ports provides information about the ports exposed by this LoadBalancer.
+                                items:
+                                  description: IngressPortStatus represents the error condition of a service port
+                                  properties:
+                                    error:
+                                      description: 'Error is to record the problem with the service port The format of the error shall comply with the following rules: - built-in error values shall be specified in this file and those shall use CamelCase names - cloud provider specific error values must have names that comply with the format foo.example.com/CamelCase. --- The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)'
+                                      maxLength: 316
+                                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                                      type: string
+                                    port:
+                                      description: Port is the port number of the ingress port.
+                                      format: int32
+                                      type: integer
+                                    protocol:
+                                      default: TCP
+                                      description: 'Protocol is the protocol of the ingress port. The supported values are: "TCP", "UDP", "SCTP"'
+                                      type: string
+                                  required:
+                                    - port
+                                    - protocol
+                                  type: object
+                                type: array
+                                x-kubernetes-list-type: atomic
+                            type: object
+                          type: array
+                      type: object
+                  type: object
+                apiVersion:
+                  description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                  type: string
+                broker:
+                  description: ServiceStatus represents the current status of a service.
+                  properties:
+                    conditions:
+                      description: Current service state
+                      items:
+                        description: "Condition contains details for one aspect of the current state of this API Resource. --- This struct is intended for direct use as an array at the field path .status.conditions.  For example, \n type FooStatus struct{ // Represents the observations of a foo's current state. // Known .status.conditions.type are: \"Available\", \"Progressing\", and \"Degraded\" // +patchMergeKey=type // +patchStrategy=merge // +listType=map // +listMapKey=type Conditions []metav1.Condition `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"` \n // other fields }"
+                        properties:
+                          lastTransitionTime:
+                            description: lastTransitionTime is the last time the condition transitioned from one status to another. This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                            format: date-time
+                            type: string
+                          message:
+                            description: message is a human readable message indicating details about the transition. This may be an empty string.
+                            maxLength: 32768
+                            type: string
+                          observedGeneration:
+                            description: observedGeneration represents the .metadata.generation that the condition was set based upon. For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date with respect to the current state of the instance.
+                            format: int64
+                            minimum: 0
+                            type: integer
+                          reason:
+                            description: reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty.
+                            maxLength: 1024
+                            minLength: 1
+                            pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                            type: string
+                          status:
+                            description: status of the condition, one of True, False, Unknown.
+                            enum:
+                              - "True"
+                              - "False"
+                              - Unknown
+                            type: string
+                          type:
+                            description: type of condition in CamelCase or in foo.example.com/CamelCase. --- Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be useful (see .node.status.conditions), the ability to deconflict is important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                            maxLength: 316
+                            pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                            type: string
+                        required:
+                          - lastTransitionTime
+                          - message
+                          - reason
+                          - status
+                          - type
+                        type: object
+                      type: array
+                      x-kubernetes-list-map-keys:
+                        - type
+                      x-kubernetes-list-type: map
+                    loadBalancer:
+                      description: LoadBalancer contains the current status of the load-balancer, if one is present.
+                      properties:
+                        ingress:
+                          description: Ingress is a list containing ingress points for the load-balancer. Traffic intended for the service should be sent to these ingress points.
+                          items:
+                            description: 'LoadBalancerIngress represents the status of a load-balancer ingress point: traffic intended for the service should be sent to an ingress point.'
+                            properties:
+                              hostname:
+                                description: Hostname is set for load-balancer ingress points that are DNS based (typically AWS load-balancers)
+                                type: string
+                              ip:
+                                description: IP is set for load-balancer ingress points that are IP based (typically GCE or OpenStack load-balancers)
+                                type: string
+                              ports:
+                                description: Ports is a list of records of service ports If used, every port defined in the service should have an entry in it
+                                items:
+                                  properties:
+                                    error:
+                                      description: 'Error is to record the problem with the service port The format of the error shall comply with the following rules: - built-in error values shall be specified in this file and those shall use CamelCase names - cloud provider specific error values must have names that comply with the format foo.example.com/CamelCase. --- The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)'
+                                      maxLength: 316
+                                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                                      type: string
+                                    port:
+                                      description: Port is the port number of the service port of which status is recorded here
+                                      format: int32
+                                      type: integer
+                                    protocol:
+                                      default: TCP
+                                      description: 'Protocol is the protocol of the service port of which status is recorded here The supported values are: "TCP", "UDP", "SCTP"'
+                                      type: string
+                                  required:
+                                    - port
+                                    - protocol
+                                  type: object
+                                type: array
+                                x-kubernetes-list-type: atomic
+                            type: object
+                          type: array
+                      type: object
+                  type: object
+                kind:
+                  description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                  type: string
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}

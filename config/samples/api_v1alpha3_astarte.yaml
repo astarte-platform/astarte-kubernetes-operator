@@ -1,6 +1,12 @@
-apiVersion: api.astarte-platform.org/v1alpha2
+apiVersion: api.astarte-platform.org/v1alpha3
 kind: Astarte
 metadata:
+  labels:
+    app.kubernetes.io/name: astarte
+    app.kubernetes.io/instance: astarte
+    app.kubernetes.io/part-of: astarte-kubernetes-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: astarte-kubernetes-operator
   name: astarte
   namespace: astarte
 spec:
@@ -18,6 +24,8 @@ spec:
         cpu: "1"
         memory: 1000M
   cassandra:
+    # The cassandra spec is suitable for testing scenarios, do NOT use
+    # this config in production.
     maxHeapSize: 1024M
     heapNewSize: 256M
     storage:
