@@ -5,11 +5,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Added
+- Add a v1alpha3 API version for the api.astarte-platform.org group.
+
 ### Changed
+- Use the imperative form for fields in the spec, i.e.: `enabled` --> `enable` in Astarte v1alpha3.
+- Do not remove CRDs when uninstalling the Operator's Helm chart.
+
+### Removed
 - Remove support for AstarteVoyagerIngress resources.
 - Remove v1alpha1 API version for the api.astarte-platform.org group.
-- Add a v1alpha3 API version for the api.astarte-platform.org group.
-- Use the imperative form for fields in the spec, i.e.: `enabled` --> `enable`.
 
 ## [23.5.1] - 2024-01-16
 ### Changed
