@@ -178,34 +178,34 @@ func getAstarteDashboardConfigMapData(cr *apiv1alpha2.Astarte, dashboard apiv1al
 	dashboardConfig["astarte_api_url"] = getBaseAstarteAPIURL(cr)
 	dashboardConfig["enable_flow_preview"] = misc.IsAstarteComponentDeployed(cr, apiv1alpha2.FlowComponent)
 
-	if dashboard.Config.RealmManagementAPIURL != "" {
-		dashboardConfig["realm_management_api_url"] = dashboard.Config.RealmManagementAPIURL
+	if dashboard.RealmManagementAPIURL != "" {
+		dashboardConfig["realm_management_api_url"] = dashboard.RealmManagementAPIURL
 	}
 
-	if dashboard.Config.AppEngineAPIURL != "" {
-		dashboardConfig["appengine_api_url"] = dashboard.Config.AppEngineAPIURL
+	if dashboard.AppEngineAPIURL != "" {
+		dashboardConfig["appengine_api_url"] = dashboard.AppEngineAPIURL
 	}
 
-	if dashboard.Config.FlowAPIURL != "" {
-		dashboardConfig["flow_api_url"] = dashboard.Config.FlowAPIURL
+	if dashboard.FlowAPIURL != "" {
+		dashboardConfig["flow_api_url"] = dashboard.FlowAPIURL
 	}
 
-	if dashboard.Config.PairingAPIURL != "" {
-		dashboardConfig["pairing_api_url"] = dashboard.Config.PairingAPIURL
+	if dashboard.PairingAPIURL != "" {
+		dashboardConfig["pairing_api_url"] = dashboard.PairingAPIURL
 	}
 
-	if dashboard.Config.DefaultRealm != "" {
-		dashboardConfig["default_realm"] = dashboard.Config.DefaultRealm
+	if dashboard.DefaultRealm != "" {
+		dashboardConfig["default_realm"] = dashboard.DefaultRealm
 	}
 
-	if dashboard.Config.DefaultAuth != "" {
-		dashboardConfig["default_auth"] = dashboard.Config.DefaultAuth
+	if dashboard.DefaultAuth != "" {
+		dashboardConfig["default_auth"] = dashboard.DefaultAuth
 	} else {
 		dashboardConfig["default_auth"] = "token"
 	}
 
-	if len(dashboard.Config.Auth) > 0 {
-		dashboardConfig["auth"] = dashboard.Config.Auth
+	if len(dashboard.Auth) > 0 {
+		dashboardConfig["auth"] = dashboard.Auth
 	} else {
 		dashboardConfig["auth"] = []apiv1alpha2.AstarteDashboardConfigAuthSpec{{Type: "token"}}
 	}
