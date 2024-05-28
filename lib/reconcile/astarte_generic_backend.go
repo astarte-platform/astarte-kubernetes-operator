@@ -186,6 +186,13 @@ func getAstarteGenericBackendEnvVars(deploymentName string, replicaIndex, replic
 		Value: getCassandraNodes(cr),
 	})
 
+	if cr.Spec.AstarteInstanceID != "" {
+		ret = append(ret, v1.EnvVar{
+			Name:  "ASTARTE_INSTANCE_ID",
+			Value: cr.Spec.AstarteInstanceID,
+		})
+	}
+
 	eventsExchangeName := cr.Spec.RabbitMQ.EventsExchangeName
 
 	// Depending on the component, we might need to add some more stuff.

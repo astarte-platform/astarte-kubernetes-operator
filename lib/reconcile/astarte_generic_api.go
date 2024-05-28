@@ -236,6 +236,13 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha2.Astarte,
 	// Depending on the component, we might need to add some more stuff.
 	switch component {
 	case apiv1alpha2.AppEngineAPI:
+		if cr.Spec.AstarteInstanceID != "" {
+			ret = append(ret, v1.EnvVar{
+				Name:  "ASTARTE_INSTANCE_ID",
+				Value: cr.Spec.AstarteInstanceID,
+			})
+		}
+
 		ret = appendCassandraConnectionEnvVars(ret, cr)
 
 		// Add Cassandra Nodes
@@ -305,6 +312,12 @@ func getAstarteFlowEnvVars(cr *apiv1alpha2.Astarte) []v1.EnvVar {
 			Name:  "FLOW_REALM_PUBLIC_KEY_PROVIDER",
 			Value: "astarte",
 		},
+	}
+	if cr.Spec.AstarteInstanceID != "" {
+		ret = append(ret, v1.EnvVar{
+			Name:  "ASTARTE_INSTANCE_ID",
+			Value: cr.Spec.AstarteInstanceID,
+		})
 	}
 
 	// Append RabbitMQ variables
