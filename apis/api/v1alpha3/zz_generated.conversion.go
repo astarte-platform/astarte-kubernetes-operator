@@ -1514,6 +1514,7 @@ func autoConvert_v1alpha3_AstarteSpec_To_v1alpha2_AstarteSpec(in *AstarteSpec, o
 	if err := Convert_v1alpha3_AstarteSystemKeyspaceSpec_To_v1alpha2_AstarteSystemKeyspaceSpec(&in.AstarteSystemKeyspace, &out.AstarteSystemKeyspace, s); err != nil {
 		return err
 	}
+	out.AstarteInstanceID = in.AstarteInstanceID
 	out.ManualMaintenanceMode = in.ManualMaintenanceMode
 	return nil
 }
@@ -1555,6 +1556,7 @@ func autoConvert_v1alpha2_AstarteSpec_To_v1alpha3_AstarteSpec(in *v1alpha2.Astar
 	if err := Convert_v1alpha2_AstarteSystemKeyspaceSpec_To_v1alpha3_AstarteSystemKeyspaceSpec(&in.AstarteSystemKeyspace, &out.AstarteSystemKeyspace, s); err != nil {
 		return err
 	}
+	out.AstarteInstanceID = in.AstarteInstanceID
 	out.ManualMaintenanceMode = in.ManualMaintenanceMode
 	return nil
 }
