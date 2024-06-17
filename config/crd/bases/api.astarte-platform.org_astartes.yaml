@@ -61,6 +61,14 @@ spec:
                   of an object. Servers should convert recognized schemas to the latest
                   internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                 type: string
+              astarteInstanceID:
+                default: ""
+                description: AstarteInstanceID is the unique ID that is associated
+                  with an Astarte instance. This parameter is used to let different
+                  Astarte instances employ a shared database infrastructure. Once
+                  set, the AstarteInstanceID cannot be changed. Defaults to "".
+                pattern: ^[a-z]?[a-z0-9]{0,47}$
+                type: string
               astarteSystemKeyspace:
                 description: astarteSystemKeyspace configures the main system keyspace
                   for Astarte. As of now, these settings have effect only upon cluster
@@ -24518,6 +24526,14 @@ spec:
                 description: 'APIVersion defines the versioned schema of this representation
                   of an object. Servers should convert recognized schemas to the latest
                   internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                type: string
+              astarteInstanceID:
+                default: ""
+                description: AstarteInstanceID is the unique ID that is associated
+                  with an Astarte instance. This parameter is used to let different
+                  Astarte instances employ a shared database infrastructure. Once
+                  set, the AstarteInstanceID cannot be changed. Defaults to "".
+                pattern: ^[a-z]?[a-z0-9]{0,47}$
                 type: string
               astarteSystemKeyspace:
                 description: astarteSystemKeyspace configures the main system keyspace

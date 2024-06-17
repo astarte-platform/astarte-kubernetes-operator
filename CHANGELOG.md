@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Added
 - Add a v1alpha3 API version for the api.astarte-platform.org group.
+- Add the `astarteInstanceID` to the astarte spec.
 
 ### Changed
 - Use the imperative form for fields in the spec, i.e.: `enabled` --> `enable` in Astarte v1alpha3.

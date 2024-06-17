@@ -27,10 +27,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
@@ -38,10 +36,15 @@ import (
 )
 
 // log is for logging in this package.
-var astartelog = logf.Log.WithName("astarte-resource")
-var flowlog = logf.Log.WithName("flow-resource")
+var (
+	astartelog = logf.Log.WithName("astarte-resource")
+	flowlog    = logf.Log.WithName("flow-resource")
+	c          client.Client
+)
 
 func (r *Astarte) SetupWebhookWithManager(mgr ctrl.Manager) error {
+	c = mgr.GetClient()
+
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
@@ -76,12 +79,21 @@ var _ webhook.Validator = &Astarte{}
 func (r *Astarte) ValidateCreate() error {
 	astartelog.Info("validate create", "name", r.Name)
 
+	if err := r.validateCreateAstarteInstanceID(); err != nil {
+		return err
+	}
+
 	return r.validateAstarte()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *Astarte) ValidateUpdate(old runtime.Object) error {
 	astartelog.Info("validate update", "name", r.Name)
+
+	oldAstarte, _ := old.(*Astarte)
+	if err := r.validateUpdateAstarteInstanceID(oldAstarte); err != nil {
+		return err
+	}
 
 	return r.validateAstarte()
 }
@@ -94,24 +106,35 @@ func (r *Astarte) ValidateDelete() error {
 	return nil
 }
 
+func (r *Astarte) validateCreateAstarteInstanceID() error {
+	astarteList := &AstarteList{}
+	if err := c.List(context.Background(), astarteList); err != nil {
+		return err
+	}
+
+	for _, otherAstarte := range astarteList.Items {
+		if r.Spec.AstarteInstanceID == otherAstarte.Spec.AstarteInstanceID {
+			return fmt.Errorf("Invalid astarteInstanceID: %s already in use", r.Spec.AstarteInstanceID)
+		}
+	}
+
+	return nil
+}
+
+func (r *Astarte) validateUpdateAstarteInstanceID(oldAstarte *Astarte) error {
+	if r.Spec.AstarteInstanceID != oldAstarte.Spec.AstarteInstanceID {
+		return fmt.Errorf("The astarteInstanceId cannot be updated since it is immutable for your Astarte instance.")
+	}
+
+	return nil
+}
+
 func (r *Astarte) validateAstarte() error {
 	if pointy.BoolValue(r.Spec.VerneMQ.SSLListener, false) {
 		// check that SSLListenerCertSecretName is set
 		if r.Spec.VerneMQ.SSLListenerCertSecretName == "" {
 			err := errors.New("sslListenerCertSecretName not set")
 			astartelog.Error(err, "When deploying Astarte, if SSLListener is set to true you must provide also SSLListenerCertSecretName.")
-			return err
-		}
-
-		var theConfig *rest.Config
-		var c client.Client
-		var err error
-
-		if theConfig, err = config.GetConfig(); err != nil {
-			return err
-		}
-
-		if c, err = client.New(theConfig, client.Options{}); err != nil {
 			return err
 		}
 

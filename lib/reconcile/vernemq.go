@@ -216,6 +216,13 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha2.Astarte) []v1.Env
 		},
 	}
 
+	if cr.Spec.AstarteInstanceID != "" {
+		envVars = append(envVars, v1.EnvVar{
+			Name:  "DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__ASTARTE_INSTANCE_ID",
+			Value: cr.Spec.AstarteInstanceID,
+		})
+	}
+
 	// Append RabbitMQ variables (trailing _, as we need two)
 	envVars = appendRabbitMQConnectionEnvVars(envVars, "DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__AMQP_", cr)
 	// Also append env vars for RPC

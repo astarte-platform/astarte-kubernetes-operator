@@ -690,6 +690,13 @@ type AstarteSpec struct {
 	Components AstarteComponentsSpec `json:"components"`
 	// +optional
 	AstarteSystemKeyspace AstarteSystemKeyspaceSpec `json:"astarteSystemKeyspace,omitempty"`
+	// AstarteInstanceID is the unique ID that is associated with an Astarte instance. This parameter
+	// is used to let different Astarte instances employ a shared database infrastructure.
+	// Once set, the AstarteInstanceID cannot be changed. Defaults to "".
+	// +kubebuilder:validation:Pattern:=`^[a-z]?[a-z0-9]{0,47}$`
+	// +kubebuilder:default:=""
+	// +optional
+	AstarteInstanceID string `json:"astarteInstanceID,omitempty"`
 	// ManualMaintenanceMode pauses all reconciliation activities but still computes the resource
 	// status. It should be used only when the managed Astarte resources requires manual intervention
 	// and the Operator cannot break out of the problem by itself. Do not set this field unless you
