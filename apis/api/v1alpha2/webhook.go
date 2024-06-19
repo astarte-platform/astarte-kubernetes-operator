@@ -21,12 +21,14 @@ package v1alpha2
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -77,25 +79,53 @@ var _ webhook.Validator = &Astarte{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *Astarte) ValidateCreate() error {
+	allErrs := field.ErrorList{}
+
 	astartelog.Info("validate create", "name", r.Name)
 
 	if err := r.validateCreateAstarteInstanceID(); err != nil {
-		return err
+		allErrs = append(allErrs, err)
 	}
 
-	return r.validateAstarte()
+	if errList := r.validateAstarte(); len(errList) > 0 {
+		allErrs = append(allErrs, errList...)
+	}
+
+	if len(allErrs) == 0 {
+		return nil
+	}
+
+	return apierrors.NewInvalid(
+		schema.GroupKind{Group: "api", Kind: "Astarte"},
+		r.Name,
+		allErrs,
+	)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *Astarte) ValidateUpdate(old runtime.Object) error {
+	allErrs := field.ErrorList{}
+
 	astartelog.Info("validate update", "name", r.Name)
 
 	oldAstarte, _ := old.(*Astarte)
 	if err := r.validateUpdateAstarteInstanceID(oldAstarte); err != nil {
-		return err
+		allErrs = append(allErrs, err)
 	}
 
-	return r.validateAstarte()
+	if errList := r.validateAstarte(); len(errList) > 0 {
+		allErrs = append(allErrs, errList...)
+	}
+
+	if len(allErrs) == 0 {
+		return nil
+	}
+
+	return apierrors.NewInvalid(
+		schema.GroupKind{Group: "api", Kind: "Astarte"},
+		r.Name,
+		allErrs,
+	)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
@@ -106,62 +136,79 @@ func (r *Astarte) ValidateDelete() error {
 	return nil
 }
 
-func (r *Astarte) validateCreateAstarteInstanceID() error {
+func (r *Astarte) validateCreateAstarteInstanceID() *field.Error {
 	astarteList := &AstarteList{}
-	if err := c.List(context.Background(), astarteList); err != nil {
-		return err
+	if clientErr := c.List(context.Background(), astarteList); clientErr != nil {
+		err := errors.New("Cannot list astarte instances in the cluster. Please retry.")
+		astartelog.Info(clientErr.Error(), "details", err.Error())
+		return field.InternalError(field.NewPath(""), err)
 	}
 
 	for _, otherAstarte := range astarteList.Items {
 		if r.Spec.AstarteInstanceID == otherAstarte.Spec.AstarteInstanceID {
-			return fmt.Errorf("Invalid astarteInstanceID: %s already in use", r.Spec.AstarteInstanceID)
+			fldPath := field.NewPath("spec").Child("astarteInstanceID")
+			err := errors.New("Invalid astarteInstanceID: the chosen ID is already in use")
+
+			astartelog.Info(err.Error(), "astarteInstanceID", r.Spec.AstarteInstanceID)
+			return field.Invalid(fldPath, r.Spec.AstarteInstanceID, err.Error())
 		}
 	}
 
 	return nil
 }
 
-func (r *Astarte) validateUpdateAstarteInstanceID(oldAstarte *Astarte) error {
+func (r *Astarte) validateUpdateAstarteInstanceID(oldAstarte *Astarte) *field.Error {
 	if r.Spec.AstarteInstanceID != oldAstarte.Spec.AstarteInstanceID {
-		return fmt.Errorf("The astarteInstanceId cannot be updated since it is immutable for your Astarte instance.")
+		fldPath := field.NewPath("spec").Child("astarteInstanceID")
+		err := errors.New("The astarteInstanceId cannot be updated since it is immutable for your Astarte instance")
+
+		astartelog.Info(err.Error(), "astarteInstanceID", r.Spec.AstarteInstanceID)
+		return field.Invalid(fldPath, r.Spec.AstarteInstanceID, err.Error())
 	}
 
 	return nil
 }
 
-func (r *Astarte) validateAstarte() error {
+func (r *Astarte) validateAstarte() field.ErrorList {
+	allErrs := field.ErrorList{}
+
 	if pointy.BoolValue(r.Spec.VerneMQ.SSLListener, false) {
 		// check that SSLListenerCertSecretName is set
 		if r.Spec.VerneMQ.SSLListenerCertSecretName == "" {
+			fldPath := field.NewPath("spec").Child("vernemq").Child("sslListenerCertSecretName")
 			err := errors.New("sslListenerCertSecretName not set")
-			astartelog.Error(err, "When deploying Astarte, if SSLListener is set to true you must provide also SSLListenerCertSecretName.")
-			return err
+			astartelog.Info(err.Error())
+
+			allErrs = append(allErrs, field.Invalid(fldPath, r.Spec.VerneMQ.SSLListenerCertSecretName, err.Error()))
 		}
 
 		// ensure the TLS secret is present
 		theSecret := &v1.Secret{}
 		if err := c.Get(context.Background(), types.NamespacedName{Name: r.Spec.VerneMQ.SSLListenerCertSecretName, Namespace: r.Namespace}, theSecret); err != nil {
-			astartelog.Error(err, "SSLListenerCertSecretName references a secret which is not present. Ensure to create the TLS secret in the namespace in which Astarte resides before applying the new configuration.")
-			return err
+			fldPath := field.NewPath("spec").Child("vernemq").Child("sslListenerCertSecretName")
+			astartelog.Info(err.Error())
+			allErrs = append(allErrs, field.NotFound(fldPath, err.Error()))
 		}
 
 		if err := r.validateAstartePriorityClasses(); err != nil {
-			return err
+			allErrs = append(allErrs, err)
 		}
 	}
 
-	if err := validatePodLabelsForClusteredResources(r); err != nil {
-		return err
+	if errList := validatePodLabelsForClusteredResources(r); len(errList) > 0 {
+		allErrs = append(allErrs, errList...)
 	}
 
 	if err := validateAutoscalerForClusteredResources(r); err != nil {
-		return err
+		allErrs = append(allErrs, err)
 	}
 
-	return nil
+	return allErrs
 }
 
-func validatePodLabelsForClusteredResources(r *Astarte) error {
+func validatePodLabelsForClusteredResources(r *Astarte) field.ErrorList {
+	allErrs := field.ErrorList{}
+
 	resources := []PodLabelsGetter{r.Spec.VerneMQ.AstarteGenericClusteredResource,
 		r.Spec.Cassandra.AstarteGenericClusteredResource, r.Spec.RabbitMQ.AstarteGenericClusteredResource,
 		r.Spec.Components.Flow.AstarteGenericClusteredResource, r.Spec.Components.Housekeeping.Backend,
@@ -170,25 +217,30 @@ func validatePodLabelsForClusteredResources(r *Astarte) error {
 		r.Spec.Components.Pairing.API.AstarteGenericClusteredResource, r.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource,
 		r.Spec.Components.TriggerEngine.AstarteGenericClusteredResource, r.Spec.Components.Dashboard.AstarteGenericClusteredResource, r.Spec.CFSSL}
 	for _, v := range resources {
-		if err := validatePodLabelsForClusteredResource(v); err != nil {
-			return err
+		if errList := validatePodLabelsForClusteredResource(v); len(errList) > 0 {
+			allErrs = append(allErrs, errList...)
 		}
 	}
 
-	return nil
+	return allErrs
 
 }
 
-func validatePodLabelsForClusteredResource(r PodLabelsGetter) error {
+func validatePodLabelsForClusteredResource(r PodLabelsGetter) field.ErrorList {
+	allErrs := field.ErrorList{}
 	for k := range r.GetPodLabels() {
 		if k == "component" || k == "app" || strings.HasPrefix(k, "astarte-") || strings.HasPrefix(k, "flow-") {
-			return fmt.Errorf("Invalid label key %s: can't be any of 'app', 'component', 'astarte-*', 'flow-*'", k)
+			fldPath := field.NewPath("podLabels")
+			err := errors.New("Invalid label key: can't be any of 'app', 'component', 'astarte-*', 'flow-*'")
+			astartelog.Info(err.Error(), "label", k)
+
+			allErrs = append(allErrs, field.Invalid(fldPath, k, err.Error()))
 		}
 	}
-	return nil
+	return allErrs
 }
 
-func validateAutoscalerForClusteredResources(r *Astarte) error {
+func validateAutoscalerForClusteredResources(r *Astarte) *field.Error {
 	// We have no constraints on autoscaling except for these components
 	excludedResources := []AstarteGenericClusteredResource{
 		r.Spec.RabbitMQ.AstarteGenericClusteredResource,
@@ -199,11 +251,14 @@ func validateAutoscalerForClusteredResources(r *Astarte) error {
 	return validateAutoscalerForClusteredResourcesExcluding(r, excludedResources)
 }
 
-func validateAutoscalerForClusteredResourcesExcluding(r *Astarte, excluded []AstarteGenericClusteredResource) error {
+func validateAutoscalerForClusteredResourcesExcluding(r *Astarte, excluded []AstarteGenericClusteredResource) *field.Error {
 	if r.Spec.Features.Autoscaling {
 		for _, v := range excluded {
 			if v.Autoscale != nil && v.Autoscale.Horizontal != "" {
-				return fmt.Errorf("invalid autoscaler: cannot autoscale horizontally RabbitMQ, DataUpdaterPlant or Cassandra")
+				fldPath := field.NewPath("")
+				err := errors.New("invalid autoscaler: cannot autoscale horizontally RabbitMQ, DataUpdaterPlant or Cassandra")
+				astartelog.Info(err.Error())
+				return field.Invalid(fldPath, "", err.Error())
 			}
 		}
 	}
@@ -250,25 +305,25 @@ func (r *Flow) ValidateDelete() error {
 	return nil
 }
 
-func (r *Astarte) validateAstartePriorityClasses() error {
+func (r *Astarte) validateAstartePriorityClasses() *field.Error {
 	if r.Spec.Features.AstartePodPriorities.IsEnabled() {
-		if err := r.validatePriorityClassesValues(); err != nil {
-			return err
-		}
+		return r.validatePriorityClassesValues()
 	}
 
 	return nil
 }
 
-func (r *Astarte) validatePriorityClassesValues() error {
+func (r *Astarte) validatePriorityClassesValues() *field.Error {
 	// default values guarantee pointers are not nil
 	highPriorityValue := *r.Spec.Features.AstartePodPriorities.AstarteHighPriority
 	midPriorityValue := *r.Spec.Features.AstartePodPriorities.AstarteMidPriority
 	lowPriorityValue := *r.Spec.Features.AstartePodPriorities.AstarteLowPriority
 	if midPriorityValue > highPriorityValue || lowPriorityValue > midPriorityValue {
 		err := errors.New("Astarte PriorityClass values are incoherent")
-		astartelog.Error(err, "Astarte PriorityClass must be ordered low < mid < high.")
-		return err
+		astartelog.Info(err.Error())
+		fldPath := field.NewPath("spec").Child("features").Child("astarte{Low|Medium|High}Priority")
+
+		return field.Invalid(fldPath, "", err.Error())
 	}
 	return nil
 }
