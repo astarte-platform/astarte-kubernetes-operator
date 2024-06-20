@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Use the imperative form for fields in the spec, i.e.: `enabled` --> `enable` in Astarte v1alpha3.
 - Do not remove CRDs when uninstalling the Operator's Helm chart.
+- Add deprecation notice for RabbitMQ managed by Astarte Operator.
 
 ### Removed
 - Remove support for AstarteVoyagerIngress resources.
