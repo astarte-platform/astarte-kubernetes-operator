@@ -39,6 +39,14 @@ for avoiding confusing situations as outlined
 In the end, you won't need to create NGINX ingresses yourself: the Astarte Operator itself will take
 care of this task.
 
+## RabbitMQ
+
+For production environments, consider using RabbitMQ deployed by the [RabbitMQ Cluster Operator]
+(https://www.rabbitmq.com/kubernetes/operator/operator-overview) or any other managed solution that 
+you prefer. The Astarte Operator includes only basic management of RabbitMQ, which is deprecated since 
+v24.5 and as such it should not be relied upon when dealing with production environments. Futher details 
+can be found [here](https://github.com/astarte-platform/astarte-kubernetes-operator/issues/287).
+
 ## Voyager (deprecated)
 
 Until Astarte v1.0.0, the only supported Managed Ingress was the
