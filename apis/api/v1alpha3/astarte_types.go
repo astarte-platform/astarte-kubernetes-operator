@@ -509,7 +509,6 @@ type AstarteDashboardConfigAuthSpec struct {
 }
 
 type AstarteDashboardConfigSpec struct {
-	metav1.TypeMeta `json:",inline"`
 	// +optional
 	RealmManagementAPIURL string `json:"realmManagementApiUrl,omitempty"`
 	// +optional
@@ -530,7 +529,7 @@ type AstarteDashboardSpec struct {
 	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
 	// +optional
-	Config AstarteDashboardConfigSpec `json:",inline"`
+	AstarteDashboardConfigSpec `json:",inline"`
 }
 
 type AstarteComponentsSpec struct {

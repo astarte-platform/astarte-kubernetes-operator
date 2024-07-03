@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Remove support for AstarteVoyagerIngress resources.
 - Remove v1alpha1 API version for the api.astarte-platform.org group.
 
+## [23.5.2] - 2024-07-03
+### Fixed
+- Fix a regression due to which it was not possible to specify custom URLs for Astarte
+  services in the Dashboard.
+
 ## [23.5.1] - 2024-01-16
 ### Changed
 - Upgrade OperatorSDK to 1.32.0.
