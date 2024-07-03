@@ -61,8 +61,8 @@ jobs:
         sudo sysctl net/netfilter/nf_conntrack_max=131072
     - uses: container-tools/kind-action@v2
       with:
-        version: "v0.20.0"
-        node_image: "kindest/node:v1.27.3@sha256:3966ac761ae0136263ffdb6cfd4db23ef8a83cba8a463690e98317add2c9ba72"
+        version: "v0.23.0"
+        node_image: "kindest/node:v1.29.4@sha256:3abb816a5b1061fb15c6e9e60856ec40d56b7b52bcea5f5f1350bc6e2320b6f8"
     - name: Build test image
       run: |
         docker build -t astarte-operator-ci:test -f Dockerfile .
