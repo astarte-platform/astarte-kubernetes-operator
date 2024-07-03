@@ -3,8 +3,8 @@ name: astarte-operator
 description: The Astarte Kubernetes Operator Helm Chart.
 type: application
 
-version: "23.5.1"
-appVersion: "23.5.1"
+version: "23.5.2"
+appVersion: "23.5.2"
 kubeVersion: ">= 1.19.0-0"
 
 home: https://github.com/astarte-platform/astarte-kubernetes-operator

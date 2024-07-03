@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [23.5.2] - Unreleased
+## [23.5.2] - 2024-07-03
 ### Fixed
 - Fix a regression due to which it was not possible to specify custom URLs for Astarte
   services in the Dashboard.
