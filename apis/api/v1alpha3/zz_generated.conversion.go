@@ -1086,7 +1086,7 @@ func autoConvert_v1alpha3_AstarteDashboardSpec_To_v1alpha2_AstarteDashboardSpec(
 	if err := Convert_v1alpha3_AstarteGenericClusteredResource_To_v1alpha2_AstarteGenericClusteredResource(&in.AstarteGenericClusteredResource, &out.AstarteGenericClusteredResource, s); err != nil {
 		return err
 	}
-	if err := Convert_v1alpha3_AstarteDashboardConfigSpec_To_v1alpha2_AstarteDashboardConfigSpec(&in.Config, &out.Config, s); err != nil {
+	if err := Convert_v1alpha3_AstarteDashboardConfigSpec_To_v1alpha2_AstarteDashboardConfigSpec(&in.AstarteDashboardConfigSpec, &out.AstarteDashboardConfigSpec, s); err != nil {
 		return err
 	}
 	return nil
@@ -1101,7 +1101,7 @@ func autoConvert_v1alpha2_AstarteDashboardSpec_To_v1alpha3_AstarteDashboardSpec(
 	if err := Convert_v1alpha2_AstarteGenericClusteredResource_To_v1alpha3_AstarteGenericClusteredResource(&in.AstarteGenericClusteredResource, &out.AstarteGenericClusteredResource, s); err != nil {
 		return err
 	}
-	if err := Convert_v1alpha2_AstarteDashboardConfigSpec_To_v1alpha3_AstarteDashboardConfigSpec(&in.Config, &out.Config, s); err != nil {
+	if err := Convert_v1alpha2_AstarteDashboardConfigSpec_To_v1alpha3_AstarteDashboardConfigSpec(&in.AstarteDashboardConfigSpec, &out.AstarteDashboardConfigSpec, s); err != nil {
 		return err
 	}
 	return nil
