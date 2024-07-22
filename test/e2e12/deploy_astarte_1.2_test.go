@@ -16,7 +16,7 @@
   limitations under the License.
 */
 
-package e2e10
+package e2e12
 
 import (
 	"context"
@@ -28,7 +28,7 @@ import (
 	"github.com/astarte-platform/astarte-kubernetes-operator/test/utils"
 )
 
-var target10Version string = "1.0.4"
+var target12Version string = "1.2.0"
 
 var _ = Describe("Astarte controller", func() {
 	Context("When deploying an Astarte resource", func() {
@@ -36,7 +36,7 @@ var _ = Describe("Astarte controller", func() {
 			By("By creating a new Astarte")
 			exampleAstarte := utils.AstarteTestResource.DeepCopy()
 			exampleAstarte.ObjectMeta.Namespace = namespace
-			exampleAstarte.Spec.Version = target10Version
+			exampleAstarte.Spec.Version = target12Version
 			ctx := context.Background()
 			Expect(k8sClient.Create(ctx, exampleAstarte)).Should(Succeed())
 
@@ -51,7 +51,7 @@ var _ = Describe("Astarte controller", func() {
 			}, utils.DefaultTimeout, utils.DefaultRetryInterval).Should(BeEquivalentTo(v1alpha2.AstarteClusterHealthGreen))
 
 			By("By ensuring all Astarte services are up and running")
-			Expect(utils.EnsureAstarteServicesReadinessUpTo10(namespace, k8sClient)).Should(Succeed())
+			Expect(utils.EnsureAstarteServicesReadinessUpTo12(namespace, k8sClient)).Should(Succeed())
 		})
 		It("Should clean up the cluster after Astarte deletion", func() {
 			By("By deleting the Astarte Resource and waiting for services to go down")

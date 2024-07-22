@@ -16,7 +16,7 @@
   limitations under the License.
 */
 
-package e2e10
+package e2e12
 
 import (
 	"path/filepath"
@@ -46,9 +46,9 @@ var testEnv *envtest.Environment
 
 const namespace string = "astarte-test"
 
-func TestAstarte10Deployment(t *testing.T) {
+func TestAstarte12Deployment(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Astarte 1.0 Controller e2e Test Suite")
+	RunSpecs(t, "Astarte 1.2 Controller e2e Test Suite")
 }
 
 var _ = BeforeSuite(func() {
