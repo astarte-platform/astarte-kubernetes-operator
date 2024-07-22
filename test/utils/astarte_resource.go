@@ -117,6 +117,24 @@ var AstarteTestResource *operator.Astarte = &operator.Astarte{
 					v1.ResourceMemory: *resource.NewScaledQuantity(2, resource.Giga),
 				},
 			},
+			Housekeeping: operator.AstarteGenericComponentSpec{
+				API: operator.AstarteGenericAPISpec{
+					AstarteGenericClusteredResource: operator.AstarteGenericClusteredResource{
+						Resources: &v1.ResourceRequirements{
+							Requests: v1.ResourceList{
+								v1.ResourceCPU: *resource.NewScaledQuantity(400, resource.Milli),
+							},
+						},
+					},
+				},
+				Backend: operator.AstarteGenericClusteredResource{
+					Resources: &v1.ResourceRequirements{
+						Requests: v1.ResourceList{
+							v1.ResourceCPU: *resource.NewScaledQuantity(400, resource.Milli),
+						},
+					},
+				},
+			},
 			// TODO: We need to add this here to ensure we don't starve the CI. Remove when it is taken into account
 			// in global resource allocation.
 			// TODO we need to explicitly set Flow's tag. Handle this case as soon as Flow images are tagged
