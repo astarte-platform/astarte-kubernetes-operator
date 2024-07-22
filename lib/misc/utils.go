@@ -218,7 +218,7 @@ func GetResourcesForAstarteComponent(cr *apiv1alpha2.Astarte, requestedResources
 	realRequests[v1.ResourceMemory] = *memoryRequests
 
 	// Ensure limits aren't out of boundaries if we changed the requests
-	if cpuLimits.Cmp(*cpuLimits) < 0 {
+	if cpuLimits.Cmp(*cpuRequests) < 0 {
 		cpuLimits = cpuRequests
 	}
 	if memoryLimits.Cmp(*memoryRequests) < 0 {
