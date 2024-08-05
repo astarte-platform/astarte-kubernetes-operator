@@ -26,7 +26,7 @@ import (
 
 const (
 	// Version is the Operator's version
-	Version = "24.5.0-dev"
+	Version = "24.5.0-rc.0"
 
 	// AstarteVersionConstraintString represents the range of supported Astarte versions for this Operator.
 	// If the Astarte version falls out of this range, reconciliation will be immediately aborted.
