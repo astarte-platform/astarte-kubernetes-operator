@@ -52,7 +52,7 @@ CRDs. The deployment therefore can be performed in just one command.
 
 To check if the deployment is successful:
 ```bash
-kubectl get deployment -n kube-system astarte-operator
+kubectl get deployment -n astarte-operator astarte-operator
 ```
 
 ## Running the Operator outside the Cluster
