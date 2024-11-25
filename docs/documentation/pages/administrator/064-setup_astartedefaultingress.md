@@ -4,13 +4,10 @@ Once your Cluster [is up and running](060-setup_cluster.html), to expose it to t
 need to set up an Ingress. Currently, the **only managed and supported Ingress** is based upon
 [NGINX](https://nginx.org/en/), and this guide will cover only this specific case.
 
-Please, note that the previously supported Voyager based ingress is deprecated and should not be
-used (see the [Voyager announcement](https://blog.byte.builders/post/voyager-v2021.09.15/) and the
-related Astarte [issue](https://github.com/astarte-platform/astarte/issues/613) for further
-details).
-
-If you want to migrate away from AstarteVoyagerIngress to the new AstarteDefaultIngress, please
-refer to the procedure outlined [here](066-migrate_to_astartedefaultingress.html).
+Please, note that the support for the Voyager based ingress (i.e.: AstarteVoyagerIngress) has been
+removed as of v24.5.0. If you want to migrate away from AstarteVoyagerIngress to the new
+AstarteDefaultIngress, please refer to the procedure outlined
+[here](066-migrate_to_astartedefaultingress.html).
 
 ## Prerequisites
 
