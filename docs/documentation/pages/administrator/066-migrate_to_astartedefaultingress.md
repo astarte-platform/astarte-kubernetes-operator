@@ -1,7 +1,9 @@
 # Migrating to the Astarte Default Ingress
 
-If your Astarte deployment is still being served by the deprecated AstarteVoyagerIngress, it is
-highly advised to move to the new managed ingress, namely, the AstarteDefaultIngress.
+The support for AstarteVoyagerIngress has been dropped. If your Astarte deployment is still being
+served by the AstarteVoyagerIngress, it is necessary to move to the new managed ingress,
+namely, the AstarteDefaultIngress. As an alternative, you can setup your custom ingress (however,
+this scenario is not covered by the present documentation).
 
 The current page focuses on describing the procedure for migrating your ingress with ease, simply
 employing `astartectl`.

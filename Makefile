@@ -1,5 +1,5 @@
 # Current Operator version
-VERSION ?= 24.5.0-dev
+VERSION ?= 24.5.0
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")

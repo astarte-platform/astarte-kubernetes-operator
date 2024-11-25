@@ -47,16 +47,6 @@ you prefer. The Astarte Operator includes only basic management of RabbitMQ, whi
 v24.5 and as such it should not be relied upon when dealing with production environments. Futher details 
 can be found [here](https://github.com/astarte-platform/astarte-kubernetes-operator/issues/287).
 
-## Voyager (deprecated)
-
-Until Astarte v1.0.0, the only supported Managed Ingress was the
-[Voyager](https://github.com/appscode/voyager) based `AstarteVoyagerIngress`. Starting from Dec the
-31st 2021, according to the [Voyager
-announcement](https://blog.byte.builders/post/voyager-v2021.09.15/), the support for Voyager will be
-dropped as stated [here](https://github.com/astarte-platform/astarte/issues/613). An alternative
-NGINX based Managed Ingress has been developed to replace the Voyager based solution (for reference,
-see the previous section).
-
 ## cert-manager
 
 Astarte requires [`cert-manager`](https://cert-manager.io/) to be installed in the cluster in its
@@ -80,11 +70,11 @@ $ kubectl create namespace cert-manager
 $ helm install \
   cert-manager jetstack/cert-manager \
   --namespace cert-manager \
-  --version v1.13.3 \
+  --version v1.14.7 \
   --set installCRDs=true
 ```
 
-This will install `cert-manager` 1.13.3 and its CRDs in the cluster.
+This will install `cert-manager` and its CRDs in the cluster.
 
 ## External Cassandra / Scylla
 

@@ -327,7 +327,9 @@ func appendVerneMQCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv1alpha2.As
 		newName := strings.Replace(v.Name, "CASSANDRA_", "CASSANDRA__", 1)
 		newName = fmt.Sprintf("DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__%s", newName)
 
-		ret = append(ret, v1.EnvVar{Name: newName, Value: v.Value})
+		// we just need to rename the env, everything else is unchanged
+		v.Name = newName
+		ret = append(ret, v)
 	}
 
 	// and finally add Cassandra nodes

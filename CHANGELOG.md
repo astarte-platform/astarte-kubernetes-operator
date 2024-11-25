@@ -4,7 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [24.5.1] - Unreleased
+### Fixed
+- Properly inject cassandra user credentials in the VerneMQ statefulset.
+
+## [24.5.0] - 2024-08-13
+
+## [24.5.0-rc.1] - 2024-08-09
+
+## [24.5.0-rc.0] - 2024-08-01
 ### Added
 - Add a v1alpha3 API version for the api.astarte-platform.org group.
 - Add the `astarteInstanceID` to the astarte spec.
