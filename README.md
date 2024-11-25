@@ -1,6 +1,6 @@
 # Astarte Kubernetes Operator
 
-![CI](https://github.com/astarte-platform/astarte-kubernetes-operator/workflows/Operator%20e2e%20tests/badge.svg?branch=release-24.5)
+![CI](https://github.com/astarte-platform/astarte-kubernetes-operator/workflows/Operator%20e2e%20tests/badge.svg?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/astarte-platform/astarte-kubernetes-operator)](https://goreportcard.com/report/github.com/astarte-platform/astarte-kubernetes-operator)
 [![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 ![Docker Pulls](https://img.shields.io/docker/pulls/astarte/astarte-kubernetes-operator)
@@ -13,7 +13,7 @@ ensure Astarte runs as smooth as possible. It also handles upgrades, monitoring,
 Astarte Operator is the foundation of any Astarte installation, and you can find more information
 about it and how to use it once installed in the
 [Astarte Operator
-guide](https://docs.astarte-platform.org/astarte-kubernetes-operator/24.5/001-intro_administrator.html).
+guide](https://docs.astarte-platform.org/astarte-kubernetes-operator/snapshot/001-intro_administrator.html).
 
 ## Getting started
 
@@ -24,7 +24,7 @@ Astarte Operator requires [`cert-manager`](https://cert-manager.io/) (`v1.7+`) t
 the cluster in its default configuration. If you are using `cert-manager` in your cluster already
 you don't need to take any action - otherwise, you will need to install it. A complete overview on
 prerequisites can be found
-[here](https://docs.astarte-platform.org/astarte-kubernetes-operator/24.5/020-prerequisites.html).
+[here](https://docs.astarte-platform.org/astarte-kubernetes-operator/snapshot/020-prerequisites.html).
 
 To install `cert-manager` simply run:
 ```bash
@@ -55,13 +55,13 @@ helm upgrade astarte-operator astarte/astarte-operator
 
 If you are interested in having a deeper understanding on how the Astarte Operator works you should
 follow the [Astarte Operator Administration
-guide](https://docs.astarte-platform.org/astarte-kubernetes-operator/24.5/001-intro_administrator.html).
+guide](https://docs.astarte-platform.org/astarte-kubernetes-operator/snapshot/001-intro_administrator.html).
 
 ### What's next?
 
 Once your Astarte Operator is up and running in your cluster, it will be time to deploy your Astarte
 instance! All you have to do is [Setting up the
-Cluster](https://docs.astarte-platform.org/astarte-kubernetes-operator/24.5/060-setup_cluster.html).
+Cluster](https://docs.astarte-platform.org/astarte-kubernetes-operator/snapshot/060-setup_cluster.html).
 
 ## Kubernetes support
 
