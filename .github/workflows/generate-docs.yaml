@@ -70,7 +70,7 @@ jobs:
       working-directory: astarte-kubernetes-operator
     # Install Hugo
     - run: |
-        curl -Lo hugo.tar.gz https://github.com/gohugoio/hugo/releases/download/v0.127.0/hugo_extended_0.127.0_Linux-64bit.tar.gz
+        curl -Lo hugo.tar.gz https://github.com/gohugoio/hugo/releases/download/v0.139.2/hugo_extended_0.139.2_Linux-64bit.tar.gz
         tar -zxvf hugo.tar.gz hugo
       working-directory: astarte-kubernetes-operator
     # Checkout the hugo-book theme
@@ -79,6 +79,7 @@ jobs:
       with:
         submodules: recursive
         repository: alex-shpak/hugo-book
+        ref: 7c78a39c531aa2492ed7e92f2ce9dfb2c8c0d3fa
         path: astarte-kubernetes-operator/themes/hugo-book
     - name: Set docs dirname
       run: |
