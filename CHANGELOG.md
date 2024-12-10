@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Forward port changes from release-24.5
 
+### Fixed
+- Fix the propagation of replicaCount, installCrds, and pullPolicy values 
+  in values.yaml during Helm chart installation.
+
 ## [24.5.1] - Unreleased
 ### Fixed
 - Properly inject cassandra user credentials in the VerneMQ statefulset.
