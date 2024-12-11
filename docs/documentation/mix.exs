@@ -28,7 +28,7 @@ defmodule Doc.MixProject do
   defp docs do
     [
       main: "001-intro_administrator",
-      logo: "images/mascot.png",
+      logo: "images/clea_bw.png",
       javascript_config_path: "../common_vars.js",
       extras: Path.wildcard("pages/*/*.{cheatmd,md}"),
       assets: "images/",
