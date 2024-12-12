@@ -180,6 +180,12 @@ func main() {
 			os.Exit(1)
 		}
 	}
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&ingressv1alpha1.AstarteDefaultIngress{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "AstarteDefaultIngress")
+			os.Exit(1)
+		}
+	}
 	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
