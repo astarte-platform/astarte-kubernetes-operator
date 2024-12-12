@@ -32,7 +32,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha2"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
 	// +kubebuilder:scaffold:imports
 )
 

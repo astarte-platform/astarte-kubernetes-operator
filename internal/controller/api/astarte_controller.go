@@ -24,29 +24,29 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha2"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
 )
 
-// FlowReconciler reconciles a Flow object
-type FlowReconciler struct {
+// AstarteReconciler reconciles a Astarte object
+type AstarteReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=api.astarte-platform.org,resources=flows,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=api.astarte-platform.org,resources=flows/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=api.astarte-platform.org,resources=flows/finalizers,verbs=update
+// +kubebuilder:rbac:groups=api.astarte-platform.org,resources=astartes,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=api.astarte-platform.org,resources=astartes/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=api.astarte-platform.org,resources=astartes/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
-// the Flow object against the actual cluster state, and then
+// the Astarte object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/reconcile
-func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *AstarteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
 	// TODO(user): your logic here
@@ -55,8 +55,8 @@ func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *FlowReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *AstarteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&apiv1alpha2.Flow{}).
+		For(&apiv1alpha2.Astarte{}).
 		Complete(r)
 }

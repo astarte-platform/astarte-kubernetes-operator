@@ -35,9 +35,9 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
 	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v1alpha1"
-	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha2"
-	"github.com/astarte-platform/astarte-kubernetes-operator/internal/controller"
+	apicontroller "github.com/astarte-platform/astarte-kubernetes-operator/internal/controller/api"
 	ingresscontroller "github.com/astarte-platform/astarte-kubernetes-operator/internal/controller/ingress"
 	// +kubebuilder:scaffold:imports
 )
@@ -147,14 +147,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controller.AstarteReconciler{
+	if err = (&apicontroller.AstarteReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Astarte")
 		os.Exit(1)
 	}
-	if err = (&controller.FlowReconciler{
+	if err = (&apicontroller.FlowReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {

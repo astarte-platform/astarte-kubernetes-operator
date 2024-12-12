@@ -27,7 +27,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/v1alpha2"
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
 )
 
 var _ = Describe("Flow Controller", func() {
