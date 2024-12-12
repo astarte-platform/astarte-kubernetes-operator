@@ -34,6 +34,10 @@ resources:
   kind: Flow
   path: github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2
   version: v1alpha2
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true
