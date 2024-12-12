@@ -56,3 +56,29 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ingress.astarte-platform.org
+  resources:
+  - astartedefaultingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ingress.astarte-platform.org
+  resources:
+  - astartedefaultingresses/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ingress.astarte-platform.org
+  resources:
+  - astartedefaultingresses/status
+  verbs:
+  - get
+  - patch
+  - update
