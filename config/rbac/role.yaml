@@ -1,3 +1,4 @@
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -6,6 +7,29 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: manager-role
 rules:
-- apiGroups: [""]
-  resources: ["pods"]
-  verbs: ["get", "list", "watch"]
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - astartes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - astartes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - astartes/status
+  verbs:
+  - get
+  - patch
+  - update
