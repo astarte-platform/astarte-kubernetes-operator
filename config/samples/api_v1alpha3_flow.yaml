@@ -1,0 +1,9 @@
+apiVersion: api.astarte-platform.org/v1alpha3
+kind: Flow
+metadata:
+  labels:
+    app.kubernetes.io/name: astarte-kubernetes-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: flow-sample
+spec:
+  # TODO(user): Add fields here
