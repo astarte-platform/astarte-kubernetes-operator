@@ -36,6 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
+	apiv1alpha3 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha3"
 	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v1alpha1"
 	apicontroller "github.com/astarte-platform/astarte-kubernetes-operator/internal/controller/api"
 	ingresscontroller "github.com/astarte-platform/astarte-kubernetes-operator/internal/controller/ingress"
@@ -52,6 +53,7 @@ func init() {
 
 	utilruntime.Must(apiv1alpha2.AddToScheme(scheme))
 	utilruntime.Must(ingressv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(apiv1alpha3.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 

@@ -1,0 +1,23 @@
+# permissions for end users to view astartes.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: astarte-kubernetes-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: api-astarte-viewer-role
+rules:
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - astartes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - astartes/status
+  verbs:
+  - get

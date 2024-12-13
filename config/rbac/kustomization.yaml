@@ -22,6 +22,8 @@ resources:
 # default, aiding admins in cluster management. Those roles are
 # not used by the Project itself. You can comment the following lines
 # if you do not want those helpers be installed with your Project.
+- api_astarte_editor_role.yaml
+- api_astarte_viewer_role.yaml
 - ingress_astartedefaultingress_editor_role.yaml
 - ingress_astartedefaultingress_viewer_role.yaml
 - flow_editor_role.yaml
