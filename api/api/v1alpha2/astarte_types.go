@@ -40,6 +40,7 @@ type AstarteStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:storageversion
 
 // Astarte is the Schema for the astartes API
 type Astarte struct {
