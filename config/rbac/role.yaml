@@ -45,12 +45,6 @@ rules:
 - apiGroups:
   - api.astarte-platform.org
   resources:
-  - flows/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - api.astarte-platform.org
-  resources:
   - flows/status
   verbs:
   - get
