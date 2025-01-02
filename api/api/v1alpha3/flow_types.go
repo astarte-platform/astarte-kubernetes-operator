@@ -173,7 +173,3 @@ type ContainerBlockSpec struct {
 	// +kubebuilder:validation:MinItems:=1
 	Workers []BlockWorker `json:"workers"`
 }
-
-func init() {
-	SchemeBuilder.Register(&Flow{}, &FlowList{})
-}

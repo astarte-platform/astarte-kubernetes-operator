@@ -713,7 +713,3 @@ type AstarteFeatures struct {
 	// +optional
 	AstartePodPriorities *AstartePodPrioritiesSpec `json:"astartePodPriorities,omitempty"`
 }
-
-func init() {
-	SchemeBuilder.Register(&Astarte{}, &AstarteList{})
-}

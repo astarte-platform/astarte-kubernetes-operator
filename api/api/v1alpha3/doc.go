@@ -14,23 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1alpha2 contains API Schema definitions for the api v1alpha2 API group
+// Package v1alpha3 contains API Schema definitions for the api v1alpha3 API group
 // +kubebuilder:object:generate=true
+// +k8s:conversion-gen=github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2
 // +groupName=api.astarte-platform.org
-package v1alpha2
-
-import (
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"sigs.k8s.io/controller-runtime/pkg/scheme"
-)
-
-var (
-	// GroupVersion is group version used to register these objects
-	GroupVersion = schema.GroupVersion{Group: "api.astarte-platform.org", Version: "v1alpha2"}
-
-	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
-	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
-
-	// AddToScheme adds the types in this group-version to the given scheme.
-	AddToScheme = SchemeBuilder.AddToScheme
-)
+package v1alpha3
