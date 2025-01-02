@@ -143,6 +143,8 @@ type AstarteDefaultIngressBrokerSpec struct {
 	// The AstarteDefaultIngress handles TLS termination at VerneMQ level and, as such, no TLSSecret is needed to
 	// configure the broker service.
 	// Default: "LoadBalancer"
+	// kubebuilder:validation:Enum:=LoadBalancer,NodePort
+	// kubebuilder:validation:Default:=LoadBalancer
 	// +optional
 	ServiceType v1.ServiceType `json:"serviceType,omitempty"`
 	// Set the LoadBalancerIP if and only if the broker service is of type "LoadBalancer". This feature depends on
