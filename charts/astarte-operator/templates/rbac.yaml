@@ -1,0 +1,580 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: astarte-kubernetes-operator
+  name: '{{ .Release.Name }}-controller-manager'
+  namespace: '{{ .Release.Namespace }}'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: astarte-kubernetes-operator
+  name: '{{ .Release.Name }}-leader-election-role'
+  namespace: '{{ .Release.Namespace }}'
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: astarte-kubernetes-operator
+  name: '{{ .Release.Name }}-api-astarte-editor-role'
+rules:
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - astartes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - astartes/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: astarte-kubernetes-operator
+  name: '{{ .Release.Name }}-api-astarte-viewer-role'
+rules:
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - astartes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - astartes/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: astarte-kubernetes-operator
+  name: '{{ .Release.Name }}-api-flow-editor-role'
+rules:
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - flows
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - flows/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: astarte-kubernetes-operator
+  name: '{{ .Release.Name }}-api-flow-viewer-role'
+rules:
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - flows
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - flows/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: astarte-kubernetes-operator
+  name: '{{ .Release.Name }}-astarte-editor-role'
+rules:
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - astartes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - astartes/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: astarte-kubernetes-operator
+  name: '{{ .Release.Name }}-astarte-viewer-role'
+rules:
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - astartes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - astartes/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: astarte-kubernetes-operator
+  name: '{{ .Release.Name }}-flow-editor-role'
+rules:
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - flows
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - flows/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: astarte-kubernetes-operator
+  name: '{{ .Release.Name }}-flow-viewer-role'
+rules:
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - flows
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - flows/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: astarte-kubernetes-operator
+  name: '{{ .Release.Name }}-ingress-astartedefaultingress-editor-role'
+rules:
+- apiGroups:
+  - ingress.astarte-platform.org
+  resources:
+  - astartedefaultingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ingress.astarte-platform.org
+  resources:
+  - astartedefaultingresses/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: astarte-kubernetes-operator
+  name: '{{ .Release.Name }}-ingress-astartedefaultingress-viewer-role'
+rules:
+- apiGroups:
+  - ingress.astarte-platform.org
+  resources:
+  - astartedefaultingresses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ingress.astarte-platform.org
+  resources:
+  - astartedefaultingresses/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: '{{ .Release.Name }}-manager-role'
+rules:
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - astartes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - astartes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - astartes/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - flows
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - api.astarte-platform.org
+  resources:
+  - flows/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  - deployments
+  - replicasets
+  - statefulsets
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resourceNames:
+  - astarte-operator
+  resources:
+  - deployments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - persistentvolumeclaims
+  - secrets
+  - serviceaccounts
+  - services
+  - services/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - services
+  - services/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ingress.astarte-platform.org
+  resources:
+  - astartedefaultingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ingress.astarte-platform.org
+  resources:
+  - astartedefaultingresses/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ingress.astarte-platform.org
+  resources:
+  - astartedefaultingresses/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  verbs:
+  - create
+  - get
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - scheduling.k8s.io
+  resources:
+  - priorityclasses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: '{{ .Release.Name }}-metrics-auth-role'
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: '{{ .Release.Name }}-metrics-reader'
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: astarte-kubernetes-operator
+  name: '{{ .Release.Name }}-leader-election-rolebinding'
+  namespace: '{{ .Release.Namespace }}'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: '{{ .Release.Name }}-leader-election-role'
+subjects:
+- kind: ServiceAccount
+  name: '{{ .Release.Name }}-controller-manager'
+  namespace: '{{ .Release.Namespace }}'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: astarte-kubernetes-operator
+  name: '{{ .Release.Name }}-manager-rolebinding'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: '{{ .Release.Name }}-manager-role'
+subjects:
+- kind: ServiceAccount
+  name: '{{ .Release.Name }}-controller-manager'
+  namespace: '{{ .Release.Namespace }}'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: '{{ .Release.Name }}-metrics-auth-rolebinding'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: '{{ .Release.Name }}-metrics-auth-role'
+subjects:
+- kind: ServiceAccount
+  name: '{{ .Release.Name }}-controller-manager'
+  namespace: '{{ .Release.Namespace }}'
