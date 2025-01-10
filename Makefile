@@ -220,6 +220,7 @@ KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 CONVERSION_GEN ?= $(LOCALBIN)/conversion-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
+CRD_REF_DOCS ?= $(LOCALBIN)/crd-ref-docs
 HELM_DOCS ?= $(LOCALBIN)/helm-docs
 GOLANGCI_LINT = $(LOCALBIN)/golangci-lint
 YQ ?= $(LOCALBIN)/yq
@@ -232,6 +233,7 @@ CONTROLLER_TOOLS_VERSION ?= v0.15.0
 CONVERSION_GEN_VERSION = v0.27.16
 ENVTEST_VERSION ?= release-0.18
 GOLANGCI_LINT_VERSION ?= v1.59.1
+CRD_REF_DOCS_VERSION = v0.0.10
 HELM_DOCS_VERSION = v1.7.0
 YQ_VERSION = v4.30.8
 
@@ -264,6 +266,11 @@ $(YQ): $(LOCALBIN)
 golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
 $(GOLANGCI_LINT): $(LOCALBIN)
 	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
+
+.PHONY: crd-ref-docs
+crd-ref-docs: $(CRD_REF_DOCS) ## Download crd-ref-docs locally if necessary.
+$(CRD_REF_DOCS): $(LOCALBIN)
+	$(call go-install-tool,$(HELM_DOCS),github.com/elastic/crd-ref-docs,$(CRD_REF_DOCS_VERSION))
 
 .PHONY: norwoodj-helm-docs
 norwoodj-helm-docs: $(HELM_DOCS) ## Download norwoodj/helm-docs locally if necessary.
@@ -365,3 +372,8 @@ catalog-push: ## Push a catalog image.
 chart-docs: norwoodj-helm-docs ## Generate Helm Chart docs.
 	$(HELM_DOCS) --chart-search-root charts \
 		-t ../docs/autogen/templates/helm-chart/README.md.gotmpl
+
+.PHONY: crd-docs
+crd-docs: crd-ref-docs ## Generate API reference documentation from code.
+	mkdir -p docs/content && $(CRD_REF_DOCS) --config="docs/autogen/config.yaml" --renderer=markdown \
+		--max-depth=10 --source-path="api" --output-path="docs/content/index.md"
