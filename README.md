@@ -1,116 +1,98 @@
-# astarte-kubernetes-operator
-// TODO(user): Add simple overview of use/purpose
+# Astarte Kubernetes Operator
 
-## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+![CI](https://github.com/astarte-platform/astarte-kubernetes-operator/workflows/Operator%20e2e%20tests/badge.svg?branch=master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/astarte-platform/astarte-kubernetes-operator)](https://goreportcard.com/report/github.com/astarte-platform/astarte-kubernetes-operator)
+[![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
+![Docker Pulls](https://img.shields.io/docker/pulls/astarte/astarte-kubernetes-operator)
 
-## Getting Started
+<img src="mascotte.svg" align="right" width="160px" />
+Astarte Kubernetes Operator runs and manages an Astarte Cluster in a Kubernetes Cluster. It is meant
+to work on any Managed Kubernetes installation, and leverages a number of Kubernetes features to
+ensure Astarte runs as smooth as possible. It also handles upgrades, monitoring, and more.
 
-### Prerequisites
-- go version v1.22.0+
-- docker version 17.03+.
-- kubectl version v1.11.3+.
-- Access to a Kubernetes v1.11.3+ cluster.
+Astarte Operator is the foundation of any Astarte installation, and you can find more information
+about it and how to use it once installed in the
+[Astarte Operator
+guide](https://docs.astarte-platform.org/astarte-kubernetes-operator/snapshot/001-intro_administrator.html).
 
-### To Deploy on the cluster
-**Build and push your image to the location specified by `IMG`:**
+## Getting started
 
-```sh
-make docker-build docker-push IMG=<some-registry>/astarte-kubernetes-operator:tag
+The preferred way to install and manage Astarte Operator leverages its [Helm
+chart](https://artifacthub.io/packages/helm/astarte/astarte-operator).
+
+Astarte Operator requires [`cert-manager`](https://cert-manager.io/) (`v1.7+`) to be installed in
+the cluster in its default configuration. If you are using `cert-manager` in your cluster already
+you don't need to take any action - otherwise, you will need to install it. A complete overview on
+prerequisites can be found
+[here](https://docs.astarte-platform.org/astarte-kubernetes-operator/snapshot/020-prerequisites.html).
+
+To install `cert-manager` simply run:
+```bash
+helm repo add jetstack https://charts.jetstack.io
+helm repo update
+kubectl create namespace cert-manager
+helm install \
+  cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
+  --version v1.14.7 \
+  --set installCRDs=true
 ```
 
-**NOTE:** This image ought to be published in the personal registry you specified.
-And it is required to have access to pull the image from the working environment.
-Make sure you have the proper permission to the registry if the above commands don’t work.
-
-**Install the CRDs into the cluster:**
-
-```sh
-make install
+Installing the operator is as simple as:
+```bash
+helm repo add astarte https://helm.astarte-platform.org
+helm repo update
+helm install astarte-operator astarte/astarte-operator
 ```
 
-**Deploy the Manager to the cluster with the image specified by `IMG`:**
+These instructions will take care of installing all needed components for the Operator to run. This
+includes all the RBAC roles, Custom Resource Definitions, Webhooks, and the Operator itself.
 
-```sh
-make deploy IMG=<some-registry>/astarte-kubernetes-operator:tag
+Moreover, Helm is responsible for upgrading the Astarte Operator. To do so, run:
+```bash
+helm upgrade astarte-operator astarte/astarte-operator
 ```
 
-> **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin
-privileges or be logged in as admin.
+If you are interested in having a deeper understanding on how the Astarte Operator works you should
+follow the [Astarte Operator Administration
+guide](https://docs.astarte-platform.org/astarte-kubernetes-operator/snapshot/001-intro_administrator.html).
 
-**Create instances of your solution**
-You can apply the samples (examples) from the config/sample:
+### What's next?
 
-```sh
-kubectl apply -k config/samples/
-```
+Once your Astarte Operator is up and running in your cluster, it will be time to deploy your Astarte
+instance! All you have to do is [Setting up the
+Cluster](https://docs.astarte-platform.org/astarte-kubernetes-operator/snapshot/060-setup_cluster.html).
 
->**NOTE**: Ensure that the samples has default values to test it out.
+## Kubernetes support
 
-### To Uninstall
-**Delete the instances (CRs) from the cluster:**
+| Kubernetes Version | Supported              | Tested by CI       |
+|--------------------|------------------------|--------------------|
+| v1.25.x            | :large_orange_diamond: | :x:                |
+| v1.26.x            | :white_check_mark:     | :white_check_mark: |
+| v1.27.x            | :white_check_mark:     | :white_check_mark: |
+| v1.28.x            | :white_check_mark:     | :white_check_mark: |
+| v1.29.x            | :white_check_mark:     | :white_check_mark: |
+| v1.30.x            | :white_check_mark:     | :white_check_mark: |
 
-```sh
-kubectl delete -k config/samples/
-```
+Key:
 
-**Delete the APIs(CRDs) from the cluster:**
+* :white_check_mark: : Supported and stable.
+* :large_orange_diamond: : Partially supported / known to run in production, but not being targeted
+  by the release.
+* :x: : Not supported. Run at your own risk.
 
-```sh
-make uninstall
-```
+## Compatibility Matrix
 
-**UnDeploy the controller from the cluster:**
+| Astarte Operator Version | Astarte Version | Kubernetes Version |
+|:------------------------:|:---------------:|:------------------:|
+| v22.11                   | v1.0+           | v1.22+             |
+| v23.5                    | v1.0+           | v1.22+             |
+| v24.5                    | v1.0+           | v1.24+             |
 
-```sh
-make undeploy
-```
+## Development
 
-## Project Distribution
+Astarte's Operator is written in Go and built upon [Operator
+SDK](https://github.com/operator-framework/operator-sdk). It depends on Go 1.19, requires Go
+Modules and Kubernetes v1.24+.
 
-Following are the steps to build the installer and distribute this project to users.
-
-1. Build the installer for the image built and published in the registry:
-
-```sh
-make build-installer IMG=<some-registry>/astarte-kubernetes-operator:tag
-```
-
-NOTE: The makefile target mentioned above generates an 'install.yaml'
-file in the dist directory. This file contains all the resources built
-with Kustomize, which are necessary to install this project without
-its dependencies.
-
-2. Using the installer
-
-Users can just run kubectl apply -f <URL for YAML BUNDLE> to install the project, i.e.:
-
-```sh
-kubectl apply -f https://raw.githubusercontent.com/<org>/astarte-kubernetes-operator/<tag or branch>/dist/install.yaml
-```
-
-## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
-
-**NOTE:** Run `make help` for more information on all potential `make` targets
-
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
-
-## License
-
-This file is part of Astarte.
-
-Copyright 2024 SECO Mind Srl.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
+The project is built with kustomize v3.8.7, controller-gen v0.10.0 and conversion-gen v0.19.16.
