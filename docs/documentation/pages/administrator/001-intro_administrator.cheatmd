@@ -1,0 +1,32 @@
+# Introduction
+
+<img src="./assets/mascotte_k8s.svg" align="right" width="25%" style="border:20px transparent solid" />
+
+Astarte Kubernetes Operator runs and manages an Astarte Cluster in a Kubernetes Cluster. It is meant
+to work on any Managed Kubernetes installation, and leverages a number of Kubernetes features to
+ensure Astarte runs as smooth as possible. It also handles upgrades, monitoring, and more.
+
+This guide is meant for System Administrators who need to deal with Astarte clusters installation,
+maintenance and upgrade. The guide will cover prerequisites, installation in different supported
+environments, and common maintenance operations.
+
+Astarte Operator is the foundation of any Astarte installation, and you can find more information
+about it in the following sections.
+
+Before you begin, it is fundamental you are familiar with [Astarte's architecture, design and
+concepts](https://docs.astarte-platform.org/astarte/latest/001-intro_architecture.html), especially
+for what concerns its components and 3rd party services.
+
+### Compatibility Matrix
+
+| Astarte Operator Version | Astarte Version | Kubernetes Version |
+|--------------------------|-----------------|--------------------|
+| v1.0.0                   | v0.11 - v1.0    | v1.19+             |
+| v1.0.x                   | v0.11 - v1.0    | v1.19+             |
+| v22.11                   | v1.0+           | v1.22+             |
+| v23.5                    | v1.0+           | v1.22+             |
+| v24.5                    | v1.0+           | v1.24+             |
+
+**Notes**:
+* starting from Kubernetes 1.22, the AstarteVoyagerIngress resource is not supported anymore;
+* starting from Astarte Operator v24.5.0+, the support for AstarteVoyagerIngress is removed.
