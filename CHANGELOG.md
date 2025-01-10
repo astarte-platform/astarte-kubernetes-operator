@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [24.5.1] - Unreleased
 ### Fixed
 - Properly inject cassandra user credentials in the VerneMQ statefulset.
+- Ensure the status of Flows is properly computed.
 
 ## [24.5.0] - 2024-08-13
 
