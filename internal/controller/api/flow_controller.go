@@ -129,13 +129,13 @@ func (r *FlowReconciler) computeFlowStatusResource(reqLogger logr.Logger, instan
 
 	switch {
 	case instance.Status.TotalContainerBlocks == 0:
-		instance.Status.State = apiv1alpha2.FlowStateUnknown
+		newStatus.State = apiv1alpha2.FlowStateUnknown
 	case instance.Status.FailingContainerBlocks > 0:
-		instance.Status.State = apiv1alpha2.FlowStateUnhealthy
+		newStatus.State = apiv1alpha2.FlowStateUnhealthy
 	case instance.Status.TotalContainerBlocks != instance.Status.ReadyContainerBlocks:
-		instance.Status.State = apiv1alpha2.FlowStateUnstable
+		newStatus.State = apiv1alpha2.FlowStateUnstable
 	case instance.Status.TotalContainerBlocks == instance.Status.ReadyContainerBlocks:
-		instance.Status.State = apiv1alpha2.FlowStateFlowing
+		newStatus.State = apiv1alpha2.FlowStateFlowing
 	}
 
 	return newStatus, nil
