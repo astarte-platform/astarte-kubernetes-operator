@@ -1,0 +1,70 @@
+apiVersion: api.astarte-platform.org/v1alpha3
+kind: Astarte
+metadata:
+  name: example-astarte
+  namespace: astarte-test
+spec:
+  # This is the most minimal set of reasonable configuration to spin up an Astarte
+  # instance with reasonable defaults and enough control over the deployment.
+  version: 1.2.0
+  api:
+    host: "api.autotest.astarte-platform.org"
+  rabbitmq:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256M
+      limits:
+        cpu: '1'
+        memory: 512M
+  cassandra:
+    maxHeapSize: 512M
+    heapNewSize: 256M
+    storage:
+      size: 30Gi
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1024M
+      limits:
+        cpu: '1'
+        memory: 2048M
+  vernemq:
+    host: "broker.autotest.astarte-platform.org"
+    resources:
+      requests:
+        cpu: '0'
+        memory: 256M
+      limits:
+        cpu: '0'
+        memory: 512M
+  cfssl:
+    resources:
+      requests:
+        cpu: 0m
+        memory: 128M
+      limits:
+        cpu: 0m
+        memory: 256M
+  components:
+    flow:
+      # TODO update Flow image as we have a robust tagging strategy
+      image: "astarte/astarte_flow:snapshot"
+    # Global resource allocation. Automatically allocates resources to components weighted in a
+    # reasonable way.
+    housekeeping:
+      api:
+        resources:
+          requests:
+            cpu: 400m
+      backend:
+        resources:
+          requests:
+            cpu: 400m
+    resources:
+      requests:
+        cpu: 0m
+        memory: 2048M
+      limits:
+        cpu: 0m
+        memory: 3072M
