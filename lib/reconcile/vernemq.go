@@ -463,11 +463,18 @@ func getVerneMQVolumeMounts(dataVolumeName string, cr *apiv1alpha2.Astarte) []v1
 }
 
 func getVerneMQPolicyRules() []rbacv1.PolicyRule {
+	// Reminder: The new "statefulsets" permissions below are required for Astarte > 1.2 (current snapshot included).
+	// Old permissions will no longer be needed when we support Astarte >= 1.3.
 	return []rbacv1.PolicyRule{
 		{
 			APIGroups: []string{""},
 			Resources: []string{"pods", "services"},
 			Verbs:     []string{"list", "get"},
+		},
+		{
+			APIGroups: []string{"apps"},
+			Resources: []string{"statefulsets"},
+			Verbs:     []string{"get"},
 		},
 	}
 }
