@@ -95,7 +95,7 @@ help: ## Display this help.
 ##@ Development
 
 .PHONY: manifests
-manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+manifests: controller-gen yq kustomize ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd:maxDescLen=0 webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 	$(KUSTOMIZE) build config/helm-crd | $(YQ) --split-exp '"charts/astarte-operator/templates/crds/" + .metadata.name + ".yaml"' --no-doc
 	$(KUSTOMIZE) build config/helm-rbac > charts/astarte-operator/templates/rbac.yaml
@@ -191,7 +191,7 @@ install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~
 .PHONY: replace
 replace: manifests kustomize ## Replace CRDs into the K8s cluster specified in ~/.kube/config.
 	# Use replace due to the annotations limit in apply
-	$(KUSTOMIZE) build config/crd | kubectl replace -f -
+	$(KUSTOMIZE) build config/crd | $(KUBECTL) replace -f -
 
 .PHONY: uninstall
 uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
