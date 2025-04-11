@@ -152,14 +152,17 @@ func main() {
 	}
 
 	if err = (&apicontroller.AstarteReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("Astarte"),
+		Recorder: mgr.GetEventRecorderFor("astarte-controller"),
+		Scheme:   mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Astarte")
 		os.Exit(1)
 	}
 	if err = (&apicontroller.FlowReconciler{
 		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Flow"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Flow")
@@ -167,6 +170,7 @@ func main() {
 	}
 	if err = (&ingresscontroller.AstarteDefaultIngressReconciler{
 		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("ingress").WithName("AstarteDefaultIngress"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "AstarteDefaultIngress")
