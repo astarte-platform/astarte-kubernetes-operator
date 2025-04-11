@@ -21,15 +21,19 @@ package e2e
 import (
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/astarte-platform/astarte-kubernetes-operator/internal/version"
 	"github.com/astarte-platform/astarte-kubernetes-operator/test/utils"
 )
 
-const namespace = "astarte-kubernetes-operator-system"
+const (
+	namespace = "astarte-kubernetes-operator-system"
+)
 
 var _ = Describe("controller", Ordered, func() {
 	BeforeAll(func() {
@@ -56,13 +60,14 @@ var _ = Describe("controller", Ordered, func() {
 		_, _ = utils.Run(cmd)
 	})
 
-	Context("Operator", func() {
+	Context("Astarte Operator", func() {
 		It("should run successfully", func() {
 			var controllerPodName string
 			var err error
+			projectDir, _ := utils.GetProjectDir()
 
 			// projectimage stores the name of the image used in the example
-			var projectimage = "example.com/astarte-kubernetes-operator:v0.0.1"
+			var projectimage = fmt.Sprintf("local-registry/astarte-kubernetes-operator:%s", version.Version)
 
 			By("building the manager(Operator) image")
 			cmd := exec.Command("make", "docker-build", fmt.Sprintf("IMG=%s", projectimage))
@@ -73,11 +78,6 @@ var _ = Describe("controller", Ordered, func() {
 			err = utils.LoadImageToKindClusterWithName(projectimage)
 			ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
-			By("installing CRDs")
-			cmd = exec.Command("make", "install")
-			_, err = utils.Run(cmd)
-			ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
 			By("deploying the controller-manager")
 			cmd = exec.Command("make", "deploy", fmt.Sprintf("IMG=%s", projectimage))
 			_, err = utils.Run(cmd)
@@ -86,7 +86,6 @@ var _ = Describe("controller", Ordered, func() {
 			By("validating that the controller-manager pod is running as expected")
 			verifyControllerUp := func() error {
 				// Get pod name
-
 				cmd = exec.Command("kubectl", "get",
 					"pods", "-l", "control-plane=controller-manager",
 					"-o", "go-template={{ range .items }}"+
@@ -117,8 +116,71 @@ var _ = Describe("controller", Ordered, func() {
 				}
 				return nil
 			}
-			EventuallyWithOffset(1, verifyControllerUp, time.Minute, time.Second).Should(Succeed())
+			EventuallyWithOffset(1, verifyControllerUp, utils.DefaultTimeout, utils.DefaultRetryInterval).Should(Succeed())
 
+			targetTestVersions := map[string]string{
+				"1.1": filepath.Join(projectDir, "/test/manifests/api_v1alpha2_astarte_1.1.yaml"),
+				"1.2": filepath.Join(projectDir, "/test/manifests/api_v1alpha2_astarte_1.2.yaml"),
+			}
+
+			for k, v := range targetTestVersions {
+				// let's wait a few seconds to ensure the webhook becomes available
+				time.Sleep(4 * time.Second)
+
+				By(fmt.Sprintf("creating an instance of Astarte (CR), version: %s", k))
+				EventuallyWithOffset(1,
+					utils.InstallAstarte,
+					utils.DefaultTimeout,
+					utils.DefaultRetryInterval,
+				).WithArguments(v).Should(Succeed())
+
+				By(fmt.Sprintf("ensuring that the Astarte v%s health becomes green", k))
+				EventuallyWithOffset(1,
+					utils.EnsureAstarteHealthGreen,
+					utils.DefaultTimeout,
+					utils.DefaultRetryInterval,
+				).Should(Succeed())
+
+				By(fmt.Sprintf("deleting an instance of Astarte (CR), version: %s", k))
+				EventuallyWithOffset(1,
+					utils.UninstallAstarte,
+					utils.DefaultTimeout,
+					utils.DefaultRetryInterval,
+				).WithArguments(v).Should(Succeed())
+			}
+
+			By("undeploying the controller-manager")
+			cmd = exec.Command("make", "undeploy")
+			_, err = utils.Run(cmd)
+			ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+			By("validating that the controller-manager pod is not running")
+			verifyControllerDown := func() error {
+				// Get pod name
+				cmd = exec.Command("kubectl", "get",
+					"pods", "-l", "control-plane=controller-manager",
+					"-o", "go-template={{ range .items }}"+
+						"{{ if not .metadata.deletionTimestamp }}"+
+						"{{ .metadata.name }}"+
+						"{{ \"\\n\" }}{{ end }}{{ end }}",
+					"-n", namespace,
+				)
+
+				podOutput, err := utils.Run(cmd)
+				ExpectWithOffset(2, err).NotTo(HaveOccurred())
+				podNames := utils.GetNonEmptyLines(string(podOutput))
+				if len(podNames) != 0 {
+					return fmt.Errorf("expect 0 controller pods running, but got %d", len(podNames))
+				}
+
+				return nil
+			}
+			EventuallyWithOffset(1, verifyControllerDown, utils.DefaultTimeout, utils.DefaultRetryInterval).Should(Succeed())
+
+			By("uninstalling CRDs")
+			cmd = exec.Command("make", "uninstall")
+			_, err = utils.Run(cmd)
+			ExpectWithOffset(1, err).NotTo(HaveOccurred())
 		})
 	})
 })

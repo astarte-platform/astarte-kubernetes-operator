@@ -1,0 +1,88 @@
+apiVersion: api.astarte-platform.org/v1alpha2
+kind: Astarte
+metadata:
+  labels:
+    app.kubernetes.io/name: astarte-kubernetes-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: example-astarte
+spec:
+  api:
+    host: api.autotest.astarte-platform.org
+  cassandra:
+    maxHeapSize: 512M
+    heapNewSize: 256M
+    storage:
+      size: 10G
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2048M
+      requests:
+        cpu: 500m
+        memory: 1024M
+  cfssl:
+    resources:
+      limits:
+        cpu: 0m
+        memory: 512M
+      requests:
+        cpu: 0m
+        memory: 256M
+    storage:
+      size: 2G
+  components:
+    appengineApi:
+      resources:
+        requests:
+          cpu: 400m
+    flow:
+      deploy: true
+      image: astarte/astarte_flow:snapshot
+      resources:
+        limits:
+          cpu: 0m
+          memory: 256M
+        requests:
+          cpu: 0m
+          memory: 256M
+    housekeeping:
+      api:
+        resources:
+          requests:
+            cpu: 400m
+            memory: 128M
+    pairing:
+      api:
+        resources:
+          requests:
+            cpu: 400m
+    realmManagement:
+      api:
+        resources:
+          requests:
+            cpu: 400m
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 6000M
+      requests:
+        cpu: 1500m
+        memory: 5000M
+  rabbitmq:
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1G
+      requests:
+        cpu: 300m
+        memory: 512M
+  vernemq:
+    host: broker.autotest.astarte-platform.org
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2048M
+      requests:
+        cpu: 200m
+        memory: 1024M
+  version: 1.1.1

@@ -29,8 +29,9 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
 
 	. "github.com/onsi/ginkgo/v2" //nolint:golint,revive
 )
@@ -40,8 +41,13 @@ const (
 	prometheusOperatorURL     = "https://github.com/prometheus-operator/prometheus-operator/" +
 		"releases/download/%s/bundle.yaml"
 
-	certmanagerVersion = "v1.14.4"
+	certmanagerVersion = "v1.16.3"
 	certmanagerURLTmpl = "https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml"
+
+	// the astarteName and astarteNamespace variables must match the values of the
+	// test/samples/api_v1alpha2_astarte_1*.yaml files
+	astarteName      = "example-astarte"
+	astarteNamespace = "default"
 
 	// DefaultRetryInterval applied to all tests
 	DefaultRetryInterval time.Duration = time.Second * 10
@@ -158,6 +164,31 @@ func GetProjectDir() (string, error) {
 	return wd, nil
 }
 
+// InstallAstarte installs the Astarte CR.
+func InstallAstarte(manifestPath string) error {
+	cmd := exec.Command("kubectl", "apply", "-f", manifestPath)
+	_, err := Run(cmd)
+	return err
+}
+
+func EnsureAstarteHealthGreen() error {
+	// Wait for astarte health to be green.
+	cmd := exec.Command("kubectl", "wait", "astartes.v1alpha2.api.astarte-platform.org", astarteName,
+		"--for", fmt.Sprintf("jsonpath={.status.health}=%s", apiv1alpha2.AstarteClusterHealthGreen),
+		"--namespace", astarteNamespace,
+		"--timeout", "10m",
+	)
+
+	_, err := Run(cmd)
+	return err
+}
+
+func UninstallAstarte(manifestPath string) error {
+	cmd := exec.Command("kubectl", "delete", "-f", manifestPath)
+	_, err := Run(cmd)
+	return err
+}
+
 // EnsureAstarteServicesReadinessUpTo12 ensures all existing Astarte components up to 1.2
 func EnsureAstarteServicesReadinessUpTo12(namespace string, c client.Client) error {
 	// No changes in components deployment, just check the previous stuff
@@ -239,23 +270,6 @@ func EnsureDeploymentReadiness(namespace, name string, c client.Client) error {
 	return nil
 }
 
-// WaitForDeploymentReadiness waits until a Deployment is ready with a reasonable timeout
-func WaitForDeploymentReadiness(namespace, name string, c client.Client) error {
-	return wait.Poll(DefaultRetryInterval, DefaultTimeout, func() (done bool, err error) {
-		deployment := &appsv1.Deployment{}
-		err = c.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, deployment)
-		if err != nil {
-			return false, err
-		}
-
-		if deployment.Status.ReadyReplicas < 1 {
-			return false, nil
-		}
-
-		return true, nil
-	})
-}
-
 // EnsureStatefulSetReadiness ensures a StatefulSet is ready by the time the function is called
 func EnsureStatefulSetReadiness(namespace, name string, c client.Client) error {
 	statefulSet := &appsv1.StatefulSet{}
@@ -269,23 +283,6 @@ func EnsureStatefulSetReadiness(namespace, name string, c client.Client) error {
 	}
 
 	return nil
-}
-
-// WaitForStatefulSetReadiness waits until a StatefulSet is ready with a reasonable timeout
-func WaitForStatefulSetReadiness(namespace, name string, c client.Client) error {
-	return wait.Poll(DefaultRetryInterval, DefaultTimeout, func() (done bool, err error) {
-		statefulSet := &appsv1.StatefulSet{}
-		err = c.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, statefulSet)
-		if err != nil {
-			return false, err
-		}
-
-		if statefulSet.Status.ReadyReplicas < 1 {
-			return false, nil
-		}
-
-		return true, nil
-	})
 }
 
 // PrintNamespaceEvents prints to fmt all namespace events

@@ -30,5 +30,5 @@ import (
 func TestE2E(t *testing.T) {
 	RegisterFailHandler(Fail)
 	_, _ = fmt.Fprintf(GinkgoWriter, "Starting astarte-kubernetes-operator suite\n")
-	RunSpecs(t, "e2e suite")
+	RunSpecs(t, "Astarte Operator e2e suite")
 }
