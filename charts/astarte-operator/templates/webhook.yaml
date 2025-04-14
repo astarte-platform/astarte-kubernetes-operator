@@ -33,7 +33,7 @@ spec:
   issuerRef:
     kind: Issuer
     name: '{{ .Release.Name }}-selfsigned-issuer'
-  secretName: '{{ .Release.Name }}-webhook-service-webhook-server-cert'
+  secretName: '{{ .Release.Name }}-webhook-server-cert'
 ---
 apiVersion: cert-manager.io/v1
 kind: Issuer
