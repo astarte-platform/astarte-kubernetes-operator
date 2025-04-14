@@ -12,7 +12,6 @@ kind: Kustomization
 resources:
 - ../webhook
 - ../certmanager
-- ../manager
 patches:
 - path: webhookcainjection_patch.yaml
 - path: helm-certificate_patch.yaml
