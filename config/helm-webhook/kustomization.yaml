@@ -90,13 +90,3 @@ replacements:
       name: serving-cert
       namespace: system
       version: v1
-  - fieldPaths:
-    - spec.secretName
-    options:
-      delimiter: '-'
-    select:
-      group: cert-manager.io
-      kind: Certificate
-      name: serving-cert
-      namespace: system
-      version: v1

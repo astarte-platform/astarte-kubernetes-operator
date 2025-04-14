@@ -12,7 +12,7 @@ namePrefix: '{{ .Release.Name }}-'
 # variables. On the other hand, all our resources are CRDs, so we can rely on commonAnnotations, which will
 # still take precedence over the other patches.
 commonAnnotations:
-  cert-manager.io/inject-ca-from: '{{ .Release.Namespace }}/{{ .Release.Name }}-manager-webhook'
+  cert-manager.io/inject-ca-from: '{{ .Release.Namespace }}/{{ .Release.Name }}-serving-cert'
   helm.sh/resource-policy: keep
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
