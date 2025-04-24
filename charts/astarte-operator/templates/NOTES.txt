@@ -1,3 +1,0 @@
-Astarte Operator successfully installed!
-
-You should now use astartectl cluster to interact with your new Astarte installation.
