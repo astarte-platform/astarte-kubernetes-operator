@@ -98,8 +98,13 @@ help: ## Display this help.
 manifests: controller-gen yq kustomize ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd:maxDescLen=0 webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 	$(KUSTOMIZE) build config/helm-crd | $(YQ) --split-exp '"charts/astarte-operator/templates/crds/" + .metadata.name + ".yaml"' --no-doc
+	# ensure we're checking if crds shall be installed
+	@sed -i '1i{{- if .Values.installCRDs }}' charts/astarte-operator/templates/crds/* # prepend to each and every crd
+	@sed -i '$$a{{- end }}' charts/astarte-operator/templates/crds/* # append to the end of each and every crd
 	$(KUSTOMIZE) build config/helm-rbac > charts/astarte-operator/templates/rbac.yaml
 	$(KUSTOMIZE) build config/helm-manager > charts/astarte-operator/templates/manager.yaml
+	# and inject helm templates for setting the number of replicas for the deployment
+	@sed -i 's/replicas:.*/replicas: {{ .Values.replicaCount }}/g' charts/astarte-operator/templates/manager.yaml
 	$(KUSTOMIZE) build config/helm-webhook > charts/astarte-operator/templates/webhook.yaml
 
 .PHONY: generate

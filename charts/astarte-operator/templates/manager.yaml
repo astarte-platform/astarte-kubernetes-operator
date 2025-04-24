@@ -8,7 +8,7 @@ metadata:
   name: '{{ .Release.Name }}-controller-manager'
   namespace: '{{ .Release.Namespace }}'
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       control-plane: controller-manager
@@ -26,6 +26,7 @@ spec:
         command:
         - /manager
         image: '{{ .Values.image.repository }}:{{ .Values.image.tag }}'
+        imagePullPolicy: '{{ .Values.image.pullPolicy }}'
         livenessProbe:
           httpGet:
             path: /healthz
