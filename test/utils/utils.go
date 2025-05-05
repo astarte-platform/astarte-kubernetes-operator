@@ -19,17 +19,11 @@ limitations under the License.
 package utils
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
-
-	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
 
@@ -187,115 +181,4 @@ func UninstallAstarte(manifestPath string) error {
 	cmd := exec.Command("kubectl", "delete", "-f", manifestPath)
 	_, err := Run(cmd)
 	return err
-}
-
-// EnsureAstarteServicesReadinessUpTo12 ensures all existing Astarte components up to 1.2
-func EnsureAstarteServicesReadinessUpTo12(namespace string, c client.Client) error {
-	// No changes in components deployment, just check the previous stuff
-	return EnsureAstarteServicesReadinessUpTo11(namespace, c)
-}
-
-// EnsureAstarteServicesReadinessUpTo11 ensures all existing Astarte components up to 1.1
-func EnsureAstarteServicesReadinessUpTo11(namespace string, c client.Client) error {
-	// No changes in components deployment, just check the previous stuff
-	return EnsureAstarteServicesReadinessUpTo10(namespace, c)
-}
-
-// EnsureAstarteServicesReadinessUpTo10 ensures all existing Astarte components up to 1.0
-func EnsureAstarteServicesReadinessUpTo10(namespace string, c client.Client) error {
-	if err := EnsureStatefulSetReadiness(namespace, "example-astarte-cassandra", c); err != nil {
-		return err
-	}
-	if err := EnsureStatefulSetReadiness(namespace, "example-astarte-rabbitmq", c); err != nil {
-		return err
-	}
-
-	// Check if API deployments + DUP are ready. If they are, we're done.
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-appengine-api", c); err != nil {
-		return err
-	}
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-housekeeping", c); err != nil {
-		return err
-	}
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-housekeeping-api", c); err != nil {
-		return err
-	}
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-pairing", c); err != nil {
-		return err
-	}
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-pairing-api", c); err != nil {
-		return err
-	}
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-realm-management", c); err != nil {
-		return err
-	}
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-realm-management-api", c); err != nil {
-		return err
-	}
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-trigger-engine", c); err != nil {
-		return err
-	}
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-data-updater-plant", c); err != nil {
-		return err
-	}
-
-	if err := EnsureStatefulSetReadiness(namespace, "example-astarte-vernemq", c); err != nil {
-		return err
-	}
-
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-cfssl", c); err != nil {
-		return err
-	}
-
-	if err := EnsureDeploymentReadiness(namespace, "example-astarte-flow", c); err != nil {
-		return err
-	}
-
-	// Done
-	return nil
-}
-
-// EnsureDeploymentReadiness ensures a Deployment is ready by the time the function is called
-func EnsureDeploymentReadiness(namespace, name string, c client.Client) error {
-	deployment := &appsv1.Deployment{}
-	err := c.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, deployment)
-	if err != nil {
-		return err
-	}
-
-	if deployment.Status.ReadyReplicas < 1 {
-		return fmt.Errorf("not ready yet: %s in %s", name, namespace)
-	}
-
-	return nil
-}
-
-// EnsureStatefulSetReadiness ensures a StatefulSet is ready by the time the function is called
-func EnsureStatefulSetReadiness(namespace, name string, c client.Client) error {
-	statefulSet := &appsv1.StatefulSet{}
-	err := c.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, statefulSet)
-	if err != nil {
-		return err
-	}
-
-	if statefulSet.Status.ReadyReplicas < 1 {
-		return fmt.Errorf("not ready yet: %s in %s", name, namespace)
-	}
-
-	return nil
-}
-
-// PrintNamespaceEvents prints to fmt all namespace events
-func PrintNamespaceEvents(namespace string, c client.Client) error {
-	events := &v1.EventList{}
-	if err := c.List(context.TODO(), events, client.InNamespace(namespace)); err != nil {
-		return err
-	}
-
-	for _, event := range events.Items {
-		fmt.Printf("%s [%s]: %s: %s\n", event.InvolvedObject.Name,
-			event.CreationTimestamp.String(), event.Reason, event.Message)
-	}
-
-	return nil
 }
