@@ -2,8 +2,69 @@ apiVersion: api.astarte-platform.org/v1alpha3
 kind: Astarte
 metadata:
   labels:
-    app.kubernetes.io/name: astarte-kubernetes-operator
+    app.kubernetes.io/name: astarte
+    app.kubernetes.io/instance: astarte
+    app.kubernetes.io/part-of: astarte-kubernetes-operator
     app.kubernetes.io/managed-by: kustomize
-  name: astarte-sample
+    app.kubernetes.io/created-by: astarte-kubernetes-operator
+  name: astarte
+  namespace: astarte
 spec:
-  # TODO(user): Add fields here
+  # This is the most minimal set of reasonable configuration to spin up an Astarte
+  # instance with reasonable defaults and enough control over the deployment.
+  version: 1.2.0
+  api:
+    host: "api.astarte-example.com" # MANDATORY
+  rabbitmq:
+    resources:
+      requests:
+        cpu: 300m
+        memory: 512M
+      limits:
+        cpu: "1"
+        memory: 1000M
+  cassandra:
+    # The cassandra spec is suitable for testing scenarios, do NOT use
+    # this config in production.
+    maxHeapSize: 1024M
+    heapNewSize: 256M
+    storage:
+      size: 30Gi
+    resources:
+      requests:
+        cpu: "1"
+        memory: 1024M
+      limits:
+        cpu: "2"
+        memory: 2048M
+  vernemq:
+    host: "broker.astarte-example.com"
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1024M
+      limits:
+        cpu: 1000m
+        memory: 2048M
+  cfssl:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128M
+      limits:
+        cpu: 200m
+        memory: 256M
+    storage:
+      size: 2Gi
+  components:
+    # Global resource allocation. Automatically allocates resources to components weighted in a
+    # reasonable way.
+    resources:
+      requests:
+        cpu: 1200m
+        memory: 3072M
+      limits:
+        cpu: 3000m
+        memory: 6144M
+    dashboard:
+      deploy: true

@@ -1,9 +1,17 @@
 apiVersion: ingress.astarte-platform.org/v1alpha1
 kind: AstarteDefaultIngress
 metadata:
-  labels:
-    app.kubernetes.io/name: astarte-kubernetes-operator
-    app.kubernetes.io/managed-by: kustomize
-  name: astartedefaultingress-sample
+  name: adi
+  namespace: astarte
 spec:
-  # TODO(user): Add fields here
+  astarte: astarte
+  tlsSecret: "tls-secret-name"
+  api:
+    deploy: true
+    exposeHousekeeping: true
+  dashboard:
+    ssl: true
+    host: "dashboard.astarte-example.com" # When not specified, dashboard will be deployed in /dashboard in the API host.
+  broker:
+    deploy: true
+    serviceType: LoadBalancer
