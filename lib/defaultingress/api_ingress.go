@@ -125,7 +125,7 @@ func getAPIIngressSpec(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1a
 
 func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte) []networkingv1.IngressRule {
 	ingressRules := []networkingv1.IngressRule{}
-	pathTypePrefix := networkingv1.PathTypePrefix
+	pathType := networkingv1.PathTypeImplementationSpecific
 
 	// Create rules for all Astarte components
 	astarteComponents := []apiv1alpha2.AstarteComponent{apiv1alpha2.AppEngineAPI, apiv1alpha2.FlowComponent, apiv1alpha2.PairingAPI, apiv1alpha2.RealmManagementAPI}
@@ -144,7 +144,7 @@ func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1
 						Paths: []networkingv1.HTTPIngressPath{
 							{
 								Path:     fmt.Sprintf("/%s(/|$)(.*)", component.ServiceRelativePath()),
-								PathType: &pathTypePrefix,
+								PathType: &pathType,
 								Backend: networkingv1.IngressBackend{
 									Service: &networkingv1.IngressServiceBackend{
 										Name: cr.Spec.Astarte + "-" + component.ServiceName(),
@@ -170,7 +170,7 @@ func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1
 						Paths: []networkingv1.HTTPIngressPath{
 							{
 								Path:     getDashboardServiceRelativePath(cr),
-								PathType: &pathTypePrefix,
+								PathType: &pathType,
 								Backend: networkingv1.IngressBackend{
 									Service: &networkingv1.IngressServiceBackend{
 										Name: cr.Spec.Astarte + "-" + theDashboard.ServiceName(),
