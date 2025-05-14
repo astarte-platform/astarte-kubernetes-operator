@@ -28,8 +28,4 @@ resources:
 - api_astarte_viewer_role.yaml
 - ingress_astartedefaultingress_editor_role.yaml
 - ingress_astartedefaultingress_viewer_role.yaml
-- flow_editor_role.yaml
-- flow_viewer_role.yaml
-- astarte_editor_role.yaml
-- astarte_viewer_role.yaml
 
