@@ -275,7 +275,7 @@ $(GOLANGCI_LINT): $(LOCALBIN)
 .PHONY: crd-ref-docs
 crd-ref-docs: $(CRD_REF_DOCS) ## Download crd-ref-docs locally if necessary.
 $(CRD_REF_DOCS): $(LOCALBIN)
-	$(call go-install-tool,$(HELM_DOCS),github.com/elastic/crd-ref-docs,$(CRD_REF_DOCS_VERSION))
+	$(call go-install-tool,$(CRD_REF_DOCS),github.com/elastic/crd-ref-docs,$(CRD_REF_DOCS_VERSION))
 
 .PHONY: norwoodj-helm-docs
 norwoodj-helm-docs: $(HELM_DOCS) ## Download norwoodj/helm-docs locally if necessary.
