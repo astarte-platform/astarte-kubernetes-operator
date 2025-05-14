@@ -104,8 +104,7 @@ type AstarteDefaultIngressSpec struct {
 	// In clusters with more than one instance of the Ingress-NGINX controller, all
 	// instances of the controllers must be aware of which Ingress object they must serve.
 	// The ingressClass field of a ingress object is the way to let the controller know about that.
-	// Default: "nginx".
-	// +optional
+	// +default:astarte-nginx
 	IngressClass string `json:"ingressClass"`
 	// Define the desired state of the AstarteDefaultIngressAPISpec resource.
 	// +optional
