@@ -33,17 +33,7 @@ type AstarteSpec struct {
 	// The Astarte Version for this Resource
 	Version string `json:"version"`
 	// +optional
-	ImagePullPolicy *v1.PullPolicy `json:"imagePullPolicy,omitempty"`
-	// +optional
-	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
-	// +optional
-	DistributionChannel string `json:"distributionChannel,omitempty"`
-	// +optional
-	DeploymentStrategy *appsv1.DeploymentStrategy `json:"deploymentStrategy,omitempty"`
-	// +optional
 	Features AstarteFeatures `json:"features,omitempty"`
-	// +optional
-	RBAC *bool `json:"rbac,omitempty"`
 	// +optional
 	StorageClassName string         `json:"storageClassName,omitempty"`
 	API              AstarteAPISpec `json:"api"`
@@ -56,8 +46,6 @@ type AstarteSpec struct {
 	CFSSL AstarteCFSSLSpec `json:"cfssl"`
 	// +optional
 	Components AstarteComponentsSpec `json:"components"`
-	// +optional
-	AstarteSystemKeyspace AstarteSystemKeyspaceSpec `json:"astarteSystemKeyspace,omitempty"`
 	// AstarteInstanceID is the unique ID that is associated with an Astarte instance. This parameter
 	// is used to let different Astarte instances employ a shared database infrastructure.
 	// Once set, the AstarteInstanceID cannot be changed. Defaults to "".
@@ -74,18 +62,15 @@ type AstarteSpec struct {
 	ManualMaintenanceMode bool `json:"manualMaintenanceMode,omitempty"`
 }
 
-// TODO: Remove all omitempty from AstarteStatus in v1beta1
-
 // AstarteStatus defines the observed state of Astarte
 type AstarteStatus struct {
-	// Important: Run "make" to regenerate code after modifying this file
 	metav1.TypeMeta     `json:",inline"`
-	ReconciliationPhase ReconciliationPhase  `json:"phase,omitempty"`
-	AstarteVersion      string               `json:"astarteVersion,omitempty"`
-	OperatorVersion     string               `json:"operatorVersion,omitempty"`
-	Health              AstarteClusterHealth `json:"health,omitempty"`
-	BaseAPIURL          string               `json:"baseAPIURL,omitempty"`
-	BrokerURL           string               `json:"brokerURL,omitempty"`
+	ReconciliationPhase ReconciliationPhase  `json:"phase"`
+	AstarteVersion      string               `json:"astarteVersion"`
+	OperatorVersion     string               `json:"operatorVersion"`
+	Health              AstarteClusterHealth `json:"health"`
+	BaseAPIURL          string               `json:"baseAPIURL"`
+	BrokerURL           string               `json:"brokerURL"`
 }
 
 //+kubebuilder:object:root=true
@@ -252,6 +237,10 @@ type AstarteGenericClusteredResource struct {
 	Version string `json:"version,omitempty"`
 	// +optional
 	Image string `json:"image,omitempty"`
+	// +optional
+	ImagePullPolicy *v1.PullPolicy `json:"imagePullPolicy,omitempty"`
+	// +optional
+	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 	// Compute Resources for this Component.
 	// +optional
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
@@ -280,14 +269,6 @@ type AstarteGenericClusteredResourceAutoscalerSpec struct {
 	// +optional
 	Horizontal string `json:"horizontal,omitempty"`
 	// TODO: Vertical string `json:"vertical,omitempty"`
-}
-
-// AstarteGenericAPISpec represents a generic Astarte API Component in the Deployment spec
-type AstarteGenericAPISpec struct {
-	metav1.TypeMeta                 `json:",inline"`
-	AstarteGenericClusteredResource `json:",inline"`
-	// +optional
-	DisableAuthentication *bool `json:"disableAuthentication,omitempty"`
 }
 
 type AstartePersistentStorageSpec struct {
@@ -374,6 +355,7 @@ type LoginCredentialsSecret struct {
 
 type AstarteCassandraConnectionSpec struct {
 	metav1.TypeMeta `json:",inline"`
+	Nodes           []CassandraNode `json:"nodes,omitempty"`
 	// +optional
 	PoolSize *int `json:"poolSize,omitempty"`
 	// +optional
@@ -392,8 +374,6 @@ type AstarteCassandraSpec struct {
 	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
 	// +optional
-	Nodes string `json:"nodes,omitempty"`
-	// +optional
 	MaxHeapSize string `json:"maxHeapSize,omitempty"`
 	// +optional
 	HeapNewSize string `json:"heapNewSize,omitempty"`
@@ -401,6 +381,18 @@ type AstarteCassandraSpec struct {
 	Storage *AstartePersistentStorageSpec `json:"storage,omitempty"`
 	// +optional
 	Connection *AstarteCassandraConnectionSpec `json:"connection,omitempty"`
+	// +optional
+	AstarteSystemKeyspace AstarteSystemKeyspaceSpec `json:"astarteSystemKeyspace,omitempty"`
+}
+
+type CassandraNode struct {
+	// The URL of a Cassandra node.
+	Host string `json:"host"`
+	// The port to which to connect. Defaults to 9042.
+	// +optional
+	// +kubebuilder:default:=9042
+	// +kubebuilder:validation:Minimum:=1
+	Port *int16 `json:"port,omitempty"`
 }
 
 type AstarteVerneMQSpec struct {
@@ -409,7 +401,6 @@ type AstarteVerneMQSpec struct {
 	Host                            string `json:"host"`
 	// +optional
 	Port *int16 `json:"port,omitempty"`
-	// +optional
 	// +optional
 	CaSecret string `json:"caSecret,omitempty"`
 	// +optional
@@ -448,14 +439,6 @@ type AstarteVerneMQSpec struct {
 	SSLListenerCertSecretName string `json:"sslListenerCertSecretName,omitempty"`
 }
 
-type AstarteGenericComponentSpec struct {
-	metav1.TypeMeta `json:",inline"`
-	// +optional
-	API AstarteGenericAPISpec `json:"api,omitempty"`
-	// +optional
-	Backend AstarteGenericClusteredResource `json:"backend,omitempty"`
-}
-
 type AstarteDataUpdaterPlantSpec struct {
 	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
@@ -486,8 +469,8 @@ type AstarteTriggerEngineSpec struct {
 }
 
 type AstarteAppengineAPISpec struct {
-	metav1.TypeMeta       `json:",inline"`
-	AstarteGenericAPISpec `json:",inline"`
+	metav1.TypeMeta             `json:",inline"`
+	AstarteGenericComponentSpec `json:",inline"`
 	// +kubebuilder:validation:Minimum=100
 	// +optional
 	MaxResultsLimit *int `json:"maxResultsLimit,omitempty"`
@@ -532,13 +515,18 @@ type AstarteDashboardSpec struct {
 	AstarteDashboardConfigSpec `json:",inline"`
 }
 
+type AstarteGenericComponentSpec struct {
+	// +optional
+	DisableAuthentication *bool `json:"disableAuthentication,omitempty"`
+}
+
 type AstarteComponentsSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// Compute Resources for this Component.
 	// +optional
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// +optional
-	Flow AstarteGenericAPISpec `json:"flow,omitempty"`
+	Flow AstarteGenericComponentSpec `json:"flow,omitempty"`
 	// +optional
 	Housekeeping AstarteGenericComponentSpec `json:"housekeeping,omitempty"`
 	// +optional
@@ -670,7 +658,8 @@ func (r AstarteCFSSLSpec) GetPodLabels() map[string]string {
 // have effect only upon cluster initialization, and will be ignored otherwise.
 type AstarteSystemKeyspaceSpec struct {
 	metav1.TypeMeta `json:",inline"`
-	// The Replication Factor for the keyspace
+	// The Replication Factor for the keyspace. Currently,
+	// using NetworkTopologyStrategy is not supported.
 	// +optional
 	ReplicationFactor int `json:"replicationFactor,omitempty"`
 }
