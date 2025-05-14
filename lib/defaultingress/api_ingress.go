@@ -40,6 +40,43 @@ import (
 )
 
 func EnsureAPIIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
+	// Create a ConfigMap with custom headers (global)
+	customHeadersConfigName := "custom-nginx-headers"
+	customHeaders := &v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: customHeadersConfigName, Namespace: "ingress-nginx"}}
+	result, err := controllerutil.CreateOrUpdate(context.TODO(), c, customHeaders, func() error {
+		customHeaders.Data = map[string]string{
+			"X-XSS-Protection":       "1; mode=block",              // stops pages from loading when they detect reflected cross-site scripting (XSS) attacks.
+			"X-Content-Type-Options": "nosniff",                    // prevent web browser from sniffing a response away from the declared Content-Type.
+			"Referrer-Policy":        "no-referrer-when-downgrade", // the URL is sent as a referrer when the protocol security level stays the same
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	ingressController := &v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "ingress-nginx-controller", Namespace: "ingress-nginx"}}
+	result, err = controllerutil.CreateOrUpdate(context.TODO(), c, ingressController, func() error {
+
+		serverSnippetValue := fmt.Sprint("location ~* \"/(appengine|flow|housekeeping|pairing|realmmanagement)/metrics\" {\n" +
+			"  deny all;\n" +
+			"  return 404;\n" +
+			"}")
+
+		ingressController.Data = map[string]string{
+			"add-headers":    fmt.Sprintf("%s/%s", "ingress-nginx", customHeadersConfigName), //TODO: add-headers or proxy-set-headers ???
+			"server-snippet": serverSnippetValue,
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
 	ingressName := getAPIIngressName(cr)
 	if !pointy.BoolValue(cr.Spec.API.Deploy, true) {
 		// We're not deploying the Ingress, so we're stopping here.
@@ -58,7 +95,7 @@ func EnsureAPIIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1al
 	configMapName := getConfigMapName(cr)
 
 	configMap := &v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: configMapName, Namespace: cr.Namespace}}
-	result, err := controllerutil.CreateOrUpdate(context.TODO(), c, configMap, func() error {
+	result, err = controllerutil.CreateOrUpdate(context.TODO(), c, configMap, func() error {
 		if e := controllerutil.SetControllerReference(cr, configMap, scheme); e != nil {
 			return e
 		}
