@@ -88,10 +88,6 @@ func (r *AstarteDefaultIngressReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
-	// Reconcile the Ingress Controller Configuration
-	if err := defaultingress.EnsureIngressControllerConfiguration(instance, astarte, r.Client, r.Scheme, reqLogger); err != nil {
-		return ctrl.Result{}, err
-	}
 	// Reconcile the API Ingress
 	if err := defaultingress.EnsureAPIIngress(instance, astarte, r.Client, r.Scheme, reqLogger); err != nil {
 		return ctrl.Result{}, err
