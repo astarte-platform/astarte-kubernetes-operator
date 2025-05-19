@@ -90,9 +90,8 @@ func getMetricsIngressName(cr *ingressv1alpha1.AstarteDefaultIngress) string {
 func getMetricsIngressSpec(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte) networkingv1.IngressSpec {
 	ingressSpec := networkingv1.IngressSpec{
 		// define which ingress controller will implement the ingress
-		IngressClassName: getIngressClassName(cr),
-		TLS:              getIngressTLS(cr, parent, false),
-		Rules:            getMetricsIngressRules(cr, parent),
+		TLS:   getIngressTLS(cr, parent, false),
+		Rules: getMetricsIngressRules(cr, parent),
 	}
 
 	return ingressSpec

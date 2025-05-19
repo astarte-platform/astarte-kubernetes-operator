@@ -43,14 +43,6 @@ func getCommonIngressAnnotations(cr *ingressv1alpha1.AstarteDefaultIngress, pare
 	return annotations
 }
 
-// TODO handle with kubebuilder defaults
-func getIngressClassName(cr *ingressv1alpha1.AstarteDefaultIngress) *string {
-	if cr.Spec.IngressClass == "" {
-		return pointy.String("nginx")
-	}
-	return pointy.String(cr.Spec.IngressClass)
-}
-
 func getIngressTLS(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte, includeDashboard bool) []networkingv1.IngressTLS {
 	ingressTLSs := []networkingv1.IngressTLS{}
 
