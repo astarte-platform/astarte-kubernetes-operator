@@ -90,9 +90,8 @@ func getMetricsIngressName(cr *ingressv1alpha1.AstarteDefaultIngress) string {
 func getMetricsIngressSpec(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte) networkingv1.IngressSpec {
 	ingressSpec := networkingv1.IngressSpec{
 		// define which ingress controller will implement the ingress
-		IngressClassName: getIngressClassName(cr),
-		TLS:              getIngressTLS(cr, parent, false),
-		Rules:            getMetricsIngressRules(cr, parent),
+		TLS:   getIngressTLS(cr, parent, false),
+		Rules: getMetricsIngressRules(cr, parent),
 	}
 
 	return ingressSpec
@@ -100,7 +99,7 @@ func getMetricsIngressSpec(cr *ingressv1alpha1.AstarteDefaultIngress, parent *ap
 
 func getMetricsIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte) []networkingv1.IngressRule {
 	ingressRules := []networkingv1.IngressRule{}
-	pathTypePrefix := networkingv1.PathTypePrefix
+	pathType := networkingv1.PathTypeImplementationSpecific
 
 	// Create rules for all Astarte components
 	astarteComponents := []apiv1alpha2.AstarteComponent{
@@ -133,7 +132,7 @@ func getMetricsIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *a
 						Paths: []networkingv1.HTTPIngressPath{
 							{
 								Path:     fmt.Sprintf("/()(metrics)/%s($|/$)", servicePath),
-								PathType: &pathTypePrefix,
+								PathType: &pathType,
 								Backend: networkingv1.IngressBackend{
 									Service: &networkingv1.IngressServiceBackend{
 										Name: cr.Spec.Astarte + "-" + component.ServiceName(),
