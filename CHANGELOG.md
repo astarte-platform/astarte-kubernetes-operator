@@ -7,9 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 ### Changed
 - Forward port changes from release-24.5
+- Upgrade Operator SDK to v1.38.
 
 ### Fixed
-- Fix the propagation of replicaCount, installCrds, and pullPolicy values 
+- Fix the propagation of replicaCount, installCrds, and pullPolicy values
   in values.yaml during Helm chart installation.
 
 ## [24.5.1] - Unreleased

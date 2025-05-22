@@ -3,12 +3,21 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: '{{ .Release.Namespace }}/{{ .Release.Name }}-manager-webhook'
-    controller-gen.kubebuilder.io/version: v0.11.3
+    cert-manager.io/inject-ca-from: '{{ .Release.Namespace }}/{{ .Release.Name }}-serving-cert'
+    controller-gen.kubebuilder.io/version: v0.15.0
     helm.sh/resource-policy: keep
-  creationTimestamp: null
   name: astartedefaultingresses.ingress.astarte-platform.org
 spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: webhook-service
+          namespace: '{{ .Release.Namespace }}'
+          path: /convert
+      conversionReviewVersions:
+        - v1
   group: ingress.astarte-platform.org
   names:
     kind: AstarteDefaultIngress
@@ -129,6 +138,7 @@ spec:
                                 x-kubernetes-list-type: atomic
                             type: object
                           type: array
+                          x-kubernetes-list-type: atomic
                       type: object
                   type: object
                 apiVersion:
@@ -183,6 +193,8 @@ spec:
                                 type: string
                               ip:
                                 type: string
+                              ipMode:
+                                type: string
                               ports:
                                 items:
                                   properties:
@@ -204,6 +216,7 @@ spec:
                                 x-kubernetes-list-type: atomic
                             type: object
                           type: array
+                          x-kubernetes-list-type: atomic
                       type: object
                   type: object
                 kind:

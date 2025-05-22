@@ -4,7 +4,6 @@ metadata:
   name: adi
   namespace: astarte
 spec:
-  ### Astarte Default Ingress CRD
   astarte: astarte
   tlsSecret: "tls-secret-name"
   api:

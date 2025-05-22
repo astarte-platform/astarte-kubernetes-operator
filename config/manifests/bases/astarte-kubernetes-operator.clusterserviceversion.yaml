@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-  name: astarte-kubernetes-operator.v0.0.0
+  name: astarte-kubernetes-operator.v24.11.0-dev
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -70,8 +70,8 @@ spec:
   - email: arnaldo.cesco@secomind.com
     name: annopaolo
   maturity: alpha
-  minKubeVersion: 1.25.0
+  minKubeVersion: 1.24.0
   provider:
     name: Astarte Platform
     url: https://github.com/astarte-platform
-  version: 0.0.0
+  version: 24.11.0-dev

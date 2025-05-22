@@ -3,13 +3,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/instance: astarte-viewer-role
-    app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: astarte-kubernetes-operator
-    app.kubernetes.io/part-of: astarte-kubernetes-operator
+    app.kubernetes.io/name: astarte-kubernetes-operator
     app.kubernetes.io/managed-by: kustomize
-  name: astarte-viewer-role
+  name: api-astarte-viewer-role
 rules:
 - apiGroups:
   - api.astarte-platform.org

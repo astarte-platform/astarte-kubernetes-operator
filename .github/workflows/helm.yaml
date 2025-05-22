@@ -23,7 +23,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
     - name: Fetch history
@@ -61,37 +61,38 @@ jobs:
         sudo sysctl net/netfilter/nf_conntrack_max=131072
     - uses: container-tools/kind-action@v2
       with:
-        version: "v0.23.0"
-        node_image: "kindest/node:v1.29.4@sha256:3abb816a5b1061fb15c6e9e60856ec40d56b7b52bcea5f5f1350bc6e2320b6f8"
+        version: "v0.27.0"
+        node_image: "kindest/node:v1.32.2@sha256:f226345927d7e348497136874b6d207e0b32cc52154ad8323129352923a3142f"
     - name: Build test image
       run: |
         docker build -t astarte-operator-ci:test -f Dockerfile .
     - name: Tag test image
       run: |
-        docker tag astarte-operator-ci:test kind-registry:5000/astarte-operator-ci:test
-    - name: Push test image to local registry
-      run: |
-        docker push kind-registry:5000/astarte-operator-ci:test
+        docker tag astarte-operator-ci:test local-kind-registry/astarte-operator-ci:test
     - name: Ensure KinD is up
       run: |
         kubectl cluster-info
         kubectl get pods -n kube-system
+        kubectl describe nodes
     - name: Dump cluster info
       run: |
         kubectl cluster-info dump
+    - name: Load test image to Kind registry
+      run: |
+        kind load docker-image local-kind-registry/astarte-operator-ci:test
     - name: Install cert-manager chart as dependency
       run: |
         kubectl create namespace cert-manager
         helm repo add jetstack https://charts.jetstack.io
         helm repo update
-        helm install cert-manager jetstack/cert-manager --namespace cert-manager --version v1.13.3 --set installCRDs=true
+        helm install cert-manager jetstack/cert-manager --namespace cert-manager --version v1.16.3 --set crds.enabled=true
     - name: Sleep for 20 seconds (wait for cert-manager to come up)
       uses: jakejarvis/wait-action@master
       with:
         time: '20s'
     - name: Install Helm Chart
       run: |
-        helm install astarte-operator ./charts/astarte-operator --set image.repository=kind-registry:5000/astarte-operator-ci --set image.tag=test
+        helm install astarte-operator ./charts/astarte-operator --set image.repository=local-kind-registry/astarte-operator-ci --set image.tag=test
     - name: Sleep for 20 seconds (wait for Astarte Operator to come up)
       uses: jakejarvis/wait-action@master
       with:
@@ -99,9 +100,10 @@ jobs:
     - name: Install Astarte Resource
       run: |
         kubectl create namespace astarte-test
-        kubectl apply -f test/helm/astarte.yaml
+        kubectl apply -n astarte-test -f test/manifests/api_v1alpha2_astarte_1.2.yaml
     - name: Wait for Astarte to come up
-      run: ./test/helm/wait-for-astarte.sh
+      run: |
+        kubectl wait astartes.v1alpha2.api.astarte-platform.org example-astarte --for jsonpath={.status.health}=green --namespace astarte-test --timeout 10m
     - name: Dump debug info
       if: failure()
       run: |

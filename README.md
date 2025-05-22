@@ -34,8 +34,8 @@ kubectl create namespace cert-manager
 helm install \
   cert-manager jetstack/cert-manager \
   --namespace cert-manager \
-  --version v1.14.7 \
-  --set installCRDs=true
+  --version v1.17.1 \
+  --set crds.enabled=true
 ```
 
 Installing the operator is as simple as:
@@ -67,12 +67,12 @@ Cluster](https://docs.astarte-platform.org/astarte-kubernetes-operator/snapshot/
 
 | Kubernetes Version | Supported              | Tested by CI       |
 |--------------------|------------------------|--------------------|
-| v1.25.x            | :large_orange_diamond: | :x:                |
-| v1.26.x            | :white_check_mark:     | :white_check_mark: |
-| v1.27.x            | :white_check_mark:     | :white_check_mark: |
-| v1.28.x            | :white_check_mark:     | :white_check_mark: |
+| v1.27.x            | :large_orange_diamond: | :x:                |
+| v1.28.x            | :large_orange_diamond: | :x:                |
 | v1.29.x            | :white_check_mark:     | :white_check_mark: |
 | v1.30.x            | :white_check_mark:     | :white_check_mark: |
+| v1.31.x            | :white_check_mark:     | :white_check_mark: |
+| v1.32.x            | :white_check_mark:     | :white_check_mark: |
 
 Key:
 
@@ -92,7 +92,7 @@ Key:
 ## Development
 
 Astarte's Operator is written in Go and built upon [Operator
-SDK](https://github.com/operator-framework/operator-sdk). It depends on Go 1.19, requires Go
+SDK](https://github.com/operator-framework/operator-sdk). It depends on Go 1.22, requires Go
 Modules and Kubernetes v1.24+.
 
-The project is built with kustomize v3.8.7, controller-gen v0.10.0 and conversion-gen v0.19.16.
+The project is built with kustomize v5.4.2, controller-gen v0.15.0 and conversion-gen v0.27.16.
