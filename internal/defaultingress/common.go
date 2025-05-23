@@ -19,7 +19,6 @@ limitations under the License.
 package defaultingress
 
 import (
-	"fmt"
 	"strconv"
 
 	"go.openly.dev/pointy"
@@ -36,13 +35,6 @@ func getCommonIngressAnnotations(cr *ingressv1alpha1.AstarteDefaultIngress, pare
 		"nginx.ingress.kubernetes.io/use-regex":      "true",
 		"nginx.ingress.kubernetes.io/rewrite-target": "/$2",
 	}
-
-	// we don't want the metrics to be exposed on /<servicename>/metrics. Thus, always return 404
-	serverSnippetValue := fmt.Sprint("location ~* \"/(appengine|flow|housekeeping|pairing|realmmanagement)/metrics\" {\n" +
-		"  deny all;\n" +
-		"  return 404;\n" +
-		"}")
-	annotations["nginx.ingress.kubernetes.io/server-snippet"] = serverSnippetValue
 
 	if pointy.BoolValue(cr.Spec.API.Cors, false) {
 		annotations["nginx.ingress.kubernetes.io/enable-cors"] = strconv.FormatBool(true)
