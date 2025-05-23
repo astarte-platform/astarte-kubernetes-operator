@@ -35,8 +35,7 @@ type AstarteDefaultIngressSpec struct {
 	// In clusters with more than one instance of the Ingress-NGINX controller, all
 	// instances of the controllers must be aware of which Ingress object they must serve.
 	// The ingressClass field of a ingress object is the way to let the controller know about that.
-	// Default: "nginx".
-	// +optional
+	// +kubebuilder:default:="astarte-nginx"
 	IngressClass string `json:"ingressClass"`
 	// Define the desired state of the AstarteDefaultIngressAPISpec resource.
 	// +optional
@@ -106,11 +105,14 @@ type AstarteDefaultIngressAPISpec struct {
 	// Metrics can be gathered by querying the /metrics/<service-name> path.
 	// Beware this might be a security hole. You can control which IPs can access /metrics
 	// with serveMetricsToSubnet. Default: false.
+	// TODO: With the removal of Metric Ingress, metrics will be accessible from whithin the
+	// cluster only. ServiceMetrics and ServeMetricsToSubnet will be removed in the next ADI release.
 	// +optional
 	ServeMetrics *bool `json:"serveMetrics,omitempty"`
 	// When specified and when serveMetrics is true, /metrics endpoints will be served only to IPs
 	// in the provided subnet range. The subnet has to be compatible with the HAProxy
 	// ACL src syntax (e.g.: "10.0.0.0/16"). Default: "".
+	// TODO: see above.
 	// +optional
 	ServeMetricsToSubnet string `json:"serveMetricsToSubnet,omitempty"`
 }
