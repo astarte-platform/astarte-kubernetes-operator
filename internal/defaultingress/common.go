@@ -35,10 +35,6 @@ func getCommonIngressAnnotations(cr *ingressv1alpha1.AstarteDefaultIngress, pare
 		"nginx.ingress.kubernetes.io/ssl-redirect":   strconv.FormatBool(apiSslRedirect),
 		"nginx.ingress.kubernetes.io/use-regex":      "true",
 		"nginx.ingress.kubernetes.io/rewrite-target": "/$2",
-		"nginx.ingress.kubernetes.io/configuration-snippet": "more_set_headers \"X-Frame-Options: SAMEORIGIN\";\n" +
-			"more_set_headers \"X-XSS-Protection: 1; mode=block\";\n" +
-			"more_set_headers \"X-Content-Type-Options: nosniff\";\n" +
-			"more_set_headers \"Referrer-Policy: no-referrer-when-downgrade\";",
 	}
 
 	// we don't want the metrics to be exposed on /<servicename>/metrics. Thus, always return 404
