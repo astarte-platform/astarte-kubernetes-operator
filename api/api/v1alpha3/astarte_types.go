@@ -29,7 +29,6 @@ import (
 
 // AstarteSpec defines the desired state of Astarte
 type AstarteSpec struct {
-	metav1.TypeMeta `json:",inline"`
 	// The Astarte Version for this Resource
 	Version string `json:"version"`
 	// +kubebuilder:validation:Optional
@@ -70,7 +69,6 @@ type AstarteSpec struct {
 
 // AstarteStatus defines the observed state of Astarte
 type AstarteStatus struct {
-	metav1.TypeMeta     `json:",inline"`
 	ReconciliationPhase ReconciliationPhase  `json:"phase"`
 	AstarteVersion      string               `json:"astarteVersion"`
 	OperatorVersion     string               `json:"operatorVersion"`
@@ -228,7 +226,6 @@ func (a *AstarteComponent) ServiceRelativePath() string {
 }
 
 type AstarteGenericClusteredResource struct {
-	metav1.TypeMeta `json:",inline"`
 	// +kubebuilder:validation:Optional
 	Deploy *bool `json:"deploy,omitempty"`
 	// +kubebuilder:validation:Optional
@@ -278,7 +275,6 @@ type AstarteGenericClusteredResourceAutoscalerSpec struct {
 }
 
 type AstartePersistentStorageSpec struct {
-	metav1.TypeMeta `json:",inline"`
 	// +kubebuilder:validation:Optional
 	Size *resource.Quantity `json:"size"`
 	// +kubebuilder:validation:Optional
@@ -288,7 +284,6 @@ type AstartePersistentStorageSpec struct {
 }
 
 type AstarteAPISpec struct {
-	metav1.TypeMeta `json:",inline"`
 	// +kubebuilder:validation:Optional
 	SSL  *bool  `json:"ssl,omitempty"`
 	Host string `json:"host"`
@@ -303,7 +298,6 @@ type HostAndPort struct {
 }
 
 type LoginCredentialsSecret struct {
-	metav1.TypeMeta `json:",inline"`
 	// +kubebuilder:validation:MinLength=1
 	Name string `json:"name"`
 	// +kubebuilder:validation:MinLength=1
@@ -333,7 +327,6 @@ type GenericConnectionSpec struct {
 }
 
 type GenericSSLConfigurationSpec struct {
-	metav1.TypeMeta `json:",inline"`
 	// +kubebuilder:validation:Optional
 	Enable bool `json:"enable,omitempty"`
 	// +kubebuilder:validation:Optional
@@ -345,8 +338,7 @@ type GenericSSLConfigurationSpec struct {
 }
 
 type AstarteRabbitMQConnectionSpec struct {
-	metav1.TypeMeta `json:",inline"`
-	HostAndPort     `json:",inline"`
+	HostAndPort `json:",inline"`
 	// +kubebuilder:validation:Optional
 	GenericConnectionSpec `json:",inline"`
 	// +kubebuilder:validation:Optional
@@ -354,7 +346,6 @@ type AstarteRabbitMQConnectionSpec struct {
 }
 
 type AstarteRabbitMQSpec struct {
-	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
 	// +kubebuilder:validation:Optional
 	Connection *AstarteRabbitMQConnectionSpec `json:"connection,omitempty"`
@@ -373,7 +364,6 @@ type AstarteRabbitMQSpec struct {
 }
 
 type AstarteCassandraConnectionSpec struct {
-	metav1.TypeMeta       `json:",inline"`
 	GenericConnectionSpec `json:",inline"`
 	Nodes                 []HostAndPort `json:"nodes,omitempty"`
 	// +kubebuilder:validation:Optional
@@ -381,7 +371,6 @@ type AstarteCassandraConnectionSpec struct {
 }
 
 type AstarteCassandraSpec struct {
-	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
 	// +kubebuilder:validation:Optional
 	MaxHeapSize string `json:"maxHeapSize,omitempty"`
@@ -396,7 +385,6 @@ type AstarteCassandraSpec struct {
 }
 
 type AstarteVerneMQSpec struct {
-	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
 	Host                            string `json:"host"`
 	// +kubebuilder:validation:Optional
@@ -440,7 +428,6 @@ type AstarteVerneMQSpec struct {
 }
 
 type AstarteDataUpdaterPlantSpec struct {
-	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
 	// +kubebuilder:validation:Optional
 	DataQueueCount *int `json:"dataQueueCount,omitempty"`
@@ -454,7 +441,6 @@ type AstarteDataUpdaterPlantSpec struct {
 }
 
 type AstarteTriggerEngineSpec struct {
-	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
 	// Configures the name of the Events queue. Should be configured only in installations with a highly
 	// customized RabbitMQ. It is advised to leave empty unless you know exactly what you're doing.
@@ -469,7 +455,6 @@ type AstarteTriggerEngineSpec struct {
 }
 
 type AstarteAppengineAPISpec struct {
-	metav1.TypeMeta                `json:",inline"`
 	AstarteGenericAPIComponentSpec `json:",inline"`
 	// +kubebuilder:validation:Minimum=100
 	// +kubebuilder:validation:Optional
@@ -485,8 +470,7 @@ type AstarteAppengineAPISpec struct {
 }
 
 type AstarteDashboardConfigAuthSpec struct {
-	metav1.TypeMeta `json:",inline"`
-	Type            string `json:"type"`
+	Type string `json:"type"`
 	// +kubebuilder:validation:Optional
 	OAuthAPIURL string `json:"oauth_api_url,omitempty"`
 }
@@ -509,7 +493,6 @@ type AstarteDashboardConfigSpec struct {
 }
 
 type AstarteDashboardSpec struct {
-	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
 	// +kubebuilder:validation:Optional
 	AstarteDashboardConfigSpec `json:",inline"`
@@ -522,7 +505,6 @@ type AstarteGenericAPIComponentSpec struct {
 }
 
 type AstarteComponentsSpec struct {
-	metav1.TypeMeta `json:",inline"`
 	// Compute Resources for this Component.
 	// +kubebuilder:validation:Optional
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
@@ -545,65 +527,47 @@ type AstarteComponentsSpec struct {
 }
 
 type AstarteCFSSLDBConfigSpec struct {
-	metav1.TypeMeta `json:",inline"`
-	Driver          string `json:"driver,omitempty"`
-	DataSource      string `json:"dataSource,omitempty"`
+	Driver     string `json:"driver,omitempty"`
+	DataSource string `json:"dataSource,omitempty"`
 }
 
 type AstarteCFSSLCSRRootCAKeySpec struct {
-	metav1.TypeMeta `json:",inline"`
-	Algo            string `json:"algo"`
-	Size            int    `json:"size"`
+	Algo string `json:"algo"`
+	Size int    `json:"size"`
 }
 
 type AstarteCFSSLCSRRootCANamesSpec struct {
-	metav1.TypeMeta `json:",inline"`
-	C               string `json:"C"`
-	L               string `json:"L"`
-	O               string `json:"O"`
-	OU              string `json:"OU"`
-	ST              string `json:"ST"`
-}
-
-type AstarteCFSSLCSRRootCACASpec struct {
-	metav1.TypeMeta `json:",inline"`
-	Expiry          string `json:"expiry"`
+	C  string `json:"C"`
+	L  string `json:"L"`
+	O  string `json:"O"`
+	OU string `json:"OU"`
+	ST string `json:"ST"`
 }
 
 type AstarteCFSSLCSRRootCASpec struct {
-	metav1.TypeMeta `json:",inline"`
-	CN              string                           `json:"CN"`
-	Key             *AstarteCFSSLCSRRootCAKeySpec    `json:"key"`
-	Names           []AstarteCFSSLCSRRootCANamesSpec `json:"names"`
-	CA              *AstarteCFSSLCSRRootCACASpec     `json:"ca"`
+	CN     string                           `json:"CN"`
+	Key    *AstarteCFSSLCSRRootCAKeySpec    `json:"key"`
+	Names  []AstarteCFSSLCSRRootCANamesSpec `json:"names"`
+	Expiry string                           `json:"expiry"`
 }
 
 type AstarteCFSSLCARootConfigSigningCAConstraintSpec struct {
-	metav1.TypeMeta `json:",inline"`
-	MaxPathLen      int  `json:"max_path_len"`
-	IsCA            bool `json:"is_ca"`
-	MaxPathLenZero  bool `json:"max_path_len_zero"`
+	MaxPathLen     int  `json:"max_path_len"`
+	IsCA           bool `json:"is_ca"`
+	MaxPathLenZero bool `json:"max_path_len_zero"`
 }
 
 type AstarteCFSSLCARootConfigSigningDefaultSpec struct {
-	metav1.TypeMeta `json:",inline"`
-	Usages          []string                                         `json:"usages"`
-	Expiry          string                                           `json:"expiry"`
-	CAConstraint    *AstarteCFSSLCARootConfigSigningCAConstraintSpec `json:"ca_constraint"`
-}
-
-type AstarteCFSSLCARootConfigSigningSpec struct {
-	metav1.TypeMeta `json:",inline"`
-	Default         *AstarteCFSSLCARootConfigSigningDefaultSpec `json:"default"`
+	Usages       []string                                         `json:"usages"`
+	Expiry       string                                           `json:"expiry"`
+	CAConstraint *AstarteCFSSLCARootConfigSigningCAConstraintSpec `json:"ca_constraint"`
 }
 
 type AstarteCFSSLCARootConfigSpec struct {
-	metav1.TypeMeta `json:",inline"`
-	Signing         *AstarteCFSSLCARootConfigSigningSpec `json:"signing"`
+	SigningDefault *AstarteCFSSLCARootConfigSigningDefaultSpec `json:"signingDefault"`
 }
 
 type AstarteCFSSLSpec struct {
-	metav1.TypeMeta `json:",inline"`
 	// +kubebuilder:validation:Optional
 	Deploy *bool `json:"deploy,omitempty"`
 	// +kubebuilder:validation:Optional
@@ -658,7 +622,6 @@ func (r AstarteCFSSLSpec) GetPodLabels() map[string]string {
 // astarteSystemKeyspace configures the main system keyspace for Astarte. As of now, these settings
 // have effect only upon cluster initialization, and will be ignored otherwise.
 type AstarteSystemKeyspaceSpec struct {
-	metav1.TypeMeta `json:",inline"`
 	// The Replication Factor for the keyspace. Currently,
 	// using NetworkTopologyStrategy is not supported.
 	// +kubebuilder:validation:Optional
@@ -669,7 +632,6 @@ type AstarteSystemKeyspaceSpec struct {
 // Note that enabling this feature might generate some counter-intuitive
 // scheduling beahaviour if not done properly.
 type AstartePodPrioritiesSpec struct {
-	metav1.TypeMeta `json:",inline"`
 	// +kubebuilder:validation:Optional
 	Enable bool `json:"enable,omitempty"`
 	// The value of the highest PriorityClass for Astarte pods.
@@ -698,7 +660,6 @@ func (a *AstartePodPrioritiesSpec) IsEnabled() bool {
 
 // AstarteFeatures enables/disables selectively a set of global features in Astarte
 type AstarteFeatures struct {
-	metav1.TypeMeta `json:",inline"`
 	// +kubebuilder:validation:Optional
 	RealmDeletion bool `json:"realmDeletion,omitempty"`
 	// +kubebuilder:validation:Optional
