@@ -216,9 +216,9 @@ var _ = Describe("controller", Ordered, func() {
 					secretsOutput, err := utils.Run(cmd)
 					ExpectWithOffset(2, err).NotTo(HaveOccurred())
 
-					statefulSetNames := utils.GetNonEmptyLines(string(secretsOutput))
-					if len(statefulSetNames) != 0 {
-						return fmt.Errorf("expect 0 secrets, but got %d", len(statefulSetNames))
+					secretNames := utils.GetNonEmptyLines(string(secretsOutput))
+					if len(secretNames) != 0 {
+						return fmt.Errorf("expect 0 secrets, but got %d", len(secretNames))
 					}
 
 					return nil
