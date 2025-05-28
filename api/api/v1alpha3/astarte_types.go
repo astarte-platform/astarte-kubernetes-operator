@@ -32,39 +32,39 @@ type AstarteSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// The Astarte Version for this Resource
 	Version string `json:"version"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Features AstarteFeatures `json:"features,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	ImagePullPolicy *v1.PullPolicy `json:"imagePullPolicy,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	DeploymentStrategy *appsv1.DeploymentStrategy `json:"deploymentStrategy,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	StorageClassName string         `json:"storageClassName,omitempty"`
 	API              AstarteAPISpec `json:"api"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	RabbitMQ AstarteRabbitMQSpec `json:"rabbitmq"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Cassandra AstarteCassandraSpec `json:"cassandra"`
 	VerneMQ   AstarteVerneMQSpec   `json:"vernemq"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	CFSSL AstarteCFSSLSpec `json:"cfssl"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Components AstarteComponentsSpec `json:"components"`
 	// AstarteInstanceID is the unique ID that is associated with an Astarte instance. This parameter
 	// is used to let different Astarte instances employ a shared database infrastructure.
 	// Once set, the AstarteInstanceID cannot be changed. Defaults to "".
 	// +kubebuilder:validation:Pattern:=`^[a-z]?[a-z0-9]{0,47}$`
 	// +kubebuilder:default:=""
-	// +optional
+	// +kubebuilder:validation:Optional
 	AstarteInstanceID string `json:"astarteInstanceID,omitempty"`
 	// ManualMaintenanceMode pauses all reconciliation activities but still computes the resource
 	// status. It should be used only when the managed Astarte resources requires manual intervention
 	// and the Operator cannot break out of the problem by itself. Do not set this field unless you
 	// know exactly what you are doing.
 	// +kubebuilder:default:=false
-	// +optional
+	// +kubebuilder:validation:Optional
 	ManualMaintenanceMode bool `json:"manualMaintenanceMode,omitempty"`
 }
 
@@ -229,67 +229,67 @@ func (a *AstarteComponent) ServiceRelativePath() string {
 
 type AstarteGenericClusteredResource struct {
 	metav1.TypeMeta `json:",inline"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Deploy *bool `json:"deploy,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Replicas *int32 `json:"replicas,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	AntiAffinity *bool `json:"antiAffinity,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	CustomAffinity *v1.Affinity `json:"customAffinity,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	DeploymentStrategy *appsv1.DeploymentStrategy `json:"deploymentStrategy,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Version string `json:"version,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Image string `json:"image,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	ImagePullPolicy *v1.PullPolicy `json:"imagePullPolicy,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 	// Compute Resources for this Component.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 	// Additional environment variables for this Component
-	// +optional
+	// +kubebuilder:validation:Optional
 	AdditionalEnv []v1.EnvVar `json:"additionalEnv,omitempty"`
 	// Additional labels for this Component's pod(s).
 	// Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
-	// +optional
+	// +kubebuilder:validation:Optional
 	PodLabels map[string]string `json:"podLabels,omitempty"`
 	// Autoscaling resources for this deployment/statefulset.
 	// If autoscaling is enabled, this will take precedence over the "Replicas" field.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Autoscale *AstarteGenericClusteredResourceAutoscalerSpec `json:"autoscaler,omitempty"`
 	// The PriorityClass for this component.
 	// Must be one of "high", "mid", "low" or unspecified.
 	// Ignored if astartePodPriorities is not enabled.
 	// +kubebuilder:validation:Enum:=high;mid;low;""
-	// +optional
+	// +kubebuilder:validation:Optional
 	PriorityClass string `json:"priorityClass,omitempty"`
 }
 
 type AstarteGenericClusteredResourceAutoscalerSpec struct {
 	// Name of the HorizontalPodAutoscaler for this deployment/statefulset.
 	// This will take precedence over the "Replicas" field of the parent Astarte component.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Horizontal string `json:"horizontal,omitempty"`
 	// TODO: Vertical string `json:"vertical,omitempty"`
 }
 
 type AstartePersistentStorageSpec struct {
 	metav1.TypeMeta `json:",inline"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Size *resource.Quantity `json:"size"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	ClassName string `json:"className,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	VolumeDefinition *v1.Volume `json:"volumeDefinition,omitempty"`
 }
 
 type AstarteAPISpec struct {
 	metav1.TypeMeta `json:",inline"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	SSL  *bool  `json:"ssl,omitempty"`
 	Host string `json:"host"`
 }
@@ -320,55 +320,55 @@ type ConnectionStringSecret struct {
 }
 
 type GenericConnectionSpec struct {
-	// +optional
+	// +kubebuilder:validation:Optional
 	SSLConfiguration GenericSSLConfigurationSpec `json:"sslConfiguration,omitempty"`
 	// The secret containing Username and Password to login.
 	// Either this field or `connectionStringSecret` must be set.
-	// +optional
+	// +kubebuilder:validation:Optional
 	CredentialsSecret *LoginCredentialsSecret `json:"credentialsSecret,omitempty"`
 	// The secret containing a connection string to the service.
 	// Either this field or `credentialsSecret` must be set.
-	// +optional
+	// +kubebuilder:validation:Optional
 	ConnectionStringSecret *ConnectionStringSecret `json:"connectionStringSecret,omitempty"`
 }
 
 type GenericSSLConfigurationSpec struct {
 	metav1.TypeMeta `json:",inline"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Enable bool `json:"enable,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	CustomCASecret v1.LocalObjectReference `json:"customCASecret,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	SNI *bool `json:"sni,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	CustomSNI string `json:"customSNI,omitempty"`
 }
 
 type AstarteRabbitMQConnectionSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	HostAndPort     `json:",inline"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	GenericConnectionSpec `json:",inline"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	VirtualHost string `json:"virtualHost,omitempty"`
 }
 
 type AstarteRabbitMQSpec struct {
 	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Connection *AstarteRabbitMQConnectionSpec `json:"connection,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Storage *AstartePersistentStorageSpec `json:"storage,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	AdditionalPlugins []string `json:"additionalPlugins,omitempty"`
 	// Configures the data queues prefix on RabbitMQ. You should change this setting only
 	// in custom RabbitMQ installations.
-	// +optional
+	// +kubebuilder:validation:Optional
 	DataQueuesPrefix string `json:"dataQueuesPrefix,omitempty"`
 	// Configures the events exchange name on RabbitMQ. You should change this setting only
 	// in custom RabbitMQ installations.
-	// +optional
+	// +kubebuilder:validation:Optional
 	EventsExchangeName string `json:"eventsExchangeName,omitempty"`
 }
 
@@ -376,22 +376,22 @@ type AstarteCassandraConnectionSpec struct {
 	metav1.TypeMeta       `json:",inline"`
 	GenericConnectionSpec `json:",inline"`
 	Nodes                 []HostAndPort `json:"nodes,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	PoolSize *int `json:"poolSize,omitempty"`
 }
 
 type AstarteCassandraSpec struct {
 	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	MaxHeapSize string `json:"maxHeapSize,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	HeapNewSize string `json:"heapNewSize,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Storage *AstartePersistentStorageSpec `json:"storage,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Connection *AstarteCassandraConnectionSpec `json:"connection,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	AstarteSystemKeyspace AstarteSystemKeyspaceSpec `json:"astarteSystemKeyspace,omitempty"`
 }
 
@@ -399,23 +399,23 @@ type AstarteVerneMQSpec struct {
 	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
 	Host                            string `json:"host"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Port *int32 `json:"port,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	CaSecret string `json:"caSecret,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Storage *AstartePersistentStorageSpec `json:"storage,omitempty"`
 	// Controls the device heartbeat from the broker to Astarte. The heartbeat is sent periodically
 	// to prevent Astarte from keeping up stale connections from Devices in case the broker misbehaves
 	// and does not send disconnection events. You should usually not tweak this value. Moreover, keep
 	// in mind that when a lot of devices are connected simultaneously, having a short heartbeat time
 	// might cause performance issues. Defaults to an hour.
-	// +optional
+	// +kubebuilder:validation:Optional
 	DeviceHeartbeatSeconds int `json:"deviceHeartbeatSeconds,omitempty"`
 	// The maximum number of QoS 1 or 2 messages to hold in the offline queue.
 	// Defaults to 1000000. Set to -1 for no maximum (not recommended). Set to 0
 	// if no messages should be stored offline.
-	// +optional
+	// +kubebuilder:validation:Optional
 	MaxOfflineMessages *int `json:"maxOfflineMessages,omitempty"`
 	// This option allows persistent clients ( = clean session set to
 	// false) to be removed if they do not reconnect within 'persistent_client_expiration'.
@@ -424,32 +424,32 @@ type AstarteVerneMQSpec struct {
 	// The expiration period should be an integer followed by one of 'd', 'w', 'm', 'y' for
 	// day, week, month, and year.
 	// Default: 1 year
-	// +optional
+	// +kubebuilder:validation:Optional
 	PersistentClientExpiration string `json:"persistentClientExpiration,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	MirrorQueue string `json:"mirrorQueue,omitempty"`
 	// This option allows, when true, to handle SSL termination at VerneMQ level.
 	// Default: false
-	// +optional
+	// +kubebuilder:validation:Optional
 	SSLListener *bool `json:"sslListener,omitempty"`
 	// Reference the name of the secret containing the TLS certificate for VerneMQ.
 	// The secret must be present in the same namespace in which Astarte resides.
 	// The field will be used only if SSLListener is set to true.
-	// +optional
+	// +kubebuilder:validation:Optional
 	SSLListenerCertSecretName string `json:"sslListenerCertSecretName,omitempty"`
 }
 
 type AstarteDataUpdaterPlantSpec struct {
 	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	DataQueueCount *int `json:"dataQueueCount,omitempty"`
 	// Controls the prefetch count for Data Updater Plant. When fine-tuning Astarte, this parameter
 	// can make a difference for what concerns Data Updater Plant ingestion performance. However,
 	// it can also degrade performance significantly and/or increase risk of data loss when misconfigured.
 	// Configure this value only if you know what you're doing and you have experience with RabbitMQ.
 	// Defaults to 300
-	// +optional
+	// +kubebuilder:validation:Optional
 	PrefetchCount *int `json:"prefetchCount,omitempty"`
 }
 
@@ -458,13 +458,13 @@ type AstarteTriggerEngineSpec struct {
 	AstarteGenericClusteredResource `json:",inline"`
 	// Configures the name of the Events queue. Should be configured only in installations with a highly
 	// customized RabbitMQ. It is advised to leave empty unless you know exactly what you're doing.
-	// +optional
+	// +kubebuilder:validation:Optional
 	EventsQueueName string `json:"eventsQueueName,omitempty"`
 	// Configures the routing key for Trigger Events. Should be configured only in installations
 	// with a highly customized RabbitMQ and a custom Trigger Engine setup. It is advised to leave
 	// empty unless you know exactly what you're doing, misconfiguring this value can cause heavy
 	// breakage within Trigger Engine.
-	// +optional
+	// +kubebuilder:validation:Optional
 	EventsRoutingKey string `json:"eventsRoutingKey,omitempty"`
 }
 
@@ -472,75 +472,75 @@ type AstarteAppengineAPISpec struct {
 	metav1.TypeMeta                `json:",inline"`
 	AstarteGenericAPIComponentSpec `json:",inline"`
 	// +kubebuilder:validation:Minimum=100
-	// +optional
+	// +kubebuilder:validation:Optional
 	MaxResultsLimit *int `json:"maxResultsLimit,omitempty"`
 	// Configures the name of the Room Events queue. Should be configured only in installations with a highly
 	// customized RabbitMQ. It is advised to leave empty unless you know exactly what you're doing.
-	// +optional
+	// +kubebuilder:validation:Optional
 	RoomEventsQueueName string `json:"roomEventsQueueName,omitempty"`
 	// Configures the name of the Room Events exchange. Should be configured only in installations with a highly
 	// customized RabbitMQ. It is advised to leave empty unless you know exactly what you're doing.
-	// +optional
+	// +kubebuilder:validation:Optional
 	RoomEventsExchangeName string `json:"roomEventsExchangeName,omitempty"`
 }
 
 type AstarteDashboardConfigAuthSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	Type            string `json:"type"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	OAuthAPIURL string `json:"oauth_api_url,omitempty"`
 }
 
 type AstarteDashboardConfigSpec struct {
-	// +optional
+	// +kubebuilder:validation:Optional
 	RealmManagementAPIURL string `json:"realmManagementApiUrl,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	AppEngineAPIURL string `json:"appEngineApiUrl,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	PairingAPIURL string `json:"pairingApiUrl,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	FlowAPIURL string `json:"flowApiUrl,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	DefaultRealm string `json:"defaultRealm,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	DefaultAuth string `json:"defaultAuth,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Auth []AstarteDashboardConfigAuthSpec `json:"auth,omitempty"`
 }
 
 type AstarteDashboardSpec struct {
 	metav1.TypeMeta                 `json:",inline"`
 	AstarteGenericClusteredResource `json:",inline"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	AstarteDashboardConfigSpec `json:",inline"`
 }
 
 type AstarteGenericAPIComponentSpec struct {
 	AstarteGenericClusteredResource `json:",inline"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	DisableAuthentication *bool `json:"disableAuthentication,omitempty"`
 }
 
 type AstarteComponentsSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// Compute Resources for this Component.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Flow AstarteGenericAPIComponentSpec `json:"flow,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Housekeeping AstarteGenericAPIComponentSpec `json:"housekeeping,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	RealmManagement AstarteGenericAPIComponentSpec `json:"realmManagement,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Pairing AstarteGenericAPIComponentSpec `json:"pairing,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	DataUpdaterPlant AstarteDataUpdaterPlantSpec `json:"dataUpdaterPlant,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	AppengineAPI AstarteAppengineAPISpec `json:"appengineApi,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	TriggerEngine AstarteTriggerEngineSpec `json:"triggerEngine,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Dashboard AstarteDashboardSpec `json:"dashboard,omitempty"`
 }
 
@@ -604,40 +604,40 @@ type AstarteCFSSLCARootConfigSpec struct {
 
 type AstarteCFSSLSpec struct {
 	metav1.TypeMeta `json:",inline"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Deploy *bool `json:"deploy,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	URL string `json:"url,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	CaExpiry string `json:"caExpiry,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	CASecret v1.LocalObjectReference `json:"caSecret,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	CertificateExpiry string `json:"certificateExpiry,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	DBConfig *AstarteCFSSLDBConfigSpec `json:"dbConfig,omitempty"`
 	// Compute Resources for this Component.
-	// +optional
+	// +kubebuilder:validation:Optional
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Version string `json:"version,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Image string `json:"image,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Storage *AstartePersistentStorageSpec `json:"storage,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	CSRRootCa *AstarteCFSSLCSRRootCASpec `json:"csrRootCa,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	CARootConfig *AstarteCFSSLCARootConfigSpec `json:"caRootConfig,omitempty"`
 	// Additional labels for this Component's pod(s).
 	// Label keys can't be of the form "app", "component", "astarte-*", "flow-*"
-	// +optional
+	// +kubebuilder:validation:Optional
 	PodLabels map[string]string `json:"podLabels,omitempty"`
 	// The PriorityClass for this component.
 	// Must be one of "high", "mid", "low" or unspecified.
 	// Ignored if astartePodPriorities is not enabled.
 	// +kubebuilder:validation:Enum:=high;mid;low;""
-	// +optional
+	// +kubebuilder:validation:Optional
 	PriorityClass string `json:"priorityClass,omitempty"`
 }
 
@@ -661,7 +661,7 @@ type AstarteSystemKeyspaceSpec struct {
 	metav1.TypeMeta `json:",inline"`
 	// The Replication Factor for the keyspace. Currently,
 	// using NetworkTopologyStrategy is not supported.
-	// +optional
+	// +kubebuilder:validation:Optional
 	ReplicationFactor int `json:"replicationFactor,omitempty"`
 }
 
@@ -670,23 +670,23 @@ type AstarteSystemKeyspaceSpec struct {
 // scheduling beahaviour if not done properly.
 type AstartePodPrioritiesSpec struct {
 	metav1.TypeMeta `json:",inline"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Enable bool `json:"enable,omitempty"`
 	// The value of the highest PriorityClass for Astarte pods.
 	// Once the value is set, updating it will not have effect.
-	// +optional
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=1000
 	// +kubebuilder:validation:Minimum:=0
 	AstarteHighPriority *int `json:"astarteHighPriority,omitempty"`
 	// The value of the medium PriorityClass for Astarte pods.
 	// Once the value is set, updating it will not have effect.
-	// +optional
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=100
 	// +kubebuilder:validation:Minimum:=0
 	AstarteMidPriority *int `json:"astarteMidPriority,omitempty"`
 	// The value of the least PriorityClass for Astarte pods.
 	// Once the value is set, updating it will not have effect.
-	// +optional
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:=10
 	// +kubebuilder:validation:Minimum:=0
 	AstarteLowPriority *int `json:"astarteLowPriority,omitempty"`
@@ -699,10 +699,10 @@ func (a *AstartePodPrioritiesSpec) IsEnabled() bool {
 // AstarteFeatures enables/disables selectively a set of global features in Astarte
 type AstarteFeatures struct {
 	metav1.TypeMeta `json:",inline"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	RealmDeletion bool `json:"realmDeletion,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	Autoscaling bool `json:"autoscaling,omitempty"`
-	// +optional
+	// +kubebuilder:validation:Optional
 	AstartePodPriorities *AstartePodPrioritiesSpec `json:"astartePodPriorities,omitempty"`
 }
