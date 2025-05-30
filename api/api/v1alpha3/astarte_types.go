@@ -346,13 +346,8 @@ type AstarteRabbitMQConnectionSpec struct {
 }
 
 type AstarteRabbitMQSpec struct {
-	AstarteGenericClusteredResource `json:",inline"`
 	// +kubebuilder:validation:Optional
 	Connection *AstarteRabbitMQConnectionSpec `json:"connection,omitempty"`
-	// +kubebuilder:validation:Optional
-	Storage *AstartePersistentStorageSpec `json:"storage,omitempty"`
-	// +kubebuilder:validation:Optional
-	AdditionalPlugins []string `json:"additionalPlugins,omitempty"`
 	// Configures the data queues prefix on RabbitMQ. You should change this setting only
 	// in custom RabbitMQ installations.
 	// +kubebuilder:validation:Optional
@@ -371,13 +366,6 @@ type AstarteCassandraConnectionSpec struct {
 }
 
 type AstarteCassandraSpec struct {
-	AstarteGenericClusteredResource `json:",inline"`
-	// +kubebuilder:validation:Optional
-	MaxHeapSize string `json:"maxHeapSize,omitempty"`
-	// +kubebuilder:validation:Optional
-	HeapNewSize string `json:"heapNewSize,omitempty"`
-	// +kubebuilder:validation:Optional
-	Storage *AstartePersistentStorageSpec `json:"storage,omitempty"`
 	// +kubebuilder:validation:Optional
 	Connection *AstarteCassandraConnectionSpec `json:"connection,omitempty"`
 	// +kubebuilder:validation:Optional
