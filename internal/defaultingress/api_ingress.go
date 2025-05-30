@@ -114,7 +114,7 @@ func getConfigMapName(cr *ingressv1alpha1.AstarteDefaultIngress) string {
 func getAPIIngressSpec(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte) networkingv1.IngressSpec {
 	ingressSpec := networkingv1.IngressSpec{
 		// define which ingress controller will implement the ingress
-		IngressClassName: getIngressClassName(cr),
+		IngressClassName: pointy.String(cr.Spec.IngressClass),
 		TLS:              getIngressTLS(cr, parent, true),
 		Rules:            getAPIIngressRules(cr, parent),
 	}
