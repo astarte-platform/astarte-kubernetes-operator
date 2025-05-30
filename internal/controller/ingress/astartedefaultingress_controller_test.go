@@ -25,6 +25,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.openly.dev/pointy"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -81,7 +82,8 @@ var _ = Describe("AstarteDefaultIngress Controller", func() {
 							Deploy: pointy.Bool(true),
 						},
 						Broker: ingressv1alpha1.AstarteDefaultIngressBrokerSpec{
-							Deploy: pointy.Bool(false),
+							Deploy:      pointy.Bool(true),
+							ServiceType: v1.ServiceTypeNodePort,
 						},
 					},
 				}
@@ -137,7 +139,8 @@ var _ = Describe("AstarteDefaultIngress Controller", func() {
 			Expect(createdADI.Spec.IngressClass).To(Equal("astarte-nginx"))
 			Expect(pointy.BoolValue(createdADI.Spec.API.Deploy, false)).To(BeTrue())
 			Expect(pointy.BoolValue(createdADI.Spec.Dashboard.Deploy, false)).To(BeTrue())
-			Expect(pointy.BoolValue(createdADI.Spec.Broker.Deploy, false)).To(BeFalse())
+			Expect(pointy.BoolValue(createdADI.Spec.Broker.Deploy, false)).To(BeTrue())
+			Expect(createdADI.Spec.Broker.ServiceType).To(Equal(v1.ServiceTypeNodePort))
 		})
 	})
 })
