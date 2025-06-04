@@ -67,4 +67,12 @@ resources:
   kind: Flow
   path: github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha3
   version: v1alpha3
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: astarte-platform.org
+  group: api
+  kind: Astarte
+  path: github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1
+  version: v2alpha1
 version: "3"
