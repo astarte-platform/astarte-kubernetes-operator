@@ -39,6 +39,7 @@ import (
 
 	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
 	apiv1alpha3 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha3"
+	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v1alpha1"
 	apicontroller "github.com/astarte-platform/astarte-kubernetes-operator/internal/controller/api"
 	ingresscontroller "github.com/astarte-platform/astarte-kubernetes-operator/internal/controller/ingress"
@@ -56,6 +57,7 @@ func init() {
 	utilruntime.Must(apiv1alpha2.AddToScheme(scheme))
 	utilruntime.Must(ingressv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(apiv1alpha3.AddToScheme(scheme))
+	utilruntime.Must(apiv2alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
