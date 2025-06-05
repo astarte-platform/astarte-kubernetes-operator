@@ -37,8 +37,6 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
-	apiv1alpha3 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha3"
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	flowv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/flow/v2alpha1"
 	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v1alpha1"
@@ -56,9 +54,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(apiv1alpha2.AddToScheme(scheme))
 	utilruntime.Must(ingressv1alpha1.AddToScheme(scheme))
-	utilruntime.Must(apiv1alpha3.AddToScheme(scheme))
 	utilruntime.Must(apiv2alpha1.AddToScheme(scheme))
 	utilruntime.Must(flowv2alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
@@ -165,14 +161,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Astarte")
 		os.Exit(1)
 	}
-	if err = (&apicontroller.FlowReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Flow"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Flow")
-		os.Exit(1)
-	}
 	if err = (&ingresscontroller.AstarteDefaultIngressReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("ingress").WithName("AstarteDefaultIngress"),
@@ -182,16 +170,6 @@ func main() {
 		os.Exit(1)
 	}
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&apiv1alpha2.Astarte{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Astarte")
-			os.Exit(1)
-		}
-
-		if err = (&apiv1alpha2.Flow{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Flow")
-			os.Exit(1)
-		}
-
 		if err = (&ingressv1alpha1.AstarteDefaultIngress{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "AstarteDefaultIngress")
 			os.Exit(1)
