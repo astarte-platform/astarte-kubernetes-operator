@@ -6,39 +6,87 @@ namePrefix: "{{ .Release.Name }}-"
 #commonLabels:
 #  someName: someValue
 
-bases:
+# the following config is for teaching kustomize how to do var substitution
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
 - ../webhook
 - ../certmanager
-
-patchesStrategicMerge:
-- webhookcainjection_patch.yaml
-- helm-certificate_patch.yaml
-
-# the following config is for teaching kustomize how to do var substitution
-vars:
-- name: CERTIFICATE_NAMESPACE # namespace of the certificate CR
-  objref:
+patches:
+- path: webhookcainjection_patch.yaml
+- path: helm-certificate_patch.yaml
+replacements:
+- source: # CERTIFICATE NAMESPACE
     kind: Certificate
-    group: cert-manager.io
-    version: v1
-    name: manager-webhook # this name should match the one in certificate.yaml
-  fieldref:
-    fieldpath: metadata.namespace
-- name: CERTIFICATE_NAME
-  objref:
+    name: serving-cert
+    fieldPath: metadata.namespace
+  targets:
+  - fieldPaths:
+    - metadata.annotations.[cert-manager.io/inject-ca-from]
+    options:
+      delimiter: /
+      index: 0
+    select:
+      annotationSelector: cert-manager.io/inject-ca-from
+- source: # CERTIFICATE NAME
     kind: Certificate
-    group: cert-manager.io
-    version: v1
-    name: manager-webhook # this name should match the one in certificate.yaml
-- name: SERVICE_NAMESPACE # namespace of the service
-  objref:
+    name: serving-cert
+  targets:
+  - fieldPaths:
+    - metadata.annotations.[cert-manager.io/inject-ca-from]
+    options:
+      delimiter: /
+      index: 1
+    select:
+      annotationSelector: cert-manager.io/inject-ca-from
+- source: # SERVICE NAMESPACE
     kind: Service
-    version: v1
     name: webhook-service
-  fieldref:
-    fieldpath: metadata.namespace
-- name: SERVICE_NAME
-  objref:
+    fieldPath: metadata.namespace
+  targets:
+  - fieldPaths:
+    - spec.dnsNames.0
+    options:
+      delimiter: .
+      index: 1
+    select:
+      group: cert-manager.io
+      kind: Certificate
+      name: serving-cert
+      namespace: system
+      version: v1
+  - fieldPaths:
+    - spec.dnsNames.1
+    options:
+      delimiter: .
+      index: 1
+    select:
+      group: cert-manager.io
+      kind: Certificate
+      name: serving-cert
+      namespace: system
+      version: v1
+- source: # SERVICE NAME
     kind: Service
-    version: v1
     name: webhook-service
+  targets:
+  - fieldPaths:
+    - spec.dnsNames.0
+    options:
+      delimiter: .
+    select:
+      group: cert-manager.io
+      kind: Certificate
+      name: serving-cert
+      namespace: system
+      version: v1
+  - fieldPaths:
+    - spec.dnsNames.1
+    options:
+      delimiter: .
+    select:
+      group: cert-manager.io
+      kind: Certificate
+      name: serving-cert
+      namespace: system
+      version: v1

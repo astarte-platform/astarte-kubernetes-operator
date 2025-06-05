@@ -28,7 +28,7 @@ on:
 
 jobs:
   check-chart:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
     - name: Fetch history
@@ -56,7 +56,7 @@ jobs:
           echo "::set-output name=changed::true"
         fi
   release:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: check-chart
     steps:
     - uses: actions/checkout@v4
@@ -67,7 +67,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.19.x'
+        go-version: '1.22.x'
     # Checkout the Helm repository
     - uses: actions/checkout@v4
       with:

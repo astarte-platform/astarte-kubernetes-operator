@@ -1,14 +1,14 @@
 defmodule Doc.MixProject do
   use Mix.Project
 
-  @source_ref "release-24.5"
+  @source_ref "master"
   @source_version String.replace_prefix(@source_ref, "release-", "")
                   |> String.replace("master", "snapshot")
 
   def project do
     [
       app: :doc,
-      version: "24.5.1",
+      version: "24.11.0-dev",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
