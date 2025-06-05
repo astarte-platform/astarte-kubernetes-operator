@@ -37,7 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
+	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/internal/controllerutils"
 	"github.com/astarte-platform/astarte-kubernetes-operator/internal/defaultingress"
@@ -77,7 +77,7 @@ func (r *AstarteDefaultIngressReconciler) Reconcile(ctx context.Context, req ctr
 	}
 
 	// Get the Astarte instance
-	astarte := &apiv1alpha2.Astarte{}
+	astarte := &apiv2alpha1.Astarte{}
 	if err := r.Client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.Astarte, Namespace: instance.Namespace}, astarte); err != nil {
 		if errors.IsNotFound(err) {
 			d, _ := time.ParseDuration("30s")
@@ -166,7 +166,7 @@ func (r *AstarteDefaultIngressReconciler) SetupWithManager(mgr ctrl.Manager) err
 		For(&ingressv1alpha1.AstarteDefaultIngress{}, builder.WithPredicates(pred)).
 		Owns(&networkingv1.Ingress{}).
 		Watches(
-			&apiv1alpha2.Astarte{},
+			&apiv2alpha1.Astarte{},
 			handler.EnqueueRequestsFromMapFunc(astarteToADIReconcileRequestFunc),
 		).
 		Complete(r)
