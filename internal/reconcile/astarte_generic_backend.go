@@ -32,19 +32,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
+	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/internal/misc"
 )
 
 // EnsureAstarteGenericBackend reconciles any component compatible with AstarteGenericClusteredResource
-func EnsureAstarteGenericBackend(cr *apiv1alpha2.Astarte, backend apiv1alpha2.AstarteGenericClusteredResource, component apiv1alpha2.AstarteComponent,
+func EnsureAstarteGenericBackend(cr *apiv2alpha1.Astarte, backend apiv2alpha1.AstarteGenericClusteredResource, component apiv2alpha1.AstarteComponent,
 	c client.Client, scheme *runtime.Scheme) error {
 	return EnsureAstarteGenericBackendWithCustomProbe(cr, backend, component, c, scheme, nil)
 }
 
 // EnsureAstarteGenericBackendWithCustomProbe reconciles any component compatible with AstarteGenericClusteredResource adding a custom probe
-func EnsureAstarteGenericBackendWithCustomProbe(cr *apiv1alpha2.Astarte, backend apiv1alpha2.AstarteGenericClusteredResource,
-	component apiv1alpha2.AstarteComponent, c client.Client, scheme *runtime.Scheme, customProbe *v1.Probe) error {
+func EnsureAstarteGenericBackendWithCustomProbe(cr *apiv2alpha1.Astarte, backend apiv2alpha1.AstarteGenericClusteredResource,
+	component apiv2alpha1.AstarteComponent, c client.Client, scheme *runtime.Scheme, customProbe *v1.Probe) error {
 	reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name, "Astarte.Component", component)
 	deploymentName := cr.Name + "-" + component.DashedString()
 	serviceName := cr.Name + "-" + component.ServiceName()
@@ -120,8 +120,8 @@ func EnsureAstarteGenericBackendWithCustomProbe(cr *apiv1alpha2.Astarte, backend
 	return nil
 }
 
-func getAstarteGenericBackendPodSpec(deploymentName string, replicaIndex, replicas int, cr *apiv1alpha2.Astarte, backend apiv1alpha2.AstarteGenericClusteredResource,
-	component apiv1alpha2.AstarteComponent, customProbe *v1.Probe) v1.PodSpec {
+func getAstarteGenericBackendPodSpec(deploymentName string, replicaIndex, replicas int, cr *apiv2alpha1.Astarte, backend apiv2alpha1.AstarteGenericClusteredResource,
+	component apiv2alpha1.AstarteComponent, customProbe *v1.Probe) v1.PodSpec {
 	ps := v1.PodSpec{
 		TerminationGracePeriodSeconds: pointy.Int64(30),
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
@@ -163,19 +163,19 @@ func getAstarteGenericBackendPodSpec(deploymentName string, replicaIndex, replic
 	return ps
 }
 
-func getAstarteGenericBackendVolumes(cr *apiv1alpha2.Astarte) []v1.Volume {
+func getAstarteGenericBackendVolumes(cr *apiv2alpha1.Astarte) []v1.Volume {
 	ret := getAstarteCommonVolumes(cr)
 
 	return ret
 }
 
-func getAstarteGenericBackendVolumeMounts(cr *apiv1alpha2.Astarte) []v1.VolumeMount {
+func getAstarteGenericBackendVolumeMounts(cr *apiv2alpha1.Astarte) []v1.VolumeMount {
 	ret := getAstarteCommonVolumeMounts(cr)
 
 	return ret
 }
 
-func getAstarteGenericBackendEnvVars(deploymentName string, replicaIndex, replicas int, cr *apiv1alpha2.Astarte, backend apiv1alpha2.AstarteGenericClusteredResource, component apiv1alpha2.AstarteComponent) []v1.EnvVar {
+func getAstarteGenericBackendEnvVars(deploymentName string, replicaIndex, replicas int, cr *apiv2alpha1.Astarte, backend apiv2alpha1.AstarteGenericClusteredResource, component apiv2alpha1.AstarteComponent) []v1.EnvVar {
 	ret := getAstarteCommonEnvVars(deploymentName, cr, backend, component)
 
 	ret = appendCassandraConnectionEnvVars(ret, cr)
@@ -197,34 +197,9 @@ func getAstarteGenericBackendEnvVars(deploymentName string, replicaIndex, replic
 
 	// Depending on the component, we might need to add some more stuff.
 	switch component {
-	case apiv1alpha2.Housekeeping:
-		if cr.Spec.AstarteSystemKeyspace.ReplicationFactor > 1 {
-			ret = append(ret,
-				v1.EnvVar{
-					Name:  "HOUSEKEEPING_ASTARTE_KEYSPACE_REPLICATION_FACTOR",
-					Value: strconv.Itoa(cr.Spec.AstarteSystemKeyspace.ReplicationFactor),
-				})
-		}
-		if cr.Spec.Features.RealmDeletion {
-			ret = append(ret,
-				v1.EnvVar{
-					Name:  "HOUSEKEEPING_ENABLE_REALM_DELETION",
-					Value: "true",
-				})
-		}
-	case apiv1alpha2.Pairing:
-		ret = append(ret,
-			v1.EnvVar{
-				Name:  "PAIRING_CFSSL_URL",
-				Value: getCFSSLURL(cr),
-			},
-			v1.EnvVar{
-				Name:  "PAIRING_BROKER_URL",
-				Value: misc.GetVerneMQBrokerURL(cr),
-			})
-	case apiv1alpha2.DataUpdaterPlant:
+	case apiv2alpha1.DataUpdaterPlant:
 		ret = append(ret, getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas, eventsExchangeName, cr)...)
-	case apiv1alpha2.TriggerEngine:
+	case apiv2alpha1.TriggerEngine:
 		// Add RabbitMQ variables
 		ret = appendRabbitMQConnectionEnvVars(ret, "TRIGGER_ENGINE_AMQP_CONSUMER", cr)
 
@@ -252,11 +227,10 @@ func getAstarteGenericBackendEnvVars(deploymentName string, replicaIndex, replic
 				})
 		}
 	}
-
 	return ret
 }
 
-func getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas int, eventsExchangeName string, cr *apiv1alpha2.Astarte) []v1.EnvVar {
+func getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas int, eventsExchangeName string, cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	ret := []v1.EnvVar{}
 
 	// Append RabbitMQ variables for both Consumer and Producer
@@ -308,7 +282,7 @@ func getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas int, events
 	return ret
 }
 
-func getAstarteDataUpdaterPlantQueuesEnvVars(replicaIndex, replicas int, cr *apiv1alpha2.Astarte) []v1.EnvVar {
+func getAstarteDataUpdaterPlantQueuesEnvVars(replicaIndex, replicas int, cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	dataQueueCount := getDataQueueCount(cr)
 
 	// Figure out the actual value for range start and range end. Defaults to the whole span of
@@ -338,13 +312,13 @@ func getAstarteDataUpdaterPlantQueuesEnvVars(replicaIndex, replicas int, cr *api
 		}}
 }
 
-func getAstarteBackendProbe(component apiv1alpha2.AstarteComponent, customProbe *v1.Probe) *v1.Probe {
+func getAstarteBackendProbe(component apiv2alpha1.AstarteComponent, customProbe *v1.Probe) *v1.Probe {
 	if customProbe != nil {
 		return customProbe
 	}
 
 	// Custom components
-	if component == apiv1alpha2.Housekeeping {
+	if component == apiv2alpha1.Housekeeping {
 		// We need a much longer timeout, as we have an initialization which happens 3 times
 		return getAstarteBackendGenericProbeWithThreshold("/health", 15)
 	}

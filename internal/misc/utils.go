@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
+	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 )
 
 const (
@@ -51,18 +51,15 @@ type allocationCoefficients struct {
 	MemoryCoefficient float64
 }
 
-var defaultComponentAllocations = map[apiv1alpha2.AstarteComponent]allocationCoefficients{
-	apiv1alpha2.AppEngineAPI:       {CPUCoefficient: 0.18, MemoryCoefficient: 0.18},
-	apiv1alpha2.DataUpdaterPlant:   {CPUCoefficient: 0.21, MemoryCoefficient: 0.21},
-	apiv1alpha2.FlowComponent:      {CPUCoefficient: 0.10, MemoryCoefficient: 0.10},
-	apiv1alpha2.Housekeeping:       {CPUCoefficient: 0.04, MemoryCoefficient: 0.04},
-	apiv1alpha2.HousekeepingAPI:    {CPUCoefficient: 0.04, MemoryCoefficient: 0.04},
-	apiv1alpha2.Pairing:            {CPUCoefficient: 0.06, MemoryCoefficient: 0.06},
-	apiv1alpha2.PairingAPI:         {CPUCoefficient: 0.13, MemoryCoefficient: 0.13},
-	apiv1alpha2.RealmManagement:    {CPUCoefficient: 0.06, MemoryCoefficient: 0.06},
-	apiv1alpha2.RealmManagementAPI: {CPUCoefficient: 0.06, MemoryCoefficient: 0.06},
-	apiv1alpha2.TriggerEngine:      {CPUCoefficient: 0.07, MemoryCoefficient: 0.07},
-	apiv1alpha2.Dashboard:          {CPUCoefficient: 0.05, MemoryCoefficient: 0.05},
+var defaultComponentAllocations = map[apiv2alpha1.AstarteComponent]allocationCoefficients{
+	apiv2alpha1.AppEngineAPI:     {CPUCoefficient: 0.18, MemoryCoefficient: 0.18},
+	apiv2alpha1.DataUpdaterPlant: {CPUCoefficient: 0.21, MemoryCoefficient: 0.21},
+	apiv2alpha1.FlowComponent:    {CPUCoefficient: 0.10, MemoryCoefficient: 0.10},
+	apiv2alpha1.Housekeeping:     {CPUCoefficient: 0.04, MemoryCoefficient: 0.04},
+	apiv2alpha1.Pairing:          {CPUCoefficient: 0.06, MemoryCoefficient: 0.06},
+	apiv2alpha1.RealmManagement:  {CPUCoefficient: 0.06, MemoryCoefficient: 0.06},
+	apiv2alpha1.TriggerEngine:    {CPUCoefficient: 0.07, MemoryCoefficient: 0.07},
+	apiv2alpha1.Dashboard:        {CPUCoefficient: 0.05, MemoryCoefficient: 0.05},
 }
 
 // ReconcileConfigMap creates or updates a ConfigMap through controllerutil through its data map
@@ -171,14 +168,14 @@ func LogCreateOrUpdateOperationResult(log logr.Logger, result controllerutil.Ope
 }
 
 // GetVerneMQBrokerURL returns the complete URL for VerneMQ (MQTT) for an Astarte resource
-func GetVerneMQBrokerURL(cr *apiv1alpha2.Astarte) string {
-	return fmt.Sprintf("mqtts://%s:%d", cr.Spec.VerneMQ.Host, pointy.Int16Value(cr.Spec.VerneMQ.Port, 8883))
+func GetVerneMQBrokerURL(cr *apiv2alpha1.Astarte) string {
+	return fmt.Sprintf("mqtts://%s:%d", cr.Spec.VerneMQ.Host, pointy.Int32Value(cr.Spec.VerneMQ.Port, 8883))
 }
 
 // GetResourcesForAstarteComponent returns the allocated resources for a given Astarte component, taking into account both the
 // directive from Components, and the directive from the individual component (if any).
 // It will compute a ResourceRequirements for the component based on said values and internal logic.
-func GetResourcesForAstarteComponent(cr *apiv1alpha2.Astarte, requestedResources *v1.ResourceRequirements, component apiv1alpha2.AstarteComponent) v1.ResourceRequirements {
+func GetResourcesForAstarteComponent(cr *apiv2alpha1.Astarte, requestedResources *v1.ResourceRequirements, component apiv2alpha1.AstarteComponent) v1.ResourceRequirements {
 	if requestedResources != nil {
 		// There has been an explicit allocation, so return that
 		return *requestedResources
@@ -244,7 +241,7 @@ func getAllocationScaledQuantity(qty *resource.Quantity, scale resource.Scale, c
 	return resource.NewScaledQuantity(int64(float64(qty.ScaledValue(scale))*coefficient), scale)
 }
 
-func getNumberOfDeployedAstarteComponentsAsFloat(cr *apiv1alpha2.Astarte) float64 {
+func getNumberOfDeployedAstarteComponentsAsFloat(cr *apiv2alpha1.Astarte) float64 {
 	var deployedComponents int
 
 	if pointy.BoolValue(cr.Spec.Components.AppengineAPI.Deploy, true) {
@@ -259,22 +256,13 @@ func getNumberOfDeployedAstarteComponentsAsFloat(cr *apiv1alpha2.Astarte) float6
 	if pointy.BoolValue(cr.Spec.Components.Flow.Deploy, true) {
 		deployedComponents++
 	}
-	if pointy.BoolValue(cr.Spec.Components.Housekeeping.Backend.Deploy, true) {
+	if pointy.BoolValue(cr.Spec.Components.Housekeeping.Deploy, true) {
 		deployedComponents++
 	}
-	if pointy.BoolValue(cr.Spec.Components.Housekeeping.API.Deploy, true) {
+	if pointy.BoolValue(cr.Spec.Components.Pairing.Deploy, true) {
 		deployedComponents++
 	}
-	if pointy.BoolValue(cr.Spec.Components.Pairing.Backend.Deploy, true) {
-		deployedComponents++
-	}
-	if pointy.BoolValue(cr.Spec.Components.Pairing.API.Deploy, true) {
-		deployedComponents++
-	}
-	if pointy.BoolValue(cr.Spec.Components.RealmManagement.Backend.Deploy, true) {
-		deployedComponents++
-	}
-	if pointy.BoolValue(cr.Spec.Components.RealmManagement.API.Deploy, true) {
+	if pointy.BoolValue(cr.Spec.Components.RealmManagement.Deploy, true) {
 		deployedComponents++
 	}
 	if pointy.BoolValue(cr.Spec.Components.TriggerEngine.Deploy, true) {
@@ -284,26 +272,23 @@ func getNumberOfDeployedAstarteComponentsAsFloat(cr *apiv1alpha2.Astarte) float6
 	return float64(deployedComponents)
 }
 
-func getLeftoverCoefficients(cr *apiv1alpha2.Astarte) allocationCoefficients {
+func getLeftoverCoefficients(cr *apiv2alpha1.Astarte) allocationCoefficients {
 	aC := allocationCoefficients{}
 
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.AppengineAPI.AstarteGenericClusteredResource, apiv1alpha2.AppEngineAPI, aC)
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Dashboard.AstarteGenericClusteredResource, apiv1alpha2.Dashboard, aC)
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource, apiv1alpha2.DataUpdaterPlant, aC)
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Flow.AstarteGenericClusteredResource, apiv1alpha2.FlowComponent, aC)
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Housekeeping.Backend, apiv1alpha2.Housekeeping, aC)
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Housekeeping.API.AstarteGenericClusteredResource, apiv1alpha2.HousekeepingAPI, aC)
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Pairing.Backend, apiv1alpha2.Pairing, aC)
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Pairing.API.AstarteGenericClusteredResource, apiv1alpha2.PairingAPI, aC)
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.RealmManagement.Backend, apiv1alpha2.RealmManagement, aC)
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.RealmManagement.API.AstarteGenericClusteredResource, apiv1alpha2.RealmManagementAPI, aC)
-	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.TriggerEngine.AstarteGenericClusteredResource, apiv1alpha2.TriggerEngine, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.AppengineAPI.AstarteGenericClusteredResource, apiv2alpha1.AppEngineAPI, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Dashboard.AstarteGenericClusteredResource, apiv2alpha1.Dashboard, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource, apiv2alpha1.DataUpdaterPlant, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Flow.AstarteGenericClusteredResource, apiv2alpha1.FlowComponent, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Housekeeping.AstarteGenericClusteredResource, apiv2alpha1.Housekeeping, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.Pairing.AstarteGenericClusteredResource, apiv2alpha1.Pairing, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.RealmManagement.AstarteGenericClusteredResource, apiv2alpha1.RealmManagement, aC)
+	aC = checkComponentForLeftoverAllocations(cr.Spec.Components.TriggerEngine.AstarteGenericClusteredResource, apiv2alpha1.TriggerEngine, aC)
 
 	return aC
 }
 
-func checkComponentForLeftoverAllocations(clusteredResource apiv1alpha2.AstarteGenericClusteredResource,
-	component apiv1alpha2.AstarteComponent, aC allocationCoefficients) allocationCoefficients {
+func checkComponentForLeftoverAllocations(clusteredResource apiv2alpha1.AstarteGenericClusteredResource,
+	component apiv2alpha1.AstarteComponent, aC allocationCoefficients) allocationCoefficients {
 	if !pointy.BoolValue(clusteredResource.Deploy, true) {
 		aC.CPUCoefficient += defaultComponentAllocations[component].CPUCoefficient
 		aC.MemoryCoefficient += defaultComponentAllocations[component].MemoryCoefficient
@@ -312,7 +297,7 @@ func checkComponentForLeftoverAllocations(clusteredResource apiv1alpha2.AstarteG
 	return aC
 }
 
-func getWeightedDefaultAllocationFor(cr *apiv1alpha2.Astarte, component apiv1alpha2.AstarteComponent) allocationCoefficients {
+func getWeightedDefaultAllocationFor(cr *apiv2alpha1.Astarte, component apiv2alpha1.AstarteComponent) allocationCoefficients {
 	// Add other percentages proportionally
 	leftovers := getLeftoverCoefficients(cr)
 	defaultAllocation := defaultComponentAllocations[component]
@@ -328,29 +313,23 @@ func getWeightedDefaultAllocationFor(cr *apiv1alpha2.Astarte, component apiv1alp
 }
 
 // IsAstarteComponentDeployed returns whether an Astarte component is deployed by cr
-func IsAstarteComponentDeployed(cr *apiv1alpha2.Astarte, component apiv1alpha2.AstarteComponent) bool {
+func IsAstarteComponentDeployed(cr *apiv2alpha1.Astarte, component apiv2alpha1.AstarteComponent) bool {
 	switch component {
-	case apiv1alpha2.AppEngineAPI:
+	case apiv2alpha1.AppEngineAPI:
 		return pointy.BoolValue(cr.Spec.Components.AppengineAPI.Deploy, true)
-	case apiv1alpha2.Dashboard:
+	case apiv2alpha1.Dashboard:
 		return pointy.BoolValue(cr.Spec.Components.Dashboard.Deploy, true)
-	case apiv1alpha2.DataUpdaterPlant:
+	case apiv2alpha1.DataUpdaterPlant:
 		return pointy.BoolValue(cr.Spec.Components.DataUpdaterPlant.Deploy, true)
-	case apiv1alpha2.FlowComponent:
+	case apiv2alpha1.FlowComponent:
 		return pointy.BoolValue(cr.Spec.Components.Flow.Deploy, false)
-	case apiv1alpha2.Housekeeping:
-		return pointy.BoolValue(cr.Spec.Components.Housekeeping.Backend.Deploy, true)
-	case apiv1alpha2.HousekeepingAPI:
-		return pointy.BoolValue(cr.Spec.Components.Housekeeping.API.Deploy, true)
-	case apiv1alpha2.Pairing:
-		return pointy.BoolValue(cr.Spec.Components.Pairing.Backend.Deploy, true)
-	case apiv1alpha2.PairingAPI:
-		return pointy.BoolValue(cr.Spec.Components.Pairing.API.Deploy, true)
-	case apiv1alpha2.RealmManagement:
-		return pointy.BoolValue(cr.Spec.Components.RealmManagement.Backend.Deploy, true)
-	case apiv1alpha2.RealmManagementAPI:
-		return pointy.BoolValue(cr.Spec.Components.RealmManagement.API.Deploy, true)
-	case apiv1alpha2.TriggerEngine:
+	case apiv2alpha1.Housekeeping:
+		return pointy.BoolValue(cr.Spec.Components.Housekeeping.Deploy, true)
+	case apiv2alpha1.Pairing:
+		return pointy.BoolValue(cr.Spec.Components.Pairing.Deploy, true)
+	case apiv2alpha1.RealmManagement:
+		return pointy.BoolValue(cr.Spec.Components.RealmManagement.Deploy, true)
+	case apiv2alpha1.TriggerEngine:
 		return pointy.BoolValue(cr.Spec.Components.TriggerEngine.Deploy, true)
 	}
 
@@ -372,7 +351,7 @@ func GetRabbitMQUserCredentialsSecret(cr *apiv2alpha1.Astarte) (string, string, 
 // GetRabbitMQCredentialsFor returns the RabbitMQ host, username and password for a given CR. This information
 // can be used for connecting to RabbitMQ from the Operator or an external agent, and it should not be used for
 // any other purpose.
-func GetRabbitMQCredentialsFor(cr *apiv1alpha2.Astarte, c client.Client) (string, int16, string, string, error) {
+func GetRabbitMQCredentialsFor(cr *apiv2alpha1.Astarte, c client.Client) (string, int32, string, string, error) {
 	host, port := GetRabbitMQHostnameAndPort(cr)
 	secretName, usernameKey, passwordKey := GetRabbitMQUserCredentialsSecret(cr)
 
