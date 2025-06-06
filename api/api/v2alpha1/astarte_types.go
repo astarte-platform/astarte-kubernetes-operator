@@ -316,6 +316,9 @@ type GenericConnectionSpec struct {
 	CredentialsSecret *LoginCredentialsSecret `json:"credentialsSecret,omitempty"`
 	// The secret containing a connection string to the service.
 	// Either this field or `credentialsSecret` must be set.
+	// TODO: currently, Astarte services do not allow the connection string to be
+	// put as-is in the env. Therefore, setting this field is a no-op.
+	// Not using `credentialsSecret` WILL break your Astarte instance.
 	// +kubebuilder:validation:Optional
 	ConnectionStringSecret *ConnectionStringSecret `json:"connectionStringSecret,omitempty"`
 }
