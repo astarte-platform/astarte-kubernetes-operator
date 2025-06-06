@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
+	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 
 	. "github.com/onsi/ginkgo/v2" //nolint:golint,revive
 )
@@ -39,7 +39,7 @@ const (
 	certmanagerURLTmpl = "https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml"
 
 	// the astarteName and astarteNamespace variables must match the values of the
-	// test/samples/api_v1alpha2_astarte_1*.yaml files
+	// test/samples/api_v2alpha1_astarte_1*.yaml files
 	astarteName      = "example-astarte"
 	astarteNamespace = "default"
 
@@ -167,8 +167,8 @@ func InstallAstarte(manifestPath string) error {
 
 func EnsureAstarteHealthGreen() error {
 	// Wait for astarte health to be green.
-	cmd := exec.Command("kubectl", "wait", "astartes.v1alpha2.api.astarte-platform.org", astarteName,
-		"--for", fmt.Sprintf("jsonpath={.status.health}=%s", apiv1alpha2.AstarteClusterHealthGreen),
+	cmd := exec.Command("kubectl", "wait", "astartes.v2alpha1.api.astarte-platform.org", astarteName,
+		"--for", fmt.Sprintf("jsonpath={.status.health}=%s", apiv2alpha1.AstarteClusterHealthGreen),
 		"--namespace", astarteNamespace,
 		"--timeout", "10m",
 	)
