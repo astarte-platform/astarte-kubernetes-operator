@@ -25,11 +25,11 @@ import (
 	"go.openly.dev/pointy"
 	networkingv1 "k8s.io/api/networking/v1"
 
-	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
+	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v1alpha1"
 )
 
-func getCommonIngressAnnotations(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte) map[string]string {
+func getCommonIngressAnnotations(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) map[string]string {
 	apiSslRedirect := pointy.BoolValue(parent.Spec.API.SSL, true) || pointy.BoolValue(cr.Spec.Dashboard.SSL, true)
 	annotations := map[string]string{
 		"nginx.ingress.kubernetes.io/ssl-redirect":   strconv.FormatBool(apiSslRedirect),
@@ -63,7 +63,7 @@ func getIngressClassName(cr *ingressv1alpha1.AstarteDefaultIngress) *string {
 	return pointy.String(cr.Spec.IngressClass)
 }
 
-func getIngressTLS(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte, includeDashboard bool) []networkingv1.IngressTLS {
+func getIngressTLS(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte, includeDashboard bool) []networkingv1.IngressTLS {
 	ingressTLSs := []networkingv1.IngressTLS{}
 
 	// Check API

@@ -32,12 +32,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
+	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/internal/misc"
 )
 
-func EnsureBrokerIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
+func EnsureBrokerIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
 	// we actually don't have an ingress, but a service which exposes the broker
 	brokerServiceName := getBrokerServiceName(cr)
 	if !pointy.BoolValue(cr.Spec.Broker.Deploy, true) {
@@ -63,7 +63,7 @@ func EnsureBrokerIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv
 		brokerService.Annotations = cr.Spec.Broker.ServiceAnnotations
 		brokerService.Spec.Ports = []v1.ServicePort{
 			{
-				Port:       int32(pointy.Int16Value(parent.Spec.VerneMQ.Port, 8883)),
+				Port:       pointy.Int32Value(parent.Spec.VerneMQ.Port, 8883),
 				TargetPort: intstr.FromInt(8883),
 			},
 		}
