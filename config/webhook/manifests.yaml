@@ -10,26 +10,6 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-api-astarte-platform-org-v1alpha2-astarte
-  failurePolicy: Fail
-  name: mastarte.kb.io
-  rules:
-  - apiGroups:
-    - api.astarte-platform.org
-    apiVersions:
-    - v1alpha2
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - astartes
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
       path: /mutate-api-astarte-platform-org-v1alpha2-flow
   failurePolicy: Fail
   name: mflow.kb.io
@@ -70,26 +50,6 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: validating-webhook-configuration
 webhooks:
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: webhook-service
-      namespace: system
-      path: /validate-api-astarte-platform-org-v1alpha2-astarte
-  failurePolicy: Fail
-  name: vastarte.kb.io
-  rules:
-  - apiGroups:
-    - api.astarte-platform.org
-    apiVersions:
-    - v1alpha2
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - astartes
-  sideEffects: None
 - admissionReviewVersions:
   - v1
   clientConfig:
