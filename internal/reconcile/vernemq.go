@@ -31,19 +31,18 @@ import (
 	"go.openly.dev/pointy"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
+	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/internal/misc"
 )
 
 // EnsureVerneMQ reconciles VerneMQ
-func EnsureVerneMQ(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func EnsureVerneMQ(cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	statefulSetName := GetVerneMQStatefulSetName(cr)
 	labels := map[string]string{"app": statefulSetName}
 
@@ -69,13 +68,6 @@ func EnsureVerneMQ(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Sch
 
 		// That would be all for today.
 		return nil
-	}
-
-	// Ensure we reconcile with the RBAC Roles, if needed.
-	if pointy.BoolValue(cr.Spec.RBAC, true) {
-		if err := reconcileStandardRBACForClusteringForApp(statefulSetName, getVerneMQPolicyRules(), cr, c, scheme); err != nil {
-			return err
-		}
 	}
 
 	// Good. Now, reconcile the service first of all.
@@ -169,11 +161,11 @@ func EnsureVerneMQ(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Sch
 	return nil
 }
 
-func GetVerneMQStatefulSetName(cr *apiv1alpha2.Astarte) string {
+func GetVerneMQStatefulSetName(cr *apiv2alpha1.Astarte) string {
 	return cr.Name + "-vernemq"
 }
 
-func validateVerneMQDefinition(vmq *apiv1alpha2.AstarteVerneMQSpec) error {
+func validateVerneMQDefinition(vmq *apiv2alpha1.AstarteVerneMQSpec) error {
 	if vmq == nil {
 		return nil
 	}
@@ -192,7 +184,7 @@ func getVerneMQProbe() *v1.Probe {
 	}
 }
 
-func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha2.Astarte) []v1.EnvVar {
+func getVerneMQEnvVars(statefulSetName string, cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	dataQueueCount := getDataQueueCount(cr)
 	mirrorQueue := getMirrorQueue(cr)
 
@@ -311,7 +303,7 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha2.Astarte) []v1.Env
 	return envVars
 }
 
-func appendVerneMQCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv1alpha2.Astarte) []v1.EnvVar {
+func appendVerneMQCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	theCassandraEnv := []v1.EnvVar{}
 	theCassandraEnv = appendCassandraConnectionEnvVars(theCassandraEnv, cr)
 
@@ -340,11 +332,8 @@ func appendVerneMQCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv1alpha2.As
 	return ret
 }
 
-func getVerneMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha2.Astarte) v1.PodSpec {
+func getVerneMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv2alpha1.Astarte) v1.PodSpec {
 	serviceAccountName := statefulSetName
-	if pointy.BoolValue(cr.Spec.RBAC, false) {
-		serviceAccountName = ""
-	}
 
 	resources := v1.ResourceRequirements{}
 	if cr.Spec.VerneMQ.Resources != nil {
@@ -409,7 +398,7 @@ func getVerneMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv1alpha2.A
 	return ps
 }
 
-func getVerneMQVolumes(cr *apiv1alpha2.Astarte) []v1.Volume {
+func getVerneMQVolumes(cr *apiv2alpha1.Astarte) []v1.Volume {
 	theVolumes := []v1.Volume{}
 
 	// if SSL termination must be handled at VerneMQ level, create the volume to store the certificates
@@ -439,7 +428,7 @@ func getVerneMQVolumes(cr *apiv1alpha2.Astarte) []v1.Volume {
 	return theVolumes
 }
 
-func getVerneMQVolumeMounts(dataVolumeName string, cr *apiv1alpha2.Astarte) []v1.VolumeMount {
+func getVerneMQVolumeMounts(dataVolumeName string, cr *apiv2alpha1.Astarte) []v1.VolumeMount {
 	theVolumeMounts := []v1.VolumeMount{
 		{
 			Name:      dataVolumeName,
@@ -461,32 +450,15 @@ func getVerneMQVolumeMounts(dataVolumeName string, cr *apiv1alpha2.Astarte) []v1
 	return theVolumeMounts
 }
 
-func getVerneMQPolicyRules() []rbacv1.PolicyRule {
-	// Reminder: The new "statefulsets" permissions below are required for Astarte > 1.2 (current snapshot included).
-	// Old permissions will no longer be needed when we support Astarte >= 1.3.
-	return []rbacv1.PolicyRule{
-		{
-			APIGroups: []string{""},
-			Resources: []string{"pods", "services"},
-			Verbs:     []string{"list", "get"},
-		},
-		{
-			APIGroups: []string{"apps"},
-			Resources: []string{"statefulsets"},
-			Verbs:     []string{"get"},
-		},
-	}
-}
-
-func getMirrorQueue(cr *apiv1alpha2.Astarte) string {
+func getMirrorQueue(cr *apiv2alpha1.Astarte) string {
 	return cr.Spec.VerneMQ.MirrorQueue
 }
 
-func shouldVerneHandleSSLTermination(cr *apiv1alpha2.Astarte) bool {
+func shouldVerneHandleSSLTermination(cr *apiv2alpha1.Astarte) bool {
 	return pointy.BoolValue(cr.Spec.VerneMQ.SSLListener, false) && cr.Spec.VerneMQ.SSLListenerCertSecretName != ""
 }
 
-func maybeDeleteVerneMQPods(cr *apiv1alpha2.Astarte, c client.Client) error {
+func maybeDeleteVerneMQPods(cr *apiv2alpha1.Astarte, c client.Client) error {
 	// List all secrets
 	secretList := &v1.SecretList{}
 	if err := c.List(context.Background(), secretList, client.InNamespace(cr.GetNamespace())); err != nil {

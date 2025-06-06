@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	controllerutil "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
+	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/internal/misc"
 )
 
@@ -38,21 +38,18 @@ const (
 	AstarteLowPriorityName  string = "astarte-low-priority-non-preemptive"
 )
 
-var defaultComponentPriorityClass = map[apiv1alpha2.AstarteComponent]string{
-	apiv1alpha2.AppEngineAPI:       AstarteMidPriorityName,
-	apiv1alpha2.DataUpdaterPlant:   AstarteHighPriorityName,
-	apiv1alpha2.FlowComponent:      AstarteMidPriorityName,
-	apiv1alpha2.Housekeeping:       AstarteLowPriorityName,
-	apiv1alpha2.HousekeepingAPI:    AstarteLowPriorityName,
-	apiv1alpha2.Pairing:            AstarteMidPriorityName,
-	apiv1alpha2.PairingAPI:         AstarteMidPriorityName,
-	apiv1alpha2.RealmManagement:    AstarteLowPriorityName,
-	apiv1alpha2.RealmManagementAPI: AstarteLowPriorityName,
-	apiv1alpha2.TriggerEngine:      AstarteLowPriorityName,
-	apiv1alpha2.Dashboard:          AstarteLowPriorityName,
+var defaultComponentPriorityClass = map[apiv2alpha1.AstarteComponent]string{
+	apiv2alpha1.AppEngineAPI:     AstarteMidPriorityName,
+	apiv2alpha1.DataUpdaterPlant: AstarteHighPriorityName,
+	apiv2alpha1.FlowComponent:    AstarteMidPriorityName,
+	apiv2alpha1.Housekeeping:     AstarteLowPriorityName,
+	apiv2alpha1.Pairing:          AstarteMidPriorityName,
+	apiv2alpha1.RealmManagement:  AstarteLowPriorityName,
+	apiv2alpha1.TriggerEngine:    AstarteLowPriorityName,
+	apiv2alpha1.Dashboard:        AstarteLowPriorityName,
 }
 
-func EnsureAstartePriorityClasses(instance *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func EnsureAstartePriorityClasses(instance *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	// Shall we use priorityClasses?
 	if instance.Spec.Features.AstartePodPriorities.IsEnabled() {
 
@@ -118,6 +115,6 @@ func EnsureAstartePriorityClasses(instance *apiv1alpha2.Astarte, c client.Client
 	return nil
 }
 
-func GetDefaultAstartePriorityClassNameForComponent(component apiv1alpha2.AstarteComponent) string {
+func GetDefaultAstartePriorityClassNameForComponent(component apiv2alpha1.AstarteComponent) string {
 	return defaultComponentPriorityClass[component]
 }
