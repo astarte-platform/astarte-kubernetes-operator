@@ -359,27 +359,14 @@ func IsAstarteComponentDeployed(cr *apiv1alpha2.Astarte, component apiv1alpha2.A
 }
 
 // GetRabbitMQHostnameAndPort returns the Cluster-accessible Hostname and AMQP port for RabbitMQ
-func GetRabbitMQHostnameAndPort(cr *apiv1alpha2.Astarte) (string, int16) {
-	if cr.Spec.RabbitMQ.Connection != nil {
-		if cr.Spec.RabbitMQ.Connection.Host != "" {
-			return cr.Spec.RabbitMQ.Connection.Host, pointy.Int16Value(cr.Spec.RabbitMQ.Connection.Port, 5672)
-		}
-	}
-
-	// We're on defaults then. Give the standard hostname + port for our service
-	return fmt.Sprintf("%s-rabbitmq.%s.svc.cluster.local", cr.Name, cr.Namespace), 5672
+func GetRabbitMQHostnameAndPort(cr *apiv2alpha1.Astarte) (string, int32) {
+	return cr.Spec.RabbitMQ.Connection.Host, pointy.Int32Value(cr.Spec.RabbitMQ.Connection.Port, 5672)
 }
 
 // GetRabbitMQUserCredentialsSecret gets the secret holding RabbitMQ credentials in the form <secret name>, <username key>, <password key>
-func GetRabbitMQUserCredentialsSecret(cr *apiv1alpha2.Astarte) (string, string, string) {
-	if cr.Spec.RabbitMQ.Connection != nil {
-		if cr.Spec.RabbitMQ.Connection.Secret != nil {
-			return cr.Spec.RabbitMQ.Connection.Secret.Name, cr.Spec.RabbitMQ.Connection.Secret.UsernameKey, cr.Spec.RabbitMQ.Connection.Secret.PasswordKey
-		}
-	}
-
-	// Standard setup
-	return cr.Name + "-rabbitmq-user-credentials", RabbitMQDefaultUserCredentialsUsernameKey, RabbitMQDefaultUserCredentialsPasswordKey
+func GetRabbitMQUserCredentialsSecret(cr *apiv2alpha1.Astarte) (string, string, string) {
+	// TODO: allow `connectionStringSecret` to be used too
+	return cr.Spec.RabbitMQ.Connection.CredentialsSecret.Name, cr.Spec.RabbitMQ.Connection.CredentialsSecret.UsernameKey, cr.Spec.RabbitMQ.Connection.CredentialsSecret.PasswordKey
 }
 
 // GetRabbitMQCredentialsFor returns the RabbitMQ host, username and password for a given CR. This information
@@ -399,13 +386,8 @@ func GetRabbitMQCredentialsFor(cr *apiv1alpha2.Astarte, c client.Client) (string
 }
 
 // GetCassandraUserCredentialsSecret gets the secret holding Cassandra credentials in the form <secret name>, <username key>, <password key>
-func GetCassandraUserCredentialsSecret(cr *apiv1alpha2.Astarte) (string, string, string) {
-	if cr.Spec.Cassandra.Connection != nil {
-		if cr.Spec.Cassandra.Connection.Secret != nil {
-			return cr.Spec.Cassandra.Connection.Secret.Name, cr.Spec.Cassandra.Connection.Secret.UsernameKey, cr.Spec.Cassandra.Connection.Secret.PasswordKey
-		}
-	}
+func GetCassandraUserCredentialsSecret(cr *apiv2alpha1.Astarte) (string, string, string) {
+	// TODO: allow `connectionStringSecret` to be used too
+	return cr.Spec.Cassandra.Connection.CredentialsSecret.Name, cr.Spec.Cassandra.Connection.CredentialsSecret.UsernameKey, cr.Spec.Cassandra.Connection.CredentialsSecret.PasswordKey
 
-	// Standard setup
-	return cr.Name + "-cassandra-user-credentials", CassandraDefaultUserCredentialsUsernameKey, CassandraDefaultUserCredentialsPasswordKey
 }
