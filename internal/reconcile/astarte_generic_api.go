@@ -35,18 +35,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
+	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/internal/misc"
 )
 
 // EnsureAstarteGenericAPI reconciles any component compatible with AstarteGenericAPISpec with a custom Probe
-func EnsureAstarteGenericAPI(cr *apiv1alpha2.Astarte, api apiv1alpha2.AstarteGenericAPISpec, component apiv1alpha2.AstarteComponent,
+func EnsureAstarteGenericAPIComponent(cr *apiv2alpha1.Astarte, api apiv2alpha1.AstarteGenericAPIComponentSpec, component apiv2alpha1.AstarteComponent,
 	c client.Client, scheme *runtime.Scheme) error {
-	return EnsureAstarteGenericAPIWithCustomProbe(cr, api, component, c, scheme, nil)
+	return EnsureAstarteGenericAPIComponentWithCustomProbe(cr, api, component, c, scheme, nil)
 }
 
 // EnsureAstarteGenericAPIWithCustomProbe reconciles any component compatible with AstarteGenericAPISpec with a custom Probe
-func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha2.Astarte, api apiv1alpha2.AstarteGenericAPISpec, component apiv1alpha2.AstarteComponent,
+func EnsureAstarteGenericAPIComponentWithCustomProbe(cr *apiv2alpha1.Astarte, api apiv2alpha1.AstarteGenericAPIComponentSpec, component apiv2alpha1.AstarteComponent,
 	c client.Client, scheme *runtime.Scheme, customProbe *v1.Probe) error {
 	reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name, "Astarte.Component", component)
 	deploymentName := cr.Name + "-" + component.DashedString()
@@ -60,7 +60,7 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha2.Astarte, api apiv1al
 	matchLabels := map[string]string{"app": deploymentName}
 
 	// Ok. Shall we deploy?
-	if !checkShouldDeployAPI(reqLogger, deploymentName, cr, api, component, c) {
+	if !checkShouldDeploy(reqLogger, deploymentName, cr, api, component, c) {
 		// That would be all for today.
 		return nil
 	}
@@ -76,7 +76,7 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha2.Astarte, api apiv1al
 	}
 
 	// Service Account?
-	if component == apiv1alpha2.FlowComponent {
+	if component == apiv2alpha1.FlowComponent {
 		if err := reconcileRBACForFlow(cr.Name+"-"+component.ServiceName(), cr, c, scheme); err != nil {
 			return err
 		}
@@ -123,11 +123,11 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha2.Astarte, api apiv1al
 	return nil
 }
 
-func checkShouldDeployAPI(reqLogger logr.Logger, deploymentName string, cr *apiv1alpha2.Astarte, api apiv1alpha2.AstarteGenericAPISpec,
-	component apiv1alpha2.AstarteComponent, c client.Client) bool {
+func checkShouldDeploy(reqLogger logr.Logger, deploymentName string, cr *apiv2alpha1.Astarte, api apiv2alpha1.AstarteGenericAPIComponentSpec,
+	component apiv2alpha1.AstarteComponent, c client.Client) bool {
 	defaultDeployValue := true
 	// Flow should be deployed only if explicitly requested
-	if component == apiv1alpha2.FlowComponent {
+	if component == apiv2alpha1.FlowComponent {
 		defaultDeployValue = false
 	}
 
@@ -151,8 +151,8 @@ func checkShouldDeployAPI(reqLogger logr.Logger, deploymentName string, cr *apiv
 	return true
 }
 
-func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha2.Astarte, api apiv1alpha2.AstarteGenericAPISpec,
-	component apiv1alpha2.AstarteComponent, customProbe *v1.Probe) v1.PodSpec {
+func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv2alpha1.Astarte, api apiv2alpha1.AstarteGenericAPIComponentSpec,
+	component apiv2alpha1.AstarteComponent, customProbe *v1.Probe) v1.PodSpec {
 	ps := v1.PodSpec{
 		TerminationGracePeriodSeconds: pointy.Int64(30),
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
@@ -161,28 +161,27 @@ func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha2.Astarte,
 			{
 				Name: component.DashedString(),
 				Ports: []v1.ContainerPort{
+					// This port is not exposed through any service - it is just used for health checks and the likes.
 					{Name: "http", ContainerPort: astarteServicesPort},
 				},
-				VolumeMounts:    getAstarteGenericAPIVolumeMounts(cr, component),
+				VolumeMounts:    getAstarteGenericAPIComponentVolumeMounts(cr, component),
 				Image:           getAstarteImageForClusteredResource(component.DockerImageName(), api.AstarteGenericClusteredResource, cr),
 				ImagePullPolicy: getImagePullPolicy(cr),
 				Resources:       misc.GetResourcesForAstarteComponent(cr, api.Resources, component),
 				Env:             getAstarteGenericAPIEnvVars(deploymentName, cr, api, component),
-				ReadinessProbe:  getAstarteAPIProbe(customProbe),
-				LivenessProbe:   getAstarteAPIProbe(customProbe),
+				ReadinessProbe:  getAstarteAPIProbe(component, customProbe),
+				LivenessProbe:   getAstarteAPIProbe(component, customProbe),
 			},
 		},
-		Volumes: getAstarteGenericAPIVolumes(cr, component),
+		Volumes: getAstarteGenericAPIComponentVolumes(cr, component),
 	}
 
 	if component == apiv1alpha2.AppEngineAPI {
 		serviceAccountName := deploymentName
-		if pointy.BoolValue(cr.Spec.RBAC, true) {
-			ps.ServiceAccountName = serviceAccountName
-		}
+		ps.ServiceAccountName = serviceAccountName
 	}
 
-	if component == apiv1alpha2.FlowComponent {
+	if component == apiv2alpha1.FlowComponent {
 		ps.ServiceAccountName = cr.Name + "-" + component.ServiceName()
 	}
 
@@ -204,11 +203,11 @@ func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha2.Astarte,
 	return ps
 }
 
-func getAstarteGenericAPIVolumes(cr *apiv1alpha2.Astarte, component apiv1alpha2.AstarteComponent) []v1.Volume {
+func getAstarteGenericAPIComponentVolumes(cr *apiv2alpha1.Astarte, component apiv2alpha1.AstarteComponent) []v1.Volume {
 	ret := getAstarteCommonVolumes(cr)
 
 	// Depending on the component, we might need to add some more stuff.
-	if component == apiv1alpha2.HousekeepingAPI {
+	if component == apiv2alpha1.Housekeeping {
 		ret = append(ret, v1.Volume{
 			Name: "jwtpubkey",
 			VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{
@@ -220,11 +219,11 @@ func getAstarteGenericAPIVolumes(cr *apiv1alpha2.Astarte, component apiv1alpha2.
 	return ret
 }
 
-func getAstarteGenericAPIVolumeMounts(cr *apiv1alpha2.Astarte, component apiv1alpha2.AstarteComponent) []v1.VolumeMount {
+func getAstarteGenericAPIComponentVolumeMounts(cr *apiv2alpha1.Astarte, component apiv2alpha1.AstarteComponent) []v1.VolumeMount {
 	ret := getAstarteCommonVolumeMounts(cr)
 
 	// Depending on the component, we might need to add some more stuff.
-	if component == apiv1alpha2.HousekeepingAPI {
+	if component == apiv2alpha1.Housekeeping {
 		ret = append(ret, v1.VolumeMount{
 			Name:      "jwtpubkey",
 			MountPath: "/jwtpubkey",
@@ -235,7 +234,7 @@ func getAstarteGenericAPIVolumeMounts(cr *apiv1alpha2.Astarte, component apiv1al
 	return ret
 }
 
-func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha2.Astarte, api apiv1alpha2.AstarteGenericAPISpec, component apiv1alpha2.AstarteComponent) []v1.EnvVar {
+func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv2alpha1.Astarte, api apiv2alpha1.AstarteGenericAPIComponentSpec, component apiv2alpha1.AstarteComponent) []v1.EnvVar {
 	ret := getAstarteCommonEnvVars(deploymentName, cr, api.AstarteGenericClusteredResource, component)
 
 	// Should we disable authentication?
@@ -246,9 +245,27 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha2.Astarte,
 		})
 	}
 
+	ret = appendCassandraConnectionEnvVars(ret, cr)
+
+	// Add Cassandra Nodes
+	ret = append(ret, v1.EnvVar{
+		Name:  "CASSANDRA_NODES",
+		Value: getCassandraNodes(cr),
+	})
+
+	if cr.Spec.AstarteInstanceID != "" {
+		ret = append(ret, v1.EnvVar{
+			Name:  "ASTARTE_INSTANCE_ID",
+			Value: cr.Spec.AstarteInstanceID,
+		})
+	}
+
+	eventsExchangeName := cr.Spec.RabbitMQ.EventsExchangeName
+
 	// Depending on the component, we might need to add some more stuff.
 	switch component {
-	case apiv1alpha2.AppEngineAPI:
+	// TODO move this to AE reconcile
+	case apiv2alpha1.AppEngineAPI:
 		if cr.Spec.AstarteInstanceID != "" {
 			ret = append(ret, v1.EnvVar{
 				Name:  "ASTARTE_INSTANCE_ID",
@@ -296,20 +313,72 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv1alpha2.Astarte,
 				Value: "kubernetes",
 			})
 
-	case apiv1alpha2.HousekeepingAPI:
+	case apiv2alpha1.Housekeeping:
 		// Add Public Key Information
 		ret = append(ret, v1.EnvVar{
 			Name:  "HOUSEKEEPING_API_JWT_PUBLIC_KEY_PATH",
 			Value: "/jwtpubkey/public-key",
 		})
-	case apiv1alpha2.FlowComponent:
+		if cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationFactor > 1 {
+			ret = append(ret,
+				v1.EnvVar{
+					Name:  "HOUSEKEEPING_ASTARTE_KEYSPACE_REPLICATION_FACTOR",
+					Value: strconv.Itoa(cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationFactor),
+				})
+		}
+		if cr.Spec.Features.RealmDeletion {
+			ret = append(ret,
+				v1.EnvVar{
+					Name:  "HOUSEKEEPING_ENABLE_REALM_DELETION",
+					Value: "true",
+				})
+		}
+	case apiv2alpha1.Pairing:
+		ret = append(ret,
+			v1.EnvVar{
+				Name:  "PAIRING_CFSSL_URL",
+				Value: getCFSSLURL(cr),
+			},
+			v1.EnvVar{
+				Name:  "PAIRING_BROKER_URL",
+				Value: misc.GetVerneMQBrokerURL(cr),
+			})
+		// TODO move this to TE reconcile
+	case apiv2alpha1.TriggerEngine:
+		// Add RabbitMQ variables
+		ret = appendRabbitMQConnectionEnvVars(ret, "TRIGGER_ENGINE_AMQP_CONSUMER", cr)
+
+		if eventsExchangeName != "" {
+			ret = append(ret,
+				v1.EnvVar{
+					Name:  "TRIGGER_ENGINE_AMQP_EVENTS_EXCHANGE_NAME",
+					Value: eventsExchangeName,
+				})
+		}
+
+		if cr.Spec.Components.AppengineAPI.RoomEventsQueueName != "" {
+			ret = append(ret,
+				v1.EnvVar{
+					Name:  "TRIGGER_ENGINE_AMQP_EVENTS_QUEUE_NAME",
+					Value: cr.Spec.Components.AppengineAPI.RoomEventsQueueName,
+				})
+		}
+
+		if cr.Spec.Components.TriggerEngine.EventsRoutingKey != "" {
+			ret = append(ret,
+				v1.EnvVar{
+					Name:  "TRIGGER_ENGINE_AMQP_EVENTS_ROUTING_KEY",
+					Value: cr.Spec.Components.TriggerEngine.EventsRoutingKey,
+				})
+		}
+	case apiv2alpha1.FlowComponent:
 		ret = append(ret, getAstarteFlowEnvVars(cr)...)
 	}
 
 	return ret
 }
 
-func getAstarteFlowEnvVars(cr *apiv1alpha2.Astarte) []v1.EnvVar {
+func getAstarteFlowEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	// TODO: This assumes Flow runs paired with the rest of Astarte. Handle other cases.
 	ret := []v1.EnvVar{
 		{
@@ -344,16 +413,26 @@ func getAstarteFlowEnvVars(cr *apiv1alpha2.Astarte) []v1.EnvVar {
 	return appendRabbitMQConnectionEnvVars(ret, "FLOW_DEFAULT_AMQP_CONNECTION", cr)
 }
 
-func getAstarteAPIProbe(customProbe *v1.Probe) *v1.Probe {
+func getAstarteAPIProbe(component apiv2alpha1.AstarteComponent, customProbe *v1.Probe) *v1.Probe {
 	if customProbe != nil {
 		return customProbe
 	}
 
+	// Custom components
+	if component == apiv2alpha1.Housekeeping {
+		// We need a much longer timeout, as we have an initialization which happens 3 times
+		return getAstarteGenericAPIComponentGenericProbeWithThreshold("/health", 15)
+	}
+
 	// The rest are generic probes on /health
-	return getAstarteAPIGenericProbe("/health")
+	return getAstarteGenericAPIComponentGenericProbe("/health")
 }
 
-func getAstarteAPIGenericProbe(path string) *v1.Probe {
+func getAstarteGenericAPIComponentGenericProbe(path string) *v1.Probe {
+	return getAstarteGenericAPIComponentGenericProbeWithThreshold(path, 5)
+}
+
+func getAstarteGenericAPIComponentGenericProbeWithThreshold(path string, threshold int32) *v1.Probe {
 	return &v1.Probe{
 		ProbeHandler: v1.ProbeHandler{
 			HTTPGet: &v1.HTTPGetAction{
@@ -364,6 +443,6 @@ func getAstarteAPIGenericProbe(path string) *v1.Probe {
 		InitialDelaySeconds: 10,
 		TimeoutSeconds:      5,
 		PeriodSeconds:       30,
-		FailureThreshold:    5,
+		FailureThreshold:    threshold,
 	}
 }
