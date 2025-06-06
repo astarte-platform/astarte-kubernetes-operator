@@ -33,12 +33,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
+	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/internal/misc"
 )
 
-func EnsureAPIIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
+func EnsureAPIIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
 	ingressName := getAPIIngressName(cr)
 	if !pointy.BoolValue(cr.Spec.API.Deploy, true) {
 		// We're not deploying the Ingress, so we're stopping here.
@@ -111,7 +111,7 @@ func getConfigMapName(cr *ingressv1alpha1.AstarteDefaultIngress) string {
 	return cr.Name + "-api-ingress-config"
 }
 
-func getAPIIngressSpec(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte) networkingv1.IngressSpec {
+func getAPIIngressSpec(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) networkingv1.IngressSpec {
 	ingressSpec := networkingv1.IngressSpec{
 		// define which ingress controller will implement the ingress
 		IngressClassName: getIngressClassName(cr),
@@ -122,16 +122,16 @@ func getAPIIngressSpec(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1a
 	return ingressSpec
 }
 
-func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte) []networkingv1.IngressRule {
+func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) []networkingv1.IngressRule {
 	ingressRules := []networkingv1.IngressRule{}
 	pathTypePrefix := networkingv1.PathTypePrefix
 
 	// Create rules for all Astarte components
-	astarteComponents := []apiv1alpha2.AstarteComponent{apiv1alpha2.AppEngineAPI, apiv1alpha2.FlowComponent, apiv1alpha2.PairingAPI, apiv1alpha2.RealmManagementAPI}
+	astarteComponents := []apiv2alpha1.AstarteComponent{apiv2alpha1.AppEngineAPI, apiv2alpha1.FlowComponent, apiv2alpha1.Pairing, apiv2alpha1.RealmManagement}
 
 	// are we supposed to expose housekeeping?
 	if pointy.BoolValue(cr.Spec.API.ExposeHousekeeping, true) {
-		astarteComponents = append(astarteComponents, apiv1alpha2.HousekeepingAPI)
+		astarteComponents = append(astarteComponents, apiv2alpha1.Housekeeping)
 	}
 
 	for _, component := range astarteComponents {
@@ -160,8 +160,8 @@ func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1
 
 	// and handle the Dashboard, if needed
 	if pointy.BoolValue(cr.Spec.Dashboard.Deploy, true) {
-		theDashboard := apiv1alpha2.Dashboard
-		if misc.IsAstarteComponentDeployed(parent, apiv1alpha2.Dashboard) {
+		theDashboard := apiv2alpha1.Dashboard
+		if misc.IsAstarteComponentDeployed(parent, apiv2alpha1.Dashboard) {
 			ingressRules = append(ingressRules, networkingv1.IngressRule{
 				Host: getDashboardHost(cr, parent),
 				IngressRuleValue: networkingv1.IngressRuleValue{
@@ -187,7 +187,7 @@ func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1
 	return ingressRules
 }
 
-func getDashboardHost(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte) string {
+func getDashboardHost(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) string {
 	// Is the Dashboard deployed without a host?
 	if cr.Spec.Dashboard.Host == "" {
 		return parent.Spec.API.Host
@@ -197,7 +197,7 @@ func getDashboardHost(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1al
 
 func getDashboardServiceRelativePath(cr *ingressv1alpha1.AstarteDefaultIngress) string {
 	// Is the Dashboard deployed without a host?
-	theDashboard := apiv1alpha2.Dashboard
+	theDashboard := apiv2alpha1.Dashboard
 	if cr.Spec.Dashboard.Host == "" {
 		return fmt.Sprintf("/%s(/|$)(.*)", theDashboard.ServiceRelativePath())
 	}
