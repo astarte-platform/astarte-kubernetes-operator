@@ -59,6 +59,26 @@ webhooks:
     service:
       name: '{{ .Release.Name }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
+      path: /mutate-api-astarte-platform-org-v2alpha1-astarte
+  failurePolicy: Fail
+  name: mastarte.kb.io
+  rules:
+  - apiGroups:
+    - api.astarte-platform.org
+    apiVersions:
+    - v2alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - astartes
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: '{{ .Release.Name }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
       path: /mutate-ingress-astarte-platform-org-v1alpha1-astartedefaultingress
   failurePolicy: Fail
   name: mastartedefaultingress.kb.io
@@ -81,6 +101,26 @@ metadata:
     cert-manager.io/inject-ca-from: '{{ .Release.Namespace }}/{{ .Release.Name }}-serving-cert'
   name: '{{ .Release.Name }}-validating-webhook-configuration'
 webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: '{{ .Release.Name }}-webhook-service'
+      namespace: '{{ .Release.Namespace }}'
+      path: /validate-api-astarte-platform-org-v2alpha1-astarte
+  failurePolicy: Fail
+  name: vastarte.kb.io
+  rules:
+  - apiGroups:
+    - api.astarte-platform.org
+    apiVersions:
+    - v2alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - astartes
+  sideEffects: None
 - admissionReviewVersions:
   - v1
   clientConfig:
