@@ -20,16 +20,12 @@ spec:
       displayName: Astarte
       kind: Astarte
       name: astartes.api.astarte-platform.org
+      version: v2alpha1
     - description: Flow is the Schema for the flows API
       displayName: Flow
       kind: Flow
-      name: flows.api.astarte-platform.org
-      version: v1alpha3
-    - description: Flow is the Schema for the flows API
-      displayName: Flow
-      kind: Flow
-      name: flows.api.astarte-platform.org
-      version: v1alpha2
+      name: flows.flow.astarte-platform.org
+      version: v2alpha1
   description: The Astarte Kubernetes Operator bundle.
   displayName: astarte-kubernetes-operator
   icon:

@@ -24,8 +24,6 @@ resources:
 # if you do not want those helpers be installed with your Project.
 - flow_flow_editor_role.yaml
 - flow_flow_viewer_role.yaml
-- api_flow_editor_role.yaml
-- api_flow_viewer_role.yaml
 - api_astarte_editor_role.yaml
 - api_astarte_viewer_role.yaml
 - ingress_astartedefaultingress_editor_role.yaml

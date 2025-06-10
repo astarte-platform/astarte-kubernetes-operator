@@ -104,56 +104,6 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: astarte-kubernetes-operator
-  name: '{{ .Release.Name }}-api-flow-editor-role'
-rules:
-- apiGroups:
-  - api.astarte-platform.org
-  resources:
-  - flows
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - api.astarte-platform.org
-  resources:
-  - flows/status
-  verbs:
-  - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: astarte-kubernetes-operator
-  name: '{{ .Release.Name }}-api-flow-viewer-role'
-rules:
-- apiGroups:
-  - api.astarte-platform.org
-  resources:
-  - flows
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - api.astarte-platform.org
-  resources:
-  - flows/status
-  verbs:
-  - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: astarte-kubernetes-operator
   name: '{{ .Release.Name }}-flow-flow-editor-role'
 rules:
 - apiGroups:
