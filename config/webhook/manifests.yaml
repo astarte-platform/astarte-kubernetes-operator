@@ -30,6 +30,26 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /mutate-flow-astarte-platform-org-v2alpha1-flow
+  failurePolicy: Fail
+  name: mflow.kb.io
+  rules:
+  - apiGroups:
+    - flow.astarte-platform.org
+    apiVersions:
+    - v2alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flows
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /mutate-ingress-astarte-platform-org-v1alpha1-astartedefaultingress
   failurePolicy: Fail
   name: mastartedefaultingress.kb.io
@@ -69,6 +89,26 @@ webhooks:
     - UPDATE
     resources:
     - astartes
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-flow-astarte-platform-org-v2alpha1-flow
+  failurePolicy: Fail
+  name: vflow.kb.io
+  rules:
+  - apiGroups:
+    - flow.astarte-platform.org
+    apiVersions:
+    - v2alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - flows
   sideEffects: None
 - admissionReviewVersions:
   - v1
