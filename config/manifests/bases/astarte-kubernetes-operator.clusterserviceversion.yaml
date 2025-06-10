@@ -20,12 +20,6 @@ spec:
       displayName: Astarte
       kind: Astarte
       name: astartes.api.astarte-platform.org
-      version: v1alpha3
-    - description: Astarte is the Schema for the astartes API
-      displayName: Astarte
-      kind: Astarte
-      name: astartes.api.astarte-platform.org
-      version: v1alpha2
     - description: Flow is the Schema for the flows API
       displayName: Flow
       kind: Flow

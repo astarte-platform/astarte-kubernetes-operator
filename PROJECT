@@ -18,19 +18,6 @@ resources:
   controller: true
   domain: astarte-platform.org
   group: api
-  kind: Astarte
-  path: github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2
-  version: v1alpha2
-  webhooks:
-    defaulting: true
-    validation: true
-    webhookVersion: v1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: astarte-platform.org
-  group: api
   kind: Flow
   path: github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2
   version: v1alpha2
@@ -56,14 +43,6 @@ resources:
     namespaced: true
   domain: astarte-platform.org
   group: api
-  kind: Astarte
-  path: github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha3
-  version: v1alpha3
-- api:
-    crdVersion: v1
-    namespaced: true
-  domain: astarte-platform.org
-  group: api
   kind: Flow
   path: github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha3
   version: v1alpha3
@@ -75,6 +54,10 @@ resources:
   kind: Astarte
   path: github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1
   version: v2alpha1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true

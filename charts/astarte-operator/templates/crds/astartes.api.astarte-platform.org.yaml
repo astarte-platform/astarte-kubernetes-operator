@@ -9,15 +9,10 @@ metadata:
   name: astartes.api.astarte-platform.org
 spec:
   conversion:
-    strategy: Webhook
     webhook:
       clientConfig:
         service:
           name: '{{ .Release.Name }}-webhook-service'
-          namespace: '{{ .Release.Namespace }}'
-          path: /convert
-      conversionReviewVersions:
-        - v1
   group: api.astarte-platform.org
   names:
     kind: Astarte
