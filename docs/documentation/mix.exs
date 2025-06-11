@@ -12,7 +12,7 @@ defmodule Doc.MixProject do
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      name: "Astarte Operator",
+      name: "Clea Astarte Operator",
       homepage_url:
         "https://docs.astarte-platform.org/astarte-kubernetes-operator/#{@source_version}/",
       source_url: "https://github.com/astarte-platform/astarte-kubernetes-operator",
@@ -28,7 +28,7 @@ defmodule Doc.MixProject do
   defp docs do
     [
       main: "001-intro_administrator",
-      logo: "images/mascot.png",
+      logo: "images/clea_bw.png",
       javascript_config_path: "../common_vars.js",
       extras: Path.wildcard("pages/*/*.{cheatmd,md}"),
       assets: "images/",
