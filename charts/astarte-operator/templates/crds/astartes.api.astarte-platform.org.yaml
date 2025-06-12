@@ -8,11 +8,6 @@ metadata:
     helm.sh/resource-policy: keep
   name: astartes.api.astarte-platform.org
 spec:
-  conversion:
-    webhook:
-      clientConfig:
-        service:
-          name: '{{ .Release.Name }}-webhook-service'
   group: api.astarte-platform.org
   names:
     kind: Astarte
