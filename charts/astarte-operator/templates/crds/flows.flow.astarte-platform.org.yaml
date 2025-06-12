@@ -8,11 +8,6 @@ metadata:
     helm.sh/resource-policy: keep
   name: flows.flow.astarte-platform.org
 spec:
-  conversion:
-    webhook:
-      clientConfig:
-        service:
-          name: '{{ .Release.Name }}-webhook-service'
   group: flow.astarte-platform.org
   names:
     kind: Flow
