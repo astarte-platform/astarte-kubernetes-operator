@@ -113,6 +113,13 @@ func EnsureGenericErlangConfiguration(cr *apiv1alpha2.Astarte, c client.Client, 
 	return err
 }
 
+// EnsureErlangClusteringCookie reconciles the Erlang Cookie Secret needed for Astarte services RPCs
+func EnsureErlangClusteringCookie(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
+	secretName := cr.Name + "-erlang-clustering-cookie"
+
+	return ensureErlangCookieSecret(secretName, cr, c, scheme)
+}
+
 func GetAstarteClusteredServicePolicyRules() []rbacv1.PolicyRule {
 	// This is needed for Astarte > 1.2.0, as DUP/AppEngine/VerneMQ are clustered using Erlang.
 	return []rbacv1.PolicyRule{
