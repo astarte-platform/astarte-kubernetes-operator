@@ -358,13 +358,22 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha2.Astarte, bac
 			Name:  "RELEASE_NAME",
 			Value: component.DockerImageName(),
 		},
-		{
+	}
+
+	// We need extra care for Erlang cookie, as some services share the same one
+	if component == apiv1alpha2.AppEngineAPI || component == apiv1alpha2.DataUpdaterPlant {
+		ret = append(ret, v1.EnvVar{
+			Name:      "ERLANG_COOKIE",
+			ValueFrom: getErlangClusteringCookieSecretReference(cr),
+		})
+	} else {
+		ret = append(ret, v1.EnvVar{
 			Name: "ERLANG_COOKIE",
 			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
 				LocalObjectReference: v1.LocalObjectReference{Name: deploymentName + "-cookie"},
 				Key:                  "erlang-cookie",
 			}},
-		},
+		})
 	}
 
 	// Add Port (needed for all components, since we also have metrics)
@@ -544,6 +553,17 @@ func appendRabbitMQConnectionEnvVars(ret []v1.EnvVar, prefix string, cr *apiv1al
 
 	// Here we go
 	return ret
+}
+
+func getErlangClusteringCookieSecretReference(cr *apiv1alpha2.Astarte) *v1.EnvVarSource {
+	return &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
+		LocalObjectReference: v1.LocalObjectReference{Name: getErlangClusteringCookieSecretName(cr)},
+		Key:                  "erlang-cookie",
+	}}
+}
+
+func getErlangClusteringCookieSecretName(cr *apiv1alpha2.Astarte) string {
+	return cr.Name + "-erlang-clustering-cookie"
 }
 
 func getAstarteCommonVolumes(cr *apiv1alpha2.Astarte) []v1.Volume {

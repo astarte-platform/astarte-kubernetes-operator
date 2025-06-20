@@ -214,6 +214,10 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha2.Astarte) []v1.Env
 			Name:  "DOCKER_VERNEMQ_KUBERNETES_LABEL_SELECTOR",
 			Value: "app=" + statefulSetName,
 		},
+		{
+			Name:      "ERLANG_COOKIE",
+			ValueFrom: getErlangClusteringCookieSecretReference(cr),
+		},
 	}
 
 	if cr.Spec.AstarteInstanceID != "" {
@@ -468,7 +472,7 @@ func getVerneMQPolicyRules() []rbacv1.PolicyRule {
 	return []rbacv1.PolicyRule{
 		{
 			APIGroups: []string{""},
-			Resources: []string{"pods", "services"},
+			Resources: []string{"pods", "services", "endpoints"},
 			Verbs:     []string{"list", "get"},
 		},
 		{
