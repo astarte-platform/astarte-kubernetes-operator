@@ -318,6 +318,12 @@ func getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas int, events
 			})
 	}
 
+	ret = append(ret,
+		v1.EnvVar{
+			Name:  "CLUSTERING_STRATEGY",
+			Value: "kubernetes",
+		})
+
 	return ret
 }
 
