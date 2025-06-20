@@ -215,7 +215,7 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv1alpha2.Astarte) []v1.Env
 			Value: "app=" + statefulSetName,
 		},
 		{
-			Name:      "ERLANG_COOKIE",
+			Name:      "RELEASE_COOKIE",
 			ValueFrom: getErlangClusteringCookieSecretReference(cr),
 		},
 	}
