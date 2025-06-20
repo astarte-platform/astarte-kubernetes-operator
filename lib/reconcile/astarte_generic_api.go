@@ -82,6 +82,12 @@ func EnsureAstarteGenericAPIWithCustomProbe(cr *apiv1alpha2.Astarte, api apiv1al
 		}
 	}
 
+	if component == apiv1alpha2.AppEngineAPI {
+		if err := reconcileStandardRBACForClusteringForApp(deploymentName, GetAstarteClusteredServicePolicyRules(), cr, c, scheme); err != nil {
+			return err
+		}
+	}
+
 	deploymentSpec := appsv1.DeploymentSpec{
 		Selector: &metav1.LabelSelector{
 			MatchLabels: matchLabels,
@@ -167,6 +173,13 @@ func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv1alpha2.Astarte,
 			},
 		},
 		Volumes: getAstarteGenericAPIVolumes(cr, component),
+	}
+
+	if component == apiv1alpha2.AppEngineAPI {
+		serviceAccountName := deploymentName
+		if pointy.BoolValue(cr.Spec.RBAC, true) {
+			ps.ServiceAccountName = serviceAccountName
+		}
 	}
 
 	if component == apiv1alpha2.FlowComponent {

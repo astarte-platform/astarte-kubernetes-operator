@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	v1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -110,4 +111,15 @@ func EnsureGenericErlangConfiguration(cr *apiv1alpha2.Astarte, c client.Client, 
 
 	_, err := misc.ReconcileConfigMap(genericErlangConfigurationMapName, genericErlangConfigurationMapData, cr, c, scheme, log)
 	return err
+}
+
+func GetAstarteClusteredServicePolicyRules() []rbacv1.PolicyRule {
+	// This is needed for Astarte > 1.2.0, as DUP/AppEngine/VerneMQ are clustered using Erlang.
+	return []rbacv1.PolicyRule{
+		{
+			APIGroups: []string{""},
+			Resources: []string{"pods", "endpoints"},
+			Verbs:     []string{"list", "get"},
+		},
+	}
 }

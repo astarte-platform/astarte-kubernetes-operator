@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [24.5.2] - Unreleased
+### Added
+- AppEngine, DUP, VerneMQ have `get` and `list` permissions on
+  endpoints, pods and services.
+
 ## [24.5.1] - 2025-01-10
 ### Fixed
 - Properly inject cassandra user credentials in the VerneMQ statefulset.
