@@ -34,6 +34,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	astartev1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
 	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
@@ -74,6 +75,13 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
+	// Register the Astarte API types with the runtime scheme
+	// Since the Ingress needs to interact with the Astarte API
+	// we need to ensure that the Astarte API types are registered too
+	err = astartev1alpha2.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	// Register the Ingress API types with the runtime scheme
 	err = ingressv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
