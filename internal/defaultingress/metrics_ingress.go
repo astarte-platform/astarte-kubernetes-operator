@@ -31,12 +31,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
+	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v1alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/internal/misc"
 )
 
-func EnsureMetricsIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
+func EnsureMetricsIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
 	ingressName := getMetricsIngressName(cr)
 	if !pointy.BoolValue(cr.Spec.API.Deploy, true) || !pointy.BoolValue(cr.Spec.API.ServeMetrics, false) {
 		// We're not deploying the Ingress, so we're stopping here.
@@ -86,7 +86,7 @@ func getMetricsIngressName(cr *ingressv1alpha1.AstarteDefaultIngress) string {
 	return cr.Name + "-metrics-ingress"
 }
 
-func getMetricsIngressSpec(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte) networkingv1.IngressSpec {
+func getMetricsIngressSpec(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) networkingv1.IngressSpec {
 	ingressSpec := networkingv1.IngressSpec{
 		// define which ingress controller will implement the ingress
 		IngressClassName: getIngressClassName(cr),
@@ -97,19 +97,19 @@ func getMetricsIngressSpec(cr *ingressv1alpha1.AstarteDefaultIngress, parent *ap
 	return ingressSpec
 }
 
-func getMetricsIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv1alpha2.Astarte) []networkingv1.IngressRule {
+func getMetricsIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) []networkingv1.IngressRule {
 	ingressRules := []networkingv1.IngressRule{}
 	pathTypePrefix := networkingv1.PathTypePrefix
 
 	// Create rules for all Astarte components
-	astarteComponents := []apiv1alpha2.AstarteComponent{
-		apiv1alpha2.AppEngineAPI,
-		apiv1alpha2.DataUpdaterPlant,
-		apiv1alpha2.HousekeepingAPI,
-		apiv1alpha2.FlowComponent,
-		apiv1alpha2.PairingAPI,
-		apiv1alpha2.RealmManagementAPI,
-		apiv1alpha2.TriggerEngine,
+	astarteComponents := []apiv2alpha1.AstarteComponent{
+		apiv2alpha1.AppEngineAPI,
+		apiv2alpha1.DataUpdaterPlant,
+		apiv2alpha1.Housekeeping,
+		apiv2alpha1.FlowComponent,
+		apiv2alpha1.Pairing,
+		apiv2alpha1.RealmManagement,
+		apiv2alpha1.TriggerEngine,
 	}
 
 	for _, component := range astarteComponents {
@@ -119,9 +119,9 @@ func getMetricsIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *a
 			// for those components. In order to properly serve metrics, the service paths are handled
 			// as special cases only in the metrics ingress.
 			switch component {
-			case apiv1alpha2.DataUpdaterPlant:
+			case apiv2alpha1.DataUpdaterPlant:
 				servicePath = "dataupdaterplant"
-			case apiv1alpha2.TriggerEngine:
+			case apiv2alpha1.TriggerEngine:
 				servicePath = "triggerengine"
 			}
 

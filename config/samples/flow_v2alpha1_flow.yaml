@@ -1,0 +1,32 @@
+apiVersion: api.astarte-platform.org/v2alpha1
+kind: Flow
+metadata:
+  labels:
+    app.kubernetes.io/name: flow
+    app.kubernetes.io/instance: flow-sample
+    app.kubernetes.io/part-of: astarte-kubernetes-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: astarte-kubernetes-operator
+  name: flow-sample
+  namespace: astarte
+spec:
+  astarte:
+    name: astarte
+  astarteRealm: example-realm
+  blocks:
+    - id: example-realm-example-flow1
+      image: your/flow_image:latest
+      config: '{}'
+      workers:
+        - dataProvider:
+            rabbitmq:
+              exchange:
+                name: ""
+                routingKey: example-realm-example-flow1-inbound
+              queues:
+                - example-realm-example-flow1-outbound
+          id: worker-0
+  nativeBlocks: 2
+  nativeBlocksResources:
+    cpu: 10m
+    memory: 2M
