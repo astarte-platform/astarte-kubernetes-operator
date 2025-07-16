@@ -1,4 +1,4 @@
-golang 1.22.0
+golang 1.23.0
 elixir 1.14.5-otp-25
-operator-sdk 1.38.0
+operator-sdk 1.39.2
 erlang 25.3.2
