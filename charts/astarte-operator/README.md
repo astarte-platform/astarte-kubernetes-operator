@@ -1,6 +1,6 @@
 # astarte-operator
 
-![Version: 24.11.0-dev](https://img.shields.io/badge/Version-24.11.0--dev-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 24.11.0-dev](https://img.shields.io/badge/AppVersion-24.11.0--dev-informational?style=flat-square)
+![Version: 25.5.0-dev](https://img.shields.io/badge/Version-25.5.0--dev-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 25.5.0-dev](https://img.shields.io/badge/AppVersion-25.5.0--dev-informational?style=flat-square)
 
 The Astarte Kubernetes Operator Helm Chart.
 
@@ -10,7 +10,6 @@ The Astarte Kubernetes Operator Helm Chart.
 
 | Name | Email | Url |
 | ---- | ------ | --- |
-| drf | dario.freddi@ispirata.com |  |
 | matt-mazzucato | mattia.mazzucato@secomind.com |  |
 | annopaolo | arnaldo.cesco@secomind.com |  |
 
@@ -20,7 +19,7 @@ The Astarte Kubernetes Operator Helm Chart.
 
 ## Requirements
 
-Kubernetes: `>= 1.19.0-0`
+Kubernetes: `>= 1.24.0-0`
 
 ## Values
 
@@ -32,4 +31,3 @@ Kubernetes: `>= 1.19.0-0`
 | installCRDs | bool | `true` | Whether or not to install Astarte CRDs. |
 | replicaCount | int | `1` | The number of Astarte Operator replicas in your cluster. |
 | resources | object | `{"limits":{"cpu":"100m","memory":"256Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | Resources to assign to each Astarte Operator instance. |
-

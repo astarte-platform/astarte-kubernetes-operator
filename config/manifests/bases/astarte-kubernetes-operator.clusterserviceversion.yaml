@@ -63,8 +63,6 @@ spec:
   - name: Astarte Kubernetes Operator
     url: https://github.com/astarte-platform/astarte-kubernetes-operator
   maintainers:
-  - email: dario.freddi@ispirata.com
-    name: drf
   - email: mattia.mazzucato@secomind.com
     name: matt-mazzucato
   - email: arnaldo.cesco@secomind.com

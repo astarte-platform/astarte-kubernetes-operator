@@ -85,9 +85,10 @@ Key:
 
 | Astarte Operator Version | Astarte Version | Kubernetes Version |
 |:------------------------:|:---------------:|:------------------:|
-| v22.11                   | v1.0+           | v1.22+             |
 | v23.5                    | v1.0+           | v1.22+             |
 | v24.5                    | v1.0+           | v1.24+             |
+| v25.5                    | v1.0+           | v1.24+             |
+
 
 ## Development
 

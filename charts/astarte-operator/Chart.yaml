@@ -3,8 +3,8 @@ name: astarte-operator
 description: The Astarte Kubernetes Operator Helm Chart.
 type: application
 
-version: "24.11.0-dev"
-appVersion: "24.11.0-dev"
+version: "25.5.0-dev"
+appVersion: "25.5.0-dev"
 kubeVersion: ">= 1.19.0-0"
 
 home: https://github.com/astarte-platform/astarte-kubernetes-operator
@@ -16,8 +16,6 @@ keywords:
   - iot
   - dataorchestration
 maintainers:
-  - name: drf
-    email: dario.freddi@ispirata.com
   - name: matt-mazzucato
     email: mattia.mazzucato@secomind.com
   - name: annopaolo
