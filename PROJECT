@@ -28,6 +28,7 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
+  controller: true
   domain: astarte-platform.org
   group: api
   kind: Astarte
