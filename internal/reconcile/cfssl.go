@@ -255,11 +255,13 @@ func getCFSSLPodSpec(deploymentName, secretName string, cr *apiv2alpha1.Astarte)
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
 		Containers: []v1.Container{
 			{
-				Name:            "cfssl",
-				VolumeMounts:    volumeMounts,
-				Env:             env,
-				Image:           cfsslImage,
-				ImagePullPolicy: getImagePullPolicy(cr),
+				Name:         "cfssl",
+				VolumeMounts: volumeMounts,
+				Env:          env,
+				Image:        cfsslImage,
+				// CFSSL is not an AstarteGenericClusteredResource and therefore we shall use the value
+				// set at the root of the Astarte Spec, i.e.: at the moment, the value cannot be overridden
+				ImagePullPolicy: getImagePullPolicy(cr, apiv2alpha1.AstarteGenericClusteredResource{}),
 				Ports: []v1.ContainerPort{
 					{Name: "http", ContainerPort: 8080},
 				},

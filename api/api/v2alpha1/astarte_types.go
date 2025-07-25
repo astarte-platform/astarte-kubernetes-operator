@@ -34,6 +34,7 @@ type AstarteSpec struct {
 	// +kubebuilder:validation:Optional
 	Features AstarteFeatures `json:"features,omitempty"`
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:="IfNotPresent"
 	ImagePullPolicy *v1.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// +kubebuilder:validation:Optional
 	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
