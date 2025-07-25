@@ -142,7 +142,7 @@ func getAstarteGenericBackendPodSpec(deploymentName string, replicaIndex, replic
 				},
 				VolumeMounts:    getAstarteGenericBackendVolumeMounts(cr),
 				Image:           getAstarteImageForClusteredResource(component.DockerImageName(), backend, cr),
-				ImagePullPolicy: getImagePullPolicy(cr),
+				ImagePullPolicy: getImagePullPolicy(cr, backend),
 				Resources:       misc.GetResourcesForAstarteComponent(cr, backend.Resources, component),
 				Env:             getAstarteGenericBackendEnvVars(deploymentName, replicaIndex, replicas, cr, backend, component),
 				ReadinessProbe:  getAstarteBackendProbe(component, customProbe),

@@ -253,12 +253,12 @@ func getAstarteImage(name, tag string) string {
 	return fmt.Sprintf("%s/%s:%s", "astarte", name, tag)
 }
 
-func getImagePullPolicy(cr *apiv2alpha1.Astarte) v1.PullPolicy {
-	if cr.Spec.ImagePullPolicy != nil {
-		return *cr.Spec.ImagePullPolicy
+func getImagePullPolicy(cr *apiv2alpha1.Astarte, astarteComponent apiv2alpha1.AstarteGenericClusteredResource) v1.PullPolicy {
+	if astarteComponent.ImagePullPolicy != nil {
+		return *astarteComponent.ImagePullPolicy
 	}
 
-	return v1.PullIfNotPresent
+	return *cr.Spec.ImagePullPolicy
 }
 
 func ensureErlangCookieSecret(secretName string, cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {

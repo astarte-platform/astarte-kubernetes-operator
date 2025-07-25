@@ -361,7 +361,7 @@ func getVerneMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv2alpha1.A
 				VolumeMounts: getVerneMQVolumeMounts(dataVolumeName, cr),
 				// Defaults to the custom image built in Astarte
 				Image:           getAstarteImageForClusteredResource("vernemq", cr.Spec.VerneMQ.AstarteGenericClusteredResource, cr),
-				ImagePullPolicy: getImagePullPolicy(cr),
+				ImagePullPolicy: getImagePullPolicy(cr, cr.Spec.VerneMQ.AstarteGenericClusteredResource),
 				Ports: []v1.ContainerPort{
 					{Name: "mqtt-ssl", ContainerPort: 8883},
 					{Name: "acme-verify", ContainerPort: 80},

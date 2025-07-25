@@ -146,7 +146,7 @@ func getAstarteDashboardPodSpec(cr *apiv2alpha1.Astarte, dashboard apiv2alpha1.A
 				},
 				VolumeMounts:    getAstarteDashboardVolumeMounts(),
 				Image:           getAstarteImageForClusteredResource(component.DockerImageName(), dashboard.AstarteGenericClusteredResource, cr),
-				ImagePullPolicy: getImagePullPolicy(cr),
+				ImagePullPolicy: getImagePullPolicy(cr, cr.Spec.Components.Dashboard.AstarteGenericClusteredResource),
 				Resources:       misc.GetResourcesForAstarteComponent(cr, dashboard.Resources, component),
 				Env:             getAstarteDashboardEnvVars(),
 			},
