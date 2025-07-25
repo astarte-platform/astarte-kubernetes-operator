@@ -22,14 +22,3 @@ package deps
 func GetDefaultVersionForCFSSL(astarteVersion string) string {
 	return "1.5.0-astarte.3"
 }
-
-// GetDefaultVersionForCassandra returns the default Cassandra version based on the Astarte version requested
-func GetDefaultVersionForCassandra(astarteVersion string) string {
-	// TODO: We should change this to the official images
-	return "v13"
-}
-
-// GetDefaultVersionForRabbitMQ returns the default RabbitMQ version based on the Astarte version requested
-func GetDefaultVersionForRabbitMQ(astarteVersion string) string {
-	return "3.8.34"
-}
