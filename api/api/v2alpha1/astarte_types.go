@@ -38,6 +38,11 @@ type AstarteSpec struct {
 	ImagePullPolicy *v1.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// +kubebuilder:validation:Optional
 	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	// The distribution channel for astarte images. This setting can be overridden by explicitly
+	// setting the 'image' value for each service. Defaults to "astarte".
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:="astarte"
+	DistributionChannel string `json:"distributionChannel,omitempty"`
 	// +kubebuilder:validation:Optional
 	DeploymentStrategy *appsv1.DeploymentStrategy `json:"deploymentStrategy,omitempty"`
 	// +kubebuilder:validation:Optional
