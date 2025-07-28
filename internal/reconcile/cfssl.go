@@ -188,12 +188,12 @@ func getCFSSLProbe() *v1.Probe {
 
 func getCFSSLPodSpec(deploymentName, secretName string, cr *apiv2alpha1.Astarte) v1.PodSpec {
 	// Defaults to the custom image built in Astarte
-	cfsslImage := getAstarteImage("cfssl", deps.GetDefaultVersionForCFSSL(cr.Spec.Version))
+	cfsslImage := getAstarteImageFromChannel("cfssl", deps.GetDefaultVersionForCFSSL(cr.Spec.Version), cr)
 
 	if cr.Spec.CFSSL.Image != "" {
 		cfsslImage = cr.Spec.CFSSL.Image
 	} else if cr.Spec.CFSSL.Version != "" {
-		cfsslImage = getAstarteImage("cfssl", cr.Spec.CFSSL.Version)
+		cfsslImage = getAstarteImageFromChannel("cfssl", cr.Spec.CFSSL.Version, cr)
 	}
 
 	resources := v1.ResourceRequirements{}

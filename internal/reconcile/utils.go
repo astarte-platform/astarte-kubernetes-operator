@@ -249,8 +249,13 @@ func reconcileRBACForFlow(name string, cr *apiv2alpha1.Astarte, c client.Client,
 	return nil
 }
 
-func getAstarteImage(name, tag string) string {
-	return fmt.Sprintf("%s/%s:%s", "astarte", name, tag)
+func getAstarteImageFromChannel(name, tag string, cr *apiv2alpha1.Astarte) string {
+	var distributionChannel string
+	if cr.Spec.DistributionChannel != "" {
+		distributionChannel = cr.Spec.DistributionChannel
+	}
+
+	return fmt.Sprintf("%s/%s:%s", distributionChannel, name, tag)
 }
 
 func getImagePullPolicy(cr *apiv2alpha1.Astarte, astarteComponent apiv2alpha1.AstarteGenericClusteredResource) v1.PullPolicy {
@@ -634,7 +639,7 @@ func getAstarteImageForClusteredResource(defaultImageName string, resource apiv2
 		return resource.Image
 	}
 
-	return getAstarteImage(defaultImageName, version.GetVersionForAstarteComponent(cr.Spec.Version, resource.Version))
+	return getAstarteImageFromChannel(defaultImageName, version.GetVersionForAstarteComponent(cr.Spec.Version, resource.Version), cr)
 }
 
 func getDeploymentStrategyForClusteredResource(cr *apiv2alpha1.Astarte, resource apiv2alpha1.AstarteGenericClusteredResource, component apiv2alpha1.AstarteComponent) appsv1.DeploymentStrategy {
