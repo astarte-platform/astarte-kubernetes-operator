@@ -260,8 +260,6 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv2alpha1.Astarte,
 		})
 	}
 
-	eventsExchangeName := cr.Spec.RabbitMQ.EventsExchangeName
-
 	// Depending on the component, we might need to add some more stuff.
 	switch component {
 	// TODO move this to AE reconcile
@@ -348,11 +346,11 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv2alpha1.Astarte,
 		// Add RabbitMQ variables
 		ret = appendRabbitMQConnectionEnvVars(ret, "TRIGGER_ENGINE_AMQP_CONSUMER", cr)
 
-		if eventsExchangeName != "" {
+		if cr.Spec.RabbitMQ.EventsExchangeName != "" {
 			ret = append(ret,
 				v1.EnvVar{
 					Name:  "TRIGGER_ENGINE_AMQP_EVENTS_EXCHANGE_NAME",
-					Value: eventsExchangeName,
+					Value: cr.Spec.RabbitMQ.EventsExchangeName,
 				})
 		}
 
