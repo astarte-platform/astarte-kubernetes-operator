@@ -377,9 +377,7 @@ type AstarteCassandraSpec struct {
 
 type AstarteVerneMQSpec struct {
 	AstarteGenericClusteredResource `json:",inline"`
-	Host                            string `json:"host"`
-	// +kubebuilder:validation:Optional
-	Port *int32 `json:"port,omitempty"`
+	HostAndPort                     `json:",inline"`
 	// +kubebuilder:validation:Optional
 	CaSecret string `json:"caSecret,omitempty"`
 	// +kubebuilder:validation:Optional
