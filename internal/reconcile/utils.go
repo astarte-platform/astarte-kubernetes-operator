@@ -734,3 +734,13 @@ func getHPAStatusForResource(autoscalerName string, cr *apiv2alpha1.Astarte, c c
 	}
 	return hpa.Status, nil
 }
+
+// This stuff is useful for other components which need to interact with Cassandra
+func getCassandraNodes(cr *apiv2alpha1.Astarte) string {
+	nodes := []string{}
+	for _, node := range cr.Spec.Cassandra.Connection.Nodes {
+		nodes = append(nodes, fmt.Sprintf("%s:%d", node.Host, node.Port))
+	}
+
+	return strings.Join(nodes, ",")
+}
