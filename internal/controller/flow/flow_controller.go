@@ -47,8 +47,8 @@ type FlowReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=api.astarte-platform.org,resources=flows,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=api.astarte-platform.org,resources=flows/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=flow.astarte-platform.org,resources=flows,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=flow.astarte-platform.org,resources=flows/status,verbs=get;update;patch
 
 func (r *FlowReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	reqLogger := r.Log.WithValues("flow", req.NamespacedName)

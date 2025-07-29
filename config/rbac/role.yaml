@@ -8,7 +8,6 @@ rules:
   - api.astarte-platform.org
   resources:
   - astartes
-  - flows
   verbs:
   - create
   - delete
@@ -27,7 +26,6 @@ rules:
   - api.astarte-platform.org
   resources:
   - astartes/status
-  - flows/status
   verbs:
   - get
   - patch
@@ -105,6 +103,26 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - flow.astarte-platform.org
+  resources:
+  - flows
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - flow.astarte-platform.org
+  resources:
+  - flows/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - ingress.astarte-platform.org
   resources:
