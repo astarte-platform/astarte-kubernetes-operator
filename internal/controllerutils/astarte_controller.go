@@ -296,6 +296,11 @@ func (r *ReconcileHelper) ReconcileAstarteResources(instance *apiv1alpha2.Astart
 		return err
 	}
 
+	// Then, make sure the prerequisite for Erlang Clustering is there
+	if err := recon.EnsureErlangClusteringCookie(instance, r.Client, r.Scheme); err != nil {
+		return err
+	}
+
 	// Give priority to PriorityClasses
 	if err := recon.EnsureAstartePriorityClasses(instance, r.Client, r.Scheme); err != nil {
 		return err

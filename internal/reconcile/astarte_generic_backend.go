@@ -75,6 +75,13 @@ func EnsureAstarteGenericBackendWithCustomProbe(cr *apiv1alpha2.Astarte, backend
 		return nil
 	}
 
+	// Ensure we reconcile with the RBAC Roles, if needed.
+	if pointy.BoolValue(cr.Spec.RBAC, true) {
+		if err := reconcileStandardRBACForClusteringForApp(deploymentName, GetAstarteClusteredServicePolicyRules(), cr, c, scheme); err != nil {
+			return err
+		}
+	}
+
 	// First of all, check if we need to regenerate the cookie.
 	if err := ensureErlangCookieSecret(deploymentName+"-cookie", cr, c, scheme); err != nil {
 		return err
@@ -122,8 +129,14 @@ func EnsureAstarteGenericBackendWithCustomProbe(cr *apiv1alpha2.Astarte, backend
 
 func getAstarteGenericBackendPodSpec(deploymentName string, replicaIndex, replicas int, cr *apiv1alpha2.Astarte, backend apiv1alpha2.AstarteGenericClusteredResource,
 	component apiv1alpha2.AstarteComponent, customProbe *v1.Probe) v1.PodSpec {
+	serviceAccountName := deploymentName
+	if pointy.BoolValue(cr.Spec.RBAC, false) {
+		serviceAccountName = ""
+	}
+
 	ps := v1.PodSpec{
 		TerminationGracePeriodSeconds: pointy.Int64(30),
+		ServiceAccountName:            serviceAccountName,
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
 		Affinity:                      getAffinityForClusteredResource(deploymentName, backend),
 		Containers: []v1.Container{
@@ -304,6 +317,12 @@ func getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas int, events
 				Value: strconv.Itoa(cr.Spec.VerneMQ.DeviceHeartbeatSeconds * 1000),
 			})
 	}
+
+	ret = append(ret,
+		v1.EnvVar{
+			Name:  "CLUSTERING_STRATEGY",
+			Value: "kubernetes",
+		})
 
 	return ret
 }
