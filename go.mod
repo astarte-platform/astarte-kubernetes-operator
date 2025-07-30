@@ -3,15 +3,15 @@ module github.com/astarte-platform/astarte-kubernetes-operator
 go 1.19
 
 require (
-	github.com/Masterminds/semver/v3 v3.1.1
+	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/cloudflare/cfssl v1.5.0
-	github.com/go-logr/logr v1.2.3
-	github.com/imdario/mergo v0.3.12
+	github.com/go-logr/logr v1.4.2
+	github.com/imdario/mergo v0.3.13
 	github.com/onsi/ginkgo/v2 v2.6.0
 	github.com/onsi/gomega v1.24.1
-	github.com/openlyinc/pointy v1.1.2
+	github.com/openlyinc/pointy v1.2.1
 	github.com/sykesm/zap-logfmt v0.0.4
-	go.uber.org/zap v1.24.0
+	go.uber.org/zap v1.27.0
 	k8s.io/api v0.26.2
 	k8s.io/apiextensions-apiserver v0.26.2
 	k8s.io/apimachinery v0.26.2
@@ -53,10 +53,9 @@ require (
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/weppos/publicsuffix-go v0.13.0 // indirect
-	github.com/zmap/zcrypto v0.0.0-20200911161511-43ff0ea04f21 // indirect
+	github.com/zmap/zcrypto v0.0.0-20201128221613-3719af1573cf // indirect
 	github.com/zmap/zlint/v2 v2.2.1 // indirect
-	go.uber.org/atomic v1.7.0 // indirect
-	go.uber.org/multierr v1.6.0 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b // indirect
