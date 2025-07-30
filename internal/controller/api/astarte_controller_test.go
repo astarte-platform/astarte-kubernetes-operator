@@ -29,7 +29,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
+	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 )
 
 var _ = Describe("Astarte Controller", func() {
@@ -42,13 +42,13 @@ var _ = Describe("Astarte Controller", func() {
 			Name:      resourceName,
 			Namespace: "default", // TODO(user):Modify as needed
 		}
-		astarte := &apiv1alpha2.Astarte{}
+		astarte := &apiv2alpha1.Astarte{}
 
 		BeforeEach(func() {
 			By("creating the custom resource for the Kind Astarte")
 			err := k8sClient.Get(ctx, typeNamespacedName, astarte)
 			if err != nil && errors.IsNotFound(err) {
-				resource := &apiv1alpha2.Astarte{
+				resource := &apiv2alpha1.Astarte{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
 						Namespace: "default",
@@ -61,7 +61,7 @@ var _ = Describe("Astarte Controller", func() {
 
 		AfterEach(func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &apiv1alpha2.Astarte{}
+			resource := &apiv2alpha1.Astarte{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
 

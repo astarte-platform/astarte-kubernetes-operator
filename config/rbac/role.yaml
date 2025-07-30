@@ -31,26 +31,6 @@ rules:
   - patch
   - update
 - apiGroups:
-  - api.astarte-platform.org
-  resources:
-  - flows
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - api.astarte-platform.org
-  resources:
-  - flows/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
   - apps
   resources:
   - daemonsets
@@ -103,20 +83,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - configmaps
-  - services
-  - services/finalizers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - events
   verbs:
   - create
@@ -137,6 +103,26 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - flow.astarte-platform.org
+  resources:
+  - flows
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - flow.astarte-platform.org
+  resources:
+  - flows/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - ingress.astarte-platform.org
   resources:
