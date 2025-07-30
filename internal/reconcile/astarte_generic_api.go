@@ -317,13 +317,9 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv2alpha1.Astarte,
 			Name:  "HOUSEKEEPING_API_JWT_PUBLIC_KEY_PATH",
 			Value: "/jwtpubkey/public-key",
 		})
-		if cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationFactor > 1 {
-			ret = append(ret,
-				v1.EnvVar{
-					Name:  "HOUSEKEEPING_ASTARTE_KEYSPACE_REPLICATION_FACTOR",
-					Value: strconv.Itoa(cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationFactor),
-				})
-		}
+
+		ret = append(ret, appendAstarteKeyspaceEnvVars(cr)...)
+
 		if cr.Spec.Features.RealmDeletion {
 			ret = append(ret,
 				v1.EnvVar{

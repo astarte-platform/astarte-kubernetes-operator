@@ -43,8 +43,18 @@ spec:
                 properties:
                   astarteSystemKeyspace:
                     properties:
+                      dataCenterReplication:
+                        type: string
                       replicationFactor:
+                        default: 1
+                        minimum: 1
                         type: integer
+                      replicationStrategy:
+                        default: SimpleStrategy
+                        enum:
+                        - SimpleStrategy
+                        - NetworkTopologyStrategy
+                        type: string
                     type: object
                   connection:
                     properties:
@@ -6577,6 +6587,7 @@ spec:
                   deviceHeartbeatSeconds:
                     type: integer
                   host:
+                    minLength: 1
                     type: string
                   image:
                     type: string
@@ -6603,6 +6614,8 @@ spec:
                     type: object
                   port:
                     format: int32
+                    maximum: 65535
+                    minimum: 1
                     type: integer
                   priorityClass:
                     enum:
@@ -7445,6 +7458,7 @@ spec:
                     type: string
                 required:
                 - host
+                - port
                 type: object
               version:
                 type: string

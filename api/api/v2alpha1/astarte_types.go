@@ -291,9 +291,11 @@ type AstarteAPISpec struct {
 
 type HostAndPort struct {
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Required
 	Host string `json:"host"`
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=65535
+	// +kubebuilder:validation:Required
 	Port *int32 `json:"port"`
 }
 
@@ -608,13 +610,36 @@ func (r AstarteCFSSLSpec) GetPodLabels() map[string]string {
 	return r.PodLabels
 }
 
-// astarteSystemKeyspace configures the main system keyspace for Astarte. As of now, these settings
-// have effect only upon cluster initialization, and will be ignored otherwise.
+// AstarteSystemKeyspaceSpec configures the ScyllaDB/Cassandra keyspace for Astarte.
+//
+// By configuring these fields, you control the replication strategy, replication factor, and (for multi-datacenter
+// deployments) the replica distribution per datacenter. These settings take effect only upon keyspace creation.
+//
+// Fields:
+//   - ReplicationStrategy chooses the replication strategy for the keyspace.
+//   - ReplicationFactor (for SimpleStrategy or for default replication factor with NetworkTopologyStrategy).
+//   - DataCenterReplication (for flexible NetworkTopologyStrategy configurations).
 type AstarteSystemKeyspaceSpec struct {
-	// The Replication Factor for the keyspace. Currently,
-	// using NetworkTopologyStrategy is not supported.
+	// ReplicationStrategy specifies the Cassandra/ScyllaDB replication strategy for the keyspace.
+	// Must be either "SimpleStrategy" or "NetworkTopologyStrategy" (for production deployments and/or
+	// multi-datacenter deployments).
+	// Defaults to "SimpleStrategy".
+	// +kubebuilder:default:=SimpleStrategy
+	// +kubebuilder:validation:Enum=SimpleStrategy;NetworkTopologyStrategy
+	ReplicationStrategy string `json:"replicationStrategy,omitempty"`
+	// ReplicationFactor sets the total number of replicas for the keyspace when using SimpleStrategy.
+	// This field is ignored if ReplicationStrategy is set to NetworkTopologyStrategy.
+	// Must be at least 1. Must be odd. Defaults to 1.
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:default:=1
 	ReplicationFactor int `json:"replicationFactor,omitempty"`
+	// DataCenterReplication specifies custom replication factors per datacenter when using NetworkTopologyStrategy.
+	// If set, this string must be a comma-separated list of <DataCenter>:<ReplicationFactor> entries
+	// (e.g., "dc1:3,dc2:5"). <ReplicationFactor> must be odd.
+	// This field is ignored if ReplicationStrategy is set to SimpleStrategy.
+	// +kubebuilder:validation:Optional
+	DataCenterReplication string `json:"dataCenterReplication,omitempty"`
 }
 
 // AstartePodPriorities allows to set different priorityClasses for Astarte pods.

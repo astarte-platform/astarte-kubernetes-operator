@@ -24,6 +24,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base32"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"strconv"
@@ -743,4 +744,43 @@ func getCassandraNodes(cr *apiv2alpha1.Astarte) string {
 	}
 
 	return strings.Join(nodes, ",")
+}
+
+func appendAstarteKeyspaceEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
+	ask := cr.Spec.Cassandra.AstarteSystemKeyspace
+
+	ret := []v1.EnvVar{
+		{
+			Name:  "HOUSEKEEPING_ASTARTE_KEYSPACE_REPLICATION_STRATEGY",
+			Value: ask.ReplicationStrategy,
+		},
+	}
+
+	if ask.ReplicationStrategy == "SimpleStrategy" {
+		ret = append(ret, v1.EnvVar{
+			Name:  "HOUSEKEEPING_ASTARTE_KEYSPACE_REPLICATION_FACTOR",
+			Value: strconv.Itoa(ask.ReplicationFactor),
+		})
+		return ret
+	}
+
+	// if we're here, we must handle NetworkTopologyStrategy
+	theMap := make(map[string]int)
+
+	pairs := strings.Split(ask.DataCenterReplication, ",")
+	for _, pair := range pairs {
+		kv := strings.Split(pair, ":")
+		key := kv[0]
+		// no need to check the error, this is covered in validation webhooks
+		val, _ := strconv.Atoi(kv[1])
+		theMap[key] = val
+	}
+
+	b, _ := json.Marshal(theMap)
+
+	ret = append(ret, v1.EnvVar{
+		Name:  "HOUSEKEEPING_ASTARTE_KEYSPACE_NETWORK_REPLICATION_MAP",
+		Value: string(b),
+	})
+	return ret
 }
