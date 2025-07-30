@@ -20,7 +20,10 @@ package v2alpha1
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"strconv"
 	"strings"
 
 	"go.openly.dev/pointy"
@@ -80,6 +83,10 @@ func (r *Astarte) ValidateCreate() (admission.Warnings, error) {
 		allErrs = append(allErrs, err)
 	}
 
+	if errList := r.validateCreateAstarteSystemKeyspace(); errList != nil {
+		allErrs = append(allErrs, errList...)
+	}
+
 	if errList := r.validateAstarte(); len(errList) > 0 {
 		allErrs = append(allErrs, errList...)
 	}
@@ -103,6 +110,10 @@ func (r *Astarte) ValidateUpdate(old runtime.Object) (admission.Warnings, error)
 
 	oldAstarte, _ := old.(*Astarte)
 	if err := r.validateUpdateAstarteInstanceID(oldAstarte); err != nil {
+		allErrs = append(allErrs, err)
+	}
+
+	if err := r.validateUpdateAstarteSystemKeyspace(oldAstarte); err != nil {
 		allErrs = append(allErrs, err)
 	}
 
@@ -188,7 +199,7 @@ func (r *Astarte) validateAstarte() field.ErrorList {
 		}
 	}
 
-	if errList := validatePodLabelsForClusteredResources(r); len(errList) > 0 {
+	if errList := r.validatePodLabelsForClusteredResources(); len(errList) > 0 {
 		allErrs = append(allErrs, errList...)
 	}
 
@@ -199,7 +210,7 @@ func (r *Astarte) validateAstarte() field.ErrorList {
 	return allErrs
 }
 
-func validatePodLabelsForClusteredResources(r *Astarte) field.ErrorList {
+func (r *Astarte) validatePodLabelsForClusteredResources() field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	resources := []PodLabelsGetter{r.Spec.VerneMQ.AstarteGenericClusteredResource,
@@ -272,5 +283,83 @@ func (r *Astarte) validatePriorityClassesValues() *field.Error {
 
 		return field.Invalid(fldPath, "", err.Error())
 	}
+	return nil
+}
+
+func (r *Astarte) validateCreateAstarteSystemKeyspace() field.ErrorList {
+	allErrs := field.ErrorList{}
+	ask := r.Spec.Cassandra.AstarteSystemKeyspace
+
+	if ask.ReplicationStrategy == "SimpleStrategy" {
+		// replication factor must be odd
+		if ask.ReplicationFactor%2 == 0 {
+			err := errors.New("invalid replication factor: it must be odd")
+			astartelog.Info(err.Error())
+			fldPath := field.NewPath("spec").Child("cassandra").Child("astarteSystemKeyspace").Child("replicationFactor")
+
+			allErrs = append(allErrs, field.Invalid(fldPath, ask.ReplicationFactor, err.Error()))
+		}
+		return allErrs
+	}
+
+	// If we reached this point, NetworkTopologyStrategy has been chosen
+	keyValuePairs := make(map[string]int)
+
+	items := strings.Split(r.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication, ",")
+	for _, dr := range items {
+		dataCenterAndReplication := strings.Split(dr, ":")
+		if len(dataCenterAndReplication) != 2 {
+			err := errors.New("invalid datacenter replication: wrong format")
+			astartelog.Info(err.Error())
+			fldPath := field.NewPath("spec").Child("cassandra").Child("astarteSystemKeyspace").Child("dataCenterReplication")
+
+			allErrs = append(allErrs, field.Invalid(fldPath, strings.Join(dataCenterAndReplication, ":"), err.Error()))
+		}
+		// ensure the replication factor is an integer...
+		dc := dataCenterAndReplication[0]
+		dcReplication, err := strconv.Atoi(dataCenterAndReplication[1])
+
+		if err != nil {
+			astartelog.Info(fmt.Sprint("invalid datacenter replication: replication must be an integer", err.Error()))
+			fldPath := field.NewPath("spec").Child("cassandra").Child("astarteSystemKeyspace").Child("dataCenterReplication")
+
+			allErrs = append(allErrs, field.Invalid(fldPath, strings.Join(dataCenterAndReplication, ":"), err.Error()))
+
+		} else {
+			// populate the keyValuePairs map only after we validated the user input
+			keyValuePairs[dc] = dcReplication
+		}
+
+		// ...and it's odd
+		if dcReplication%2 == 0 {
+			err := errors.New("invalid datacenter replication: replication must be odd")
+			astartelog.Info(err.Error())
+			fldPath := field.NewPath("spec").Child("cassandra").Child("astarteSystemKeyspace").Child("dataCenterReplication")
+
+			allErrs = append(allErrs, field.Invalid(fldPath, strings.Join(dataCenterAndReplication, ":"), err.Error()))
+		}
+
+	}
+
+	// finally, ensure that it can be marshaled into json
+	_, err := json.Marshal(keyValuePairs)
+	if err != nil {
+		userFacingErr := errors.New("invalid datacenter replication format")
+		astartelog.Info(fmt.Sprintf("%s: %s", userFacingErr.Error(), err.Error()))
+		fldPath := field.NewPath("spec").Child("cassandra").Child("astarteSystemKeyspace").Child("dataCenterReplication")
+
+		allErrs = append(allErrs, field.Invalid(fldPath, ask.DataCenterReplication, err.Error()))
+	}
+
+	return allErrs
+}
+
+func (r *Astarte) validateUpdateAstarteSystemKeyspace(oldAstarte *Astarte) *field.Error {
+	if r.Spec.Cassandra.AstarteSystemKeyspace != oldAstarte.Spec.Cassandra.AstarteSystemKeyspace {
+		err := errors.New("Once Astarte is created, the astarteSystemKeyspace cannot be modified")
+		fldPath := field.NewPath("spec").Child("cassandra").Child("astarteSystemKeyspace")
+		return field.Invalid(fldPath, r.Spec.Cassandra.AstarteSystemKeyspace, err.Error())
+	}
+
 	return nil
 }

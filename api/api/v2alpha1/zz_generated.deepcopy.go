@@ -775,11 +775,7 @@ func (in *AstarteTriggerEngineSpec) DeepCopy() *AstarteTriggerEngineSpec {
 func (in *AstarteVerneMQSpec) DeepCopyInto(out *AstarteVerneMQSpec) {
 	*out = *in
 	in.AstarteGenericClusteredResource.DeepCopyInto(&out.AstarteGenericClusteredResource)
-	if in.Port != nil {
-		in, out := &in.Port, &out.Port
-		*out = new(int32)
-		**out = **in
-	}
+	in.HostAndPort.DeepCopyInto(&out.HostAndPort)
 	if in.Storage != nil {
 		in, out := &in.Storage, &out.Storage
 		*out = new(AstartePersistentStorageSpec)
