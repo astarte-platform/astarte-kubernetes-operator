@@ -8,6 +8,7 @@ rules:
   - api.astarte-platform.org
   resources:
   - astartes
+  - flows
   verbs:
   - create
   - delete
@@ -26,25 +27,6 @@ rules:
   - api.astarte-platform.org
   resources:
   - astartes/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - api.astarte-platform.org
-  resources:
-  - flows
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - api.astarte-platform.org
-  resources:
   - flows/status
   verbs:
   - get
@@ -90,20 +72,6 @@ rules:
   - persistentvolumeclaims
   - secrets
   - serviceaccounts
-  - services
-  - services/finalizers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
   - services
   - services/finalizers
   verbs:
