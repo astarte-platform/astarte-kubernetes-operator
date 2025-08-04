@@ -5929,6 +5929,9 @@ spec:
                     type:
                       type: string
                   type: object
+                distributionChannel:
+                  default: astarte
+                  type: string
                 features:
                   properties:
                     astartePodPriorities:
@@ -5954,6 +5957,7 @@ spec:
                       type: boolean
                   type: object
                 imagePullPolicy:
+                  default: IfNotPresent
                   type: string
                 imagePullSecrets:
                   items:
