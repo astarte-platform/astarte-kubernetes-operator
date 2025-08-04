@@ -76,10 +76,8 @@ func EnsureAstarteGenericBackendWithCustomProbe(cr *apiv2alpha1.Astarte, backend
 	}
 
 	// Ensure we reconcile with the RBAC Roles, if needed.
-	if pointy.BoolValue(cr.Spec.RBAC, true) {
-		if err := reconcileStandardRBACForClusteringForApp(deploymentName, GetAstarteClusteredServicePolicyRules(), cr, c, scheme); err != nil {
-			return err
-		}
+	if err := reconcileStandardRBACForClusteringForApp(deploymentName, GetAstarteClusteredServicePolicyRules(), cr, c, scheme); err != nil {
+		return err
 	}
 
 	// First of all, check if we need to regenerate the cookie.
@@ -129,6 +127,7 @@ func EnsureAstarteGenericBackendWithCustomProbe(cr *apiv2alpha1.Astarte, backend
 
 func getAstarteGenericBackendPodSpec(deploymentName string, replicaIndex, replicas int, cr *apiv2alpha1.Astarte, backend apiv2alpha1.AstarteGenericClusteredResource,
 	component apiv2alpha1.AstarteComponent, customProbe *v1.Probe) v1.PodSpec {
+	serviceAccountName := deploymentName
 	ps := v1.PodSpec{
 		TerminationGracePeriodSeconds: pointy.Int64(30),
 		ServiceAccountName:            serviceAccountName,

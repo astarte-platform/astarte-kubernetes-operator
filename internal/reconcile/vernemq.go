@@ -31,6 +31,7 @@ import (
 	"go.openly.dev/pointy"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -68,6 +69,11 @@ func EnsureVerneMQ(cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Sch
 
 		// That would be all for today.
 		return nil
+	}
+
+	// Ensure we reconcile with the RBAC Roles, if needed.
+	if err := reconcileStandardRBACForClusteringForApp(statefulSetName, getVerneMQPolicyRules(), cr, c, scheme); err != nil {
+		return err
 	}
 
 	// Good. Now, reconcile the service first of all.

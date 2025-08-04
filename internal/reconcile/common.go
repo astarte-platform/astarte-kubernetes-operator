@@ -114,7 +114,7 @@ func EnsureGenericErlangConfiguration(cr *apiv2alpha1.Astarte, c client.Client, 
 }
 
 // EnsureErlangClusteringCookie reconciles the Erlang Cookie Secret needed for Astarte services RPCs
-func EnsureErlangClusteringCookie(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func EnsureErlangClusteringCookie(cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	secretName := cr.Name + "-erlang-clustering-cookie"
 
 	return ensureErlangCookieSecret(secretName, cr, c, scheme)

@@ -127,6 +127,64 @@ func getStandardAntiAffinityForAppLabel(app string) *v1.Affinity {
 	}
 }
 
+func reconcileStandardRBACForClusteringForApp(name string, policyRules []rbacv1.PolicyRule, cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+	// Service Account
+	serviceAccount := &v1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: cr.Namespace}}
+	if result, err := controllerutil.CreateOrUpdate(context.TODO(), c, serviceAccount, func() error {
+		if err := controllerutil.SetControllerReference(cr, serviceAccount, scheme); err != nil {
+			return err
+		}
+		// Actually nothing to do here.
+		return nil
+	}); err == nil {
+		misc.LogCreateOrUpdateOperationResult(log, result, cr, serviceAccount)
+	} else {
+		return err
+	}
+
+	// Role
+	role := &rbacv1.Role{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: cr.Namespace}}
+	if result, err := controllerutil.CreateOrUpdate(context.TODO(), c, role, func() error {
+		if err := controllerutil.SetControllerReference(cr, role, scheme); err != nil {
+			return err
+		}
+		// Always impose what we want in terms of policy roles without caring.
+		role.Rules = policyRules
+		return nil
+	}); err == nil {
+		misc.LogCreateOrUpdateOperationResult(log, result, cr, serviceAccount)
+	} else {
+		return err
+	}
+
+	// Role Binding
+	roleBinding := &rbacv1.RoleBinding{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: cr.Namespace}}
+	if result, err := controllerutil.CreateOrUpdate(context.TODO(), c, roleBinding, func() error {
+		if err := controllerutil.SetControllerReference(cr, roleBinding, scheme); err != nil {
+			return err
+		}
+		// Always impose what we want in terms of policy roles without caring.
+		roleBinding.Subjects = []rbacv1.Subject{
+			{
+				Kind: "ServiceAccount",
+				Name: name,
+			},
+		}
+		roleBinding.RoleRef = rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     name,
+		}
+		return nil
+	}); err == nil {
+		misc.LogCreateOrUpdateOperationResult(log, result, cr, serviceAccount)
+	} else {
+		return err
+	}
+
+	return nil
+}
+
 func reconcileRBACForFlow(name string, cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	// Service Account
 	serviceAccount := &v1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: cr.Namespace}}
@@ -296,7 +354,7 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv2alpha1.Astarte, bac
 	}
 
 	// We need extra care for Erlang cookie, as some services share the same one
-	if component == apiv1alpha2.AppEngineAPI || component == apiv1alpha2.DataUpdaterPlant {
+	if component == apiv2alpha1.AppEngineAPI || component == apiv2alpha1.DataUpdaterPlant {
 		ret = append(ret, v1.EnvVar{
 			Name:      "RELEASE_COOKIE",
 			ValueFrom: getErlangClusteringCookieSecretReference(cr),
@@ -478,14 +536,14 @@ func appendRabbitMQConnectionEnvVars(ret []v1.EnvVar, prefix string, cr *apiv2al
 	return ret
 }
 
-func getErlangClusteringCookieSecretReference(cr *apiv1alpha2.Astarte) *v1.EnvVarSource {
+func getErlangClusteringCookieSecretReference(cr *apiv2alpha1.Astarte) *v1.EnvVarSource {
 	return &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
 		LocalObjectReference: v1.LocalObjectReference{Name: getErlangClusteringCookieSecretName(cr)},
 		Key:                  "erlang-cookie",
 	}}
 }
 
-func getErlangClusteringCookieSecretName(cr *apiv1alpha2.Astarte) string {
+func getErlangClusteringCookieSecretName(cr *apiv2alpha1.Astarte) string {
 	return cr.Name + "-erlang-clustering-cookie"
 }
 

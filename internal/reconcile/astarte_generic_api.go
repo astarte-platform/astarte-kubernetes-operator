@@ -82,7 +82,7 @@ func EnsureAstarteGenericAPIComponentWithCustomProbe(cr *apiv2alpha1.Astarte, ap
 		}
 	}
 
-	if component == apiv1alpha2.AppEngineAPI {
+	if component == apiv2alpha1.AppEngineAPI {
 		if err := reconcileStandardRBACForClusteringForApp(deploymentName, GetAstarteClusteredServicePolicyRules(), cr, c, scheme); err != nil {
 			return err
 		}
@@ -176,7 +176,7 @@ func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv2alpha1.Astarte,
 		Volumes: getAstarteGenericAPIComponentVolumes(cr, component),
 	}
 
-	if component == apiv1alpha2.AppEngineAPI {
+	if component == apiv2alpha1.AppEngineAPI {
 		serviceAccountName := deploymentName
 		ps.ServiceAccountName = serviceAccountName
 	}
