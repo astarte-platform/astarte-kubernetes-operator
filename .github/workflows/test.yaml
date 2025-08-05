@@ -70,7 +70,7 @@ jobs:
         sudo sysctl net/netfilter/nf_conntrack_max=131072
     - uses: container-tools/kind-action@v2
       with:
-        version: "v0.27.0"
+        version: "v0.29.0"
         node_image: "${{ matrix.kubernetesNodeImage }}"
     - name: Ensure KinD is up
       run: |
