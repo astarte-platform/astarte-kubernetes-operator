@@ -376,8 +376,13 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv2alpha1.Astarte, bac
 	}
 
 	// Add Port (needed for all components, since we also have metrics)
+	suffix := "_PORT"
+	if component == apiv2alpha1.Housekeeping || component == apiv2alpha1.Pairing ||
+		component == apiv2alpha1.RealmManagement {
+		suffix = "_API_PORT"
+	}
 	ret = append(ret, v1.EnvVar{
-		Name:  strings.ToUpper(component.String()) + "_PORT",
+		Name:  strings.ToUpper(component.String()) + suffix,
 		Value: strconv.Itoa(int(astarteServicesPort)),
 	})
 
