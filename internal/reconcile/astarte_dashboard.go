@@ -32,12 +32,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
+	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/internal/misc"
 )
 
 // EnsureAstarteDashboard reconciles Astarte Dashboard
-func EnsureAstarteDashboard(cr *apiv1alpha2.Astarte, dashboard apiv1alpha2.AstarteDashboardSpec, c client.Client, scheme *runtime.Scheme) error {
+func EnsureAstarteDashboard(cr *apiv2alpha1.Astarte, dashboard apiv2alpha1.AstarteDashboardSpec, c client.Client, scheme *runtime.Scheme) error {
 	reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name, "Astarte.Component", "dashboard")
 	deploymentName := cr.Name + "-dashboard"
 	serviceName := cr.Name + "-dashboard"
@@ -102,7 +102,7 @@ func EnsureAstarteDashboard(cr *apiv1alpha2.Astarte, dashboard apiv1alpha2.Astar
 		Selector: &metav1.LabelSelector{
 			MatchLabels: matchLabels,
 		},
-		Strategy: getDeploymentStrategyForClusteredResource(cr, dashboard.AstarteGenericClusteredResource, apiv1alpha2.Dashboard),
+		Strategy: getDeploymentStrategyForClusteredResource(cr, dashboard.AstarteGenericClusteredResource, apiv2alpha1.Dashboard),
 		Template: v1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: computePodLabels(dashboard.AstarteGenericClusteredResource, labels),
@@ -133,8 +133,8 @@ func EnsureAstarteDashboard(cr *apiv1alpha2.Astarte, dashboard apiv1alpha2.Astar
 	return nil
 }
 
-func getAstarteDashboardPodSpec(cr *apiv1alpha2.Astarte, dashboard apiv1alpha2.AstarteDashboardSpec) v1.PodSpec {
-	component := apiv1alpha2.Dashboard
+func getAstarteDashboardPodSpec(cr *apiv2alpha1.Astarte, dashboard apiv2alpha1.AstarteDashboardSpec) v1.PodSpec {
+	component := apiv2alpha1.Dashboard
 	ps := v1.PodSpec{
 		TerminationGracePeriodSeconds: pointy.Int64(30),
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
@@ -146,7 +146,7 @@ func getAstarteDashboardPodSpec(cr *apiv1alpha2.Astarte, dashboard apiv1alpha2.A
 				},
 				VolumeMounts:    getAstarteDashboardVolumeMounts(),
 				Image:           getAstarteImageForClusteredResource(component.DockerImageName(), dashboard.AstarteGenericClusteredResource, cr),
-				ImagePullPolicy: getImagePullPolicy(cr),
+				ImagePullPolicy: getImagePullPolicy(cr, cr.Spec.Components.Dashboard.AstarteGenericClusteredResource),
 				Resources:       misc.GetResourcesForAstarteComponent(cr, dashboard.Resources, component),
 				Env:             getAstarteDashboardEnvVars(),
 			},
@@ -172,11 +172,11 @@ func getAstarteDashboardPodSpec(cr *apiv1alpha2.Astarte, dashboard apiv1alpha2.A
 	return ps
 }
 
-func getAstarteDashboardConfigMapData(cr *apiv1alpha2.Astarte, dashboard apiv1alpha2.AstarteDashboardSpec) map[string]string {
+func getAstarteDashboardConfigMapData(cr *apiv2alpha1.Astarte, dashboard apiv2alpha1.AstarteDashboardSpec) map[string]string {
 	dashboardConfig := make(map[string]interface{})
 
 	dashboardConfig["astarte_api_url"] = getBaseAstarteAPIURL(cr)
-	dashboardConfig["enable_flow_preview"] = misc.IsAstarteComponentDeployed(cr, apiv1alpha2.FlowComponent)
+	dashboardConfig["enable_flow_preview"] = misc.IsAstarteComponentDeployed(cr, apiv2alpha1.FlowComponent)
 
 	if dashboard.RealmManagementAPIURL != "" {
 		dashboardConfig["realm_management_api_url"] = dashboard.RealmManagementAPIURL
@@ -207,7 +207,7 @@ func getAstarteDashboardConfigMapData(cr *apiv1alpha2.Astarte, dashboard apiv1al
 	if len(dashboard.Auth) > 0 {
 		dashboardConfig["auth"] = dashboard.Auth
 	} else {
-		dashboardConfig["auth"] = []apiv1alpha2.AstarteDashboardConfigAuthSpec{{Type: "token"}}
+		dashboardConfig["auth"] = []apiv2alpha1.AstarteDashboardConfigAuthSpec{{Type: "token"}}
 	}
 
 	configJSON, _ := json.Marshal(dashboardConfig)
@@ -217,7 +217,7 @@ func getAstarteDashboardConfigMapData(cr *apiv1alpha2.Astarte, dashboard apiv1al
 	}
 }
 
-func getAstarteDashboardVolumes(cr *apiv1alpha2.Astarte) []v1.Volume {
+func getAstarteDashboardVolumes(cr *apiv2alpha1.Astarte) []v1.Volume {
 	return []v1.Volume{
 		{
 			Name: "config",

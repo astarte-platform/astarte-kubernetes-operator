@@ -24,7 +24,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base32"
-	"encoding/base64"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"strconv"
@@ -36,7 +36,6 @@ import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,7 +45,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
+	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/internal/misc"
 	"github.com/astarte-platform/astarte-kubernetes-operator/internal/version"
 )
@@ -63,7 +62,7 @@ func encodePEMBlockToEncodedBytes(block *pem.Block) string {
 	return string(pem.EncodeToMemory(block))
 }
 
-func storePublicKeyInSecret(name string, publicKey *rsa.PublicKey, cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func storePublicKeyInSecret(name string, publicKey *rsa.PublicKey, cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	pkixBytes, err := x509.MarshalPKIXPublicKey(publicKey)
 	if err != nil {
 		return err
@@ -84,7 +83,7 @@ func storePublicKeyInSecret(name string, publicKey *rsa.PublicKey, cr *apiv1alph
 	return err
 }
 
-func storePrivateKeyInSecret(name string, privateKey *rsa.PrivateKey, cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func storePrivateKeyInSecret(name string, privateKey *rsa.PrivateKey, cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	var privateKeyPEM = &pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
@@ -129,7 +128,7 @@ func getStandardAntiAffinityForAppLabel(app string) *v1.Affinity {
 	}
 }
 
-func reconcileStandardRBACForClusteringForApp(name string, policyRules []rbacv1.PolicyRule, cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func reconcileStandardRBACForClusteringForApp(name string, policyRules []rbacv1.PolicyRule, cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	// Service Account
 	serviceAccount := &v1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: cr.Namespace}}
 	if result, err := controllerutil.CreateOrUpdate(context.TODO(), c, serviceAccount, func() error {
@@ -187,7 +186,7 @@ func reconcileStandardRBACForClusteringForApp(name string, policyRules []rbacv1.
 	return nil
 }
 
-func reconcileRBACForFlow(name string, cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func reconcileRBACForFlow(name string, cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	// Service Account
 	serviceAccount := &v1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: cr.Namespace}}
 	if result, err := controllerutil.CreateOrUpdate(context.TODO(), c, serviceAccount, func() error {
@@ -251,8 +250,8 @@ func reconcileRBACForFlow(name string, cr *apiv1alpha2.Astarte, c client.Client,
 	return nil
 }
 
-func getAstarteImageFromChannel(name, tag string, cr *apiv1alpha2.Astarte) string {
-	distributionChannel := "astarte"
+func getAstarteImageFromChannel(name, tag string, cr *apiv2alpha1.Astarte) string {
+	var distributionChannel string
 	if cr.Spec.DistributionChannel != "" {
 		distributionChannel = cr.Spec.DistributionChannel
 	}
@@ -260,15 +259,15 @@ func getAstarteImageFromChannel(name, tag string, cr *apiv1alpha2.Astarte) strin
 	return fmt.Sprintf("%s/%s:%s", distributionChannel, name, tag)
 }
 
-func getImagePullPolicy(cr *apiv1alpha2.Astarte) v1.PullPolicy {
-	if cr.Spec.ImagePullPolicy != nil {
-		return *cr.Spec.ImagePullPolicy
+func getImagePullPolicy(cr *apiv2alpha1.Astarte, astarteComponent apiv2alpha1.AstarteGenericClusteredResource) v1.PullPolicy {
+	if astarteComponent.ImagePullPolicy != nil {
+		return *astarteComponent.ImagePullPolicy
 	}
 
-	return v1.PullIfNotPresent
+	return *cr.Spec.ImagePullPolicy
 }
 
-func ensureErlangCookieSecret(secretName string, cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func ensureErlangCookieSecret(secretName string, cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name)
 	theCookie := &v1.Secret{}
 	if err := c.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: cr.Namespace}, theCookie); err != nil {
@@ -305,8 +304,8 @@ func ensureErlangCookieSecret(secretName string, cr *apiv1alpha2.Astarte, c clie
 	return nil
 }
 
-func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quantity, storageSpec *apiv1alpha2.AstartePersistentStorageSpec,
-	cr *apiv1alpha2.Astarte) (string, *v1.PersistentVolumeClaim) {
+func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quantity, storageSpec *apiv2alpha1.AstartePersistentStorageSpec,
+	cr *apiv2alpha1.Astarte) (string, *v1.PersistentVolumeClaim) {
 	var storageClassName string
 	dataVolumeSize := defaultSize
 	dataVolumeName := defaultName
@@ -340,7 +339,7 @@ func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quan
 	}
 }
 
-func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha2.Astarte, backend apiv1alpha2.AstarteGenericClusteredResource, component apiv1alpha2.AstarteComponent) []v1.EnvVar {
+func getAstarteCommonEnvVars(deploymentName string, cr *apiv2alpha1.Astarte, backend apiv2alpha1.AstarteGenericClusteredResource, component apiv2alpha1.AstarteComponent) []v1.EnvVar {
 	ret := []v1.EnvVar{
 		{
 			Name:  "RELEASE_CONFIG_DIR",
@@ -361,7 +360,7 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha2.Astarte, bac
 	}
 
 	// We need extra care for Erlang cookie, as some services share the same one
-	if component == apiv1alpha2.AppEngineAPI || component == apiv1alpha2.DataUpdaterPlant {
+	if component == apiv2alpha1.AppEngineAPI || component == apiv2alpha1.DataUpdaterPlant {
 		ret = append(ret, v1.EnvVar{
 			Name:      "RELEASE_COOKIE",
 			ValueFrom: getErlangClusteringCookieSecretReference(cr),
@@ -377,8 +376,13 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha2.Astarte, bac
 	}
 
 	// Add Port (needed for all components, since we also have metrics)
+	suffix := "_PORT"
+	if component == apiv2alpha1.Housekeeping || component == apiv2alpha1.Pairing ||
+		component == apiv2alpha1.RealmManagement {
+		suffix = "_API_PORT"
+	}
 	ret = append(ret, v1.EnvVar{
-		Name:  strings.ToUpper(component.String()) + "_PORT",
+		Name:  strings.ToUpper(component.String()) + suffix,
 		Value: strconv.Itoa(int(astarteServicesPort)),
 	})
 
@@ -391,7 +395,7 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha2.Astarte, bac
 	return appendRabbitMQConnectionEnvVars(ret, "RPC_AMQP_CONNECTION", cr)
 }
 
-func appendCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv1alpha2.Astarte) []v1.EnvVar {
+func appendCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	spec := cr.Spec.Cassandra.Connection
 	if spec != nil {
 		// pool size
@@ -404,18 +408,8 @@ func appendCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv1alpha2.Astarte) 
 			)
 		}
 
-		// autodiscovery
-		if pointy.BoolValue(spec.Autodiscovery, true) {
-			ret = append(ret,
-				v1.EnvVar{
-					Name:  "CASSANDRA_AUTODISCOVERY_ENABLED",
-					Value: "true",
-				},
-			)
-		}
-
 		// SSL
-		if spec.SSLConfiguration.Enabled {
+		if spec.SSLConfiguration.Enable {
 			ret = append(ret, v1.EnvVar{
 				Name:  "CASSANDRA_SSL_ENABLED",
 				Value: "true",
@@ -445,7 +439,7 @@ func appendCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv1alpha2.Astarte) 
 			}
 		}
 
-		if spec.Secret != nil || spec.Username != "" {
+		if spec.CredentialsSecret != nil {
 			// Fetch our Credentials for Cassandra
 			userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetCassandraUserCredentialsSecret(cr)
 
@@ -471,7 +465,7 @@ func appendCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv1alpha2.Astarte) 
 	return ret
 }
 
-func appendRabbitMQConnectionEnvVars(ret []v1.EnvVar, prefix string, cr *apiv1alpha2.Astarte) []v1.EnvVar {
+func appendRabbitMQConnectionEnvVars(ret []v1.EnvVar, prefix string, cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	spec := cr.Spec.RabbitMQ.Connection
 
 	// Let's verify Virtualhost and default to "/" where needed. Al
@@ -486,7 +480,7 @@ func appendRabbitMQConnectionEnvVars(ret []v1.EnvVar, prefix string, cr *apiv1al
 		}
 
 		// SSL
-		if spec.SSLConfiguration.Enabled {
+		if spec.SSLConfiguration.Enable {
 			ret = append(ret, v1.EnvVar{
 				Name:  prefix + "_SSL_ENABLED",
 				Value: "true",
@@ -555,18 +549,18 @@ func appendRabbitMQConnectionEnvVars(ret []v1.EnvVar, prefix string, cr *apiv1al
 	return ret
 }
 
-func getErlangClusteringCookieSecretReference(cr *apiv1alpha2.Astarte) *v1.EnvVarSource {
+func getErlangClusteringCookieSecretReference(cr *apiv2alpha1.Astarte) *v1.EnvVarSource {
 	return &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
 		LocalObjectReference: v1.LocalObjectReference{Name: getErlangClusteringCookieSecretName(cr)},
 		Key:                  "erlang-cookie",
 	}}
 }
 
-func getErlangClusteringCookieSecretName(cr *apiv1alpha2.Astarte) string {
+func getErlangClusteringCookieSecretName(cr *apiv2alpha1.Astarte) string {
 	return cr.Name + "-erlang-clustering-cookie"
 }
 
-func getAstarteCommonVolumes(cr *apiv1alpha2.Astarte) []v1.Volume {
+func getAstarteCommonVolumes(cr *apiv2alpha1.Astarte) []v1.Volume {
 	ret := []v1.Volume{
 		{
 			Name: "beam-config",
@@ -606,7 +600,7 @@ func getAstarteCommonVolumes(cr *apiv1alpha2.Astarte) []v1.Volume {
 	return ret
 }
 
-func getAstarteCommonVolumeMounts(cr *apiv1alpha2.Astarte) []v1.VolumeMount {
+func getAstarteCommonVolumeMounts(cr *apiv2alpha1.Astarte) []v1.VolumeMount {
 	ret := []v1.VolumeMount{
 		{
 			Name:      "beam-config",
@@ -640,7 +634,7 @@ func getAstarteCommonVolumeMounts(cr *apiv1alpha2.Astarte) []v1.VolumeMount {
 	return ret
 }
 
-func getAffinityForClusteredResource(appLabel string, resource apiv1alpha2.AstarteGenericClusteredResource) *v1.Affinity {
+func getAffinityForClusteredResource(appLabel string, resource apiv2alpha1.AstarteGenericClusteredResource) *v1.Affinity {
 	affinity := resource.CustomAffinity
 	if affinity == nil && pointy.BoolValue(resource.AntiAffinity, true) {
 		affinity = getStandardAntiAffinityForAppLabel(appLabel)
@@ -648,7 +642,7 @@ func getAffinityForClusteredResource(appLabel string, resource apiv1alpha2.Astar
 	return affinity
 }
 
-func getAstarteImageForClusteredResource(defaultImageName string, resource apiv1alpha2.AstarteGenericClusteredResource, cr *apiv1alpha2.Astarte) string {
+func getAstarteImageForClusteredResource(defaultImageName string, resource apiv2alpha1.AstarteGenericClusteredResource, cr *apiv2alpha1.Astarte) string {
 	if resource.Image != "" {
 		return resource.Image
 	}
@@ -656,21 +650,10 @@ func getAstarteImageForClusteredResource(defaultImageName string, resource apiv1
 	return getAstarteImageFromChannel(defaultImageName, version.GetVersionForAstarteComponent(cr.Spec.Version, resource.Version), cr)
 }
 
-func getImageForClusteredResource(defaultImageName, defaultImageTag string, resource apiv1alpha2.AstarteGenericClusteredResource) string {
-	image := fmt.Sprintf("%s:%s", defaultImageName, defaultImageTag)
-	if resource.Image != "" {
-		image = resource.Image
-	} else if resource.Version != "" {
-		image = fmt.Sprintf("%s:%s", defaultImageName, resource.Version)
-	}
-
-	return image
-}
-
-func getDeploymentStrategyForClusteredResource(cr *apiv1alpha2.Astarte, resource apiv1alpha2.AstarteGenericClusteredResource, component apiv1alpha2.AstarteComponent) appsv1.DeploymentStrategy {
+func getDeploymentStrategyForClusteredResource(cr *apiv2alpha1.Astarte, resource apiv2alpha1.AstarteGenericClusteredResource, component apiv2alpha1.AstarteComponent) appsv1.DeploymentStrategy {
 	switch {
-	case component == apiv1alpha2.DataUpdaterPlant, component == apiv1alpha2.TriggerEngine,
-		component == apiv1alpha2.FlowComponent:
+	case component == apiv2alpha1.DataUpdaterPlant, component == apiv2alpha1.TriggerEngine,
+		component == apiv2alpha1.FlowComponent:
 		return appsv1.DeploymentStrategy{
 			Type: appsv1.RecreateDeploymentStrategyType,
 		}
@@ -685,15 +668,15 @@ func getDeploymentStrategyForClusteredResource(cr *apiv1alpha2.Astarte, resource
 	}
 }
 
-func getDataQueueCount(cr *apiv1alpha2.Astarte) int {
+func getDataQueueCount(cr *apiv2alpha1.Astarte) int {
 	return pointy.IntValue(cr.Spec.Components.DataUpdaterPlant.DataQueueCount, 128)
 }
 
-func getAppEngineAPIMaxResultslimit(cr *apiv1alpha2.Astarte) int {
+func getAppEngineAPIMaxResultslimit(cr *apiv2alpha1.Astarte) int {
 	return pointy.IntValue(cr.Spec.Components.AppengineAPI.MaxResultsLimit, 10000)
 }
 
-func getBaseAstarteAPIURL(cr *apiv1alpha2.Astarte) string {
+func getBaseAstarteAPIURL(cr *apiv2alpha1.Astarte) string {
 	scheme := "https"
 	if !pointy.BoolValue(cr.Spec.API.SSL, true) {
 		scheme = "http"
@@ -702,46 +685,7 @@ func getBaseAstarteAPIURL(cr *apiv1alpha2.Astarte) string {
 	return fmt.Sprintf("%s://%s", scheme, cr.Spec.API.Host)
 }
 
-func handleGenericUserCredentialsSecret(username, password, usernameKey, passwordKey, secretName string, forceCredentialsCreation bool,
-	secret *apiv1alpha2.LoginCredentialsSecret, cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
-	secretExists := false
-	resource := &v1.Secret{}
-	if err := c.Get(context.TODO(), types.NamespacedName{Namespace: cr.Namespace, Name: secretName}, resource); err == nil {
-		secretExists = true
-	} else if !errors.IsNotFound(err) {
-		// if the error is different from NotFound, return the error
-		return err
-	}
-
-	switch {
-	case secret != nil:
-		// the secret has been defined in the cr, nothing left to do
-	case username != "":
-		newSecret := map[string]string{
-			usernameKey: username,
-			passwordKey: password,
-		}
-		_, err := misc.ReconcileSecretString(secretName, newSecret, cr, c, scheme, log)
-		return err
-	case secretExists:
-		// the secret already exists, nothing to do here
-	case forceCredentialsCreation:
-		// create a new random password out of 16 bytes of entropy
-		generatedPassword := make([]byte, 16)
-		if _, err := rand.Read(generatedPassword); err != nil {
-			return err
-		}
-		newSecret := map[string]string{
-			usernameKey: "astarte-admin",
-			passwordKey: base64.URLEncoding.EncodeToString(generatedPassword),
-		}
-		_, err := misc.ReconcileSecretString(secretName, newSecret, cr, c, scheme, log)
-		return err
-	}
-	return nil
-}
-
-func createOrUpdateService(cr *apiv1alpha2.Astarte, c client.Client, serviceName string, scheme *runtime.Scheme,
+func createOrUpdateService(cr *apiv2alpha1.Astarte, c client.Client, serviceName string, scheme *runtime.Scheme,
 	matchLabels, labels map[string]string) error {
 	service := &v1.Service{ObjectMeta: metav1.ObjectMeta{Name: serviceName, Namespace: cr.Namespace}}
 	result, err := controllerutil.CreateOrUpdate(context.TODO(), c, service, func() error {
@@ -768,7 +712,7 @@ func createOrUpdateService(cr *apiv1alpha2.Astarte, c client.Client, serviceName
 	return err
 }
 
-func computePodLabels(r apiv1alpha2.PodLabelsGetter, labels map[string]string) map[string]string {
+func computePodLabels(r apiv2alpha1.PodLabelsGetter, labels map[string]string) map[string]string {
 	// Validating webhook guarantees that custom user labels won't interfere with operator's.
 	podLabels := map[string]string{}
 	for k, v := range labels {
@@ -780,7 +724,7 @@ func computePodLabels(r apiv1alpha2.PodLabelsGetter, labels map[string]string) m
 	return podLabels
 }
 
-func getReplicaCountForResource(resource *apiv1alpha2.AstarteGenericClusteredResource, cr *apiv1alpha2.Astarte, c client.Client, log logr.Logger) *int32 {
+func getReplicaCountForResource(resource *apiv2alpha1.AstarteGenericClusteredResource, cr *apiv2alpha1.Astarte, c client.Client, log logr.Logger) *int32 {
 	if cr.Spec.Features.Autoscaling && resource.Autoscale != nil {
 		if hpaStatus, err := getHPAStatusForResource(resource.Autoscale.Horizontal, cr, c, log); err == nil {
 			log.Info("Getting replica count from HPA", "value", hpaStatus.DesiredReplicas)
@@ -790,11 +734,60 @@ func getReplicaCountForResource(resource *apiv1alpha2.AstarteGenericClusteredRes
 	return resource.Replicas
 }
 
-func getHPAStatusForResource(autoscalerName string, cr *apiv1alpha2.Astarte, c client.Client, log logr.Logger) (autoscalingv2.HorizontalPodAutoscalerStatus, error) {
+func getHPAStatusForResource(autoscalerName string, cr *apiv2alpha1.Astarte, c client.Client, log logr.Logger) (autoscalingv2.HorizontalPodAutoscalerStatus, error) {
 	hpa := &autoscalingv2.HorizontalPodAutoscaler{}
 	if err := c.Get(context.Background(), types.NamespacedName{Name: autoscalerName, Namespace: cr.Namespace}, hpa); err != nil {
 		log.Info("Could not get HPA", "name", autoscalerName, "namespace", cr.Namespace)
 		return autoscalingv2.HorizontalPodAutoscalerStatus{}, fmt.Errorf("not found")
 	}
 	return hpa.Status, nil
+}
+
+// This stuff is useful for other components which need to interact with Cassandra
+func getCassandraNodes(cr *apiv2alpha1.Astarte) string {
+	nodes := []string{}
+	for _, node := range cr.Spec.Cassandra.Connection.Nodes {
+		nodes = append(nodes, fmt.Sprintf("%s:%d", node.Host, *node.Port))
+	}
+
+	return strings.Join(nodes, ",")
+}
+
+func appendAstarteKeyspaceEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
+	ask := cr.Spec.Cassandra.AstarteSystemKeyspace
+
+	ret := []v1.EnvVar{
+		{
+			Name:  "HOUSEKEEPING_ASTARTE_KEYSPACE_REPLICATION_STRATEGY",
+			Value: ask.ReplicationStrategy,
+		},
+	}
+
+	if ask.ReplicationStrategy == "SimpleStrategy" {
+		ret = append(ret, v1.EnvVar{
+			Name:  "HOUSEKEEPING_ASTARTE_KEYSPACE_REPLICATION_FACTOR",
+			Value: strconv.Itoa(ask.ReplicationFactor),
+		})
+		return ret
+	}
+
+	// if we're here, we must handle NetworkTopologyStrategy
+	theMap := make(map[string]int)
+
+	pairs := strings.Split(ask.DataCenterReplication, ",")
+	for _, pair := range pairs {
+		kv := strings.Split(pair, ":")
+		key := kv[0]
+		// no need to check the error, this is covered in validation webhooks
+		val, _ := strconv.Atoi(kv[1])
+		theMap[key] = val
+	}
+
+	b, _ := json.Marshal(theMap)
+
+	ret = append(ret, v1.EnvVar{
+		Name:  "HOUSEKEEPING_ASTARTE_KEYSPACE_NETWORK_REPLICATION_MAP",
+		Value: string(b),
+	})
+	return ret
 }

@@ -104,10 +104,10 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: astarte-kubernetes-operator
-  name: '{{ .Release.Name }}-api-flow-editor-role'
+  name: '{{ .Release.Name }}-flow-flow-editor-role'
 rules:
 - apiGroups:
-  - api.astarte-platform.org
+  - flow.astarte-platform.org
   resources:
   - flows
   verbs:
@@ -119,7 +119,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - api.astarte-platform.org
+  - flow.astarte-platform.org
   resources:
   - flows/status
   verbs:
@@ -131,10 +131,10 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: astarte-kubernetes-operator
-  name: '{{ .Release.Name }}-api-flow-viewer-role'
+  name: '{{ .Release.Name }}-flow-flow-viewer-role'
 rules:
 - apiGroups:
-  - api.astarte-platform.org
+  - flow.astarte-platform.org
   resources:
   - flows
   verbs:
@@ -142,7 +142,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - api.astarte-platform.org
+  - flow.astarte-platform.org
   resources:
   - flows/status
   verbs:
@@ -230,26 +230,6 @@ rules:
   - patch
   - update
 - apiGroups:
-  - api.astarte-platform.org
-  resources:
-  - flows
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - api.astarte-platform.org
-  resources:
-  - flows/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
   - apps
   resources:
   - daemonsets
@@ -302,20 +282,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - configmaps
-  - services
-  - services/finalizers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - events
   verbs:
   - create
@@ -336,6 +302,26 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - flow.astarte-platform.org
+  resources:
+  - flows
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - flow.astarte-platform.org
+  resources:
+  - flows/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - ingress.astarte-platform.org
   resources:
