@@ -439,26 +439,28 @@ func appendCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astarte) 
 			}
 		}
 
-		// Fetch our Credentials for Cassandra
-		userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetCassandraUserCredentialsSecret(cr)
+		if spec.CredentialsSecret != nil {
+			// Fetch our Credentials for Cassandra
+			userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetCassandraUserCredentialsSecret(cr)
 
-		// Standard Cassandra env vars that we need to plug in
-		ret = append(ret,
-			v1.EnvVar{
-				Name: "CASSANDRA_USERNAME",
-				ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-					LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-					Key:                  userCredentialsSecretUsernameKey,
-				}},
-			},
-			v1.EnvVar{
-				Name: "CASSANDRA_PASSWORD",
-				ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-					LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-					Key:                  userCredentialsSecretPasswordKey,
-				}},
-			},
-		)
+			// Standard Cassandra env vars that we need to plug in
+			ret = append(ret,
+				v1.EnvVar{
+					Name: "CASSANDRA_USERNAME",
+					ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
+						LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
+						Key:                  userCredentialsSecretUsernameKey,
+					}},
+				},
+				v1.EnvVar{
+					Name: "CASSANDRA_PASSWORD",
+					ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
+						LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
+						Key:                  userCredentialsSecretPasswordKey,
+					}},
+				},
+			)
+		}
 	}
 	return ret
 }
