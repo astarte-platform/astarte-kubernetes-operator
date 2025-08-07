@@ -22,15 +22,17 @@ spec:
   # Cassandra/ScyllaDB can be deployed either in cluster or out of cluster.
   # What follows is just an in-cluster example.
   cassandra:
-    nodes:
-    - host: "scylladb-cluster.scylla.svc.cluster.local"
-      port: 9042
-    credentialsSecret:
-      name: "scylladb-connection-secret"
-      usernameKey: "username"
-      passwordKey: "password"
+    connection:
+      nodes:
+      - host: "scylladb-cluster.scylla.svc.cluster.local"
+        port: 9042
+      credentialsSecret:
+        name: "scylladb-connection-secret"
+        usernameKey: "username"
+        passwordKey: "password"
   vernemq:
     host: "broker.astarte-example.com"
+    port: 8883
     resources:
       requests:
         cpu: 200m
