@@ -24,7 +24,7 @@ on:
     # Documentation
     - 'docs/**'
     # APIs
-    - 'apis/**'
+    - 'api/**'
     # The workflow itself
     - '.github/workflows/generate-docs.yaml'
     branches:
