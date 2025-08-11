@@ -29,12 +29,12 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v1alpha2"
+	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/internal/misc"
 )
 
 // EnsureHousekeepingKey makes sure that a valid Housekeeping key is available
-func EnsureHousekeepingKey(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func EnsureHousekeepingKey(cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	publicSecretName := fmt.Sprintf("%s-housekeeping-public-key", cr.Name)
 	theSecret := &v1.Secret{}
 	err := c.Get(context.TODO(), types.NamespacedName{Name: publicSecretName, Namespace: cr.Namespace}, theSecret)
@@ -80,7 +80,7 @@ func EnsureHousekeepingKey(cr *apiv1alpha2.Astarte, c client.Client, scheme *run
 }
 
 // EnsureGenericErlangConfiguration reconciles the generic Erlang Configuration for Astarte services
-func EnsureGenericErlangConfiguration(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func EnsureGenericErlangConfiguration(cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	genericErlangConfigurationMapName := fmt.Sprintf("%s-generic-erlang-configuration", cr.Name)
 
 	genericErlangConfigurationMapData := map[string]string{
@@ -114,7 +114,7 @@ func EnsureGenericErlangConfiguration(cr *apiv1alpha2.Astarte, c client.Client, 
 }
 
 // EnsureErlangClusteringCookie reconciles the Erlang Cookie Secret needed for Astarte services RPCs
-func EnsureErlangClusteringCookie(cr *apiv1alpha2.Astarte, c client.Client, scheme *runtime.Scheme) error {
+func EnsureErlangClusteringCookie(cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	secretName := cr.Name + "-erlang-clustering-cookie"
 
 	return ensureErlangCookieSecret(secretName, cr, c, scheme)

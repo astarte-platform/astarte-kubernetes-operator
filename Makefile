@@ -108,9 +108,7 @@ manifests: controller-gen yq kustomize ## Generate WebhookConfiguration, Cluster
 	$(KUSTOMIZE) build config/helm-webhook > charts/astarte-operator/templates/webhook.yaml
 
 .PHONY: generate
-generate: controller-gen conversion-gen ## Generate code containing DeepCopy, DeepCopyInto, DeepCopyObject and conversion method implementations.
-	$(CONVERSION_GEN) --go-header-file "./hack/boilerplate.go.txt" --input-dirs "./api/api/v1alpha3" \
-		-O zz_generated.conversion --output-base "."
+generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 .PHONY: fmt
