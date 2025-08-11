@@ -5,11 +5,22 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [25.5.0] - Unreleased
+### Added
+- Add v2alpha1 API version for the api.astarte-platform.org group.
+- Add v2alpha1 API version for the flow.astarte-platform.org group.
+- Support the NetworkTopologyStrategy replication strategy for Cassandra.
+
 ### Changed
 - Forward port changes from release-24.5
 - Upgrade Operator SDK to v1.38.
 - Add Kubernetes 1.33 to the supported list.
 - Add E2E tests for Kubernetes 1.33 and remove tests for Kubernetes 1.29.
+- Allow to override the global ImagePullPolicy for every Astarte component.
+- Use a single deployment for components formerly split into API/backend (i.e.: remove
+  Realm Management API, Housekeeping API and Pairing API).
+
+### Removed
+- [Breaking] Remove v1alpha2 and v1alpha3 API version for the api.astarte-platform.org group.
 
 ### Fixed
 - Fix the propagation of replicaCount, installCrds, and pullPolicy values
