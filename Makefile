@@ -244,7 +244,7 @@ CONTROLLER_TOOLS_VERSION ?= v0.16.1
 CONVERSION_GEN_VERSION = v0.27.16
 ENVTEST_VERSION ?= release-0.19
 GOLANGCI_LINT_VERSION ?= v1.59.1
-CRD_REF_DOCS_VERSION = v0.0.10
+CRD_REF_DOCS_VERSION = v0.2.0
 HELM_DOCS_VERSION = v1.7.0
 YQ_VERSION = v4.30.8
 
@@ -387,4 +387,4 @@ chart-docs: norwoodj-helm-docs ## Generate Helm Chart docs.
 .PHONY: crd-docs
 crd-docs: crd-ref-docs ## Generate API reference documentation from code.
 	mkdir -p docs/content && $(CRD_REF_DOCS) --config="docs/autogen/config.yaml" --renderer=markdown \
-		--max-depth=10 --source-path="api" --output-path="docs/content/index.md"
+		--max-depth=20 --source-path="api" --output-path="docs/content/index.md"
