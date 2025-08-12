@@ -43,6 +43,12 @@ var _ = Describe("controller", Ordered, func() {
 		By("installing the cert-manager")
 		Expect(utils.InstallCertManager()).To(Succeed())
 
+		By("installing rabbitmq cluster operator")
+		Expect(utils.InstallRabbitMQClusterOperator()).To(Succeed())
+
+		By("deploying the RabbitMQ cluster")
+		Expect(utils.DeployRabbitMQCluster()).To(Succeed())
+
 		By("creating manager namespace")
 		cmd := exec.Command("kubectl", "create", "ns", namespace)
 		_, _ = utils.Run(cmd)
@@ -51,6 +57,9 @@ var _ = Describe("controller", Ordered, func() {
 	AfterAll(func() {
 		By("uninstalling the Prometheus manager bundle")
 		utils.UninstallPrometheusOperator()
+
+		By("uninstalling rabbitmq cluster operator")
+		utils.UninstallRabbitMQClusterOperator()
 
 		By("uninstalling the cert-manager bundle")
 		utils.UninstallCertManager()
