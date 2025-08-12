@@ -49,6 +49,9 @@ var _ = Describe("controller", Ordered, func() {
 		By("deploying the RabbitMQ cluster")
 		Expect(utils.DeployRabbitMQCluster()).To(Succeed())
 
+		By("creating the RabbitMq connection secret")
+		Expect(utils.CreateRabbitMQConnectionSecret()).To(Succeed())
+
 		By("installing scylla operator")
 		Expect(utils.InstallScyllaOperator()).To(Succeed())
 
