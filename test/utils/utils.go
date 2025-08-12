@@ -42,7 +42,7 @@ const (
 	// the astarteName and astarteNamespace variables must match the values of the
 	// test/samples/api_v2alpha1_astarte_1*.yaml files
 	astarteName      = "example-astarte"
-	astarteNamespace = "default"
+	astarteNamespace = "astarte"
 
 	// DefaultRetryInterval applied to all tests
 	DefaultRetryInterval time.Duration = time.Second * 10
@@ -171,8 +171,15 @@ func GetProjectDir() (string, error) {
 
 // InstallAstarte installs the Astarte CR.
 func InstallAstarte(manifestPath string) error {
-	cmd := exec.Command("kubectl", "apply", "-f", manifestPath)
-	_, err := Run(cmd)
+	err := EnsureNamespaceExists(astarteNamespace)
+	if err != nil {
+		return fmt.Errorf("failed to ensure namespace %s exists: %w", astarteNamespace, err)
+	}
+
+	cmd := exec.Command("kubectl", "apply", "-f", manifestPath, "--namespace", astarteNamespace)
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to install Astarte: %w", err)
+	}
 	return err
 }
 
@@ -201,9 +208,9 @@ func DeployRabbitMQCluster() error {
 	}
 
 	// Create RabbitMQ cluster namespace
-	cmd := exec.Command("kubectl", "create", "namespace", rabbitmqNamespace)
-	if _, err := Run(cmd); err != nil {
-		return fmt.Errorf("failed to create RabbitMQ namespace: %w", err)
+	err = EnsureNamespaceExists(rabbitmqNamespace)
+	if err != nil {
+		return fmt.Errorf("failed to ensure namespace %s exists: %w", rabbitmqNamespace, err)
 	}
 
 	// Check if manifest file exists
@@ -213,7 +220,7 @@ func DeployRabbitMQCluster() error {
 	}
 
 	// Deploy RabbitMQ cluster with the manifest
-	cmd = exec.Command("kubectl", "apply", "-f", manifestPath, "-n", rabbitmqNamespace)
+	cmd := exec.Command("kubectl", "apply", "-f", manifestPath, "-n", rabbitmqNamespace)
 	if _, err := Run(cmd); err != nil {
 		return fmt.Errorf("failed to deploy RabbitMQ cluster: %w", err)
 	}
@@ -451,12 +458,9 @@ func InstallScyllaOperator() error {
 	}
 
 	// Create Scylla cluster namespace
-	cmd = exec.Command("kubectl", "create", "namespace", scyllaNamespace)
-	if _, err := Run(cmd); err != nil {
-		if !strings.Contains(err.Error(), "already exists") {
-			_, _ = fmt.Fprintf(GinkgoWriter, "Namespace %s already exists, skipping creation.\n", scyllaNamespace)
-		}
-		return fmt.Errorf("failed to create Scylla namespace: %w", err)
+	err = EnsureNamespaceExists(scyllaNamespace)
+	if err != nil {
+		return fmt.Errorf("failed to ensure namespace %s exists: %w", scyllaNamespace, err)
 	}
 
 	// Wait for all CRDs to be established

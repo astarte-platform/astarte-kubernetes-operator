@@ -143,8 +143,7 @@ var _ = Describe("controller", Ordered, func() {
 			EventuallyWithOffset(1, verifyControllerUp, utils.DefaultTimeout, utils.DefaultRetryInterval).Should(Succeed())
 
 			targetTestVersions := map[string]string{
-				"1.1": filepath.Join(projectDir, "/test/manifests/api_v1alpha2_astarte_1.1.yaml"),
-				"1.2": filepath.Join(projectDir, "/test/manifests/api_v1alpha2_astarte_1.2.yaml"),
+				"1.3": filepath.Join(projectDir, "/test/manifests/api_v2alpha1_astarte_1.3.yaml"),
 			}
 
 			for k, v := range targetTestVersions {
