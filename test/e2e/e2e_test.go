@@ -55,6 +55,9 @@ var _ = Describe("controller", Ordered, func() {
 		By("deploying the Scylla cluster")
 		Expect(utils.DeployScyllaCluster()).To(Succeed())
 
+		By("creating the Scylla connection secret")
+		Expect(utils.CreateScyllaConnectionSecret()).To(Succeed())
+
 		By("creating manager namespace")
 		cmd := exec.Command("kubectl", "create", "ns", namespace)
 		_, _ = utils.Run(cmd)
