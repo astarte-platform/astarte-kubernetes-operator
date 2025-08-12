@@ -51,6 +51,10 @@ const (
 	DefaultCleanupRetryInterval time.Duration = time.Second * 1
 	// DefaultCleanupTimeout applied to all tests
 	DefaultCleanupTimeout time.Duration = time.Second * 5
+
+	rabbitmqClusterOperatorVersion = "v2.16.0"                                                                                //nolint:all
+	rabbitmqClusterOperatorURL     = "https://github.com/rabbitmq/cluster-operator/releases/download/%s/cluster-operator.yml" //nolint:all
+	rabbitmqNamespace              = "rabbitmq"
 )
 
 func warnError(err error) {
@@ -181,4 +185,104 @@ func UninstallAstarte(manifestPath string) error {
 	cmd := exec.Command("kubectl", "delete", "-f", manifestPath)
 	_, err := Run(cmd)
 	return err
+}
+
+func DeployRabbitMQCluster() error {
+	prj, err := GetProjectDir()
+	if err != nil {
+		return fmt.Errorf("failed to get project directory: %w", err)
+	}
+
+	// Create RabbitMQ cluster namespace
+	cmd := exec.Command("kubectl", "create", "namespace", rabbitmqNamespace)
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to create RabbitMQ namespace: %w", err)
+	}
+
+	// Check if manifest file exists
+	manifestPath := fmt.Sprintf("%s/test/manifests/dependencies/rabbitmq-cluster.yaml", prj)
+	if _, err := os.Stat(manifestPath); os.IsNotExist(err) {
+		return fmt.Errorf("manifest file %s does not exist", manifestPath)
+	}
+
+	// Deploy RabbitMQ cluster with the manifest
+	cmd = exec.Command("kubectl", "apply", "-f", manifestPath, "-n", rabbitmqNamespace)
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to deploy RabbitMQ cluster: %w", err)
+	}
+
+	// Wait 15 seconds
+	// TODO: Use a more robust waiting mechanism
+	time.Sleep(15 * time.Second)
+
+	// Wait for RabbitMQ cluster to be ready
+	cmd = exec.Command("kubectl", "wait",
+		"--for", "condition=ready",
+		"pod",
+		"-l", "app.kubernetes.io/component=rabbitmq",
+		"-n", rabbitmqNamespace,
+		"--timeout", "5m",
+	)
+
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to wait for RabbitMQ cluster pods to be ready: %w", err)
+	}
+
+	return nil
+}
+
+func InstallRabbitMQClusterOperator() error {
+	url := fmt.Sprintf(rabbitmqClusterOperatorURL, rabbitmqClusterOperatorVersion)
+	cmd := exec.Command("kubectl", "create", "-f", url)
+
+	if _, err := Run(cmd); err != nil {
+		return err
+	}
+
+	// Wait for CRDs
+	crd := "rabbitmqclusters.rabbitmq.com"
+	cmd = exec.Command("kubectl", "wait",
+		"--for", "condition=established",
+		fmt.Sprintf("crd/%s", crd),
+		"--timeout", "5m",
+	)
+
+	if _, err := Run(cmd); err != nil {
+		return err
+	}
+
+	// Wait for operator deployment
+	cmd = exec.Command("kubectl",
+		"-n", "rabbitmq-system",
+		"rollout", "status",
+		"deployment/rabbitmq-cluster-operator",
+		"--timeout", "10m",
+	)
+
+	if _, err := Run(cmd); err != nil {
+		return err
+	}
+
+	// Verify operator pod is running
+	cmd = exec.Command("kubectl", "wait",
+		"--for", "condition=ready",
+		"pod",
+		"-l", "app.kubernetes.io/name=rabbitmq-cluster-operator",
+		"-n", "rabbitmq-system",
+		"--timeout", "5m",
+	)
+
+	if _, err := Run(cmd); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func UninstallRabbitMQClusterOperator() {
+	url := fmt.Sprintf(rabbitmqClusterOperatorURL, rabbitmqClusterOperatorVersion)
+	cmd := exec.Command("kubectl", "delete", "-f", url)
+	if _, err := Run(cmd); err != nil {
+		warnError(err)
+	}
 }
