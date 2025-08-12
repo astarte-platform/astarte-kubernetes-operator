@@ -366,6 +366,30 @@ func DeployScyllaCluster() error {
 	return nil
 }
 
+func CreateScyllaConnectionSecret() error {
+	secretData := map[string]string{
+		"username": "cassandra",
+		"password": "cassandra",
+	}
+
+	if err := CreateSecret("scylladb-connection-secret", astarteNamespace, secretData); err != nil {
+		return fmt.Errorf("failed to create scylla connection secret: %w", err)
+	}
+
+	// Wait for the secret to be created
+	cmd := exec.Command("kubectl", "wait", "--for=create",
+		"-n", astarteNamespace,
+		"secret/scylladb-connection-secret",
+		"--timeout", "30s",
+	)
+
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to wait for scylla connection secret to be created: %w", err)
+	}
+
+	return nil
+}
+
 func InstallScyllaOperator() error {
 	url := fmt.Sprintf(scyllaOperatorURL, scyllaOperatorVersion)
 	cmd := exec.Command("kubectl", "create", "-f", url)
