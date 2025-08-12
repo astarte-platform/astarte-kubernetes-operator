@@ -1,0 +1,13 @@
+ apiVersion: v1
+ kind: ConfigMap
+ metadata:
+   name: scylladb-config
+ data:
+   scylla.yaml: |
+     # By default, Scylla do not use authentication and authorization.
+     # We want to enable both to avoid setting empty username and password
+     # that can cause issues with VerneMQ. The VerneMQ behavior with empty
+     # env vars still has to be investigated, for now, we want to have
+     # authentication and authorization enabled.
+     authenticator: PasswordAuthenticator
+     authorizer: CassandraAuthorizer

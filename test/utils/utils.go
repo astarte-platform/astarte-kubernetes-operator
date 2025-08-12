@@ -51,10 +51,16 @@ const (
 	DefaultCleanupRetryInterval time.Duration = time.Second * 1
 	// DefaultCleanupTimeout applied to all tests
 	DefaultCleanupTimeout time.Duration = time.Second * 5
+	// DefaultSleepInterval applied to all tests
+	DefaultSleepInterval time.Duration = time.Second * 5
 
 	rabbitmqClusterOperatorVersion = "v2.16.0"                                                                                //nolint:all
 	rabbitmqClusterOperatorURL     = "https://github.com/rabbitmq/cluster-operator/releases/download/%s/cluster-operator.yml" //nolint:all
 	rabbitmqNamespace              = "rabbitmq"
+
+	scyllaOperatorVersion = "v1.17.1"
+	scyllaOperatorURL     = "https://raw.githubusercontent.com/scylladb/scylla-operator/%s/deploy/operator.yaml"
+	scyllaNamespace       = "scylla"
 )
 
 func warnError(err error) {
@@ -312,4 +318,114 @@ func EnsureNamespaceExists(namespace string) error {
 	}
 
 	return nil
+}
+
+func DeployScyllaCluster() error {
+	prj, err := GetProjectDir()
+	if err != nil {
+		return fmt.Errorf("failed to get project directory: %w", err)
+	}
+
+	// Create Scylla configmap
+	manifestPath := fmt.Sprintf("%s/test/manifests/dependencies/scylla-config.yaml", prj)
+	if _, err := os.Stat(manifestPath); os.IsNotExist(err) {
+		return fmt.Errorf("manifest file %s does not exist", manifestPath)
+	}
+
+	cmd := exec.Command("kubectl", "apply", "-f", manifestPath, "-n", scyllaNamespace)
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to create Scylla configmap: %w", err)
+	}
+
+	// Create Scylla cluster
+	manifestPath = fmt.Sprintf("%s/test/manifests/dependencies/scylla-cluster.yaml", prj)
+	if _, err := os.Stat(manifestPath); os.IsNotExist(err) {
+		return fmt.Errorf("manifest file %s does not exist", manifestPath)
+	}
+
+	cmd = exec.Command("kubectl", "apply", "-f", manifestPath, "-n", scyllaNamespace)
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to deploy Scylla cluster: %w", err)
+	}
+
+	time.Sleep(DefaultSleepInterval)
+
+	// Wait for Scylla cluster pods to be ready
+	cmd = exec.Command("kubectl", "wait",
+		"--for", "condition=ready",
+		"pod",
+		"-l", "app=scylla",
+		"-n", scyllaNamespace,
+		"--timeout", "15m",
+	)
+
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to wait for Scylla cluster pods to be ready: %w", err)
+	}
+
+	return nil
+}
+
+func InstallScyllaOperator() error {
+	url := fmt.Sprintf(scyllaOperatorURL, scyllaOperatorVersion)
+	cmd := exec.Command("kubectl", "create", "-f", url)
+	_, err := Run(cmd)
+	if err != nil {
+		return err
+	}
+
+	// Create Scylla cluster namespace
+	cmd = exec.Command("kubectl", "create", "namespace", scyllaNamespace)
+	if _, err := Run(cmd); err != nil {
+		if !strings.Contains(err.Error(), "already exists") {
+			_, _ = fmt.Fprintf(GinkgoWriter, "Namespace %s already exists, skipping creation.\n", scyllaNamespace)
+		}
+		return fmt.Errorf("failed to create Scylla namespace: %w", err)
+	}
+
+	// Wait for all CRDs to be established
+	crds := []string{
+		"scyllaclusters.scylla.scylladb.com",
+		"nodeconfigs.scylla.scylladb.com",
+		"scyllaoperatorconfigs.scylla.scylladb.com",
+	}
+
+	for _, crd := range crds {
+		cmd := exec.Command("kubectl", "wait",
+			"--for", "condition=established",
+			fmt.Sprintf("crd/%s", crd),
+			"--timeout", "5m",
+		)
+		if _, err := Run(cmd); err != nil {
+			return fmt.Errorf("failed to wait for CRD %s: %w", crd, err)
+		}
+	}
+
+	// Wait for all deployments to be ready
+	deployments := []string{
+		"scylla-operator",
+		"webhook-server",
+	}
+
+	for _, deployment := range deployments {
+		cmd := exec.Command("kubectl",
+			"-n", "scylla-operator",
+			"rollout", "status",
+			fmt.Sprintf("deployment.apps/%s", deployment),
+			"--timeout", "10m",
+		)
+		if _, err := Run(cmd); err != nil {
+			return fmt.Errorf("failed to wait for deployment %s: %w", deployment, err)
+		}
+	}
+
+	return nil
+}
+
+func UninstallScyllaOperator() {
+	url := fmt.Sprintf(scyllaOperatorURL, scyllaOperatorVersion)
+	cmd := exec.Command("kubectl", "delete", "-f", url)
+	if _, err := Run(cmd); err != nil {
+		warnError(err)
+	}
 }
