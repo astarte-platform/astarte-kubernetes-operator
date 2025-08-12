@@ -429,3 +429,43 @@ func UninstallScyllaOperator() {
 		warnError(err)
 	}
 }
+
+// CreateSecret takes a secret name, namespace, and a map of key-value pairs
+// to create a generic Kubernetes secret using kubectl.
+func CreateSecret(secretName string, secretNamespace string, data map[string]string) error {
+	args := []string{
+		"create",
+		"secret",
+		"generic",
+		secretName,
+		"--namespace",
+		secretNamespace,
+	}
+
+	for key, value := range data {
+		args = append(args, fmt.Sprintf("--from-literal=%s=%s", key, value))
+	}
+
+	if err := EnsureNamespaceExists(secretNamespace); err != nil {
+		return fmt.Errorf("failed to ensure namespace %s exists: %w", secretNamespace, err)
+	}
+
+	cmd := exec.Command("kubectl", args...)
+
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to create secret %s: %w", secretName, err)
+	}
+
+	// Wait for the secret to be created
+	waitCmd := exec.Command("kubectl", "wait", "--for=create",
+		"secret", secretName,
+		"--namespace", secretNamespace,
+		"--timeout", "30s",
+	)
+
+	if _, err := Run(waitCmd); err != nil {
+		return fmt.Errorf("failed to wait for secret %s to be created: %w", secretName, err)
+	}
+
+	return nil
+}
