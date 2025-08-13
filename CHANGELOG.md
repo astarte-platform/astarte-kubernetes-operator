@@ -19,11 +19,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Use a single deployment for components formerly split into API/backend (i.e.: remove
   Realm Management API, Housekeeping API and Pairing API).
 - [Breaking] Support Astarte v1.3+. Support to previous Astarte versions is dropped.
+- Moved CFSSL validation logic to the Astarte CRD validation webhook.
 
 ### Removed
 - [Breaking] Remove v1alpha2 and v1alpha3 API version for the api.astarte-platform.org group.
 - [Breaking] Remove management of RabbitMQ and Cassandra by the operator. Users are now
   expected to deploy and manage RabbitMQ and Cassandra independently of the operator.
+- Removed unimplemented VerneMQ validation logic from the reconciliation cycle.
 
 ### Fixed
 - Fix the propagation of replicaCount, installCrds, and pullPolicy values
