@@ -55,9 +55,9 @@ var defaultComponentAllocations = map[apiv2alpha1.AstarteComponent]allocationCoe
 	apiv2alpha1.AppEngineAPI:     {CPUCoefficient: 0.18, MemoryCoefficient: 0.18},
 	apiv2alpha1.DataUpdaterPlant: {CPUCoefficient: 0.21, MemoryCoefficient: 0.21},
 	apiv2alpha1.FlowComponent:    {CPUCoefficient: 0.10, MemoryCoefficient: 0.10},
-	apiv2alpha1.Housekeeping:     {CPUCoefficient: 0.04, MemoryCoefficient: 0.04},
-	apiv2alpha1.Pairing:          {CPUCoefficient: 0.06, MemoryCoefficient: 0.06},
-	apiv2alpha1.RealmManagement:  {CPUCoefficient: 0.06, MemoryCoefficient: 0.06},
+	apiv2alpha1.Housekeeping:     {CPUCoefficient: 0.08, MemoryCoefficient: 0.08},
+	apiv2alpha1.Pairing:          {CPUCoefficient: 0.19, MemoryCoefficient: 0.19},
+	apiv2alpha1.RealmManagement:  {CPUCoefficient: 0.12, MemoryCoefficient: 0.12},
 	apiv2alpha1.TriggerEngine:    {CPUCoefficient: 0.07, MemoryCoefficient: 0.07},
 	apiv2alpha1.Dashboard:        {CPUCoefficient: 0.05, MemoryCoefficient: 0.05},
 }
