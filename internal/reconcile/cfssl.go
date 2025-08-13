@@ -21,7 +21,6 @@ package reconcile
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	cfsslcsr "github.com/cloudflare/cfssl/csr"
@@ -44,16 +43,6 @@ import (
 
 // EnsureCFSSL reconciles CFSSL
 func EnsureCFSSL(cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
-	// Validate where necessary
-	if err := validateCFSSLDefinition(cr.Spec.CFSSL); err != nil {
-		return err
-	}
-
-	// And reconcile the deployment
-	return ensureCFSSLDeployment(cr, c, scheme)
-}
-
-func ensureCFSSLDeployment(cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
 	deploymentName := cr.Name + "-cfssl"
 	labels := map[string]string{"app": deploymentName}
 
@@ -163,15 +152,6 @@ func ensureCFSSLCommonSidecars(resourceName string, labels map[string]string, cr
 	}
 
 	// All good!
-	return nil
-}
-
-func validateCFSSLDefinition(cfssl apiv2alpha1.AstarteCFSSLSpec) error {
-	if !pointy.BoolValue(cfssl.Deploy, true) && cfssl.URL == "" {
-		return errors.New("When not deploying CFSSL, the 'url' must be specified")
-	}
-
-	// All is good.
 	return nil
 }
 
