@@ -47,11 +47,6 @@ func EnsureVerneMQ(cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Sch
 	statefulSetName := GetVerneMQStatefulSetName(cr)
 	labels := map[string]string{"app": statefulSetName}
 
-	// Validate where necessary
-	if err := validateVerneMQDefinition(&cr.Spec.VerneMQ); err != nil {
-		return err
-	}
-
 	// Ok. Shall we deploy?
 	if !pointy.BoolValue(cr.Spec.VerneMQ.Deploy, true) {
 		log.Info("Skipping VerneMQ Deployment")
@@ -169,14 +164,6 @@ func EnsureVerneMQ(cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Sch
 
 func GetVerneMQStatefulSetName(cr *apiv2alpha1.Astarte) string {
 	return cr.Name + "-vernemq"
-}
-
-func validateVerneMQDefinition(vmq *apiv2alpha1.AstarteVerneMQSpec) error {
-	if vmq == nil {
-		return nil
-	}
-	// All is good.
-	return nil
 }
 
 func getVerneMQProbe() *v1.Probe {
