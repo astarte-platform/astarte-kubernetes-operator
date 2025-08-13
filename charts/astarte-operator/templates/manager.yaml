@@ -25,7 +25,7 @@ spec:
         - --health-probe-bind-address=:8081
         command:
         - /manager
-        image: '{{ .Values.image.repository }}:{{ .Values.image.tag }}'
+        image: local-registry/astarte-kubernetes-operator:25.5.0-dev
         imagePullPolicy: '{{ .Values.image.pullPolicy }}'
         livenessProbe:
           httpGet:
