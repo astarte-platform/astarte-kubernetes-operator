@@ -20,11 +20,9 @@ name: "Operator e2e tests"
 on:
   pull_request:
     paths:
-    - 'apis/**'
-    - 'controllers/**'
-    - 'lib/**'
+    - 'api/**'
+    - 'internal/**'
     - 'test/**'
-    - 'version/**'
     - 'Makefile'
     # The workflow itself
     - '.github/workflows/test.yaml'
@@ -32,11 +30,9 @@ on:
     - 'go.mod'
   push:
     paths:
-    - 'apis/**'
-    - 'controllers/**'
-    - 'lib/**'
+    - 'api/**'
+    - 'internal/**'
     - 'test/**'
-    - 'version/**'
     - 'Makefile'
     # The workflow itself
     - '.github/workflows/test.yaml'
