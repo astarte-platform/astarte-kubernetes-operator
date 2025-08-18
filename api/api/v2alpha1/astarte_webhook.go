@@ -207,6 +207,10 @@ func (r *Astarte) validateAstarte() field.ErrorList {
 		allErrs = append(allErrs, err)
 	}
 
+	if err := r.validateCFSSLDefinition(); err != nil {
+		allErrs = append(allErrs, err)
+	}
+
 	return allErrs
 }
 
@@ -359,6 +363,17 @@ func (r *Astarte) validateUpdateAstarteSystemKeyspace(oldAstarte *Astarte) *fiel
 		err := errors.New("Once Astarte is created, the astarteSystemKeyspace cannot be modified")
 		fldPath := field.NewPath("spec").Child("cassandra").Child("astarteSystemKeyspace")
 		return field.Invalid(fldPath, r.Spec.Cassandra.AstarteSystemKeyspace, err.Error())
+	}
+
+	return nil
+}
+
+func (r *Astarte) validateCFSSLDefinition() *field.Error {
+	if !pointy.BoolValue(r.Spec.CFSSL.Deploy, true) && r.Spec.CFSSL.URL == "" {
+		err := errors.New("When not deploying CFSSL, the 'url' must be specified")
+		fldPath := field.NewPath("spec").Child("cfssl").Child("url")
+		astartelog.Info(err.Error())
+		return field.Invalid(fldPath, r.Spec.CFSSL.URL, err.Error())
 	}
 
 	return nil
