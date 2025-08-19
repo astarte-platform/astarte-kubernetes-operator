@@ -1,3 +1,6 @@
+#In an ephemeral env such as E2E testing we allow components to allocate resources as needed without setting requests and limits. This approach is not recommended in prod envs.
+#For a Pod to be given a QoS class of BestEffort, the Containers in the Pod must not have any memory or CPU limits or requests.
+
 apiVersion: api.astarte-platform.org/v2alpha1
 kind: Astarte
 metadata:
@@ -32,21 +35,7 @@ spec:
   vernemq:
     host: "broker.astarte-example.com"
     port: 8883
-    resources:
-      requests:
-        cpu: 200m
-        memory: 1024M
-      limits:
-        cpu: 1000m
-        memory: 2048M
   cfssl:
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128M
-      limits:
-        cpu: 200m
-        memory: 256M
     storage:
       size: 2Gi
   components:
@@ -60,15 +49,6 @@ spec:
           value: "guest"
         - name: "HOUSEKEEPING_AMQP_PASSWORD"
           value: "guest"
-    # Global resource allocation. Automatically allocates resources to components weighted in a
-    # reasonable way.
-    resources:
-      requests:
-        cpu: 1200m
-        memory: 6G
-      limits:
-        cpu: 3000m
-        memory: 12G
     dashboard:
       image: "docker.io/astarte/astarte-dashboard:1.2.1-rc.0"
       deploy: true
