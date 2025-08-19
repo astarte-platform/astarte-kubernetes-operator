@@ -225,6 +225,9 @@ func DeployRabbitMQCluster() error {
 		return fmt.Errorf("failed to deploy RabbitMQ cluster: %w", err)
 	}
 
+	// Sleep to allow the cluster to start
+	time.Sleep(DefaultSleepInterval)
+
 	// Wait for RabbitMQ cluster to be ready
 	cmd = exec.Command("kubectl", "wait",
 		"--for", "condition=ready",
@@ -276,17 +279,6 @@ func CreateRabbitMQConnectionSecret() error {
 
 	if err := CreateSecret("rabbitmq-connection-secret", astarteNamespace, secretData); err != nil {
 		return fmt.Errorf("failed to create RabbitMQ connection secret: %w", err)
-	}
-
-	// Wait for the secret to be created
-	cmd = exec.Command("kubectl", "wait", "--for=create",
-		"-n", astarteNamespace,
-		"secret/rabbitmq-default-user",
-		"--timeout", "30s",
-	)
-
-	if _, err := Run(cmd); err != nil {
-		return fmt.Errorf("failed to wait for rabbitmq connection secret to be created: %w", err)
 	}
 
 	return nil
@@ -442,17 +434,6 @@ func CreateScyllaConnectionSecret() error {
 
 	if err := CreateSecret("scylladb-connection-secret", astarteNamespace, secretData); err != nil {
 		return fmt.Errorf("failed to create scylla connection secret: %w", err)
-	}
-
-	// Wait for the secret to be created
-	cmd := exec.Command("kubectl", "wait", "--for=create",
-		"-n", astarteNamespace,
-		"secret/scylladb-connection-secret",
-		"--timeout", "30s",
-	)
-
-	if _, err := Run(cmd); err != nil {
-		return fmt.Errorf("failed to wait for scylla connection secret to be created: %w", err)
 	}
 
 	return nil
