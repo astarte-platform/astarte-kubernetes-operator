@@ -70,6 +70,9 @@ var _ = Describe("controller", Ordered, func() {
 		By("uninstalling the Prometheus manager bundle")
 		utils.UninstallPrometheusOperator()
 
+		By("uninstalling rabbitmq cluster")
+		utils.UninstallRabbitMQCluster()
+
 		By("uninstalling rabbitmq cluster operator")
 		utils.UninstallRabbitMQClusterOperator()
 

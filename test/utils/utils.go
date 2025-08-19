@@ -196,7 +196,7 @@ func EnsureAstarteHealthGreen() error {
 }
 
 func UninstallAstarte(manifestPath string) error {
-	cmd := exec.Command("kubectl", "delete", "-f", manifestPath)
+	cmd := exec.Command("kubectl", "delete", "-f", manifestPath, "--namespace", astarteNamespace)
 	_, err := Run(cmd)
 	return err
 }
@@ -346,7 +346,20 @@ func InstallRabbitMQClusterOperator() error {
 
 func UninstallRabbitMQClusterOperator() {
 	url := fmt.Sprintf(rabbitmqClusterOperatorURL, rabbitmqClusterOperatorVersion)
-	cmd := exec.Command("kubectl", "delete", "-f", url)
+	cmd := exec.Command("kubectl", "delete", "-f", url, "-n", "rabbitmq-system")
+	if _, err := Run(cmd); err != nil {
+		warnError(err)
+	}
+}
+
+func UninstallRabbitMQCluster() {
+	cmd := exec.Command("kubectl", "delete", "rabbitmqcluster", "--all", "-n", rabbitmqNamespace)
+	if _, err := Run(cmd); err != nil {
+		warnError(err)
+	}
+
+	// Delete the RabbitMQ namespace
+	cmd = exec.Command("kubectl", "delete", "namespace", rabbitmqNamespace)
 	if _, err := Run(cmd); err != nil {
 		warnError(err)
 	}
