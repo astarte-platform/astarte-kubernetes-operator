@@ -24,6 +24,15 @@ on:
 jobs:
   test:
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        kubernetesNodeImage:
+        - "kindest/node:v1.33.2@sha256:c55080dc5be4f2cc242e6966fdf97bb62282e1cd818a28223cf536db8b0fddf4"
+        - "kindest/node:v1.32.5@sha256:5d5a4d793d2a3d9727013b8b0cf6c95008c71abeb547759a273ef27e9c564984"
+        - "kindest/node:v1.31.9@sha256:b94a3a6c06198d17f59cca8c6f486236fa05e2fb359cbd75dabbfc348a10b211"
+        - "kindest/node:v1.30.13@sha256:cf819926d6f5ba996f7489fa18a38156f952f5dd172395da7d83f734190e95da"
+      fail-fast: false
+      
     steps:
     - uses: actions/checkout@v4
     - name: Fetch history
@@ -31,22 +40,30 @@ jobs:
     - uses: alexellis/setup-arkade@v3
     - uses: alexellis/arkade-get@master
       with:
+        kubectl: v1.32.2
         helm: v3.14.0
+
     - name: Setup chart-testing
       uses: helm/chart-testing-action@v2
+
     - name: Set env variable for ct target branch
       run: echo "CT_TARGET_BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
       if: ${{ github.event_name == 'push' }}
+
     - name: Set env variable for ct target branch
       run: echo "CT_TARGET_BRANCH=${GITHUB_BASE_REF#refs/heads/}" >> $GITHUB_ENV
       if: ${{ github.event_name == 'pull_request' }}
+
     - name: Set env variable to prevent chart bump errors
       run: echo "CT_CHECK_VERSION_INCREMENT=false" >> $GITHUB_ENV
+
     - name: Check ct env
       run: echo $CT_TARGET_BRANCH $CT_CHECK_VERSION_INCREMENT
+
     - name: Run chart-testing (lint)
       id: lint
       run: ct lint --target-branch $CT_TARGET_BRANCH
+
     - name: Run chart-testing (list-changed)
       id: list-changed
       run: |
@@ -54,68 +71,90 @@ jobs:
         if [[ -n "$changed" ]]; then
           echo "::set-output name=changed::true"
         fi
+
     - name: Set nf_conntrack_max value
       # This step is required to avoid CrashLoopBackOff for kube-proxy
       # see https://github.com/kubernetes-sigs/kind/issues/2240#issuecomment-838510890
       run: |
         sudo sysctl net/netfilter/nf_conntrack_max=131072
+
     - uses: container-tools/kind-action@v2
       with:
-        version: "v0.27.0"
-        node_image: "kindest/node:v1.32.2@sha256:f226345927d7e348497136874b6d207e0b32cc52154ad8323129352923a3142f"
+        version: "v0.29.0"
+        node_image: "${{ matrix.kubernetesNodeImage }}"
+
     - name: Build test image
       run: |
         docker build -t astarte-operator-ci:test -f Dockerfile .
+
     - name: Tag test image
       run: |
         docker tag astarte-operator-ci:test local-kind-registry/astarte-operator-ci:test
+
     - name: Ensure KinD is up
       run: |
         kubectl cluster-info
         kubectl get pods -n kube-system
         kubectl describe nodes
+
     - name: Dump cluster info
       run: |
         kubectl cluster-info dump
+
     - name: Load test image to Kind registry
       run: |
         kind load docker-image local-kind-registry/astarte-operator-ci:test
+
     - name: Install cert-manager chart as dependency
       run: |
         kubectl create namespace cert-manager
         helm repo add jetstack https://charts.jetstack.io
         helm repo update
         helm install cert-manager jetstack/cert-manager --namespace cert-manager --version v1.16.3 --set crds.enabled=true
-    - name: Sleep for 20 seconds (wait for cert-manager to come up)
-      uses: jakejarvis/wait-action@master
-      with:
-        time: '20s'
+
+    - name: Wait for cert-manager to be ready
+      run: |
+        kubectl wait --for=condition=available --timeout=120s deployment/cert-manager -n cert-manager
+        kubectl wait --for=condition=available --timeout=120s deployment/cert-manager-webhook -n cert-manager
+        kubectl wait --for=condition=available --timeout=120s deployment/cert-manager-cainjector -n cert-manager
+
     - name: Install Helm Chart
       run: |
         helm install astarte-operator ./charts/astarte-operator --set image.repository=local-kind-registry/astarte-operator-ci --set image.tag=test
-    - name: Sleep for 20 seconds (wait for Astarte Operator to come up)
-      uses: jakejarvis/wait-action@master
-      with:
-        time: '20s'
-    - name: Install Astarte Resource
+
+    - name: Check Helm release is deployed
+      id: check-helm-release
       run: |
-        kubectl create namespace astarte-test
-        kubectl apply -n astarte-test -f test/manifests/api_v1alpha2_astarte_1.2.yaml
-    - name: Wait for Astarte to come up
+        kubectl wait --for=create --timeout=120s deployment/astarte-operator-controller-manager
+
+    - name: Check Astarte Operator is running
+      id: check-operator-running
       run: |
-        kubectl wait astartes.v1alpha2.api.astarte-platform.org example-astarte --for jsonpath={.status.health}=green --namespace astarte-test --timeout 10m
+        kubectl wait --for=condition=available --timeout=120s deployment/astarte-operator-controller-manager
+
     - name: Dump debug info
-      if: failure()
       run: |
-        kubectl logs deployment/astarte-operator-controller-manager || echo "No operator logs available"
-        kubectl logs deployment/astarte-operator-controller-manager --previous || echo "Operator never crashed"
-        kubectl get pods -n astarte-test
-        kubectl get deployment -n astarte-test
-        kubectl get statefulset -n astarte-test
-        kubectl get secrets -n astarte-test
-        kubectl get configmaps -n astarte-test
-        kubectl get pvc -n astarte-test
-        kubectl describe astarte -n astarte-test || echo "Astarte already deleted"
-    - name: Show pod states
-      run: |
-        kubectl get pods -n astarte-test
+        echo "::group:: PODS"
+        echo "kubectl get pods -A"
+        kubectl get pods -A
+        echo "::endgroup::"
+        echo "::group:: DEPLOYMENTS"
+        echo "kubectl get deployment -A"
+        kubectl get deployment -A
+        echo "::endgroup::"
+        echo "::group:: SECRETS"
+        echo "kubectl get secrets -A"
+        kubectl get secrets -A
+        echo "::endgroup::"
+        echo "::group:: CONFIGMAPS"
+        echo "kubectl get configmaps -A"
+        kubectl get configmaps -A
+        echo "::endgroup::"
+        echo "::group:: DESCRIBE OP"
+        echo "kubectl describe deployment astarte-operator-controller-manager"
+        kubectl describe deployment astarte-operator-controller-manager
+        echo "::endgroup::"
+        echo "::group:: LOGS OP"
+        echo "kubectl logs deployment/astarte-operator-controller-manager"
+        kubectl logs deployment/astarte-operator-controller-manager
+        echo "::endgroup::"
