@@ -49,5 +49,13 @@ spec:
           value: "guest"
         - name: "HOUSEKEEPING_AMQP_PASSWORD"
           value: "guest"
+        - name: "HOUSEKEEPING_AMQP_SSL_ENABLED"
+          value: "false"
+        - name: "HOUSEKEEPING_AMQP_SSL_CA_FILE"
+          value: "/etc/ssl/certs/ca.crt"
+        - name: "HOUSEKEEPING_AMQP_SSL_DISABLE_SNI"
+          value: "false"
+        - name: "HOUSEKEEPING_AMQP_SSL_CUSTOM_SNI"
+          value: ""
     dashboard:
       deploy: false
