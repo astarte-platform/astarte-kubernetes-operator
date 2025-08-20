@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add v2alpha1 API version for the api.astarte-platform.org group.
 - Add v2alpha1 API version for the flow.astarte-platform.org group.
 - Support the NetworkTopologyStrategy replication strategy for Cassandra.
+- Add kubernetes 1.30.x, 1.31.x, 1.32.x and 1.33.x to the test matrix of the Helm chart installation tests.
 
 ### Changed
 - Forward port changes from release-24.5
@@ -20,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   Realm Management API, Housekeeping API and Pairing API).
 - [Breaking] Support Astarte v1.3+. Support to previous Astarte versions is dropped.
 - Moved CFSSL validation logic to the Astarte CRD validation webhook.
+- Updated Helm chart installation tests to work with Astarte v1.3+.
 
 ### Removed
 - [Breaking] Remove v1alpha2 and v1alpha3 API version for the api.astarte-platform.org group.
