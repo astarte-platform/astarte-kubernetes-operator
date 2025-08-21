@@ -139,14 +139,6 @@ test-e2e:
 	go test ./test/e2e/ -v -ginkgo.v -timeout 1h
  
 
-# Utilize Kind or modify the e2e tests to load the image locally, enabling compatibility with other vendors.
-# The default timeout is 10m, this can cause problems in the E2E test suite where we have timeouts for each step.
-# If you want to change timeouts of E2E please change it in the E2E test. The timeout here is a upper-bound protection against test without explicit timeouts that could take hours.
-.PHONY: test-e2e  # Run the e2e tests against a Kind k8s instance that is spun up.
-test-e2e:
-	go test ./test/e2e/ -v -ginkgo.v -timeout 1h
- 
-
 ##@ Build
 
 .PHONY: build
