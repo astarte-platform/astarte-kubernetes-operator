@@ -1,0 +1,8 @@
+ apiVersion: v1
+ kind: ConfigMap
+ metadata:
+   name: scylladb-config
+ data:
+   scylla.yaml: |
+     authenticator: PasswordAuthenticator
+     authorizer: CassandraAuthorizer

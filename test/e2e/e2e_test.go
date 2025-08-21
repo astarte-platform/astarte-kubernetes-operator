@@ -43,6 +43,24 @@ var _ = Describe("controller", Ordered, func() {
 		By("installing the cert-manager")
 		Expect(utils.InstallCertManager()).To(Succeed())
 
+		By("installing rabbitmq cluster operator")
+		Expect(utils.InstallRabbitMQClusterOperator()).To(Succeed())
+
+		By("deploying the RabbitMQ cluster")
+		Expect(utils.DeployRabbitMQCluster()).To(Succeed())
+
+		By("creating the RabbitMq connection secret")
+		Expect(utils.CreateRabbitMQConnectionSecret()).To(Succeed())
+
+		By("installing scylla operator")
+		Expect(utils.InstallScyllaOperator()).To(Succeed())
+
+		By("deploying the Scylla cluster")
+		Expect(utils.DeployScyllaCluster()).To(Succeed())
+
+		By("creating the Scylla connection secret")
+		Expect(utils.CreateScyllaConnectionSecret()).To(Succeed())
+
 		By("creating manager namespace")
 		cmd := exec.Command("kubectl", "create", "ns", namespace)
 		_, _ = utils.Run(cmd)
@@ -51,6 +69,15 @@ var _ = Describe("controller", Ordered, func() {
 	AfterAll(func() {
 		By("uninstalling the Prometheus manager bundle")
 		utils.UninstallPrometheusOperator()
+
+		By("uninstalling rabbitmq cluster")
+		utils.UninstallRabbitMQCluster()
+
+		By("uninstalling rabbitmq cluster operator")
+		utils.UninstallRabbitMQClusterOperator()
+
+		By("uninstalling scylla operator")
+		utils.UninstallScyllaOperator()
 
 		By("uninstalling the cert-manager bundle")
 		utils.UninstallCertManager()
@@ -119,8 +146,7 @@ var _ = Describe("controller", Ordered, func() {
 			EventuallyWithOffset(1, verifyControllerUp, utils.DefaultTimeout, utils.DefaultRetryInterval).Should(Succeed())
 
 			targetTestVersions := map[string]string{
-				"1.1": filepath.Join(projectDir, "/test/manifests/api_v1alpha2_astarte_1.1.yaml"),
-				"1.2": filepath.Join(projectDir, "/test/manifests/api_v1alpha2_astarte_1.2.yaml"),
+				"1.3": filepath.Join(projectDir, "/test/manifests/api_v2alpha1_astarte_1.3.yaml"),
 			}
 
 			for k, v := range targetTestVersions {
