@@ -30,6 +30,7 @@ import (
 	"strconv"
 	"strings"
 
+	semver "github.com/Masterminds/semver/v3"
 	"github.com/go-logr/logr"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
@@ -366,6 +367,33 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha2.Astarte, bac
 			Name:      "RELEASE_COOKIE",
 			ValueFrom: getErlangClusteringCookieSecretReference(cr),
 		})
+
+		// If Astarte version is bigger than 1.2.0, we need to set clustering environment variables.
+		if cr.Spec.Version != "" && semver.MustParse(cr.Spec.Version).GreaterThan(semver.MustParse("1.2.0")) {
+			ret = append(ret, v1.EnvVar{
+				Name:  "CLUSTERING_STRATEGY",
+				Value: "kubernetes",
+			})
+
+			ret = append(ret,
+				v1.EnvVar{
+					Name:  "DATA_UPDATER_PLANT_CLUSTERING_KUBERNETES_SELECTOR",
+					Value: fmt.Sprint("app=", cr.Name, "-data-updater-plant"),
+				})
+
+			ret = append(ret,
+				v1.EnvVar{
+					Name:  "VERNEMQ_CLUSTERING_KUBERNETES_SELECTOR",
+					Value: fmt.Sprint("app=", cr.Name, "-vernemq"),
+				})
+
+			ret = append(ret,
+				v1.EnvVar{
+					Name:  "CLUSTERING_KUBERNETES_NAMESPACE",
+					Value: cr.Namespace,
+				})
+		}
+
 	} else {
 		ret = append(ret, v1.EnvVar{
 			Name: "RELEASE_COOKIE",
