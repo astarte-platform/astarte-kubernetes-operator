@@ -305,12 +305,6 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv2alpha1.Astarte,
 				})
 		}
 
-		ret = append(ret,
-			v1.EnvVar{
-				Name:  "CLUSTERING_STRATEGY",
-				Value: "kubernetes",
-			})
-
 	case apiv2alpha1.Housekeeping:
 		// Add Public Key Information
 		ret = append(ret, v1.EnvVar{
