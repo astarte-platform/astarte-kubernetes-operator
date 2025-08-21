@@ -23,14 +23,14 @@ on:
 
 jobs:
   golangci-lint:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
     # Since v3, golangci-lint needs explicit go-setup
     - uses: actions/setup-go@v5
       with:
-        go-version: v1.19.x
+        go-version: v1.22.x
     # Run golint-ci
     - uses: golangci/golangci-lint-action@v3
       with:
-          version: v1.52
+          version: v1.59.1

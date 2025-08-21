@@ -4,7 +4,7 @@
 # More info: https://book.kubebuilder.io/reference/project-config.html
 domain: astarte-platform.org
 layout:
-- go.kubebuilder.io/v3
+- go.kubebuilder.io/v4
 multigroup: true
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
@@ -17,37 +17,9 @@ resources:
     namespaced: true
   controller: true
   domain: astarte-platform.org
-  group: api
-  kind: Astarte
-  path: github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2
-  version: v1alpha2
-  webhooks:
-    conversion: true
-    defaulting: true
-    validation: true
-    webhookVersion: v1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: astarte-platform.org
-  group: api
-  kind: Flow
-  path: github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2
-  version: v1alpha2
-  webhooks:
-    conversion: true
-    defaulting: true
-    validation: true
-    webhookVersion: v1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: astarte-platform.org
   group: ingress
   kind: AstarteDefaultIngress
-  path: github.com/astarte-platform/astarte-kubernetes-operator/apis/ingress/v1alpha1
+  path: github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v1alpha1
   version: v1alpha1
   webhooks:
     defaulting: true
@@ -56,23 +28,27 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
+  controller: true
   domain: astarte-platform.org
   group: api
   kind: Astarte
-  path: github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha3
-  version: v1alpha3
+  path: github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1
+  version: v2alpha1
   webhooks:
-    conversion: true
+    defaulting: true
+    validation: true
     webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true
+  controller: true
   domain: astarte-platform.org
-  group: api
+  group: flow
   kind: Flow
-  path: github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha3
-  version: v1alpha3
+  path: github.com/astarte-platform/astarte-kubernetes-operator/api/flow/v2alpha1
+  version: v2alpha1
   webhooks:
-    conversion: true
+    defaulting: true
+    validation: true
     webhookVersion: v1
 version: "3"

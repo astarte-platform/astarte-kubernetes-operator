@@ -20,22 +20,20 @@ name: "Operator e2e tests"
 on:
   pull_request:
     paths:
-    - 'apis/**'
-    - 'controllers/**'
-    - 'lib/**'
+    - 'api/**'
+    - 'internal/**'
     - 'test/**'
-    - 'version/**'
+    - 'Makefile'
     # The workflow itself
     - '.github/workflows/test.yaml'
     # And in case dependencies are changed
     - 'go.mod'
   push:
     paths:
-    - 'apis/**'
-    - 'controllers/**'
-    - 'lib/**'
+    - 'api/**'
+    - 'internal/**'
     - 'test/**'
-    - 'version/**'
+    - 'Makefile'
     # The workflow itself
     - '.github/workflows/test.yaml'
     # And in case dependencies are changed
@@ -43,29 +41,24 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
-        testSuite:
-        - "11"
-        - "12"
-        - "121"
         kubernetesNodeImage:
-        - "kindest/node:v1.26.15@sha256:84333e26cae1d70361bb7339efb568df1871419f2019c80f9a12b7e2d485fe19"
-        - "kindest/node:v1.27.13@sha256:17439fa5b32290e3ead39ead1250dca1d822d94a10d26f1981756cd51b24b9d8"
-        - "kindest/node:v1.28.9@sha256:dca54bc6a6079dd34699d53d7d4ffa2e853e46a20cd12d619a09207e35300bd0"
-        - "kindest/node:v1.29.4@sha256:3abb816a5b1061fb15c6e9e60856ec40d56b7b52bcea5f5f1350bc6e2320b6f8"
-        - "kindest/node:v1.30.0@sha256:047357ac0cfea04663786a612ba1eaba9702bef25227a794b52890dd8bcd692e"
+        - "kindest/node:v1.33.2@sha256:c55080dc5be4f2cc242e6966fdf97bb62282e1cd818a28223cf536db8b0fddf4"
+        - "kindest/node:v1.32.5@sha256:5d5a4d793d2a3d9727013b8b0cf6c95008c71abeb547759a273ef27e9c564984"
+        - "kindest/node:v1.31.9@sha256:b94a3a6c06198d17f59cca8c6f486236fa05e2fb359cbd75dabbfc348a10b211"
+        - "kindest/node:v1.30.13@sha256:cf819926d6f5ba996f7489fa18a38156f952f5dd172395da7d83f734190e95da"
       fail-fast: false
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-go@v5
       with:
-        go-version: '1.19.x'
+        go-version: '1.22.x'
     - uses: alexellis/setup-arkade@v3
     - uses: alexellis/arkade-get@master
       with:
-        kubectl: v1.27.9
+        kubectl: v1.30.5
     - name: Set nf_conntrack_max value
       # This step is required to avoid CrashLoopBackOff for kube-proxy
       # see https://github.com/kubernetes-sigs/kind/issues/2240#issuecomment-838510890
@@ -73,7 +66,7 @@ jobs:
         sudo sysctl net/netfilter/nf_conntrack_max=131072
     - uses: container-tools/kind-action@v2
       with:
-        version: "v0.23.0"
+        version: "v0.29.0"
         node_image: "${{ matrix.kubernetesNodeImage }}"
     - name: Ensure KinD is up
       run: |
@@ -82,27 +75,20 @@ jobs:
     - name: Dump cluster info
       run: |
         kubectl cluster-info dump
-    - name: Setup needed resources
-      run: |
-        kubectl create namespace astarte-test
-        make install
     - name: Run e2e tests
-      run: go test -v -timeout 20m ./...
-      working-directory: "test/e2e${{ matrix.testSuite }}"
-      env:
-        USE_EXISTING_CLUSTER: "true"
+      run: make test-e2e ignore-not-found=true
     - name: Dump debug info
       if: failure()
       run: |
-        kubectl get pods -n astarte-test
-        kubectl get deployment -n astarte-test
-        kubectl get statefulset -n astarte-test
-        kubectl get secrets -n astarte-test
-        kubectl get configmaps -n astarte-test
-        kubectl get pvc -n astarte-test
-        kubectl describe astarte -n astarte-test || echo "Astarte already deleted"
-        kubectl logs -n astarte-test deployment/example-astarte-flow || echo "No logs"
-        kubectl logs -n astarte-test deployment/example-astarte-flow --previous || echo "No logs"
+        kubectl get pods
+        kubectl get deployment
+        kubectl get statefulset
+        kubectl get secrets
+        kubectl get configmaps
+        kubectl get pvc
+        kubectl describe astarte || echo "Astarte already deleted"
+        kubectl logs deployment/example-astarte-flow || echo "No logs"
+        kubectl logs deployment/example-astarte-flow --previous || echo "No logs"
     - name: Show pod states
       run: |
-        kubectl get pods -n astarte-test
+        kubectl get pods

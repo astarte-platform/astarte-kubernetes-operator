@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-  name: astarte-kubernetes-operator.v0.0.0
+  name: astarte-kubernetes-operator.v24.11.0-dev
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -20,22 +20,12 @@ spec:
       displayName: Astarte
       kind: Astarte
       name: astartes.api.astarte-platform.org
-      version: v1alpha3
-    - description: Astarte is the Schema for the astartes API
-      displayName: Astarte
-      kind: Astarte
-      name: astartes.api.astarte-platform.org
-      version: v1alpha2
+      version: v2alpha1
     - description: Flow is the Schema for the flows API
       displayName: Flow
       kind: Flow
-      name: flows.api.astarte-platform.org
-      version: v1alpha3
-    - description: Flow is the Schema for the flows API
-      displayName: Flow
-      kind: Flow
-      name: flows.api.astarte-platform.org
-      version: v1alpha2
+      name: flows.flow.astarte-platform.org
+      version: v2alpha1
   description: The Astarte Kubernetes Operator bundle.
   displayName: astarte-kubernetes-operator
   icon:
@@ -63,15 +53,13 @@ spec:
   - name: Astarte Kubernetes Operator
     url: https://github.com/astarte-platform/astarte-kubernetes-operator
   maintainers:
-  - email: dario.freddi@ispirata.com
-    name: drf
   - email: mattia.mazzucato@secomind.com
     name: matt-mazzucato
   - email: arnaldo.cesco@secomind.com
     name: annopaolo
   maturity: alpha
-  minKubeVersion: 1.25.0
+  minKubeVersion: 1.24.0
   provider:
     name: Astarte Platform
     url: https://github.com/astarte-platform
-  version: 0.0.0
+  version: 24.11.0-dev

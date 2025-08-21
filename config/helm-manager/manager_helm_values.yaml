@@ -11,6 +11,7 @@ spec:
     spec:
       containers:
       - name: manager
+        imagePullPolicy: '{{ .Values.image.pullPolicy }}'
         resources:
           limits:
             cpu: "{{ .Values.resources.limits.cpu }}"

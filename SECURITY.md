@@ -13,9 +13,11 @@
 | 0.10.x  | :x:                |
 | 0.11.x  | :x:                |
 | 1.0.x   | :x:                |
-| 22.11.x | :white_check_mark: |
+| 22.11.x | :x:                |
 | 23.5.x  | :white_check_mark: |
 | 24.5.x  | :white_check_mark: |
+| 25.5.x  | :white_check_mark: |
+
 
 ## Reporting a Vulnerability
 

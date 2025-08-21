@@ -2,7 +2,6 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
-  creationTimestamp: null
   name: mutating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
@@ -11,14 +10,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-api-astarte-platform-org-v1alpha2-astarte
+      path: /mutate-api-astarte-platform-org-v2alpha1-astarte
   failurePolicy: Fail
   name: mastarte.kb.io
   rules:
   - apiGroups:
     - api.astarte-platform.org
     apiVersions:
-    - v1alpha2
+    - v2alpha1
     operations:
     - CREATE
     - UPDATE
@@ -31,14 +30,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-api-astarte-platform-org-v1alpha2-flow
+      path: /mutate-flow-astarte-platform-org-v2alpha1-flow
   failurePolicy: Fail
   name: mflow.kb.io
   rules:
   - apiGroups:
-    - api.astarte-platform.org
+    - flow.astarte-platform.org
     apiVersions:
-    - v1alpha2
+    - v2alpha1
     operations:
     - CREATE
     - UPDATE
@@ -69,7 +68,6 @@ webhooks:
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  creationTimestamp: null
   name: validating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
@@ -78,14 +76,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-api-astarte-platform-org-v1alpha2-astarte
+      path: /validate-api-astarte-platform-org-v2alpha1-astarte
   failurePolicy: Fail
   name: vastarte.kb.io
   rules:
   - apiGroups:
     - api.astarte-platform.org
     apiVersions:
-    - v1alpha2
+    - v2alpha1
     operations:
     - CREATE
     - UPDATE
@@ -98,14 +96,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-api-astarte-platform-org-v1alpha2-flow
+      path: /validate-flow-astarte-platform-org-v2alpha1-flow
   failurePolicy: Fail
   name: vflow.kb.io
   rules:
   - apiGroups:
-    - api.astarte-platform.org
+    - flow.astarte-platform.org
     apiVersions:
-    - v1alpha2
+    - v2alpha1
     operations:
     - CREATE
     - UPDATE

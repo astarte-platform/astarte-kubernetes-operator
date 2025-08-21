@@ -1,0 +1,64 @@
+apiVersion: api.astarte-platform.org/v2alpha1
+kind: Astarte
+metadata:
+  name: astarte
+  namespace: astarte
+spec:
+  # This is the most minimal set of reasonable configuration to spin up an Astarte
+  # instance with reasonable defaults and enough control over the deployment.
+  version: 1.3.0
+  api:
+    host: "api.astarte-example.com" # MANDATORY
+  # RabbitMQ can be deployed either in cluster or out of cluster.
+  # What follows is just an in-cluster example.
+  rabbitmq:
+    connection:
+      host: "rabbitmq-cluster.rabbitmq.svc.cluster.local"
+      port: 5672
+      credentialsSecret:
+        name: "rabbitmq-connection-secret"
+        usernameKey: "username"
+        passwordKey: "password"
+  # Cassandra/ScyllaDB can be deployed either in cluster or out of cluster.
+  # What follows is just an in-cluster example.
+  cassandra:
+    connection:
+      nodes:
+      - host: "scylladb-cluster.scylla.svc.cluster.local"
+        port: 9042
+      credentialsSecret:
+        name: "scylladb-connection-secret"
+        usernameKey: "username"
+        passwordKey: "password"
+  vernemq:
+    host: "broker.astarte-example.com"
+    port: 8883
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1024M
+      limits:
+        cpu: 1000m
+        memory: 2048M
+  cfssl:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128M
+      limits:
+        cpu: 200m
+        memory: 256M
+    storage:
+      size: 2Gi
+  components:
+    # Global resource allocation. Automatically allocates resources to components weighted in a
+    # reasonable way.
+    resources:
+      requests:
+        cpu: 1200m
+        memory: 3072M
+      limits:
+        cpu: 3000m
+        memory: 6144M
+    dashboard:
+      deploy: true
