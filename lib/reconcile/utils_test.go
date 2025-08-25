@@ -21,11 +21,10 @@ func TestCompareAstarteVersions(t *testing.T) { //nolint:funlen
 		},
 		{
 			name: "equal snapshot versions",
-			v1:   "1.2.3-snapshot",
-			v2:   "1.2.3-snapshot",
+			v1:   "1.2-snapshot",
+			v2:   "1.2-snapshot",
 			want: 0,
 		},
-
 		// --- Standard SemVer Comparison Cases (v1 > v2) ---
 		{
 			name: "v1 greater on major version",
@@ -69,9 +68,21 @@ func TestCompareAstarteVersions(t *testing.T) { //nolint:funlen
 		// --- Custom Snapshot Logic Cases (same base version) ---
 		{
 			name: "snapshot is greater than its base version",
-			v1:   "1.2.3-snapshot",
+			v1:   "1.2-snapshot",
 			v2:   "1.2.3",
 			want: 1,
+		},
+		{
+			name: "snapshot is greater than its base version",
+			v1:   "1.2.3",
+			v2:   "1.2-snapshot",
+			want: -1,
+		},
+		{
+			name: "snapshot is greater than its base version",
+			v1:   "1.2.99",
+			v2:   "1.2-snapshot",
+			want: -1,
 		},
 		{
 			name: "base version is less than its snapshot",
@@ -84,7 +95,7 @@ func TestCompareAstarteVersions(t *testing.T) { //nolint:funlen
 		{
 			name: "base version comparison takes precedence over snapshot (v1 greater)",
 			v1:   "1.3.0",
-			v2:   "1.2.0-snapshot",
+			v2:   "1.2-snapshot",
 			want: 1,
 		},
 		{
@@ -96,13 +107,13 @@ func TestCompareAstarteVersions(t *testing.T) { //nolint:funlen
 		{
 			name: "both snapshots, v1 base is greater",
 			v1:   "1.3.0-snapshot",
-			v2:   "1.2.0-snapshot",
+			v2:   "1.2-snapshot",
 			want: 1,
 		},
 		{
 			name: "both snapshots, v2 base is greater",
-			v1:   "1.2.0-snapshot",
-			v2:   "1.3.0-snapshot",
+			v1:   "1.2-snapshot",
+			v2:   "1.3-snapshot",
 			want: -1,
 		},
 
@@ -115,9 +126,9 @@ func TestCompareAstarteVersions(t *testing.T) { //nolint:funlen
 		},
 		{
 			name: "snapshot vs standard pre-release (base comparison wins)",
-			v1:   "1.0.0-snapshot", // base becomes "1.0.0"
-			v2:   "1.0.0-beta",     // base is "1.0.0-beta"
-			want: 1,                // "1.0.0" > "1.0.0-beta", so snapshot logic is not reached
+			v1:   "1.0-snapshot", // base becomes "1.0.0"
+			v2:   "1.0.0-beta",   // base is "1.0.0-beta"
+			want: 1,              // "1.0.0" > "1.0.0-beta", so snapshot logic is not reached
 		},
 
 		// --- Error Cases ---

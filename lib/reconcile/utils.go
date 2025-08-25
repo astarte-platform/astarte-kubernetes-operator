@@ -345,45 +345,39 @@ func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quan
 // version as always greater than its corresponding base version (e.g., "1.2-snapshot" > "1.2").
 // This behavior is a custom rule and is not aligned with the official semver spec, hence the custom implementation.
 func compareAstarteVersions(v1, v2 string) (int, error) {
-	// Normalize a version string by separating its
-	// base from its snapshot status.
 	normalize := func(v string) (string, bool) {
-		if strings.HasSuffix(v, "-snapshot") {
-			return strings.TrimSuffix(v, "-snapshot"), true
+		isSnapshot := strings.HasSuffix(v, "-snapshot")
+		base := strings.TrimSuffix(v, "-snapshot")
+		if isSnapshot && strings.Count(base, ".") == 1 {
+			// If missing patch version, normalize (e.g., "1.2-snapshot" → "1.2.9999")
+			base += ".9999"
 		}
-		return v, false
+		return base, isSnapshot
 	}
 
-	// Normalize both inputs to get their base version and snapshot status.
-	baseV1, isSnapshotV1 := normalize(v1)
-	baseV2, isSnapshotV2 := normalize(v2)
+	base1, snap1 := normalize(v1)
+	base2, snap2 := normalize(v2)
 
-	parsedV1, err := semver.NewVersion(baseV1)
+	ver1, err := semver.NewVersion(base1)
 	if err != nil {
 		return 0, err
 	}
-	parsedV2, err := semver.NewVersion(baseV2)
+	ver2, err := semver.NewVersion(base2)
 	if err != nil {
 		return 0, err
 	}
 
-	// Compare the base versions first.
-	// If they aren't equal, the snapshot status doesn't matter.
-	if comparison := parsedV1.Compare(parsedV2); comparison != 0 {
-		return comparison, nil
+	if c := ver1.Compare(ver2); c != 0 {
+		return c, nil
 	}
-
-	// If the bases are equal, compare their snapshot status.
-	// A snapshot is greater than a non-snapshot.
-	if isSnapshotV1 && !isSnapshotV2 {
-		return 1, nil // v1 is snapshot, v2 is not => v1 > v2
+	switch {
+	case snap1 && !snap2:
+		return 1, nil
+	case !snap1 && snap2:
+		return -1, nil
+	default:
+		return 0, nil
 	}
-	if !isSnapshotV1 && isSnapshotV2 {
-		return -1, nil // v2 is snapshot, v1 is not => v1 < v2
-	}
-
-	// Otherwise, they are equal (both are snapshots or both are not).
-	return 0, nil
 }
 
 // Erlang clustering is introduced in Astarte 1.2.1. For every
