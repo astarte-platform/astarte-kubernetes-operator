@@ -341,6 +341,51 @@ func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quan
 	}
 }
 
+// compareAstarteVersions compares two Astarte version strings (including snapshot versions).
+// version as always greater than its corresponding base version (e.g., "1.2-snapshot" > "1.2").
+// This behavior is a custom rule and is not aligned with the official semver spec, hence the custom implementation.
+func compareAstarteVersions(v1, v2 string) (int, error) {
+	// Normalize a version string by separating its
+	// base from its snapshot status.
+	normalize := func(v string) (string, bool) {
+		if strings.HasSuffix(v, "-snapshot") {
+			return strings.TrimSuffix(v, "-snapshot"), true
+		}
+		return v, false
+	}
+
+	// Normalize both inputs to get their base version and snapshot status.
+	baseV1, isSnapshotV1 := normalize(v1)
+	baseV2, isSnapshotV2 := normalize(v2)
+
+	parsedV1, err := semver.NewVersion(baseV1)
+	if err != nil {
+		return 0, err
+	}
+	parsedV2, err := semver.NewVersion(baseV2)
+	if err != nil {
+		return 0, err
+	}
+
+	// Compare the base versions first.
+	// If they aren't equal, the snapshot status doesn't matter.
+	if comparison := parsedV1.Compare(parsedV2); comparison != 0 {
+		return comparison, nil
+	}
+
+	// If the bases are equal, compare their snapshot status.
+	// A snapshot is greater than a non-snapshot.
+	if isSnapshotV1 && !isSnapshotV2 {
+		return 1, nil // v1 is snapshot, v2 is not => v1 > v2
+	}
+	if !isSnapshotV1 && isSnapshotV2 {
+		return -1, nil // v2 is snapshot, v1 is not => v1 < v2
+	}
+
+	// Otherwise, they are equal (both are snapshots or both are not).
+	return 0, nil
+}
+
 func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha2.Astarte, backend apiv1alpha2.AstarteGenericClusteredResource, component apiv1alpha2.AstarteComponent) []v1.EnvVar {
 	ret := []v1.EnvVar{
 		{
