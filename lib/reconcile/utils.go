@@ -432,6 +432,7 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha2.Astarte, bac
 			ValueFrom: getErlangClusteringCookieSecretReference(cr),
 		})
 
+		// If the Astarte version supports clustering, we need to add the relevant env vars
 		if err, clustering := astarteVersionImplementsErlangClustering(cr); err == nil && clustering {
 			ret = append(ret, v1.EnvVar{
 				Name:  "CLUSTERING_STRATEGY",
@@ -454,6 +455,12 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha2.Astarte, bac
 				v1.EnvVar{
 					Name:  "CLUSTERING_KUBERNETES_NAMESPACE",
 					Value: cr.Namespace,
+				})
+
+			ret = append(ret,
+				v1.EnvVar{
+					Name:  "VERNEMQ_CLUSTERING_KUBERNETES_SERVICE_NAME",
+					Value: fmt.Sprint(cr.Name, "-vernemq"),
 				})
 		} else if err != nil {
 			log.Error(err, "Could not parse Astarte version, assuming no clustering support")
