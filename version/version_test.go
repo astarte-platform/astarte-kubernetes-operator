@@ -1,6 +1,10 @@
-package reconcile
+package version
 
-import "testing"
+import (
+	"testing"
+
+	apiv1alpha2 "github.com/astarte-platform/astarte-kubernetes-operator/apis/api/v1alpha2"
+)
 
 // TestCompareAstarteVersions contains the test suite for the compareAstarteVersions function.
 func TestCompareAstarteVersions(t *testing.T) { //nolint:funlen
@@ -156,7 +160,7 @@ func TestCompareAstarteVersions(t *testing.T) { //nolint:funlen
 	for _, tc := range testCases {
 		// t.Run enables running each case as a distinct sub-test.
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := compareAstarteVersions(tc.v1, tc.v2)
+			got, err := CompareAstarteVersions(tc.v1, tc.v2)
 
 			// Check if an error was expected.
 			if tc.wantErr {
@@ -174,6 +178,63 @@ func TestCompareAstarteVersions(t *testing.T) { //nolint:funlen
 			// Check if the comparison result is correct.
 			if got != tc.want {
 				t.Errorf("compareAstarteVersions(%q, %q) = %d; want %d", tc.v1, tc.v2, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestAstarteVersionImplementsErlangClustering(t *testing.T) {
+	tests := []struct {
+		name     string
+		version  string
+		wantErr  bool
+		wantImpl bool
+	}{
+		{
+			name:     "no version implies true",
+			version:  "",
+			wantErr:  false,
+			wantImpl: true,
+		},
+		{
+			name:     "old version returns false",
+			version:  "1.1.0",
+			wantErr:  false,
+			wantImpl: false,
+		},
+		{
+			name:     "equal version returns true",
+			version:  "1.2.1",
+			wantErr:  false,
+			wantImpl: true,
+		},
+		{
+			name:     "new version returns true",
+			version:  "1.2.2",
+			wantErr:  false,
+			wantImpl: true,
+		},
+		{
+			name:     "compare returns error",
+			version:  "invalid",
+			wantErr:  true,
+			wantImpl: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &apiv1alpha2.Astarte{
+				Spec: apiv1alpha2.AstarteSpec{
+					Version: tt.version,
+				},
+			}
+			err, implements := AstarteVersionImplementsErlangClustering(r)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("got err = %v, wantErr %v", err, tt.wantErr)
+			}
+			if implements != tt.wantImpl {
+				t.Errorf("got implements = %v, want %v", implements, tt.wantImpl)
 			}
 		})
 	}

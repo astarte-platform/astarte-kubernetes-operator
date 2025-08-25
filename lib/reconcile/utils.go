@@ -30,7 +30,6 @@ import (
 	"strconv"
 	"strings"
 
-	semver "github.com/Masterminds/semver/v3"
 	"github.com/go-logr/logr"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
@@ -341,64 +340,6 @@ func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quan
 	}
 }
 
-// compareAstarteVersions compares two Astarte version strings (including snapshot versions).
-// version as always greater than its corresponding base version (e.g., "1.2-snapshot" > "1.2").
-// This behavior is a custom rule and is not aligned with the official semver spec, hence the custom implementation.
-func compareAstarteVersions(v1, v2 string) (int, error) {
-	normalize := func(v string) (string, bool) {
-		isSnapshot := strings.HasSuffix(v, "-snapshot")
-		base := strings.TrimSuffix(v, "-snapshot")
-		if isSnapshot && strings.Count(base, ".") == 1 {
-			// If missing patch version, normalize (e.g., "1.2-snapshot" → "1.2.9999")
-			base += ".9999"
-		}
-		return base, isSnapshot
-	}
-
-	base1, snap1 := normalize(v1)
-	base2, snap2 := normalize(v2)
-
-	ver1, err := semver.NewVersion(base1)
-	if err != nil {
-		return 0, err
-	}
-	ver2, err := semver.NewVersion(base2)
-	if err != nil {
-		return 0, err
-	}
-
-	if c := ver1.Compare(ver2); c != 0 {
-		return c, nil
-	}
-	switch {
-	case snap1 && !snap2:
-		return 1, nil
-	case !snap1 && snap2:
-		return -1, nil
-	default:
-		return 0, nil
-	}
-}
-
-// Erlang clustering is introduced in Astarte 1.2.1. For every
-// Astarte version >= 1.2.1 (1.2-snapshots included), we need to set
-// the environment variables needed for kubernetes-based clustering
-func astarteVersionImplementsErlangClustering(r *apiv1alpha2.Astarte) (err error, implements bool) {
-	if r.Spec.Version == "" {
-		// If no version is specified, we assume the latest and thus
-		// we assume it implements clustering.
-		return nil, true
-	}
-
-	comparison, err := compareAstarteVersions(r.Spec.Version, "1.2.1")
-	if err != nil {
-		return err, false
-	}
-
-	// If comparison is >= 0, r.Spec.Version is >= 1.2.1
-	return nil, comparison >= 0
-}
-
 func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha2.Astarte, backend apiv1alpha2.AstarteGenericClusteredResource, component apiv1alpha2.AstarteComponent) []v1.EnvVar {
 	ret := []v1.EnvVar{
 		{
@@ -427,7 +368,7 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha2.Astarte, bac
 		})
 
 		// If the Astarte version supports clustering, we need to add the relevant env vars
-		if err, clustering := astarteVersionImplementsErlangClustering(cr); err == nil && clustering {
+		if err, clustering := version.AstarteVersionImplementsErlangClustering(cr); err == nil && clustering {
 			ret = append(ret, v1.EnvVar{
 				Name:  "CLUSTERING_STRATEGY",
 				Value: "kubernetes",
