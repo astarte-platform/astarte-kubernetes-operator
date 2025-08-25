@@ -30,7 +30,6 @@ import (
 	"strconv"
 	"strings"
 
-	semver "github.com/Masterminds/semver/v3"
 	"github.com/go-logr/logr"
 	"github.com/openlyinc/pointy"
 	appsv1 "k8s.io/api/apps/v1"
@@ -368,8 +367,8 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha2.Astarte, bac
 			ValueFrom: getErlangClusteringCookieSecretReference(cr),
 		})
 
-		// If Astarte version is bigger than 1.2.0, we need to set clustering environment variables.
-		if cr.Spec.Version != "" && semver.MustParse(cr.Spec.Version).GreaterThan(semver.MustParse("1.2.0")) {
+		// If the Astarte version supports clustering, we need to add the relevant env vars
+		if err, clustering := version.AstarteVersionImplementsErlangClustering(cr); err == nil && clustering {
 			ret = append(ret, v1.EnvVar{
 				Name:  "CLUSTERING_STRATEGY",
 				Value: "kubernetes",
@@ -392,6 +391,14 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv1alpha2.Astarte, bac
 					Name:  "CLUSTERING_KUBERNETES_NAMESPACE",
 					Value: cr.Namespace,
 				})
+
+			ret = append(ret,
+				v1.EnvVar{
+					Name:  "VERNEMQ_CLUSTERING_KUBERNETES_SERVICE_NAME",
+					Value: fmt.Sprint(cr.Name, "-vernemq"),
+				})
+		} else if err != nil {
+			log.Error(err, "Could not parse Astarte version, assuming no clustering support")
 		}
 
 	} else {

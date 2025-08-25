@@ -31,6 +31,7 @@ var (
 
 // CheckConstraintAgainstAstarteVersion validates a given Astarte version against a given constraint. Returns nil if
 // the constraint is satisfied, an error otherwise
+// TODO: this function is not called anywhere (apart from CheckConstraintAgainstAstarteComponentVersion), consider removing it
 func CheckConstraintAgainstAstarteVersion(constraint, v string) error {
 	c, err := semver.NewConstraint(constraint)
 	if err != nil {
@@ -53,12 +54,15 @@ func CheckConstraintAgainstAstarteVersion(constraint, v string) error {
 }
 
 // CheckConstraintAgainstAstarteComponentVersion checks a constraint against a specialized Astarte component version
+// TODO: this function is not called anywhere, consider removing it
 func CheckConstraintAgainstAstarteComponentVersion(constraint, componentVersion, astarteVersion string) error {
 	versionString := GetVersionForAstarteComponent(astarteVersion, componentVersion)
 	return CheckConstraintAgainstAstarteVersion(constraint, versionString)
 }
 
 // GetVersionForAstarteComponent returns the version for a given Astarte Component
+// If the component has a specific version, that version is returned,
+// otherwise, the Astarte version is returned
 func GetVersionForAstarteComponent(astarteVersion, componentVersion string) string {
 	if componentVersion != "" {
 		return componentVersion
