@@ -35,9 +35,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - AppEngine, DUP, VerneMQ have `get` and `list` permissions on
   endpoints, pods and services.
-- Add `CLUSTERING_STRATEGY`, `DATA_UPDATER_PLANT_CLUSTERING_KUBERNETES_SELECTOR`
-  and `DATA_UPDATER_PLANT_CLUSTERING_KUBERNETES_LABELS` environment variables
-  to AppEngine and DUP for Erlang clustering support.
+- Add `VERNEMQ_CLUSTERING_KUBERNETES_SERVICE_NAME`, `CLUSTERING_STRATEGY`,
+  `DATA_UPDATER_PLANT_CLUSTERING_KUBERNETES_SELECTOR` and 
+  `DATA_UPDATER_PLANT_CLUSTERING_KUBERNETES_LABELS` environment variables to
+  AppEngine and DUP for Erlang clustering support.
 - Add Astarte v1.2.1 to E2E tests matrix.
 
 ### Changed
