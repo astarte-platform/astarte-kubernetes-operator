@@ -391,6 +391,11 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv2alpha1.Astarte, bac
 					Name:  "CLUSTERING_KUBERNETES_NAMESPACE",
 					Value: cr.Namespace,
 				})
+			ret = append(ret,
+				v1.EnvVar{
+					Name:  "VERNEMQ_CLUSTERING_KUBERNETES_SERVICE_NAME",
+					Value: fmt.Sprint(cr.Name, "-vernemq"),
+				})
 		}
 
 	} else {
