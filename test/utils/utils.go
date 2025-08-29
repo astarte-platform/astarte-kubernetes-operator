@@ -52,8 +52,6 @@ const (
 	DefaultCleanupRetryInterval time.Duration = time.Second * 1
 	// DefaultCleanupTimeout applied to all tests
 	DefaultCleanupTimeout time.Duration = time.Second * 5
-	// DefaultSleepInterval applied to all tests
-	DefaultSleepInterval time.Duration = time.Second * 5
 
 	rabbitmqClusterOperatorVersion = "v2.16.0"                                                                                //nolint:all
 	rabbitmqClusterOperatorURL     = "https://github.com/rabbitmq/cluster-operator/releases/download/%s/cluster-operator.yml" //nolint:all
@@ -225,9 +223,17 @@ func DeployRabbitMQCluster() error {
 		return fmt.Errorf("failed to deploy RabbitMQ cluster: %w", err)
 	}
 
-	// Wait 15 seconds
-	// TODO: Use a more robust waiting mechanism
-	time.Sleep(15 * time.Second)
+	cmd = exec.Command("kubectl", "wait",
+		"--for=create",
+		"statefulset",
+		"rabbitmq-server",
+		"-n", rabbitmqNamespace,
+		"--timeout", "5m",
+	)
+
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to wait for RabbitMQ cluster pods to be created: %w", err)
+	}
 
 	// Wait for RabbitMQ cluster to be ready
 	cmd = exec.Command("kubectl", "wait",
@@ -409,7 +415,18 @@ func DeployScyllaCluster() error {
 		return fmt.Errorf("failed to deploy Scylla cluster: %w", err)
 	}
 
-	time.Sleep(DefaultSleepInterval)
+	// Wait for Scylla cluster pods to be created
+	cmd = exec.Command("kubectl", "wait",
+		"--for=create",
+		"statefulset",
+		"scylla-local-kind-1-local-kind-1a",
+		"-n", scyllaNamespace,
+		"--timeout", "5m",
+	)
+
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to wait for Scylla cluster pods to be created: %w", err)
+	}
 
 	// Wait for Scylla cluster pods to be ready
 	cmd = exec.Command("kubectl", "wait",
