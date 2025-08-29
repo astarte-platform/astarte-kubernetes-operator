@@ -19,6 +19,7 @@ limitations under the License.
 package utils
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os"
 	"os/exec"
@@ -41,7 +42,7 @@ const (
 	// the astarteName and astarteNamespace variables must match the values of the
 	// test/samples/api_v2alpha1_astarte_1*.yaml files
 	astarteName      = "example-astarte"
-	astarteNamespace = "default"
+	astarteNamespace = "astarte"
 
 	// DefaultRetryInterval applied to all tests
 	DefaultRetryInterval time.Duration = time.Second * 10
@@ -51,6 +52,14 @@ const (
 	DefaultCleanupRetryInterval time.Duration = time.Second * 1
 	// DefaultCleanupTimeout applied to all tests
 	DefaultCleanupTimeout time.Duration = time.Second * 5
+
+	rabbitmqClusterOperatorVersion = "v2.16.0"                                                                                //nolint:all
+	rabbitmqClusterOperatorURL     = "https://github.com/rabbitmq/cluster-operator/releases/download/%s/cluster-operator.yml" //nolint:all
+	rabbitmqNamespace              = "rabbitmq"
+
+	scyllaOperatorVersion = "v1.17.1"
+	scyllaOperatorURL     = "https://raw.githubusercontent.com/scylladb/scylla-operator/%s/deploy/operator.yaml"
+	scyllaNamespace       = "scylla"
 )
 
 func warnError(err error) {
@@ -160,8 +169,15 @@ func GetProjectDir() (string, error) {
 
 // InstallAstarte installs the Astarte CR.
 func InstallAstarte(manifestPath string) error {
-	cmd := exec.Command("kubectl", "apply", "-f", manifestPath)
-	_, err := Run(cmd)
+	err := EnsureNamespaceExists(astarteNamespace)
+	if err != nil {
+		return fmt.Errorf("failed to ensure namespace %s exists: %w", astarteNamespace, err)
+	}
+
+	cmd := exec.Command("kubectl", "apply", "-f", manifestPath, "--namespace", astarteNamespace)
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to install Astarte: %w", err)
+	}
 	return err
 }
 
@@ -178,7 +194,366 @@ func EnsureAstarteHealthGreen() error {
 }
 
 func UninstallAstarte(manifestPath string) error {
-	cmd := exec.Command("kubectl", "delete", "-f", manifestPath)
+	cmd := exec.Command("kubectl", "delete", "-f", manifestPath, "--namespace", astarteNamespace)
 	_, err := Run(cmd)
 	return err
+}
+
+func DeployRabbitMQCluster() error {
+	prj, err := GetProjectDir()
+	if err != nil {
+		return fmt.Errorf("failed to get project directory: %w", err)
+	}
+
+	// Create RabbitMQ cluster namespace
+	err = EnsureNamespaceExists(rabbitmqNamespace)
+	if err != nil {
+		return fmt.Errorf("failed to ensure namespace %s exists: %w", rabbitmqNamespace, err)
+	}
+
+	// Check if manifest file exists
+	manifestPath := fmt.Sprintf("%s/test/manifests/dependencies/rabbitmq-cluster.yaml", prj)
+	if _, err := os.Stat(manifestPath); os.IsNotExist(err) {
+		return fmt.Errorf("manifest file %s does not exist", manifestPath)
+	}
+
+	// Deploy RabbitMQ cluster with the manifest
+	cmd := exec.Command("kubectl", "apply", "-f", manifestPath, "-n", rabbitmqNamespace)
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to deploy RabbitMQ cluster: %w", err)
+	}
+
+	cmd = exec.Command("kubectl", "wait",
+		"--for=create",
+		"statefulset",
+		"rabbitmq-server",
+		"-n", rabbitmqNamespace,
+		"--timeout", "5m",
+	)
+
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to wait for RabbitMQ cluster pods to be created: %w", err)
+	}
+
+	// Wait for RabbitMQ cluster to be ready
+	cmd = exec.Command("kubectl", "wait",
+		"--for", "condition=ready",
+		"pod",
+		"-l", "app.kubernetes.io/component=rabbitmq",
+		"-n", rabbitmqNamespace,
+		"--timeout", "5m",
+	)
+
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to wait for RabbitMQ cluster pods to be ready: %w", err)
+	}
+
+	return nil
+}
+
+func CreateRabbitMQConnectionSecret() error {
+	// Get RabbitMQ credentials
+	// kubectl get secret -n rabbitmq rabbitmq-default-user -o jsonpath='{.data.username}' | base64 -d
+	// kubectl get secret -n rabbitmq rabbitmq-default-user -o jsonpath='{.data.password}' | base64 -d
+
+	cmd := exec.Command("kubectl", "get", "secret", "-n", rabbitmqNamespace, "rabbitmq-default-user",
+		"-o", "jsonpath={.data.username}")
+	usrB64, err := Run(cmd)
+	if err != nil {
+		return fmt.Errorf("failed to get RabbitMQ username: %w", err)
+	}
+
+	cmd = exec.Command("kubectl", "get", "secret", "-n", rabbitmqNamespace, "rabbitmq-default-user",
+		"-o", "jsonpath={.data.password}")
+	pwdB64, err := Run(cmd)
+	if err != nil {
+		return fmt.Errorf("failed to get RabbitMQ password: %w", err)
+	}
+
+	usr, err := base64.StdEncoding.DecodeString(string(usrB64))
+	if err != nil {
+		return fmt.Errorf("failed to decode rabbitmq username: %w", err)
+	}
+	pwd, err := base64.StdEncoding.DecodeString(string(pwdB64))
+	if err != nil {
+		return fmt.Errorf("failed to decode rabbitmq password: %w", err)
+	}
+
+	secretData := map[string]string{
+		"username": strings.TrimSpace(string(usr)),
+		"password": strings.TrimSpace(string(pwd)),
+	}
+
+	if err := CreateSecret("rabbitmq-connection-secret", astarteNamespace, secretData); err != nil {
+		return fmt.Errorf("failed to create RabbitMQ connection secret: %w", err)
+	}
+
+	return nil
+}
+
+func InstallRabbitMQClusterOperator() error {
+	url := fmt.Sprintf(rabbitmqClusterOperatorURL, rabbitmqClusterOperatorVersion)
+	cmd := exec.Command("kubectl", "create", "-f", url)
+
+	if _, err := Run(cmd); err != nil {
+		return err
+	}
+
+	// Wait for CRDs
+	crd := "rabbitmqclusters.rabbitmq.com"
+	cmd = exec.Command("kubectl", "wait",
+		"--for", "condition=established",
+		fmt.Sprintf("crd/%s", crd),
+		"--timeout", "5m",
+	)
+
+	if _, err := Run(cmd); err != nil {
+		return err
+	}
+
+	// Wait for operator deployment
+	cmd = exec.Command("kubectl",
+		"-n", "rabbitmq-system",
+		"rollout", "status",
+		"deployment/rabbitmq-cluster-operator",
+		"--timeout", "10m",
+	)
+
+	if _, err := Run(cmd); err != nil {
+		return err
+	}
+
+	// Verify operator pod is running
+	cmd = exec.Command("kubectl", "wait",
+		"--for", "condition=ready",
+		"pod",
+		"-l", "app.kubernetes.io/name=rabbitmq-cluster-operator",
+		"-n", "rabbitmq-system",
+		"--timeout", "5m",
+	)
+
+	if _, err := Run(cmd); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func UninstallRabbitMQClusterOperator() {
+	url := fmt.Sprintf(rabbitmqClusterOperatorURL, rabbitmqClusterOperatorVersion)
+	cmd := exec.Command("kubectl", "delete", "-f", url, "-n", "rabbitmq-system")
+	if _, err := Run(cmd); err != nil {
+		warnError(err)
+	}
+}
+
+func UninstallRabbitMQCluster() {
+	cmd := exec.Command("kubectl", "delete", "rabbitmqcluster", "--all", "-n", rabbitmqNamespace)
+	if _, err := Run(cmd); err != nil {
+		warnError(err)
+	}
+
+	// Delete the RabbitMQ namespace
+	cmd = exec.Command("kubectl", "delete", "namespace", rabbitmqNamespace)
+	if _, err := Run(cmd); err != nil {
+		warnError(err)
+	}
+}
+
+func EnsureNamespaceExists(namespace string) error {
+	if namespace == "default" || namespace == "kube-system" {
+		// Skip creating default and kube-system namespaces
+		return nil
+	}
+
+	cmd := exec.Command("kubectl", "create", "namespace", namespace)
+	if _, err := Run(cmd); err != nil {
+		if !strings.Contains(err.Error(), "already exists") {
+			return fmt.Errorf("failed to create namespace %s: %w", namespace, err)
+		}
+		_, _ = fmt.Fprintf(GinkgoWriter, "Namespace %s already exists, skipping creation.\n", namespace)
+	}
+
+	// Wait for the namespace to be ready
+	cmd = exec.Command("kubectl", "wait", "--for=create",
+		"namespace", namespace,
+		"--timeout", "30s",
+	)
+
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to wait for namespace %s to be ready: %w", namespace, err)
+	}
+
+	return nil
+}
+
+func DeployScyllaCluster() error {
+	prj, err := GetProjectDir()
+	if err != nil {
+		return fmt.Errorf("failed to get project directory: %w", err)
+	}
+
+	// Create Scylla configmap
+	manifestPath := fmt.Sprintf("%s/test/manifests/dependencies/scylla-config.yaml", prj)
+	if _, err := os.Stat(manifestPath); os.IsNotExist(err) {
+		return fmt.Errorf("manifest file %s does not exist", manifestPath)
+	}
+
+	cmd := exec.Command("kubectl", "apply", "-f", manifestPath, "-n", scyllaNamespace)
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to create Scylla configmap: %w", err)
+	}
+
+	// Create Scylla cluster
+	manifestPath = fmt.Sprintf("%s/test/manifests/dependencies/scylla-cluster.yaml", prj)
+	if _, err := os.Stat(manifestPath); os.IsNotExist(err) {
+		return fmt.Errorf("manifest file %s does not exist", manifestPath)
+	}
+
+	cmd = exec.Command("kubectl", "apply", "-f", manifestPath, "-n", scyllaNamespace)
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to deploy Scylla cluster: %w", err)
+	}
+
+	// Wait for Scylla cluster pods to be created
+	cmd = exec.Command("kubectl", "wait",
+		"--for=create",
+		"statefulset",
+		"scylla-local-kind-1-local-kind-1a",
+		"-n", scyllaNamespace,
+		"--timeout", "5m",
+	)
+
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to wait for Scylla cluster pods to be created: %w", err)
+	}
+
+	// Wait for Scylla cluster pods to be ready
+	cmd = exec.Command("kubectl", "wait",
+		"--for", "condition=ready",
+		"pod",
+		"-l", "app=scylla",
+		"-n", scyllaNamespace,
+		"--timeout", "15m",
+	)
+
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to wait for Scylla cluster pods to be ready: %w", err)
+	}
+
+	return nil
+}
+
+func CreateScyllaConnectionSecret() error {
+	secretData := map[string]string{
+		"username": "cassandra",
+		"password": "cassandra",
+	}
+
+	if err := CreateSecret("scylladb-connection-secret", astarteNamespace, secretData); err != nil {
+		return fmt.Errorf("failed to create scylla connection secret: %w", err)
+	}
+
+	return nil
+}
+
+func InstallScyllaOperator() error {
+	url := fmt.Sprintf(scyllaOperatorURL, scyllaOperatorVersion)
+	cmd := exec.Command("kubectl", "create", "-f", url)
+	_, err := Run(cmd)
+	if err != nil {
+		return err
+	}
+
+	// Create Scylla cluster namespace
+	err = EnsureNamespaceExists(scyllaNamespace)
+	if err != nil {
+		return fmt.Errorf("failed to ensure namespace %s exists: %w", scyllaNamespace, err)
+	}
+
+	// Wait for all CRDs to be established
+	crds := []string{
+		"scyllaclusters.scylla.scylladb.com",
+		"nodeconfigs.scylla.scylladb.com",
+		"scyllaoperatorconfigs.scylla.scylladb.com",
+	}
+
+	for _, crd := range crds {
+		cmd := exec.Command("kubectl", "wait",
+			"--for", "condition=established",
+			fmt.Sprintf("crd/%s", crd),
+			"--timeout", "5m",
+		)
+		if _, err := Run(cmd); err != nil {
+			return fmt.Errorf("failed to wait for CRD %s: %w", crd, err)
+		}
+	}
+
+	// Wait for all deployments to be ready
+	deployments := []string{
+		"scylla-operator",
+		"webhook-server",
+	}
+
+	for _, deployment := range deployments {
+		cmd := exec.Command("kubectl",
+			"-n", "scylla-operator",
+			"rollout", "status",
+			fmt.Sprintf("deployment.apps/%s", deployment),
+			"--timeout", "10m",
+		)
+		if _, err := Run(cmd); err != nil {
+			return fmt.Errorf("failed to wait for deployment %s: %w", deployment, err)
+		}
+	}
+
+	return nil
+}
+
+func UninstallScyllaOperator() {
+	url := fmt.Sprintf(scyllaOperatorURL, scyllaOperatorVersion)
+	cmd := exec.Command("kubectl", "delete", "-f", url)
+	if _, err := Run(cmd); err != nil {
+		warnError(err)
+	}
+}
+
+// CreateSecret takes a secret name, namespace, and a map of key-value pairs
+// to create a generic Kubernetes secret using kubectl.
+func CreateSecret(secretName string, secretNamespace string, data map[string]string) error {
+	args := []string{
+		"create",
+		"secret",
+		"generic",
+		secretName,
+		"--namespace",
+		secretNamespace,
+	}
+
+	for key, value := range data {
+		args = append(args, fmt.Sprintf("--from-literal=%s=%s", key, value))
+	}
+
+	if err := EnsureNamespaceExists(secretNamespace); err != nil {
+		return fmt.Errorf("failed to ensure namespace %s exists: %w", secretNamespace, err)
+	}
+
+	cmd := exec.Command("kubectl", args...)
+
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to create secret %s: %w", secretName, err)
+	}
+
+	// Wait for the secret to be created
+	waitCmd := exec.Command("kubectl", "wait", "--for=create",
+		"secret", secretName,
+		"--namespace", secretNamespace,
+		"--timeout", "30s",
+	)
+
+	if _, err := Run(waitCmd); err != nil {
+		return fmt.Errorf("failed to wait for secret %s to be created: %w", secretName, err)
+	}
+
+	return nil
 }
