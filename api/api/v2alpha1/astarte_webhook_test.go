@@ -95,3 +95,73 @@ func TestValidateSSLListener(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateCFSSLDefinition(t *testing.T) {
+	g := NewWithT(t)
+
+	testCases := []struct {
+		description string
+		cfsslSpec   AstarteCFSSLSpec
+		expectError bool
+	}{
+		{
+			description: "should return an error when Deploy is false and URL is empty",
+			cfsslSpec: AstarteCFSSLSpec{
+				Deploy: pointy.Bool(false),
+				URL:    "",
+			},
+			expectError: true,
+		},
+		{
+			description: "should NOT return an error when Deploy is false and URL is provided",
+			cfsslSpec: AstarteCFSSLSpec{
+				Deploy: pointy.Bool(false),
+				URL:    "http://my-cfssl.com",
+			},
+			expectError: false,
+		},
+		{
+			description: "should NOT return an error when Deploy is true and URL is empty",
+			cfsslSpec: AstarteCFSSLSpec{
+				Deploy: pointy.Bool(true),
+				URL:    "",
+			},
+			expectError: false,
+		},
+		{
+			description: "should NOT return an error when Deploy is true and URL is provided",
+			cfsslSpec: AstarteCFSSLSpec{
+				Deploy: pointy.Bool(true),
+				URL:    "http://my-cfssl.com",
+			},
+			expectError: false,
+		},
+		{
+			description: "should NOT return an error when Deploy is nil (defaults to true) and URL is empty",
+			cfsslSpec: AstarteCFSSLSpec{
+				Deploy: nil,
+				URL:    "",
+			},
+			expectError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			astarte := &Astarte{
+				Spec: AstarteSpec{
+					CFSSL: tc.cfsslSpec,
+				},
+			}
+
+			err := astarte.validateCFSSLDefinition()
+
+			if tc.expectError {
+				g.Expect(err).ToNot(BeNil())
+				g.Expect(err.Field).To(Equal("spec.cfssl.url"))
+			} else {
+				g.Expect(err).To(BeNil())
+			}
+		})
+	}
+}
