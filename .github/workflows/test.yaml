@@ -58,7 +58,7 @@ jobs:
     - uses: alexellis/setup-arkade@v3
     - uses: alexellis/arkade-get@master
       with:
-        kubectl: v1.30.5
+        kubectl: v1.32.2
     - name: Set nf_conntrack_max value
       # This step is required to avoid CrashLoopBackOff for kube-proxy
       # see https://github.com/kubernetes-sigs/kind/issues/2240#issuecomment-838510890

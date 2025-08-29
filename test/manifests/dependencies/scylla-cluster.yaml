@@ -1,0 +1,26 @@
+# Source: scylla/templates/scyllacluster.yaml
+apiVersion: scylla.scylladb.com/v1
+kind: ScyllaCluster
+metadata:
+  name: scylla
+spec:
+  version: 2025.1.5
+  agentVersion: 3.5.1@sha256:d1b57d08b9949c8faad2048fdf4dc7c502dae81da856c3c6b3a77dd347d5c7fc
+  repository: scylladb/scylla
+  agentRepository: scylladb/scylla-manager-agent
+  developerMode: true
+  sysctls:
+    - fs.aio-max-nr=30000000
+  datacenter:
+    name: local-kind-1
+    racks:
+    - members: 1
+      name: local-kind-1a
+      scyllaConfig: scylladb-config
+      resources:
+        limits:
+          cpu: 1
+          memory: 2Gi
+      storage:
+        capacity: 5Gi
+        storageClassName: standard
