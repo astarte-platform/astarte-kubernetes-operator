@@ -760,6 +760,14 @@ func computePodLabels(r apiv2alpha1.PodLabelsGetter, labels map[string]string) m
 func getReplicaCountForResource(resource *apiv2alpha1.AstarteGenericClusteredResource, cr *apiv2alpha1.Astarte, c client.Client, log logr.Logger) *int32 {
 	if cr.Spec.Features.Autoscaling && resource.Autoscale != nil {
 		if hpaStatus, err := getHPAStatusForResource(resource.Autoscale.Horizontal, cr, c, log); err == nil {
+			// This is a special case to avoid a race condition with HPA, which can lead to the Operator
+			// and HPA fighting over replica count, causing service disruption. This can happen when
+			// the HPA isn't able to fetch metrics for the pods, and decides to scale down to 0.
+			// This is a known issue in HPA, and this is a workaround to avoid it.
+			if hpaStatus.DesiredReplicas == 0 {
+				log.Info("HPA is reporting 0 desired replicas. This is likely a transient state. Ignoring HPA and using the spec's replica count", "HPA.Name", resource.Autoscale.Horizontal)
+				return resource.Replicas
+			}
 			log.Info("Getting replica count from HPA", "value", hpaStatus.DesiredReplicas)
 			return &hpaStatus.DesiredReplicas
 		}

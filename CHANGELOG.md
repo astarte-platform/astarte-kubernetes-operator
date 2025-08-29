@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - Fix the propagation of replicaCount, installCrds, and pullPolicy values
   in values.yaml during Helm chart installation.
+- Fix HPA race condition on initialization (#397).
+  If the HPA reports 0 desired replicas, the operator will ignore the HPA and use
+  the replica count from the Astarte custom resource instead.
 - Fix E2E tests for Astarte v1.3+ and Astarte Operator v25.5+.
 
 ## [24.5.2] - Unreleased
