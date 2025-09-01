@@ -96,6 +96,149 @@ func TestValidateSSLListener(t *testing.T) {
 	}
 }
 
+func TestValidateAstartePriorityClasses(t *testing.T) {
+	// Use Gomega with standard Go testing
+	g := NewWithT(t)
+
+	testCases := []struct {
+		description       string
+		enable            bool
+		highPriorityValue int
+		midPriorityValue  int
+		lowPriorityValue  int
+		expectError       bool
+	}{
+		{
+			description:       "should not return an error when pod priorities are disabled and values are in correct order",
+			enable:            false,
+			lowPriorityValue:  100,
+			midPriorityValue:  500,
+			highPriorityValue: 1000,
+			expectError:       false,
+		},
+		{
+			description:       "should not return an error when pod priorities are disabled and values are not in correct order",
+			enable:            false,
+			lowPriorityValue:  1000,
+			midPriorityValue:  500,
+			highPriorityValue: 0,
+			expectError:       false,
+		},
+		{
+			description:       "should return an error when pod priorities are enabled and values are not in correct order",
+			enable:            true,
+			lowPriorityValue:  1000,
+			midPriorityValue:  1000,
+			highPriorityValue: 500,
+			expectError:       true,
+		},
+		{
+			description:       "should not return an error when pod priorities are enabled and values are in correct order",
+			enable:            true,
+			lowPriorityValue:  100,
+			midPriorityValue:  500,
+			highPriorityValue: 1000,
+			expectError:       false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			astarte := &Astarte{
+				Spec: AstarteSpec{
+					Features: AstarteFeatures{
+						AstartePodPriorities: &AstartePodPrioritiesSpec{
+							Enable:              tc.enable,
+							AstarteHighPriority: &tc.highPriorityValue,
+							AstarteMidPriority:  &tc.midPriorityValue,
+							AstarteLowPriority:  &tc.lowPriorityValue,
+						},
+					},
+				},
+			}
+
+			err := astarte.validateAstartePriorityClasses()
+
+			if tc.expectError {
+				g.Expect(err).ToNot(BeNil())
+				g.Expect(err.Field).To(Equal("spec.features.astarte{Low|Medium|High}Priority"))
+			} else {
+				g.Expect(err).To(BeNil())
+			}
+		})
+	}
+}
+
+func TestValidatePriorityClassesValues(t *testing.T) {
+
+	// Use Gomega with standard Go testing
+	g := NewWithT(t)
+
+	testCases := []struct {
+		description       string
+		highPriorityValue int
+		midPriorityValue  int
+		lowPriorityValue  int
+		expectError       bool
+	}{
+		{
+			description:       "should not return an error when priorities are in correct order",
+			highPriorityValue: 1000,
+			midPriorityValue:  500,
+			lowPriorityValue:  100,
+			expectError:       false,
+		},
+		{
+			description:       "should return an error when high priority is less than mid priority",
+			highPriorityValue: 400,
+			midPriorityValue:  500,
+			lowPriorityValue:  100,
+			expectError:       true,
+		},
+		{
+			description:       "should return an error when mid priority is less than low priority",
+			highPriorityValue: 1000,
+			midPriorityValue:  50,
+			lowPriorityValue:  100,
+			expectError:       true,
+		},
+		{
+			description:       "should not return an error when priorities are equal",
+			highPriorityValue: 500,
+			midPriorityValue:  500,
+			lowPriorityValue:  100,
+			expectError:       false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			astarte := &Astarte{
+				Spec: AstarteSpec{
+					Features: AstarteFeatures{
+						AstartePodPriorities: &AstartePodPrioritiesSpec{
+							Enable:              true,
+							AstarteHighPriority: &tc.highPriorityValue,
+							AstarteMidPriority:  &tc.midPriorityValue,
+							AstarteLowPriority:  &tc.lowPriorityValue,
+						},
+					},
+				},
+			}
+
+			err := astarte.validatePriorityClassesValues()
+
+			if tc.expectError {
+				g.Expect(err).ToNot(BeNil())
+				g.Expect(err.Field).To(Equal("spec.features.astarte{Low|Medium|High}Priority"))
+			} else {
+				g.Expect(err).To(BeNil())
+			}
+		})
+	}
+
+}
+
 func TestValidateUpdateAstarteSystemKeyspace(t *testing.T) {
 	g := NewWithT(t)
 
