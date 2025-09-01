@@ -316,33 +316,32 @@ func (r *Astarte) validateCreateAstarteSystemKeyspace() field.ErrorList {
 			err := errors.New("invalid datacenter replication: wrong format")
 			astartelog.Info(err.Error())
 			fldPath := field.NewPath("spec").Child("cassandra").Child("astarteSystemKeyspace").Child("dataCenterReplication")
-
 			allErrs = append(allErrs, field.Invalid(fldPath, strings.Join(dataCenterAndReplication, ":"), err.Error()))
-		}
-		// ensure the replication factor is an integer...
-		dc := dataCenterAndReplication[0]
-		dcReplication, err := strconv.Atoi(dataCenterAndReplication[1])
-
-		if err != nil {
-			astartelog.Info(fmt.Sprint("invalid datacenter replication: replication must be an integer", err.Error()))
-			fldPath := field.NewPath("spec").Child("cassandra").Child("astarteSystemKeyspace").Child("dataCenterReplication")
-
-			allErrs = append(allErrs, field.Invalid(fldPath, strings.Join(dataCenterAndReplication, ":"), err.Error()))
-
 		} else {
-			// populate the keyValuePairs map only after we validated the user input
-			keyValuePairs[dc] = dcReplication
+			// ensure the replication factor is an integer...
+			dc := dataCenterAndReplication[0]
+			dcReplication, err := strconv.Atoi(dataCenterAndReplication[1])
+
+			if err != nil {
+				astartelog.Info(fmt.Sprint("invalid datacenter replication: replication must be an integer", err.Error()))
+				fldPath := field.NewPath("spec").Child("cassandra").Child("astarteSystemKeyspace").Child("dataCenterReplication")
+
+				allErrs = append(allErrs, field.Invalid(fldPath, strings.Join(dataCenterAndReplication, ":"), err.Error()))
+
+			} else {
+				// populate the keyValuePairs map only after we validated the user input
+				keyValuePairs[dc] = dcReplication
+			}
+
+			// ...and it's odd
+			if dcReplication%2 == 0 {
+				err := errors.New("invalid datacenter replication: replication must be odd")
+				astartelog.Info(err.Error())
+				fldPath := field.NewPath("spec").Child("cassandra").Child("astarteSystemKeyspace").Child("dataCenterReplication")
+
+				allErrs = append(allErrs, field.Invalid(fldPath, strings.Join(dataCenterAndReplication, ":"), err.Error()))
+			}
 		}
-
-		// ...and it's odd
-		if dcReplication%2 == 0 {
-			err := errors.New("invalid datacenter replication: replication must be odd")
-			astartelog.Info(err.Error())
-			fldPath := field.NewPath("spec").Child("cassandra").Child("astarteSystemKeyspace").Child("dataCenterReplication")
-
-			allErrs = append(allErrs, field.Invalid(fldPath, strings.Join(dataCenterAndReplication, ":"), err.Error()))
-		}
-
 	}
 
 	// finally, ensure that it can be marshaled into json
