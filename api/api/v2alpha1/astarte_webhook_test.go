@@ -96,6 +96,79 @@ func TestValidateSSLListener(t *testing.T) {
 	}
 }
 
+func TestValidateUpdateAstarteSystemKeyspace(t *testing.T) {
+	g := NewWithT(t)
+
+	testCases := []struct {
+		description string
+		oldKeyspace AstarteSystemKeyspaceSpec
+		newKeyspace AstarteSystemKeyspaceSpec
+		expectError bool
+	}{
+		{
+			description: "should return an error when trying to change the keyspace",
+			oldKeyspace: AstarteSystemKeyspaceSpec{
+				ReplicationStrategy:   "SimpleStrategy",
+				ReplicationFactor:     1,
+				DataCenterReplication: "dc1:3,dc2:2",
+			},
+			newKeyspace: AstarteSystemKeyspaceSpec{
+				ReplicationStrategy:   "NetworkTopologyStrategy",
+				ReplicationFactor:     2,
+				DataCenterReplication: "dc1:2,dc2:3",
+			},
+			expectError: true,
+		},
+		{
+			description: "should NOT return an error when the keyspace is unchanged",
+			oldKeyspace: AstarteSystemKeyspaceSpec{
+				ReplicationStrategy:   "SimpleStrategy",
+				ReplicationFactor:     1,
+				DataCenterReplication: "dc1:3,dc2:2",
+			},
+			newKeyspace: AstarteSystemKeyspaceSpec{
+				ReplicationStrategy:   "SimpleStrategy",
+				ReplicationFactor:     1,
+				DataCenterReplication: "dc1:3,dc2:2",
+			},
+			expectError: false,
+		},
+		{
+			description: "should NOT return an error when the keyspace is empty in both old and new spec",
+			oldKeyspace: AstarteSystemKeyspaceSpec{},
+			newKeyspace: AstarteSystemKeyspaceSpec{},
+			expectError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			oldAstarte := &Astarte{
+				Spec: AstarteSpec{
+					Cassandra: AstarteCassandraSpec{
+						AstarteSystemKeyspace: tc.oldKeyspace,
+					},
+				},
+			}
+			newAstarte := &Astarte{
+				Spec: AstarteSpec{
+					Cassandra: AstarteCassandraSpec{
+						AstarteSystemKeyspace: tc.newKeyspace,
+					},
+				},
+			}
+
+			err := newAstarte.validateUpdateAstarteSystemKeyspace(oldAstarte)
+			if tc.expectError {
+				g.Expect(err).ToNot(BeNil())
+				g.Expect(err.Field).To(Equal("spec.cassandra.astarteSystemKeyspace"))
+			} else {
+				g.Expect(err).To(BeNil())
+			}
+		})
+	}
+}
+
 func TestValidateCFSSLDefinition(t *testing.T) {
 	g := NewWithT(t)
 
