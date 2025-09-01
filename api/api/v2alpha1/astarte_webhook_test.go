@@ -574,3 +574,162 @@ func TestValidateCFSSLDefinition(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateCreateAstarteSystemKeyspace(t *testing.T) {
+	g := NewWithT(t)
+	testCases := []struct {
+		description  string
+		astarte      *Astarte
+		expectedErrs int
+	}{
+		{
+			description: "It should not return with SimpleStrategy and valid odd replication factor",
+			astarte: &Astarte{
+				Spec: AstarteSpec{Cassandra: AstarteCassandraSpec{
+					AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+						ReplicationStrategy: "SimpleStrategy",
+						ReplicationFactor:   3,
+					},
+				}},
+			},
+			expectedErrs: 0,
+		},
+		{
+			description: "NetworkTopologyStrategy with single valid DC",
+			astarte: &Astarte{
+				Spec: AstarteSpec{Cassandra: AstarteCassandraSpec{
+					AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+						ReplicationStrategy:   "NetworkTopologyStrategy",
+						DataCenterReplication: "dc1:3",
+					},
+				}},
+			},
+			expectedErrs: 0,
+		},
+		{
+			description: "NetworkTopologyStrategy with multiple valid DCs",
+			astarte: &Astarte{
+				Spec: AstarteSpec{Cassandra: AstarteCassandraSpec{
+					AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+						ReplicationStrategy:   "NetworkTopologyStrategy",
+						DataCenterReplication: "dc1:3,dc2:5,dc3:1",
+					},
+				}},
+			},
+			expectedErrs: 0,
+		},
+		{
+			description: "SimpleStrategy with invalid even replication factor",
+			astarte: &Astarte{
+				Spec: AstarteSpec{Cassandra: AstarteCassandraSpec{
+					AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+						ReplicationStrategy: "SimpleStrategy",
+						ReplicationFactor:   2,
+					},
+				}},
+			},
+			expectedErrs: 1,
+		},
+		{
+			description: "NetworkTopologyStrategy with invalid format (no colon)",
+			astarte: &Astarte{
+				Spec: AstarteSpec{Cassandra: AstarteCassandraSpec{
+					AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+						ReplicationStrategy:   "NetworkTopologyStrategy",
+						DataCenterReplication: "dc1",
+					},
+				}},
+			},
+			expectedErrs: 1,
+		},
+		{
+			description: "NetworkTopologyStrategy with invalid format (too many colons)",
+			astarte: &Astarte{
+				Spec: AstarteSpec{Cassandra: AstarteCassandraSpec{
+					AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+						ReplicationStrategy:   "NetworkTopologyStrategy",
+						DataCenterReplication: "dc1:3:bad",
+					},
+				}},
+			},
+			expectedErrs: 1,
+		},
+		{
+			description: "NetworkTopologyStrategy with non-integer replication factor",
+			astarte: &Astarte{
+				Spec: AstarteSpec{Cassandra: AstarteCassandraSpec{
+					AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+						ReplicationStrategy:   "NetworkTopologyStrategy",
+						DataCenterReplication: "dc1:three",
+					},
+				}},
+			},
+			expectedErrs: 2,
+		},
+		{
+			description: "NetworkTopologyStrategy with even replication factor",
+			astarte: &Astarte{
+				Spec: AstarteSpec{Cassandra: AstarteCassandraSpec{
+					AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+						ReplicationStrategy:   "NetworkTopologyStrategy",
+						DataCenterReplication: "dc1:4",
+					},
+				}},
+			},
+			expectedErrs: 1,
+		},
+		{
+			description: "NetworkTopologyStrategy with mixed valid and invalid DCs",
+			astarte: &Astarte{
+				Spec: AstarteSpec{Cassandra: AstarteCassandraSpec{
+					AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+						ReplicationStrategy:   "NetworkTopologyStrategy",
+						DataCenterReplication: "dc1:3,dc2:4", // dc2 is invalid
+					},
+				}},
+			},
+			expectedErrs: 1,
+		},
+		{
+			description: "NetworkTopologyStrategy with multiple invalid entries",
+			astarte: &Astarte{
+				Spec: AstarteSpec{Cassandra: AstarteCassandraSpec{
+					AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+						ReplicationStrategy:   "NetworkTopologyStrategy",
+						DataCenterReplication: "dc1:2,dc2:not-a-number,dc3:5",
+					},
+				}},
+			},
+			expectedErrs: 3,
+		},
+		{
+			description: "NetworkTopologyStrategy with empty DataCenterReplication string",
+			astarte: &Astarte{
+				Spec: AstarteSpec{Cassandra: AstarteCassandraSpec{
+					AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+						ReplicationStrategy:   "NetworkTopologyStrategy",
+						DataCenterReplication: "",
+					},
+				}},
+			},
+			expectedErrs: 1,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			r := tc.astarte
+			err := r.validateCreateAstarteSystemKeyspace()
+
+			if tc.expectedErrs == 0 {
+				g.Expect(err).ToNot(BeNil())
+				g.Expect(len(err)).To(BeNumerically("==", 0))
+			}
+
+			if tc.expectedErrs > 0 {
+				g.Expect(err).ToNot(BeNil())
+				g.Expect(len(err)).To(BeNumerically("==", tc.expectedErrs))
+			}
+		})
+	}
+}
