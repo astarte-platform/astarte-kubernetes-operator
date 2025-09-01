@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-name: "Operator e2e tests"
+name: "Operator tests"
 on:
   pull_request:
     paths:
@@ -40,7 +40,7 @@ on:
     - 'go.mod'
 
 jobs:
-  test:
+  e2e-tests:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
@@ -92,3 +92,19 @@ jobs:
     - name: Show pod states
       run: |
         kubectl get pods
+
+  unit-tests:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-go@v5
+      with:
+        go-version: '1.22.x'
+    - uses: alexellis/setup-arkade@v3
+    - uses: alexellis/arkade-get@master
+      with:
+        kubectl: v1.32.2
+    - name: Ensure Envtest
+      run: make envtest
+    - name: Run unit tests
+      run: make test
