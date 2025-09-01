@@ -19,6 +19,7 @@ limitations under the License.
 package v2alpha1
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -92,6 +93,137 @@ func TestValidateSSLListener(t *testing.T) {
 			errs := r.validateSSLListener()
 			g.Expect(errs).ToNot(BeNil())
 			g.Expect(errs).To(HaveLen(tc.expectedErrors))
+		})
+	}
+}
+
+func TestValidatePodLabelsForClusteredResources(t *testing.T) {
+	testCases := []struct {
+		name        string
+		labels      map[string]string
+		expectError bool
+	}{
+		{
+			name: "with allowed custom labels",
+			labels: map[string]string{
+				"custom-label":           "lbl",
+				"my.custom.domain/label": "value",
+			},
+			expectError: false,
+		},
+		{
+			name: "with unallowed reserved labels",
+			labels: map[string]string{
+				"app":          "my-app",
+				"component":    "my-component",
+				"astarte-role": "my-role",
+				"flow-role":    "my-role",
+			},
+			expectError: true,
+		},
+		{
+			name:        "with no labels",
+			labels:      nil,
+			expectError: false,
+		},
+	}
+
+	testComponents := map[string]AstarteSpec{
+		"DataUpdaterPlant": {Components: AstarteComponentsSpec{DataUpdaterPlant: AstarteDataUpdaterPlantSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}}}},
+		"TriggerEngine":    {Components: AstarteComponentsSpec{TriggerEngine: AstarteTriggerEngineSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}}}},
+		"Flow":             {Components: AstarteComponentsSpec{Flow: AstarteGenericAPIComponentSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}}}},
+		"Housekeeping":     {Components: AstarteComponentsSpec{Housekeeping: AstarteGenericAPIComponentSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}}}},
+		"RealmManagement":  {Components: AstarteComponentsSpec{RealmManagement: AstarteGenericAPIComponentSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}}}},
+		"Pairing":          {Components: AstarteComponentsSpec{Pairing: AstarteGenericAPIComponentSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}}}},
+		"VerneMQ":          {VerneMQ: AstarteVerneMQSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}}},
+	}
+
+	for componentName, baseSpec := range testComponents {
+		for _, tc := range testCases {
+			t.Run(fmt.Sprintf("%s %s", componentName, tc.name), func(t *testing.T) {
+				g := NewWithT(t)
+
+				r := &Astarte{Spec: baseSpec}
+
+				switch componentName {
+				case "DataUpdaterPlant":
+					r.Spec.Components.DataUpdaterPlant.PodLabels = tc.labels
+				case "TriggerEngine":
+					r.Spec.Components.TriggerEngine.PodLabels = tc.labels
+				case "Flow":
+					r.Spec.Components.Flow.PodLabels = tc.labels
+				case "Housekeeping":
+					r.Spec.Components.Housekeeping.PodLabels = tc.labels
+				case "RealmManagement":
+					r.Spec.Components.RealmManagement.PodLabels = tc.labels
+				case "Pairing":
+					r.Spec.Components.Pairing.PodLabels = tc.labels
+				case "VerneMQ":
+					r.Spec.VerneMQ.PodLabels = tc.labels
+				}
+
+				err := r.validatePodLabelsForClusteredResources()
+
+				if tc.expectError {
+					g.Expect(err).ToNot(BeNil())
+					g.Expect(err).ToNot(BeEmpty())
+				} else {
+					g.Expect(err).ToNot(BeNil())
+					g.Expect(err).To(BeEmpty())
+				}
+			})
+		}
+	}
+}
+
+func TestValidatePodLabelsForClusteredResource(t *testing.T) {
+	g := NewWithT(t)
+
+	testCases := []struct {
+		name        string
+		labels      map[string]string
+		expectError bool
+	}{
+		{
+			name: "with allowed custom labels",
+			labels: map[string]string{
+				"custom-label":           "lbl",
+				"my.custom.domain/label": "value",
+			},
+			expectError: false,
+		},
+		{
+			name: "with unallowed reserved labels",
+			labels: map[string]string{
+				"app":          "my-app",
+				"component":    "my-component",
+				"astarte-role": "my-role",
+				"flow-role":    "my-role",
+			},
+			expectError: true,
+		},
+		{
+			name:        "with no labels",
+			labels:      nil,
+			expectError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+
+			a := &AstarteGenericClusteredResource{
+				PodLabels: tc.labels,
+			}
+
+			err := validatePodLabelsForClusteredResource(PodLabelsGetter(a))
+			if tc.expectError {
+				g.Expect(err).ToNot(BeNil())
+				g.Expect(err).ToNot(BeEmpty())
+			} else {
+				g.Expect(err).ToNot(BeNil())
+				g.Expect(err).To(BeEmpty())
+			}
 		})
 	}
 }
