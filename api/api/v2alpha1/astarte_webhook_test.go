@@ -721,15 +721,7 @@ func TestValidateCreateAstarteSystemKeyspace(t *testing.T) {
 			r := tc.astarte
 			err := r.validateCreateAstarteSystemKeyspace()
 
-			if tc.expectedErrs == 0 {
-				g.Expect(err).ToNot(BeNil())
-				g.Expect(len(err)).To(BeNumerically("==", 0))
-			}
-
-			if tc.expectedErrs > 0 {
-				g.Expect(err).ToNot(BeNil())
-				g.Expect(len(err)).To(BeNumerically("==", tc.expectedErrs))
-			}
+			g.Expect(err).To(HaveLen(tc.expectedErrs))
 		})
 	}
 }
