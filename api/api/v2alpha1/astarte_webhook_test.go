@@ -97,6 +97,59 @@ func TestValidateSSLListener(t *testing.T) {
 	}
 }
 
+func TestValidateUpdateAstarteInstanceID(t *testing.T) {
+	g := NewWithT(t)
+
+	testCases := []struct {
+		description          string
+		oldAstarteInstanceID string
+		newAstarteInstanceID string
+		expectError          bool
+	}{
+		{
+			description:          "should return an error when trying to change the instanceID",
+			oldAstarteInstanceID: "old-instance-id",
+			newAstarteInstanceID: "new-instance-id",
+			expectError:          true,
+		},
+		{
+			description:          "should NOT return an error when the instanceID is unchanged",
+			oldAstarteInstanceID: "same-instance-id",
+			newAstarteInstanceID: "same-instance-id",
+			expectError:          false,
+		},
+		{
+			description:          "should NOT return an error when the instanceID is empty in both old and new spec",
+			oldAstarteInstanceID: "",
+			newAstarteInstanceID: "",
+			expectError:          false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			oldAstarte := &Astarte{
+				Spec: AstarteSpec{
+					AstarteInstanceID: tc.oldAstarteInstanceID,
+				},
+			}
+			newAstarte := &Astarte{
+				Spec: AstarteSpec{
+					AstarteInstanceID: tc.newAstarteInstanceID,
+				},
+			}
+
+			err := newAstarte.validateUpdateAstarteInstanceID(oldAstarte)
+			if tc.expectError {
+				g.Expect(err).ToNot(BeNil())
+			} else {
+				g.Expect(err).To(BeNil())
+			}
+		})
+	}
+
+}
+
 func TestValidatePodLabelsForClusteredResources(t *testing.T) {
 	testCases := []struct {
 		name        string
