@@ -96,6 +96,14 @@ func TestValidateSSLListener(t *testing.T) {
 	}
 }
 
+func TestValidateAutoscalerForClusteredResources(t *testing.T) {
+	// TODO: implement this test
+}
+
+func TestValidateAutoscalerForClusteredResourcesExcluding(t *testing.T) {
+	// TODO: implement this test
+}
+
 func TestValidateAstartePriorityClasses(t *testing.T) {
 	// Use Gomega with standard Go testing
 	g := NewWithT(t)
