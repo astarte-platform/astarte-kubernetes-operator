@@ -19,7 +19,11 @@ limitations under the License.
 package v2alpha1
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"go.openly.dev/pointy"
 )
 
 var _ = Describe("Astarte Webhook", func() {
@@ -47,3 +51,47 @@ var _ = Describe("Astarte Webhook", func() {
 	})
 
 })
+
+func TestValidateSSLListener(t *testing.T) {
+	testCases := []struct {
+		description    string
+		verneSpec      AstarteVerneMQSpec
+		expectedErrors int
+	}{
+		{
+			description: "SSL Listener disabled",
+			verneSpec: AstarteVerneMQSpec{
+				SSLListener: pointy.Bool(false),
+			},
+			expectedErrors: 0,
+		},
+		{
+			description: "SSL Listener enabled and empty SSLListenerCertSecretName",
+			verneSpec: AstarteVerneMQSpec{
+				SSLListener:               pointy.Bool(true),
+				SSLListenerCertSecretName: "",
+			},
+			expectedErrors: 1,
+		},
+		{
+			description: "SSL Listener enabled and no SSLListenerCertSecretName",
+			verneSpec: AstarteVerneMQSpec{
+				SSLListener: pointy.Bool(true),
+			},
+			expectedErrors: 1,
+		},
+	}
+
+	// TODO: Test against k8s api to check if the secret exists
+
+	g := NewWithT(t)
+	r := &Astarte{}
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			r.Spec.VerneMQ = tc.verneSpec
+			errs := r.validateSSLListener()
+			g.Expect(errs).ToNot(BeNil())
+			g.Expect(errs).To(HaveLen(tc.expectedErrors))
+		})
+	}
+}
