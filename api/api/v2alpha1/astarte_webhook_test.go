@@ -98,8 +98,6 @@ func TestValidateSSLListener(t *testing.T) {
 }
 
 func TestValidateUpdateAstarteInstanceID(t *testing.T) {
-	g := NewWithT(t)
-
 	testCases := []struct {
 		description          string
 		oldAstarteInstanceID string
@@ -126,6 +124,7 @@ func TestValidateUpdateAstarteInstanceID(t *testing.T) {
 		},
 	}
 
+	g := NewWithT(t)
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
 			oldAstarte := &Astarte{
@@ -216,12 +215,11 @@ func TestValidatePodLabelsForClusteredResources(t *testing.T) {
 				}
 
 				err := r.validatePodLabelsForClusteredResources()
+				g.Expect(err).ToNot(BeNil())
 
 				if tc.expectError {
-					g.Expect(err).ToNot(BeNil())
 					g.Expect(err).ToNot(BeEmpty())
 				} else {
-					g.Expect(err).ToNot(BeNil())
 					g.Expect(err).To(BeEmpty())
 				}
 			})
@@ -230,8 +228,6 @@ func TestValidatePodLabelsForClusteredResources(t *testing.T) {
 }
 
 func TestValidatePodLabelsForClusteredResource(t *testing.T) {
-	g := NewWithT(t)
-
 	testCases := []struct {
 		name        string
 		labels      map[string]string
@@ -262,19 +258,17 @@ func TestValidatePodLabelsForClusteredResource(t *testing.T) {
 		},
 	}
 
+	g := NewWithT(t)
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-
-			a := &AstarteGenericClusteredResource{
+			r := &AstarteGenericClusteredResource{
 				PodLabels: tc.labels,
 			}
-
-			err := validatePodLabelsForClusteredResource(PodLabelsGetter(a))
+			err := validatePodLabelsForClusteredResource(PodLabelsGetter(r))
+			g.Expect(err).ToNot(BeNil())
 			if tc.expectError {
-				g.Expect(err).ToNot(BeNil())
 				g.Expect(err).ToNot(BeEmpty())
 			} else {
-				g.Expect(err).ToNot(BeNil())
 				g.Expect(err).To(BeEmpty())
 			}
 		})
@@ -290,9 +284,6 @@ func TestValidateAutoscalerForClusteredResourcesExcluding(t *testing.T) {
 }
 
 func TestValidateAstartePriorityClasses(t *testing.T) {
-	// Use Gomega with standard Go testing
-	g := NewWithT(t)
-
 	testCases := []struct {
 		description       string
 		enable            bool
@@ -335,6 +326,7 @@ func TestValidateAstartePriorityClasses(t *testing.T) {
 		},
 	}
 
+	g := NewWithT(t)
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
 			astarte := &Astarte{
@@ -363,10 +355,6 @@ func TestValidateAstartePriorityClasses(t *testing.T) {
 }
 
 func TestValidatePriorityClassesValues(t *testing.T) {
-
-	// Use Gomega with standard Go testing
-	g := NewWithT(t)
-
 	testCases := []struct {
 		description       string
 		highPriorityValue int
@@ -404,6 +392,7 @@ func TestValidatePriorityClassesValues(t *testing.T) {
 		},
 	}
 
+	g := NewWithT(t)
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
 			astarte := &Astarte{
@@ -433,8 +422,6 @@ func TestValidatePriorityClassesValues(t *testing.T) {
 }
 
 func TestValidateUpdateAstarteSystemKeyspace(t *testing.T) {
-	g := NewWithT(t)
-
 	testCases := []struct {
 		description string
 		oldKeyspace AstarteSystemKeyspaceSpec
@@ -477,6 +464,7 @@ func TestValidateUpdateAstarteSystemKeyspace(t *testing.T) {
 		},
 	}
 
+	g := NewWithT(t)
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
 			oldAstarte := &Astarte{
@@ -506,8 +494,6 @@ func TestValidateUpdateAstarteSystemKeyspace(t *testing.T) {
 }
 
 func TestValidateCFSSLDefinition(t *testing.T) {
-	g := NewWithT(t)
-
 	testCases := []struct {
 		description string
 		cfsslSpec   AstarteCFSSLSpec
@@ -557,6 +543,7 @@ func TestValidateCFSSLDefinition(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
+			g := NewWithT(t)
 			astarte := &Astarte{
 				Spec: AstarteSpec{
 					CFSSL: tc.cfsslSpec,
@@ -576,7 +563,6 @@ func TestValidateCFSSLDefinition(t *testing.T) {
 }
 
 func TestValidateCreateAstarteSystemKeyspace(t *testing.T) {
-	g := NewWithT(t)
 	testCases := []struct {
 		description  string
 		astarte      *Astarte
@@ -716,11 +702,12 @@ func TestValidateCreateAstarteSystemKeyspace(t *testing.T) {
 		},
 	}
 
+	g := NewWithT(t)
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
 			r := tc.astarte
 			err := r.validateCreateAstarteSystemKeyspace()
-
+			g.Expect(err).ToNot(BeNil())
 			g.Expect(err).To(HaveLen(tc.expectedErrs))
 		})
 	}
