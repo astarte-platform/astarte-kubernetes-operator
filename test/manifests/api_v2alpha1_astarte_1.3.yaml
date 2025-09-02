@@ -44,31 +44,6 @@ spec:
       image: "docker.io/astarte/astarte_realm_management:1.3-snapshot"
     dataUpdaterPlant:
       image: "docker.io/astarte/astarte_data_updater_plant:1.3-snapshot"
-      additionalEnv:
-      - name: "DATA_UPDATER_PLANT_AMQP_TRIGGERS_PRODUCER_HOST"
-        value: "rabbitmq.rabbitmq.svc.cluster.local"
-      - name: "DATA_UPDATER_PLANT_AMQP_TRIGGERS_PRODUCER_USERNAME"
-        valueFrom:
-          secretKeyRef:
-            name: rabbitmq-connection-secret
-            key: username
-      - name: "DATA_UPDATER_PLANT_AMQP_TRIGGERS_PRODUCER_PASSWORD"
-        valueFrom:
-          secretKeyRef:
-            name: rabbitmq-connection-secret
-            key: password
-      - name: "DATA_UPDATER_PLANT_AMQP_TRIGGERS_PRODUCER_VIRTUAL_HOST"
-        value: "/"
-      - name: "DATA_UPDATER_PLANT_AMQP_TRIGGERS_PRODUCER_PORT"
-        value: "5672"
-      - name: "DATA_UPDATER_PLANT_AMQP_TRIGGERS_PRODUCER_SSL_ENABLED"
-        value: "false"
-      - name: "DATA_UPDATER_PLANT_AMQP_TRIGGERS_PRODUCER_SSL_CA_FILE"
-        value: "/etc/ssl/certs/ca.crt"
-      - name: "DATA_UPDATER_PLANT_AMQP_TRIGGERS_PRODUCER_SSL_DISABLE_SNI"
-        value: "false"
-      - name: "DATA_UPDATER_PLANT_AMQP_TRIGGERS_PRODUCER_SSL_CUSTOM_SNI"
-        value: "rabbitmq.rabbitmq.svc.cluster.local"
     appengineApi:
       image: "docker.io/astarte/astarte_appengine_api:1.3-snapshot"
     pairing:
@@ -77,37 +52,6 @@ spec:
       image: "docker.io/astarte/astarte_trigger_engine:1.3-snapshot"
     housekeeping:
       image: "docker.io/astarte/astarte_housekeeping:1.3-snapshot"
-      additionalEnv:
-        - name: "HOUSEKEEPING_AMQP_HOST"
-          value: "rabbitmq.rabbitmq.svc.cluster.local"
-        - name: "HOUSEKEEPING_AMQP_PORT"
-          value: "5672"
-        - name: "HOUSEKEEPING_AMQP_USERNAME"
-          valueFrom:
-            secretKeyRef:
-              name: rabbitmq-connection-secret
-              key: username
-        - name: "HOUSEKEEPING_AMQP_PASSWORD"
-          valueFrom:
-            secretKeyRef:
-              name: rabbitmq-connection-secret
-              key: password
-        - name: "HOUSEKEEPING_AMQP_SSL_ENABLED"
-          value: "false"
-        - name: "HOUSEKEEPING_AMQP_SSL_CA_FILE"
-          value: "/etc/ssl/certs/ca.crt"
-        - name: "HOUSEKEEPING_AMQP_SSL_DISABLE_SNI"
-          value: "false"
-        - name: "HOUSEKEEPING_AMQP_SSL_CUSTOM_SNI"
-          value: "rabbitmq.rabbitmq.svc.cluster.local"
-        - name: "VERNEMQ_CLUSTERING_KUBERNETES_SERVICE_NAME"
-          value: "example-astarte-vernemq"
-        - name: "HOUSEKEEPING_AMQP_MANAGEMENT_PORT"
-          value: "15672"
-        - name: "HOUSEKEEPING_ASTARTE_KEYSPACE_REPLICATION_STRATEGY"
-          value: "SimpleStrategy"
-        - name: "HOUSEKEEPING_ASTARTE_KEYSPACE_REPLICATION_FACTOR"
-          value: "1"
     dashboard:
       image: "docker.io/astarte/astarte-dashboard:1.2.1-rc.0"
       deploy: true
