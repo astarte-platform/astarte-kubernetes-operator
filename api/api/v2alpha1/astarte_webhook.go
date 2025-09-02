@@ -176,27 +176,12 @@ func (r *Astarte) validateUpdateAstarteInstanceID(oldAstarte *Astarte) *field.Er
 func (r *Astarte) validateAstarte() field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if pointy.BoolValue(r.Spec.VerneMQ.SSLListener, false) {
-		// check that SSLListenerCertSecretName is set
-		if r.Spec.VerneMQ.SSLListenerCertSecretName == "" {
-			fldPath := field.NewPath("spec").Child("vernemq").Child("sslListenerCertSecretName")
-			err := errors.New("sslListenerCertSecretName not set")
-			astartelog.Info(err.Error())
+	if errList := r.validateSSLListener(); len(errList) > 0 {
+		allErrs = append(allErrs, errList...)
+	}
 
-			allErrs = append(allErrs, field.Invalid(fldPath, r.Spec.VerneMQ.SSLListenerCertSecretName, err.Error()))
-		}
-
-		// ensure the TLS secret is present
-		theSecret := &v1.Secret{}
-		if err := c.Get(context.Background(), types.NamespacedName{Name: r.Spec.VerneMQ.SSLListenerCertSecretName, Namespace: r.Namespace}, theSecret); err != nil {
-			fldPath := field.NewPath("spec").Child("vernemq").Child("sslListenerCertSecretName")
-			astartelog.Info(err.Error())
-			allErrs = append(allErrs, field.NotFound(fldPath, err.Error()))
-		}
-
-		if err := r.validateAstartePriorityClasses(); err != nil {
-			allErrs = append(allErrs, err)
-		}
+	if err := r.validateAstartePriorityClasses(); err != nil {
+		allErrs = append(allErrs, err)
 	}
 
 	if errList := r.validatePodLabelsForClusteredResources(); len(errList) > 0 {
@@ -211,6 +196,31 @@ func (r *Astarte) validateAstarte() field.ErrorList {
 		allErrs = append(allErrs, err)
 	}
 
+	return allErrs
+}
+
+func (r *Astarte) validateSSLListener() field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	// Only validate if the SSL Listener is explicitly enabled.
+	if pointy.BoolValue(r.Spec.VerneMQ.SSLListener, false) {
+		fldPath := field.NewPath("spec").Child("vernemq").Child("sslListenerCertSecretName")
+		secretName := r.Spec.VerneMQ.SSLListenerCertSecretName
+
+		// First, check that SSLListenerCertSecretName is set.
+		if secretName == "" {
+			err := errors.New("must be set when sslListener is true")
+			astartelog.Info(err.Error())
+			allErrs = append(allErrs, field.Invalid(fldPath, secretName, err.Error()))
+		} else {
+			// If the name is set, then ensure the Secret resource exists.
+			secret := &v1.Secret{}
+			if err := c.Get(context.Background(), types.NamespacedName{Name: secretName, Namespace: r.Namespace}, secret); err != nil {
+				astartelog.Info(err.Error())
+				allErrs = append(allErrs, field.NotFound(fldPath, secretName))
+			}
+		}
+	}
 	return allErrs
 }
 
