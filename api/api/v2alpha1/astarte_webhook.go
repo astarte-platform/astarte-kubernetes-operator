@@ -194,9 +194,10 @@ func (r *Astarte) validateAstarte() field.ErrorList {
 			allErrs = append(allErrs, field.NotFound(fldPath, err.Error()))
 		}
 
-		if err := r.validateAstartePriorityClasses(); err != nil {
-			allErrs = append(allErrs, err)
-		}
+	}
+
+	if err := r.validateAstartePriorityClasses(); err != nil {
+		allErrs = append(allErrs, err)
 	}
 
 	if errList := r.validatePodLabelsForClusteredResources(); len(errList) > 0 {
