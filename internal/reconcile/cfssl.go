@@ -20,8 +20,11 @@ package reconcile
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	cfsslcsr "github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/initca"
@@ -70,6 +73,16 @@ func EnsureCFSSL(cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Schem
 		return err
 	}
 
+	// Grab the reconciled ConfigMap and compute the checksum
+	theConfigMap := &v1.ConfigMap{}
+	if err := c.Get(context.TODO(), types.NamespacedName{Name: deploymentName + "-config", Namespace: cr.Namespace}, theConfigMap); err != nil {
+		return err
+	}
+	configMapChecksum, err := getChecksumForConfigMap(theConfigMap)
+	if err != nil {
+		return err
+	}
+
 	caSecretName := cr.Name + "-devices-ca"
 	if cr.Spec.CFSSL.CASecret.Name != "" {
 		// Don't even try creating it
@@ -90,7 +103,8 @@ func EnsureCFSSL(cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Schem
 		},
 		Template: v1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Labels: labels,
+				Labels:      labels,
+				Annotations: map[string]string{"checksum/config": configMapChecksum},
 			},
 			Spec: getCFSSLPodSpec(deploymentName, caSecretName, cr),
 		},
@@ -458,4 +472,25 @@ func createCFSSLCASecret(secretName string, cr *apiv2alpha1.Astarte, c client.Cl
 	// Reconcile our secret
 	_, err = misc.ReconcileTLSSecret(secretName, string(cert), string(key), cr, c, scheme, log)
 	return err
+}
+
+func getChecksumForConfigMap(cm *v1.ConfigMap) (string, error) {
+	// json.Marshal is not consistent in map ordering. We need to handle this to have a consistent checksum.
+	// Let's sort the keys of the map, and then concatenate the values.
+	keys := make([]string, 0, len(cm.Data))
+	for k := range cm.Data {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	var allData string
+	for _, k := range keys {
+		allData += cm.Data[k]
+	}
+
+	hasher := sha256.New()
+	if _, err := hasher.Write([]byte(allData)); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
