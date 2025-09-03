@@ -39,10 +39,10 @@ const (
 	certmanagerVersion = "v1.16.3"
 	certmanagerURLTmpl = "https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml"
 
-	// the astarteName and astarteNamespace variables must match the values of the
+	// the astarteName must match the value of the
 	// test/samples/api_v2alpha1_astarte_1*.yaml files
 	astarteName      = "example-astarte"
-	astarteNamespace = "astarte"
+	astarteNamespace = "example-astarte-ns"
 
 	// DefaultRetryInterval applied to all tests
 	DefaultRetryInterval time.Duration = time.Second * 10
@@ -191,6 +191,140 @@ func EnsureAstarteHealthGreen() error {
 
 	_, err := Run(cmd)
 	return err
+}
+
+func DeleteRabbitMQConnectionSecret() error {
+	cmd := exec.Command("kubectl", "delete", "secret",
+		"rabbitmq-connection-secret",
+		"-n", astarteNamespace,
+	)
+	_, err := Run(cmd)
+	return err
+}
+
+func DeleteScyllaConnectionSecret() error {
+	cmd := exec.Command("kubectl", "delete", "secret",
+		"scylladb-connection-secret",
+		"-n", astarteNamespace,
+	)
+	_, err := Run(cmd)
+	return err
+}
+
+func EnsureAstarteDeployementsAreRemoved() error {
+	// Wait for all Astarte resources to be deleted.
+	cmd := exec.Command("kubectl", "get", "deployments.apps",
+		"-n", astarteNamespace,
+		"-l", "component=astarte",
+		"-o", "go-template={{ range .items }}"+
+			"{{ if not .metadata.deletionTimestamp }}"+
+			"{{ .metadata.name }}"+
+			"{{ \"\\n\" }}{{ end }}{{ end }}",
+	)
+
+	cmdOut, err := Run(cmd)
+
+	if err != nil {
+		return err
+	}
+
+	resources := GetNonEmptyLines(string(cmdOut))
+	if len(resources) != 0 {
+		return fmt.Errorf("expect 0 deployments running, but got %d", len(resources))
+	}
+
+	return nil
+}
+
+func EnsureAstarteStatefulsetsAreRemoved() error {
+	// Wait for all Astarte resources to be deleted.
+	cmd := exec.Command("kubectl", "get", "statefulsets.apps",
+		"-n", astarteNamespace,
+		"-l", "component=astarte",
+		"-o", "go-template={{ range .items }}"+
+			"{{ if not .metadata.deletionTimestamp }}"+
+			"{{ .metadata.name }}"+
+			"{{ \"\\n\" }}{{ end }}{{ end }}",
+	)
+
+	cmdOut, err := Run(cmd)
+
+	if err != nil {
+		return err
+	}
+
+	resources := GetNonEmptyLines(string(cmdOut))
+	if len(resources) != 0 {
+		return fmt.Errorf("expect 0 stateful sets running, but got %d", len(resources))
+	}
+
+	return nil
+}
+
+func EnsureAstarteConfigmapsAreRemoved() error {
+	// Wait for all Astarte resources to be deleted.
+	cmd := exec.Command("kubectl", "get", "configmaps",
+		"-n", astarteNamespace,
+		"-o", "go-template={{ range .items }}"+
+			"{{ .metadata.name }}{{ end }}")
+
+	cmdOut, err := Run(cmd)
+	if err != nil {
+		return err
+	}
+
+	resources := GetNonEmptyLines(string(cmdOut))
+
+	// From Kubernetes 1.20+, a configmap named "kube-root-ca.crt" is created by default
+	// in every namespace. If it's the only item left, let it be.
+	if len(resources) > 1 || (len(resources) == 1 && resources[0] != "kube-root-ca.crt") {
+		// Do not account for kube-root-ca.crt when returning the error.
+		return fmt.Errorf("some configmaps are still present")
+	}
+
+	return nil
+}
+
+func EnsureAstarteSecretsAreRemoved() error {
+	cmd := exec.Command("kubectl", "get", "secrets",
+		"-n", astarteNamespace,
+		"-o", "go-template={{ range .items }}"+
+			"{{ .metadata.name }}{{ end }}")
+
+	cmdOut, err := Run(cmd)
+
+	if err != nil {
+		return err
+	}
+
+	resources := GetNonEmptyLines(string(cmdOut))
+
+	if len(resources) != 0 {
+		return fmt.Errorf("expect 0 secrets but got %d", len(resources))
+	}
+
+	return nil
+}
+
+func EnsureAstartePvcAreRemoved() error {
+	cmd := exec.Command("kubectl", "get", "pvc",
+		"-n", astarteNamespace,
+		"-o", "go-template={{ range .items }}"+
+			"{{ .metadata.name }}{{ end }}")
+
+	cmdOut, err := Run(cmd)
+
+	if err != nil {
+		return err
+	}
+
+	resources := GetNonEmptyLines(string(cmdOut))
+
+	if len(resources) != 0 {
+		return fmt.Errorf("expect 0 pvc but got %d", len(resources))
+	}
+
+	return nil
 }
 
 func UninstallAstarte(manifestPath string) error {
