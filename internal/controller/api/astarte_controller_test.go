@@ -259,7 +259,7 @@ func TestRemove(t *testing.T) {
 			expected:    []string{"a", "b"},
 		},
 		{
-			description: "empty string is not the list",
+			description: "empty string is not in the list",
 			list:        []string{"a", "b"},
 			s:           "",
 			expected:    []string{"a", "b"},
