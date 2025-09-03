@@ -174,99 +174,61 @@ var _ = Describe("controller", Ordered, func() {
 					utils.DefaultRetryInterval,
 				).WithArguments(v).Should(Succeed())
 
+				// deployments
 				By(fmt.Sprintf("ensuring that every deployment of Astarte v%s is removed", k))
-				verifyDeploymentsDown := func() error {
-					cmd = exec.Command("kubectl", "get", "deployments.apps", "-l", "component=astarte",
-						"-o", "go-template={{ range .items }}"+
-							"{{ if not .metadata.deletionTimestamp }}"+
-							"{{ .metadata.name }}"+
-							"{{ \"\\n\" }}{{ end }}{{ end }}",
-					)
-					deploymentsOutput, err := utils.Run(cmd)
-					ExpectWithOffset(2, err).NotTo(HaveOccurred())
+				EventuallyWithOffset(1,
+					utils.EnsureAstarteDeployementsAreRemoved,
+					utils.DefaultTimeout,
+					utils.DefaultRetryInterval,
+				).Should(Succeed())
 
-					deploymentNames := utils.GetNonEmptyLines(string(deploymentsOutput))
-					if len(deploymentNames) != 0 {
-						return fmt.Errorf("expect 0 deployments running, but got %d", len(deploymentNames))
-					}
-
-					return nil
-				}
-				EventuallyWithOffset(1, verifyDeploymentsDown, utils.DefaultTimeout, utils.DefaultRetryInterval).Should(Succeed())
-
+				// statefulsets
 				By(fmt.Sprintf("ensuring that every statefulset of Astarte v%s is removed", k))
-				verifyStatefulSetsDown := func() error {
-					cmd = exec.Command("kubectl", "get", "statefulsets.apps", "-l", "component=astarte",
-						"-o", "go-template={{ range .items }}"+
-							"{{ if not .metadata.deletionTimestamp }}"+
-							"{{ .metadata.name }}"+
-							"{{ \"\\n\" }}{{ end }}{{ end }}",
-					)
-					statefulSetsOutput, err := utils.Run(cmd)
-					ExpectWithOffset(2, err).NotTo(HaveOccurred())
-
-					statefulSetNames := utils.GetNonEmptyLines(string(statefulSetsOutput))
-					if len(statefulSetNames) != 0 {
-						return fmt.Errorf("expect 0 deployments running, but got %d", len(statefulSetNames))
-					}
-
-					return nil
-				}
-				EventuallyWithOffset(1, verifyStatefulSetsDown, utils.DefaultTimeout, utils.DefaultRetryInterval).Should(Succeed())
+				EventuallyWithOffset(1,
+					utils.EnsureAstarteStatefulsetsAreRemoved,
+					utils.DefaultTimeout,
+					utils.DefaultRetryInterval,
+				).Should(Succeed())
 
 				// configmaps
 				By(fmt.Sprintf("ensuring that every configmap of Astarte v%s is removed", k))
-				verifyCMDown := func() error {
-					cmd = exec.Command("kubectl", "get", "configmaps", "-o", "go-template={{ range .items }}"+
-						"{{ .metadata.name }}{{ end }}")
-					cmOutput, err := utils.Run(cmd)
-					ExpectWithOffset(2, err).NotTo(HaveOccurred())
+				EventuallyWithOffset(1,
+					utils.EnsureAstarteConfigmapsAreRemoved,
+					utils.DefaultTimeout,
+					utils.DefaultRetryInterval,
+				).Should(Succeed())
 
-					cmNames := utils.GetNonEmptyLines(string(cmOutput))
-					// From Kubernetes 1.20+, a configmap named "kube-root-ca.crt" is created by default
-					// in every namespace. If it's the only item left, let it be.
-					if len(cmNames) > 1 || (len(cmNames) == 1 && cmNames[0] != "kube-root-ca.crt") {
-						// Do not account for kube-root-ca.crt when returning the error.
-						return fmt.Errorf("some configmaps are still present")
-					}
+				// RabbitMq connections secrets
+				By("deleting the RabbitMq connection secret")
+				EventuallyWithOffset(1,
+					utils.DeleteRabbitMQConnectionSecret,
+					utils.DefaultTimeout,
+					utils.DefaultRetryInterval,
+				).Should(Succeed())
 
-					return nil
-				}
-				EventuallyWithOffset(1, verifyCMDown, utils.DefaultTimeout, utils.DefaultRetryInterval).Should(Succeed())
+				// Scylla connection secret
+				By("deleting the Scylla connection secret")
+				EventuallyWithOffset(1,
+					utils.DeleteScyllaConnectionSecret,
+					utils.DefaultTimeout,
+					utils.DefaultRetryInterval,
+				).Should(Succeed())
 
 				// secrets
 				By(fmt.Sprintf("ensuring that every secret of Astarte v%s is removed", k))
-				verifySecretsDown := func() error {
-					cmd = exec.Command("kubectl", "get", "secrets", "-o", "go-template={{ range .items }}"+
-						"{{ .metadata.name }}{{ end }}")
-					secretsOutput, err := utils.Run(cmd)
-					ExpectWithOffset(2, err).NotTo(HaveOccurred())
-
-					secretNames := utils.GetNonEmptyLines(string(secretsOutput))
-					if len(secretNames) != 0 {
-						return fmt.Errorf("expect 0 secrets, but got %d", len(secretNames))
-					}
-
-					return nil
-				}
-				EventuallyWithOffset(1, verifySecretsDown, utils.DefaultTimeout, utils.DefaultRetryInterval).Should(Succeed())
+				EventuallyWithOffset(1,
+					utils.EnsureAstarteSecretsAreRemoved,
+					utils.DefaultTimeout,
+					utils.DefaultRetryInterval,
+				).Should(Succeed())
 
 				// pvc
 				By(fmt.Sprintf("ensuring that every pvc of Astarte v%s is removed", k))
-				verifyPvcDown := func() error {
-					cmd = exec.Command("kubectl", "get", "pvc", "-o", "go-template={{ range .items }}"+
-						"{{ .metadata.name }}{{ end }}")
-					pvcOutput, err := utils.Run(cmd)
-					ExpectWithOffset(2, err).NotTo(HaveOccurred())
-
-					pvcNames := utils.GetNonEmptyLines(string(pvcOutput))
-					if len(pvcNames) != 0 {
-						return fmt.Errorf("expect 0 pvc, but got %d", len(pvcNames))
-					}
-
-					return nil
-				}
-				EventuallyWithOffset(1, verifyPvcDown, utils.DefaultTimeout, utils.DefaultRetryInterval).Should(Succeed())
+				EventuallyWithOffset(1,
+					utils.EnsureAstartePvcAreRemoved,
+					utils.DefaultTimeout,
+					utils.DefaultRetryInterval,
+				).Should(Succeed())
 			}
 
 			By("undeploying the controller-manager")
