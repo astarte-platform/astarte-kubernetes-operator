@@ -187,6 +187,7 @@ func (r *AstarteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return ctrl.Result{}, nil
 }
 
+// contains checks if a string is present in a list of strings.
 func contains(list []string, s string) bool {
 	for _, v := range list {
 		if v == s {
@@ -196,6 +197,7 @@ func contains(list []string, s string) bool {
 	return false
 }
 
+// remove removes a string from a list of strings.
 func remove(list []string, s string) []string {
 	for i, v := range list {
 		if v == s {
