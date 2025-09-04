@@ -345,7 +345,11 @@ func GetRabbitMQHostnameAndPort(cr *apiv2alpha1.Astarte) (string, int32) {
 // GetRabbitMQUserCredentialsSecret gets the secret holding RabbitMQ credentials in the form <secret name>, <username key>, <password key>
 func GetRabbitMQUserCredentialsSecret(cr *apiv2alpha1.Astarte) (string, string, string) {
 	// TODO: allow `connectionStringSecret` to be used too
-	return cr.Spec.RabbitMQ.Connection.CredentialsSecret.Name, cr.Spec.RabbitMQ.Connection.CredentialsSecret.UsernameKey, cr.Spec.RabbitMQ.Connection.CredentialsSecret.PasswordKey
+
+	if cr.Spec.RabbitMQ.Connection.CredentialsSecret != nil {
+		return cr.Spec.RabbitMQ.Connection.CredentialsSecret.Name, cr.Spec.RabbitMQ.Connection.CredentialsSecret.UsernameKey, cr.Spec.RabbitMQ.Connection.CredentialsSecret.PasswordKey
+	}
+	return cr.Name + "-rabbitmq-user-credentials", RabbitMQDefaultUserCredentialsUsernameKey, RabbitMQDefaultUserCredentialsPasswordKey
 }
 
 // GetRabbitMQCredentialsFor returns the RabbitMQ host, username and password for a given CR. This information
