@@ -218,9 +218,10 @@ func (r *AstarteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		},
 	}
 
-	tlsSecretToAstarteReconcileRequestFunc := func(_ context.Context, obj client.Object) []reconcile.Request {
+	genericToAstarteReconcileRequestFunc := func(_ context.Context, obj client.Object) []reconcile.Request {
 		ret := []reconcile.Request{}
 		astarteList := &apiv2alpha1.AstarteList{}
+		// TODO: maybe there is a better way to do this
 		_ = r.List(context.Background(), astarteList, client.InNamespace(obj.GetNamespace()))
 
 		if len(astarteList.Items) == 0 {
@@ -245,7 +246,11 @@ func (r *AstarteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&appsv1.StatefulSet{}).
 		Watches(
 			&v1.Secret{},
-			handler.EnqueueRequestsFromMapFunc(tlsSecretToAstarteReconcileRequestFunc),
+			handler.EnqueueRequestsFromMapFunc(genericToAstarteReconcileRequestFunc),
+		).
+		Watches(
+			&v1.ConfigMap{},
+			handler.EnqueueRequestsFromMapFunc(genericToAstarteReconcileRequestFunc),
 		).
 		Complete(r)
 }
