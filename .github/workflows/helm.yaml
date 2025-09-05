@@ -125,12 +125,12 @@ jobs:
     - name: Check Helm release is deployed
       id: check-helm-release
       run: |
-        kubectl wait --for=create --timeout=120s deployment/astarte-operator-controller-manager
+        kubectl wait --for=create --timeout=5m deployment/astarte-operator-controller-manager
 
     - name: Check Astarte Operator is running
       id: check-operator-running
       run: |
-        kubectl wait --for=condition=available --timeout=120s deployment/astarte-operator-controller-manager
+        kubectl wait --for=condition=available --timeout=5m deployment/astarte-operator-controller-manager
 
     - name: Dump debug info
       run: |

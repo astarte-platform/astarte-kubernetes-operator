@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package misc
+package reconcile
 
 import (
 	"context"
@@ -51,7 +51,7 @@ var testEnv *envtest.Environment
 func TestMisc(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecs(t, "Misc Suite")
+	RunSpecs(t, "Reconcile Suite")
 }
 
 var _ = BeforeSuite(func() {

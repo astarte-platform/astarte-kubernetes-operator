@@ -121,12 +121,12 @@ var _ = Describe("Astarte Controller", func() {
 			By("getting the created resource")
 			resource := &apiv2alpha1.Astarte{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
 
 			// ... and then delete it
 			By("deleting the created resource")
 			err = k8sClient.Delete(ctx, resource)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should successfully reconcile the resource", func() {
@@ -134,14 +134,14 @@ var _ = Describe("Astarte Controller", func() {
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: typeNamespacedName,
 			})
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should not reconcile an unsupported astarte version", func() {
 			By("Updating the resource to an unsupported version")
 			resource := &apiv2alpha1.Astarte{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
 
 			resource.Spec.Version = "4.0.1"
 			Expect(k8sClient.Update(ctx, resource)).To(Succeed())
@@ -158,7 +158,7 @@ var _ = Describe("Astarte Controller", func() {
 			By("Updating the resource to be in manual maintenance mode")
 			resource := &apiv2alpha1.Astarte{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
 
 			resource.Spec.ManualMaintenanceMode = true
 			Expect(k8sClient.Update(ctx, resource)).To(Succeed())
@@ -167,7 +167,7 @@ var _ = Describe("Astarte Controller", func() {
 			_, err = controllerReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: typeNamespacedName,
 			})
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should not requeue when the resource is not found and there are no errors", func() {
@@ -178,7 +178,7 @@ var _ = Describe("Astarte Controller", func() {
 					Namespace: "default",
 				},
 			})
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(res.Requeue).To(BeFalse())
 		})
 
