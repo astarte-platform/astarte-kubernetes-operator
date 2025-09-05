@@ -16,6 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+//nolint:goconst
 package misc
 
 import (
@@ -25,6 +26,7 @@ import (
 	"github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	"github.com/go-logr/logr"
 	"go.openly.dev/pointy"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -50,10 +52,9 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 
 	var cr *v2alpha1.Astarte
 	var log logr.Logger
-	var reqLogger logr.Logger
 
 	BeforeAll(func() {
-		log = reqLogger.WithValues("test", "misc-utils")
+		log = log.WithValues("test", "misc-utils")
 		if CustomAstarteNamespace != "default" {
 			ns := &v1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
@@ -108,16 +109,22 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			},
 		}
 
-		// Create the Astarte CR in the fake client
 		Expect(k8sClient.Create(context.Background(), cr)).To(Succeed())
+		Eventually(func() error {
+			return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+		}, "10s", "250ms").Should(Succeed())
 	})
 
 	AfterEach(func() {
-		Expect(k8sClient.Delete(context.Background(), cr)).To(Succeed())
+		astartes := &v2alpha1.AstarteList{}
+		Expect(k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace})).To(Succeed())
+		for _, a := range astartes.Items {
+			Expect(k8sClient.Delete(context.Background(), &a)).To(Succeed())
 
-		Eventually(func() error {
-			return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-		}, "10s", "250ms").ShouldNot(Succeed())
+			Eventually(func() error {
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &v2alpha1.Astarte{})
+			}, "10s", "250ms").ShouldNot(Succeed())
+		}
 	})
 
 	Describe("ReconcileConfigMap", func() {
@@ -131,7 +138,6 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			}
 
 			objName = "example-configmap"
-			reqLogger = log.WithValues("test", "ReconcileConfigMap")
 		})
 
 		AfterEach(func() {
@@ -143,12 +149,12 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 		})
 
 		It("should create a ConfigMap", func() {
-			_, err := ReconcileConfigMap(objName, cmData, cr, k8sClient, testEnv.Scheme, reqLogger)
-			Expect(err).NotTo(HaveOccurred())
+			_, err := ReconcileConfigMap(objName, cmData, cr, k8sClient, testEnv.Scheme, log)
+			Expect(err).ToNot(HaveOccurred())
 
 			createdCm := &v1.ConfigMap{}
 			err = k8sClient.Get(context.Background(), types.NamespacedName{Name: objName, Namespace: CustomAstarteNamespace}, createdCm)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(createdCm.Data).To(Equal(cmData))
 		})
 
@@ -163,7 +169,6 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			cert = "cert-data"
 			key = "key-data"
 			objName = "example-cert-secret"
-			reqLogger = log.WithValues("test", "ReconcileTLSSecret")
 		})
 
 		AfterEach(func() {
@@ -175,13 +180,13 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 		})
 
 		It("should create a TLS Secret", func() {
-			_, err := ReconcileTLSSecret(objName, cert, key, cr, k8sClient, testEnv.Scheme, reqLogger)
-			Expect(err).NotTo(HaveOccurred())
+			_, err := ReconcileTLSSecret(objName, cert, key, cr, k8sClient, testEnv.Scheme, log)
+			Expect(err).ToNot(HaveOccurred())
 
 			createdSecret := &v1.Secret{}
 
 			err = k8sClient.Get(context.Background(), types.NamespacedName{Name: objName, Namespace: CustomAstarteNamespace}, createdSecret)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(createdSecret.Type).To(Equal(v1.SecretTypeTLS))
 			Expect(string(createdSecret.Data[v1.TLSCertKey])).To(Equal(cert))
 			Expect(string(createdSecret.Data[v1.TLSPrivateKeyKey])).To(Equal(key))
@@ -199,7 +204,6 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			}
 
 			objName = "example-secret"
-			reqLogger = log.WithValues("test", "ReconcileSecret")
 		})
 
 		AfterEach(func() {
@@ -211,13 +215,13 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 		})
 
 		It("should create a TLS Secret", func() {
-			_, err := ReconcileSecret(objName, secretData, cr, k8sClient, testEnv.Scheme, reqLogger)
-			Expect(err).NotTo(HaveOccurred())
+			_, err := ReconcileSecret(objName, secretData, cr, k8sClient, testEnv.Scheme, log)
+			Expect(err).ToNot(HaveOccurred())
 
 			createdSecret := &v1.Secret{}
 
 			err = k8sClient.Get(context.Background(), types.NamespacedName{Name: objName, Namespace: CustomAstarteNamespace}, createdSecret)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(createdSecret.Data).To(Equal(secretData))
 		})
 	})

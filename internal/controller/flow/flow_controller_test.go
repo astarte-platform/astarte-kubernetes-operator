@@ -52,7 +52,7 @@ var _ = Describe("Flow Controller", func() {
 			// // TODO(user): Cleanup logic after each test, like removing the resource instance.
 			// resource := &flowv2alpha1.Flow{}
 			// err := k8sClient.Get(ctx, typeNamespacedName, resource)
-			// Expect(err).NotTo(HaveOccurred())
+			// Expect(err).ToNot(HaveOccurred())
 
 			// By("Cleanup the specific resource instance Flow")
 			// Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
@@ -67,7 +67,7 @@ var _ = Describe("Flow Controller", func() {
 			// _, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
 			// 	NamespacedName: typeNamespacedName,
 			// })
-			// Expect(err).NotTo(HaveOccurred())
+			// Expect(err).ToNot(HaveOccurred())
 			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
 			// Example: If you expect a certain status condition after reconciliation, verify it here.
 		})

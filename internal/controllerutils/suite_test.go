@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package misc
+package controllerutils
 
 import (
 	"context"
@@ -48,10 +48,9 @@ var ctx context.Context
 var cancel context.CancelFunc
 var testEnv *envtest.Environment
 
-func TestMisc(t *testing.T) {
+func TestControllerUtils(t *testing.T) {
 	RegisterFailHandler(Fail)
-
-	RunSpecs(t, "Misc Suite")
+	RunSpecs(t, "TestControllerUtils Suite")
 }
 
 var _ = BeforeSuite(func() {
@@ -76,6 +75,7 @@ var _ = BeforeSuite(func() {
 	var err error
 	cfg, err = testEnv.Start()
 	Expect(err).ToNot(HaveOccurred())
+
 	Expect(cfg).NotTo(BeNil())
 
 	err = apiv2alpha1.AddToScheme(scheme.Scheme)
@@ -84,7 +84,6 @@ var _ = BeforeSuite(func() {
 	// +kubebuilder:scaffold:scheme
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
-
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
