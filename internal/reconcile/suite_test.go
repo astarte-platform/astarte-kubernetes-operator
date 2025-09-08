@@ -48,10 +48,10 @@ var ctx context.Context
 var cancel context.CancelFunc
 var testEnv *envtest.Environment
 
-func TestMisc(t *testing.T) {
+func TestReconcile(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecs(t, "Reconcile Suite")
+	RunSpecs(t, "Reconcile Test Suite")
 }
 
 var _ = BeforeSuite(func() {
