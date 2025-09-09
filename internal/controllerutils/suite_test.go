@@ -28,6 +28,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	schedulingv1 "k8s.io/api/scheduling/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -79,6 +80,10 @@ var _ = BeforeSuite(func() {
 	Expect(cfg).NotTo(BeNil())
 
 	err = apiv2alpha1.AddToScheme(scheme.Scheme)
+	Expect(err).ToNot(HaveOccurred())
+
+	// Also register Scheduling v1 (PriorityClass) to the scheme, used by finalizePriorityClasses tests
+	err = schedulingv1.AddToScheme(scheme.Scheme)
 	Expect(err).ToNot(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme
