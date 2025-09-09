@@ -104,6 +104,16 @@ var _ = Describe("controllerutils tests", Ordered, func() {
 						Port: pointy.Int32(CustomVerneMQPort),
 					},
 				},
+				Cassandra: v2alpha1.AstarteCassandraSpec{
+					Connection: &v2alpha1.AstarteCassandraConnectionSpec{
+						Nodes: []v2alpha1.HostAndPort{
+							{
+								Host: "cassandra.example.com",
+								Port: pointy.Int32(9042),
+							},
+						},
+					},
+				},
 			},
 		}
 

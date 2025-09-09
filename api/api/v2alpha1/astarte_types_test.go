@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//nolint:goconst
+//nolint:goconst,dupl
 package v2alpha1
 
 import (
@@ -101,6 +101,16 @@ var _ = Describe("Astarte types testing", Ordered, func() {
 					HostAndPort: HostAndPort{
 						Host: CustomVerneMQHost,
 						Port: pointy.Int32(CustomVerneMQPort),
+					},
+				},
+				Cassandra: AstarteCassandraSpec{
+					Connection: &AstarteCassandraConnectionSpec{
+						Nodes: []HostAndPort{
+							{
+								Host: "cassandra.example.com",
+								Port: pointy.Int32(9042),
+							},
+						},
 					},
 				},
 			},
