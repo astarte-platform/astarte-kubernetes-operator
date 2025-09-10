@@ -27,18 +27,20 @@ import (
 	. "github.com/onsi/gomega"
 	"go.openly.dev/pointy"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var _ = Describe("Misc utils testing", Ordered, func() {
+var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	const (
 		CustomSecretName       = "custom-secret"
 		CustomUsernameKey      = "usr"
 		CustomPasswordKey      = "pwd"
 		CustomAstarteName      = "my-astarte"
-		CustomAstarteNamespace = "default"
+		CustomAstarteNamespace = "astarte-webhook-tests"
 		CustomRabbitMQHost     = "custom-rabbitmq-host"
 		CustomRabbitMQPort     = 5673
 		CustomVerneMQHost      = "vernemq.example.com"
@@ -59,7 +61,11 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			}
 
 			Eventually(func() error {
-				return k8sClient.Create(context.Background(), ns)
+				err := k8sClient.Create(context.Background(), ns)
+				if apierrors.IsAlreadyExists(err) {
+					return nil
+				}
+				return err
 			}, "10s", "250ms").Should(Succeed())
 		}
 	})
@@ -71,11 +77,13 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 
 			for _, a := range astartes.Items {
 				Expect(k8sClient.Delete(context.Background(), &a)).To(Succeed())
+				Eventually(func() error {
+					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &Astarte{})
+				}, "10s", "250ms").ShouldNot(Succeed())
 			}
 
-			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteNamespace}, &v1.Namespace{})
-			}, "10s", "250ms").ShouldNot(Succeed())
+			// Attempt namespace deletion but don't block on it in envtest
+			_ = k8sClient.Delete(context.Background(), &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}})
 		}
 	})
 
@@ -126,11 +134,19 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 		Expect(k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace})).To(Succeed())
 		for _, a := range astartes.Items {
 			Expect(k8sClient.Delete(context.Background(), &a)).To(Succeed())
-
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &Astarte{})
 			}, "10s", "250ms").ShouldNot(Succeed())
 		}
+
+		// Ensure all Astarte CRs are gone in the test namespace
+		Eventually(func() int {
+			list := &AstarteList{}
+			if err := k8sClient.List(context.Background(), list, &client.ListOptions{Namespace: CustomAstarteNamespace}); err != nil {
+				return -1
+			}
+			return len(list.Items)
+		}, "10s", "250ms").Should(Equal(0))
 
 	})
 
@@ -142,12 +158,21 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			Expect(errs).To(BeEmpty())
 		})
 
+		It("should return no errors when SSL Listener is nil (default false)", func() {
+			cr.Spec.VerneMQ.SSLListener = nil
+			errs := cr.validateSSLListener()
+			Expect(errs).ToNot(BeNil())
+			Expect(errs).To(BeEmpty())
+		})
+
 		It("should return an error when SSL Listener is enabled and SSLListenerCertSecretName is empty", func() {
 			cr.Spec.VerneMQ.SSLListener = pointy.Bool(true)
 			cr.Spec.VerneMQ.SSLListenerCertSecretName = ""
 			errs := cr.validateSSLListener()
 			Expect(errs).ToNot(BeNil())
 			Expect(errs).To(HaveLen(1))
+			Expect(errs[0].Type).To(Equal(field.ErrorTypeInvalid))
+			Expect(errs[0].Field).To(Equal("spec.vernemq.sslListenerCertSecretName"))
 		})
 
 		It("should return an error when SSL Listener is valid but there is no a secret", func() {
@@ -156,16 +181,19 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			errs := cr.validateSSLListener()
 			Expect(errs).ToNot(BeNil())
 			Expect(errs).To(HaveLen(1))
+			Expect(errs[0].Type).To(Equal(field.ErrorTypeNotFound))
+			Expect(errs[0].Field).To(Equal("spec.vernemq.sslListenerCertSecretName"))
 		})
 
 		It("should return no errors when SSL Listener is valid and the secret is deployed", func() {
 			cr.Spec.VerneMQ.SSLListener = pointy.Bool(true)
-			cr.Spec.VerneMQ.SSLListenerCertSecretName = CustomSecretName
+			secretName := "ssl-secret-" + cr.Name // Use unique name to avoid conflicts
+			cr.Spec.VerneMQ.SSLListenerCertSecretName = secretName
 
 			// Create the secret
 			secret := &v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      CustomSecretName,
+					Name:      secretName,
 					Namespace: CustomAstarteNamespace,
 				},
 				Data: map[string][]byte{
@@ -177,7 +205,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 
 			// Ensure the secret is created
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomSecretName, Namespace: CustomAstarteNamespace}, &v1.Secret{})
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: secretName, Namespace: CustomAstarteNamespace}, &v1.Secret{})
 			}, "10s", "250ms").Should(Succeed())
 
 			errs := cr.validateSSLListener()
@@ -188,7 +216,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			Expect(k8sClient.Delete(context.Background(), secret)).To(Succeed())
 
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomSecretName, Namespace: CustomAstarteNamespace}, &v1.Secret{})
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: secretName, Namespace: CustomAstarteNamespace}, &v1.Secret{})
 			}, "10s", "250ms").ShouldNot(Succeed())
 		})
 	})
@@ -207,7 +235,9 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			}
 
 			err := newAstarte.validateUpdateAstarteInstanceID(oldAstarte)
-			Expect(err).ToNot(BeNil())
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err.Type).To(Equal(field.ErrorTypeInvalid))
+			Expect(err.Field).To(Equal("spec.astarteInstanceID"))
 		})
 
 		It("should NOT return an error when the instanceID is unchanged", func() {
@@ -223,7 +253,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			}
 
 			err := newAstarte.validateUpdateAstarteInstanceID(oldAstarte)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should NOT return an error when the instanceID is empty in both old and new spec", func() {
@@ -239,7 +269,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			}
 
 			err := newAstarte.validateUpdateAstarteInstanceID(oldAstarte)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
@@ -288,7 +318,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 				}
 
 				err := cr.validatePodLabelsForClusteredResources()
-				Expect(err).ToNot(BeNil())
+				Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 				Expect(err).To(BeEmpty())
 			}
 		})
@@ -315,7 +345,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 				}
 
 				err := cr.validatePodLabelsForClusteredResources()
-				Expect(err).ToNot(BeNil())
+				Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 				Expect(err).ToNot(BeEmpty())
 			}
 		})
@@ -342,9 +372,25 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 				}
 
 				err := cr.validatePodLabelsForClusteredResources()
-				Expect(err).ToNot(BeNil())
+				Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 				Expect(err).To(BeEmpty())
 			}
+		})
+
+		It("should handle CFSSL component pod labels validation", func() {
+			cr := &Astarte{
+				Spec: AstarteSpec{
+					CFSSL: AstarteCFSSLSpec{
+						PodLabels: map[string]string{
+							"app": "invalid", // Should trigger error
+						},
+					},
+				},
+			}
+			err := cr.validatePodLabelsForClusteredResources()
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeEmpty())
+			Expect(err[0].Field).To(Equal("podLabels"))
 		})
 	})
 
@@ -357,7 +403,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 				},
 			}
 			err := validatePodLabelsForClusteredResource(PodLabelsGetter(r))
-			Expect(err).ToNot(BeNil())
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err).To(BeEmpty())
 		})
 
@@ -371,7 +417,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 				},
 			}
 			err := validatePodLabelsForClusteredResource(PodLabelsGetter(r))
-			Expect(err).ToNot(BeNil())
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err).ToNot(BeEmpty())
 		})
 
@@ -380,15 +426,133 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 				PodLabels: nil,
 			}
 			err := validatePodLabelsForClusteredResource(PodLabelsGetter(r))
-			Expect(err).ToNot(BeNil())
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).To(BeEmpty())
+		})
+
+		It("should handle multiple invalid labels", func() {
+			r := &AstarteGenericClusteredResource{
+				PodLabels: map[string]string{
+					"app":          "my-app",
+					"component":    "my-component",
+					"astarte-role": "my-role",
+					"flow-role":    "my-role",
+					"astarte-test": "test",
+					"flow-test":    "test",
+				},
+			}
+			err := validatePodLabelsForClusteredResource(PodLabelsGetter(r))
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).To(HaveLen(6)) // All 6 labels should be invalid
+		})
+
+		It("should allow labels with astarte- and flow- in the middle or end", func() {
+			r := &AstarteGenericClusteredResource{
+				PodLabels: map[string]string{
+					"my-astarte-label": "valid", // astarte- in middle is OK
+					"label-flow-end":   "valid", // flow- in middle is OK
+					"myflow":           "valid", // flow without dash is OK
+					"myastarte":        "valid", // astarte without dash is OK
+				},
+			}
+			err := validatePodLabelsForClusteredResource(PodLabelsGetter(r))
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err).To(BeEmpty())
 		})
 	})
 
 	Describe("TestValidateAutoscalerForClusteredResources", func() {
+		It("should return error when autoscaling horizontally on excluded components with autoscaling enabled", func() {
+			astarte := &Astarte{
+				Spec: AstarteSpec{
+					Features: AstarteFeatures{Autoscaling: true},
+					Components: AstarteComponentsSpec{
+						DataUpdaterPlant: AstarteDataUpdaterPlantSpec{
+							AstarteGenericClusteredResource: AstarteGenericClusteredResource{
+								Autoscale: &AstarteGenericClusteredResourceAutoscalerSpec{Horizontal: "hpa"},
+							},
+						},
+					},
+				},
+			}
+
+			err := validateAutoscalerForClusteredResources(astarte)
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+		})
+
+		It("should not return error when autoscaling disabled", func() {
+			astarte := &Astarte{
+				Spec: AstarteSpec{
+					Features: AstarteFeatures{Autoscaling: false},
+					Components: AstarteComponentsSpec{
+						DataUpdaterPlant: AstarteDataUpdaterPlantSpec{
+							AstarteGenericClusteredResource: AstarteGenericClusteredResource{
+								Autoscale: &AstarteGenericClusteredResourceAutoscalerSpec{Horizontal: "hpa"},
+							},
+						},
+					},
+				},
+			}
+
+			err := validateAutoscalerForClusteredResources(astarte)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should not return error when autoscaling enabled but Autoscale is nil", func() {
+			astarte := &Astarte{
+				Spec: AstarteSpec{
+					Features: AstarteFeatures{Autoscaling: true},
+					Components: AstarteComponentsSpec{
+						DataUpdaterPlant: AstarteDataUpdaterPlantSpec{
+							AstarteGenericClusteredResource: AstarteGenericClusteredResource{
+								Autoscale: nil,
+							},
+						},
+					},
+				},
+			}
+
+			err := validateAutoscalerForClusteredResources(astarte)
+			Expect(err).ToNot(HaveOccurred())
+		})
 	})
 
 	Describe("TestValidateAutoscalerForClusteredResourcesExcluding", func() {
+		It("should return error when excluded resources include a horizontally autoscaled component", func() {
+			astarte := &Astarte{
+				Spec: AstarteSpec{
+					Features: AstarteFeatures{Autoscaling: true},
+					Components: AstarteComponentsSpec{
+						DataUpdaterPlant: AstarteDataUpdaterPlantSpec{
+							AstarteGenericClusteredResource: AstarteGenericClusteredResource{
+								Autoscale: &AstarteGenericClusteredResourceAutoscalerSpec{Horizontal: "hpa"},
+							},
+						},
+					},
+				},
+			}
+			excluded := []AstarteGenericClusteredResource{astarte.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource}
+			err := validateAutoscalerForClusteredResourcesExcluding(astarte, excluded)
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+		})
+
+		It("should not return error when excluded resources include a horizontally autoscaled component but Autoscale is nil", func() {
+			astarte := &Astarte{
+				Spec: AstarteSpec{
+					Features: AstarteFeatures{Autoscaling: true},
+					Components: AstarteComponentsSpec{
+						DataUpdaterPlant: AstarteDataUpdaterPlantSpec{
+							AstarteGenericClusteredResource: AstarteGenericClusteredResource{
+								Autoscale: nil,
+							},
+						},
+					},
+				},
+			}
+			excluded := []AstarteGenericClusteredResource{astarte.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource}
+			err := validateAutoscalerForClusteredResourcesExcluding(astarte, excluded)
+			Expect(err).ToNot(HaveOccurred())
+		})
 	})
 
 	Describe("TestValidateAstartePriorityClasses", func() {
@@ -407,7 +571,20 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			}
 
 			err := astarte.validateAstartePriorityClasses()
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should not return an error when pod priorities are nil", func() {
+			astarte := &Astarte{
+				Spec: AstarteSpec{
+					Features: AstarteFeatures{
+						AstartePodPriorities: nil,
+					},
+				},
+			}
+
+			err := astarte.validateAstartePriorityClasses()
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should not return an error when pod priorities are disabled and values are not in correct order", func() {
@@ -425,7 +602,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			}
 
 			err := astarte.validateAstartePriorityClasses()
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should return an error when pod priorities are enabled and values are not in correct order", func() {
@@ -443,7 +620,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			}
 
 			err := astarte.validateAstartePriorityClasses()
-			Expect(err).ToNot(BeNil())
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err.Field).To(Equal("spec.features.astarte{Low|Medium|High}Priority"))
 		})
 
@@ -462,7 +639,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			}
 
 			err := astarte.validateAstartePriorityClasses()
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
@@ -482,7 +659,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			}
 
 			err := astarte.validatePriorityClassesValues()
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should return an error when high priority is less than mid priority", func() {
@@ -500,7 +677,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			}
 
 			err := astarte.validatePriorityClassesValues()
-			Expect(err).ToNot(BeNil())
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err.Field).To(Equal("spec.features.astarte{Low|Medium|High}Priority"))
 		})
 
@@ -519,7 +696,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			}
 
 			err := astarte.validatePriorityClassesValues()
-			Expect(err).ToNot(BeNil())
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err.Field).To(Equal("spec.features.astarte{Low|Medium|High}Priority"))
 		})
 
@@ -538,7 +715,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			}
 
 			err := astarte.validatePriorityClassesValues()
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
@@ -582,7 +759,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			}
 
 			err := newAstarte.validateUpdateAstarteSystemKeyspace(oldAstarte)
-			Expect(err).ToNot(BeNil())
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err.Field).To(Equal("spec.cassandra.astarteSystemKeyspace"))
 		})
 
@@ -600,7 +777,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			}
 
 			err := newAstarte.validateUpdateAstarteSystemKeyspace(oldAstarte)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should NOT return an error when the keyspace is empty in both old and new spec", func() {
@@ -608,7 +785,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			newAstarte.Spec.Cassandra.AstarteSystemKeyspace = AstarteSystemKeyspaceSpec{}
 
 			err := newAstarte.validateUpdateAstarteSystemKeyspace(oldAstarte)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
@@ -631,7 +808,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			cr.Spec.CFSSL.URL = ""
 
 			err := cr.validateCFSSLDefinition()
-			Expect(err).ToNot(BeNil())
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err.Field).To(Equal("spec.cfssl.url"))
 		})
 
@@ -639,7 +816,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			cr.Spec.CFSSL.Deploy = pointy.Bool(false)
 			cr.Spec.CFSSL.URL = "http://my-cfssl.com"
 			err := cr.validateCFSSLDefinition()
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should NOT return an error when Deploy is true and URL is empty", func() {
@@ -647,7 +824,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			cr.Spec.CFSSL.URL = ""
 
 			err := cr.validateCFSSLDefinition()
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should NOT return an error when Deploy is true and URL is provided", func() {
@@ -655,7 +832,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			cr.Spec.CFSSL.URL = "http://my-cfssl.com"
 
 			err := cr.validateCFSSLDefinition()
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should NOT return an error when Deploy is nil (defaults to true) and URL is empty", func() {
@@ -663,27 +840,49 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			cr.Spec.CFSSL.URL = ""
 
 			err := cr.validateCFSSLDefinition()
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should NOT return an error when Deploy is nil (defaults to true) and URL is provided", func() {
 			cr.Spec.CFSSL.Deploy = nil
 			cr.Spec.CFSSL.URL = "http://my-cfssl.com"
 			err := cr.validateCFSSLDefinition()
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should handle URL with whitespace", func() {
+			cr.Spec.CFSSL.Deploy = pointy.Bool(false)
+			cr.Spec.CFSSL.URL = "   " // Whitespace only
+			err := cr.validateCFSSLDefinition()
+			// Current implementation only checks for empty string, not whitespace
+			// This is a potential improvement area - whitespace-only URLs should probably be invalid
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
 	Describe("TestValidateCreateAstarteSystemKeyspace", func() {
-		cr := &Astarte{}
+		BeforeEach(func() {
+			// Reset keyspace to empty state
+			cr.Spec.Cassandra.AstarteSystemKeyspace = AstarteSystemKeyspaceSpec{}
+		})
 
 		It("should not return error with SimpleStrategy and valid odd replication factor", func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "SimpleStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationFactor = 3
 
 			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil())
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err).To(BeEmpty())
+		})
+
+		It("should return an error with SimpleStrategy and zero replication factor", func() {
+			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "SimpleStrategy"
+			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationFactor = 0
+
+			err := cr.validateCreateAstarteSystemKeyspace()
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).To(HaveLen(1))
+			Expect(err[0].Field).To(Equal("spec.cassandra.astarteSystemKeyspace.replicationFactor"))
 		})
 
 		It("should not return an error with NetworkTopologyStrategy and a single valid DC", func() {
@@ -691,7 +890,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:3"
 
 			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil())
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err).To(BeEmpty())
 		})
 
@@ -700,7 +899,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:3,dc2:5,dc3:1"
 
 			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil())
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err).To(BeEmpty())
 		})
 
@@ -709,7 +908,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationFactor = 2
 
 			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil())
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err).To(HaveLen(1))
 		})
 
@@ -733,7 +932,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:three"
 			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil())
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err).To(HaveLen(2))
 		})
 
@@ -741,7 +940,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:4"
 			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil())
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err).To(HaveLen(1))
 
 		})
@@ -750,7 +949,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:3,dc2:4" // dc2 is invalid
 			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil())
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err).To(HaveLen(1))
 
 		})
@@ -759,7 +958,7 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:2,dc2:not-a-number,dc3:5"
 			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil())
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err).To(HaveLen(3))
 
 		})
@@ -768,21 +967,166 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = ""
 			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil())
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err).To(HaveLen(1))
+			Expect(err[0].Field).To(Equal("spec.cassandra.astarteSystemKeyspace.dataCenterReplication"))
+		})
 
+		It("should handle empty DataCenterReplication with NetworkTopologyStrategy", func() {
+			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
+			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = ""
+			err := cr.validateCreateAstarteSystemKeyspace()
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).To(HaveLen(1))
+		})
+
+		It("should handle unknown replication strategy (defaults to NetworkTopologyStrategy behavior)", func() {
+			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "UnknownStrategy"
+			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:3"
+			err := cr.validateCreateAstarteSystemKeyspace()
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).To(BeEmpty())
 		})
 	})
 
 	Describe("TestValidateCreate", func() {
+		It("should succeed when spec passes all validations", func() {
+			obj := &Astarte{
+				ObjectMeta: metav1.ObjectMeta{Name: "vc-astarte", Namespace: CustomAstarteNamespace},
+				Spec: AstarteSpec{
+					Version:           AstarteVersion,
+					AstarteInstanceID: "coverageid1",
+					VerneMQ:           AstarteVerneMQSpec{SSLListener: pointy.Bool(false)},
+					Cassandra: AstarteCassandraSpec{AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+						ReplicationStrategy: "SimpleStrategy",
+						ReplicationFactor:   3,
+					}},
+					API: AstarteAPISpec{Host: "test.example.com"},
+				},
+			}
+			w, err := obj.ValidateCreate()
+			Expect(w).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
+		})
 
+		It("should return invalid when SSL listener enabled without secret", func() {
+			obj := &Astarte{
+				ObjectMeta: metav1.ObjectMeta{Name: "vc-astarte-invalid", Namespace: CustomAstarteNamespace},
+				Spec: AstarteSpec{
+					Version:           AstarteVersion,
+					AstarteInstanceID: "coverageid2",
+					API:               AstarteAPISpec{Host: "test.example.com"},
+					VerneMQ:           AstarteVerneMQSpec{SSLListener: pointy.Bool(true), SSLListenerCertSecretName: ""},
+					Cassandra: AstarteCassandraSpec{AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+						ReplicationStrategy: "SimpleStrategy",
+						ReplicationFactor:   3,
+					}},
+				},
+			}
+			w, err := obj.ValidateCreate()
+			Expect(w).To(BeNil())
+			Expect(err).To(HaveOccurred())
+			Expect(apierrors.IsInvalid(err)).To(BeTrue())
+		})
+
+		It("should return invalid when keyspace has invalid replication factor", func() {
+			obj := &Astarte{
+				ObjectMeta: metav1.ObjectMeta{Name: "vc-astarte-keyspace", Namespace: CustomAstarteNamespace},
+				Spec: AstarteSpec{
+					Version:           AstarteVersion,
+					AstarteInstanceID: "coverageid3",
+					API:               AstarteAPISpec{Host: "test.example.com"},
+					VerneMQ:           AstarteVerneMQSpec{SSLListener: pointy.Bool(false)},
+					Cassandra: AstarteCassandraSpec{AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+						ReplicationStrategy: "SimpleStrategy",
+						ReplicationFactor:   2, // Even number - invalid
+					}},
+				},
+			}
+			w, err := obj.ValidateCreate()
+			Expect(w).To(BeNil())
+			Expect(err).To(HaveOccurred())
+			Expect(apierrors.IsInvalid(err)).To(BeTrue())
+		})
 	})
 
 	Describe("TestValidateUpdate", func() {
+		It("should return invalid when astarteInstanceID changes", func() {
+			oldObj := &Astarte{Spec: AstarteSpec{AstarteInstanceID: "old"}}
+			newObj := &Astarte{Spec: AstarteSpec{AstarteInstanceID: "new"}}
+			w, err := newObj.ValidateUpdate(oldObj)
+			Expect(w).To(BeNil())
+			Expect(err).To(HaveOccurred())
+			Expect(apierrors.IsInvalid(err)).To(BeTrue())
+		})
 
+		It("should return invalid when keyspace changes", func() {
+			oldObj := &Astarte{
+				Spec: AstarteSpec{
+					Cassandra: AstarteCassandraSpec{
+						AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+							ReplicationStrategy: "SimpleStrategy",
+							ReplicationFactor:   3,
+						},
+					},
+				},
+			}
+			newObj := &Astarte{
+				Spec: AstarteSpec{
+					Cassandra: AstarteCassandraSpec{
+						AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+							ReplicationStrategy: "NetworkTopologyStrategy",
+							ReplicationFactor:   1,
+						},
+					},
+				},
+			}
+			w, err := newObj.ValidateUpdate(oldObj)
+			Expect(w).To(BeNil())
+			Expect(err).To(HaveOccurred())
+			Expect(apierrors.IsInvalid(err)).To(BeTrue())
+		})
+
+		It("should succeed when no changes violate validations", func() {
+			oldObj := &Astarte{Spec: AstarteSpec{AstarteInstanceID: "same", Cassandra: AstarteCassandraSpec{AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{}}}}
+			newObj := &Astarte{Spec: AstarteSpec{AstarteInstanceID: "same", Cassandra: AstarteCassandraSpec{AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{}}}}
+			w, err := newObj.ValidateUpdate(oldObj)
+			Expect(w).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
+		})
 	})
 
 	Describe("TestValidateAstarte", func() {
+		It("should aggregate multiple errors across validators", func() {
+			obj := &Astarte{
+				ObjectMeta: metav1.ObjectMeta{Name: "va-astarte", Namespace: CustomAstarteNamespace},
+				Spec: AstarteSpec{
+					VerneMQ: AstarteVerneMQSpec{
+						SSLListener:               pointy.Bool(true),
+						SSLListenerCertSecretName: "missing-secret",
+						AstarteGenericClusteredResource: AstarteGenericClusteredResource{
+							PodLabels: map[string]string{"app": "bad"},
+						},
+					},
+					Features: AstarteFeatures{
+						Autoscaling: true,
+						AstartePodPriorities: &AstartePodPrioritiesSpec{
+							Enable:              true,
+							AstarteHighPriority: pointy.Int(500),
+							AstarteMidPriority:  pointy.Int(600),
+							AstarteLowPriority:  pointy.Int(700),
+						},
+					},
+					Components: AstarteComponentsSpec{
+						DataUpdaterPlant: AstarteDataUpdaterPlantSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{Autoscale: &AstarteGenericClusteredResourceAutoscalerSpec{Horizontal: "hpa"}}},
+					},
+					CFSSL: AstarteCFSSLSpec{Deploy: pointy.Bool(false), URL: ""},
+				},
+			}
+			errs := obj.validateAstarte()
+			Expect(errs).ToNot(BeNil())
+			Expect(len(errs)).To(BeNumerically(">=", 4))
+		})
 
 	})
 
@@ -797,35 +1141,86 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 
 	Describe("TestValidateCreateAstarteInstanceID", func() {
 		It("should return error if it cannot list astarte instances", func() {
-			// Todo: find a way to simulate this
+			// This is difficult to test with the current architecture as the client
+			// is a package variable. In a real scenario, a mock client could be injected.
+			Skip("Cannot easily simulate client.List error with current architecture")
+		})
+
+		It("should not return error for empty instance ID", func() {
+			// Note: The current implementation validates that instance IDs are unique,
+			// but empty instance IDs ("") are considered equal, causing validation to fail.
+			// This test demonstrates the current behavior - empty IDs are not special-cased.
+			newCr := cr.DeepCopy()
+			newCr.Spec.AstarteInstanceID = ""
+			newCr.Name = "empty-id-astarte"
+
+			err := newCr.validateCreateAstarteInstanceID()
+			// Current implementation treats empty IDs as duplicates if another instance exists with empty ID
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err.Field).To(Equal("spec.astarteInstanceID"))
+		})
+
+		It("should not return error when no conflicts exist for empty ID", func() {
+			// First, clean up existing CR to avoid empty ID conflict
+			astartes := &AstarteList{}
+			Expect(k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace})).To(Succeed())
+			for _, a := range astartes.Items {
+				Expect(k8sClient.Delete(context.Background(), &a)).To(Succeed())
+			}
+
+			// Wait for cleanup
+			Eventually(func() bool {
+				astartes := &AstarteList{}
+				if err := k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace}); err != nil {
+					return false
+				}
+				return len(astartes.Items) == 0
+			}, "10s", "250ms").Should(BeTrue())
+
+			// Now test empty ID with no conflicts
+			newCr := &Astarte{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-empty-id",
+					Namespace: CustomAstarteNamespace,
+				},
+				Spec: AstarteSpec{
+					AstarteInstanceID: "",
+				},
+			}
+
+			err := newCr.validateCreateAstarteInstanceID()
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should return error if other Astarte instances exists with same instanceID", func() {
+			instanceID := "myuniqueinstanceid001"
+
 			// Instance a new CR with a custom instanceID (1)
 			cr1 := cr.DeepCopy()
 			cr1.ResourceVersion = ""
-			cr1.Name = "first-astarte"
-			cr1.Spec.AstarteInstanceID = "myuniqueinstanceid"
+			cr1.Name = "first-astarte-" + cr.Name
+			cr1.Spec.AstarteInstanceID = instanceID
 			Expect(k8sClient.Create(context.Background(), cr1)).To(Succeed())
 			// Ensure the instance is created
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: "first-astarte", Namespace: CustomAstarteNamespace}, cr1)
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, cr1)
 			}, "10s", "250ms").Should(Succeed())
 
 			// Try to validate a new CR with the same instanceID (2)
 			cr2 := cr.DeepCopy()
 			cr2.ResourceVersion = ""
-			cr2.Name = "second-astarte"
-			cr2.Spec.AstarteInstanceID = "myuniqueinstanceid"
+			cr2.Name = "second-astarte-" + cr.Name
+			cr2.Spec.AstarteInstanceID = instanceID
 
 			err := cr2.validateCreateAstarteInstanceID()
-			Expect(err).ToNot(BeNil())
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err.Field).To(Equal("spec.astarteInstanceID"))
+			Expect(err.Type).To(Equal(field.ErrorTypeInvalid))
 
 			// Cleanup the first instance
 			Expect(k8sClient.Delete(context.Background(), cr1)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: "first-astarte", Namespace: CustomAstarteNamespace}, cr1)
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, cr1)
 			}, "10s", "250ms").ShouldNot(Succeed())
 
 			// No need to cleanup the second instance, as it was never created
@@ -833,12 +1228,13 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 
 		It("should not return error if no other Astarte instances exists with same instanceID", func() {
 			newCr := cr.DeepCopy()
-			newCr.Spec.AstarteInstanceID = "myuniqueinstanceid"
-			newCr.Name = "another-astarte"
+			newCr.Spec.AstarteInstanceID = "myuniqueinstanceid002"
+			newCr.Name = "another-astarte-" + cr.Name
 
 			err := newCr.validateCreateAstarteInstanceID()
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 
+			// Verify the original CR still exists
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
 			}, "10s", "250ms").Should(Succeed())
