@@ -50,6 +50,9 @@ jobs:
         - "kindest/node:v1.31.9@sha256:b94a3a6c06198d17f59cca8c6f486236fa05e2fb359cbd75dabbfc348a10b211"
         - "kindest/node:v1.30.13@sha256:cf819926d6f5ba996f7489fa18a38156f952f5dd172395da7d83f734190e95da"
       fail-fast: false
+    concurrency:
+      group: 'e2e-tests-${{ github.ref }}-${{ matrix.kubernetesNodeImage }}'
+      cancel-in-progress: true
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-go@v5
@@ -94,6 +97,9 @@ jobs:
         kubectl get pods
 
   unit-tests:
+    concurrency:
+      group: unit-tests-${{ github.ref }}
+      cancel-in-progress: true
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
