@@ -34,9 +34,6 @@ import (
 
 var _ = Describe("Astarte types testing", Ordered, func() {
 	const (
-		CustomSecretName       = "custom-secret"
-		CustomUsernameKey      = "usr"
-		CustomPasswordKey      = "pwd"
 		CustomAstarteName      = "my-astarte"
 		CustomAstarteNamespace = "default"
 		CustomRabbitMQHost     = "custom-rabbitmq-host"
@@ -51,7 +48,7 @@ var _ = Describe("Astarte types testing", Ordered, func() {
 
 	BeforeAll(func() {
 		log = log.WithValues("test", "astarte_types.go")
-		log.Info("Starting controllerutils tests")
+		log.Info("Starting astarte_types tests")
 		if CustomAstarteNamespace != "default" {
 			ns := &v1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
@@ -89,6 +86,9 @@ var _ = Describe("Astarte types testing", Ordered, func() {
 			},
 			Spec: AstarteSpec{
 				Version: AstarteVersion,
+				API: AstarteAPISpec{
+					Host: "api.example.com",
+				},
 				RabbitMQ: AstarteRabbitMQSpec{
 					Connection: &AstarteRabbitMQConnectionSpec{
 						HostAndPort: HostAndPort{
@@ -170,6 +170,98 @@ var _ = Describe("Astarte types testing", Ordered, func() {
 			labels := cr.Spec.CFSSL.GetPodLabels()
 			Expect(labels).ToNot(BeNil())
 			Expect(labels).To(HaveKeyWithValue("cfssl-label", "cfssl"))
+		})
+
+		It("should return nil when PodLabels is not set", func() {
+			cr.Spec.CFSSL = AstarteCFSSLSpec{}
+			labels := cr.Spec.CFSSL.GetPodLabels()
+			Expect(labels).To(BeNil())
+		})
+	})
+
+	Describe("Test AstarteGenericClusteredResource.GetPodLabels()", func() {
+		It("should return a map when PodLabels are set", func() {
+			gr := AstarteGenericClusteredResource{
+				PodLabels: map[string]string{"k": "v"},
+			}
+			labels := gr.GetPodLabels()
+			Expect(labels).ToNot(BeNil())
+			Expect(labels).To(HaveKeyWithValue("k", "v"))
+		})
+
+		It("should return nil when PodLabels is not set", func() {
+			gr := AstarteGenericClusteredResource{}
+			Expect(gr.GetPodLabels()).To(BeNil())
+		})
+	})
+
+	Describe("Test ReconciliationPhase.String()", func() {
+		It("should return the string value of the phase", func() {
+			p := ReconciliationPhaseUpgrading
+			Expect((&p).String()).To(Equal("Upgrading"))
+		})
+
+		It("should return empty string for unknown phase", func() {
+			p := ReconciliationPhaseUnknown
+			Expect((&p).String()).To(Equal(""))
+		})
+	})
+
+	Describe("Test AstarteComponent helpers", func() {
+		It("String() should return the underlying value", func() {
+			c := AppEngineAPI
+			Expect((&c).String()).To(Equal("appengine_api"))
+		})
+
+		It("DashedString() should replace underscores with hyphens", func() {
+			c := DataUpdaterPlant
+			Expect((&c).DashedString()).To(Equal("data-updater-plant"))
+		})
+
+		It("DockerImageName() should special-case dashboard and prefix others", func() {
+			cDash := Dashboard
+			cDup := DataUpdaterPlant
+			Expect((&cDash).DockerImageName()).To(Equal("astarte-dashboard"))
+			Expect((&cDup).DockerImageName()).To(Equal("astarte_data_updater_plant"))
+		})
+
+		It("ServiceName() should equal DashedString()", func() {
+			c := TriggerEngine
+			Expect((&c).ServiceName()).To(Equal("trigger-engine"))
+		})
+
+		It("ServiceRelativePath() should return expected values per component", func() {
+			// API-like components or explicitly allowed ones
+			cApp := AppEngineAPI
+			cFlow := FlowComponent
+			cDash := Dashboard
+			Expect((&cApp).ServiceRelativePath()).To(Equal("appengine"))
+			Expect((&cFlow).ServiceRelativePath()).To(Equal("flow"))
+			Expect((&cDash).ServiceRelativePath()).To(Equal("dashboard"))
+
+			// Non-API components
+			cDup := DataUpdaterPlant
+			cHk := Housekeeping
+			cRm := RealmManagement
+			cPair := Pairing
+			cTrig := TriggerEngine
+			Expect((&cDup).ServiceRelativePath()).To(BeEmpty())
+			Expect((&cHk).ServiceRelativePath()).To(BeEmpty())
+			Expect((&cRm).ServiceRelativePath()).To(BeEmpty())
+			Expect((&cPair).ServiceRelativePath()).To(BeEmpty())
+			Expect((&cTrig).ServiceRelativePath()).To(BeEmpty())
+		})
+	})
+
+	Describe("Test AstarteResourceEvent.String()", func() {
+		It("should return the string representation of the event", func() {
+			e := AstarteResourceEventMigration
+			Expect(e.String()).To(Equal("Migration"))
+		})
+
+		It("should return other event names correctly", func() {
+			e := AstarteResourceEventUpgradeError
+			Expect(e.String()).To(Equal("ErrUpgrade"))
 		})
 	})
 })
