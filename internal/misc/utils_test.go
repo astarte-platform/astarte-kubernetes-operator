@@ -33,18 +33,19 @@ import (
 	. "github.com/onsi/gomega"
 
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
-var _ = Describe("Misc utils testing", Ordered, func() {
+var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 	const (
 		CustomSecretName       = "custom-secret"
 		CustomUsernameKey      = "usr"
 		CustomPasswordKey      = "pwd"
 		CustomAstarteName      = "my-astarte"
-		CustomAstarteNamespace = "default"
+		CustomAstarteNamespace = "utils-test"
 		CustomRabbitMQHost     = "custom-rabbitmq-host"
 		CustomRabbitMQPort     = 5673
 		CustomVerneMQHost      = "vernemq.example.com"
@@ -59,30 +60,28 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 		// Use a safe no-op logger to avoid panics when utils log
 		log = logr.Discard()
 		if CustomAstarteNamespace != "default" {
-			ns := &v1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: CustomAstarteNamespace,
-				},
-			}
-
+			ns := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}}
 			Eventually(func() error {
-				return k8sClient.Create(context.Background(), ns)
+				err := k8sClient.Create(context.Background(), ns)
+				if apierrors.IsAlreadyExists(err) {
+					return nil
+				}
+				return err
 			}, "10s", "250ms").Should(Succeed())
 		}
 	})
 
 	AfterAll(func() {
 		if CustomAstarteNamespace != "default" {
-			ns := &v1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: CustomAstarteNamespace,
-				},
+			astartes := &v2alpha1.AstarteList{}
+			Expect(k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace})).To(Succeed())
+			for _, a := range astartes.Items {
+				_ = k8sClient.Delete(context.Background(), &a)
+				Eventually(func() error {
+					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &v2alpha1.Astarte{})
+				}, "10s", "250ms").ShouldNot(Succeed())
 			}
-			Expect(k8sClient.Delete(context.Background(), ns)).To(Succeed())
-
-			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteNamespace}, &v1.Namespace{})
-			}, "10s", "250ms").ShouldNot(Succeed())
+			_ = k8sClient.Delete(context.Background(), &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}})
 		}
 	})
 
@@ -138,6 +137,14 @@ var _ = Describe("Misc utils testing", Ordered, func() {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &v2alpha1.Astarte{})
 			}, "10s", "250ms").ShouldNot(Succeed())
 		}
+
+		Eventually(func() int {
+			list := &v2alpha1.AstarteList{}
+			if err := k8sClient.List(context.Background(), list, &client.ListOptions{Namespace: CustomAstarteNamespace}); err != nil {
+				return -1
+			}
+			return len(list.Items)
+		}, "10s", "250ms").Should(Equal(0))
 	})
 
 	Describe("ReconcileConfigMap", func() {
