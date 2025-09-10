@@ -34,11 +34,11 @@ import (
 // FinalizeAstarte: not tested here because envtest doesn't run kube-controller-manager,
 // so resources with finalizers (e.g., PVCs) aren't actually removed. Delete() returns nil
 // but objects remain terminating, making assertions unreliable in this environment.
-var _ = Describe("FinalizeAstarte", func() {
+var _ = Describe("FinalizeAstarte", Serial, func() {
 	// Intentionally left without executable tests; see note above.
 })
 
-var _ = Describe("finalizePriorityClasses", Ordered, func() {
+var _ = Describe("finalizePriorityClasses", Ordered, Serial, func() {
 	var logger logr.Logger
 
 	BeforeAll(func() {

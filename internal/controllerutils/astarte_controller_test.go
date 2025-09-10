@@ -28,18 +28,20 @@ import (
 	. "github.com/onsi/gomega"
 	"go.openly.dev/pointy"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var _ = Describe("controllerutils tests", Ordered, func() {
+var _ = Describe("controllerutils tests", Ordered, Serial, func() {
 	const (
 		CustomSecretName       = "custom-secret"
 		CustomUsernameKey      = "usr"
 		CustomPasswordKey      = "pwd"
 		CustomAstarteName      = "my-astarte"
-		CustomAstarteNamespace = "default"
+		CustomAstarteNamespace = "astarte-controllerutils-tests"
 		CustomRabbitMQHost     = "custom-rabbitmq-host"
 		CustomRabbitMQPort     = 5673
 		CustomVerneMQHost      = "vernemq.example.com"
@@ -51,33 +53,31 @@ var _ = Describe("controllerutils tests", Ordered, func() {
 	var log logr.Logger
 
 	BeforeAll(func() {
-		log = log.WithValues("test", "controllerutils")
+		log = logr.Discard()
 		log.Info("Starting controllerutils tests")
 		if CustomAstarteNamespace != "default" {
-			ns := &v1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: CustomAstarteNamespace,
-				},
-			}
-
+			ns := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}}
 			Eventually(func() error {
-				return k8sClient.Create(context.Background(), ns)
+				err := k8sClient.Create(context.Background(), ns)
+				if apierrors.IsAlreadyExists(err) {
+					return nil
+				}
+				return err
 			}, "10s", "250ms").Should(Succeed())
 		}
 	})
 
 	AfterAll(func() {
 		if CustomAstarteNamespace != "default" {
-			ns := &v1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: CustomAstarteNamespace,
-				},
+			astartes := &v2alpha1.AstarteList{}
+			Expect(k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace})).To(Succeed())
+			for _, a := range astartes.Items {
+				_ = k8sClient.Delete(context.Background(), &a)
+				Eventually(func() error {
+					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &v2alpha1.Astarte{})
+				}, "10s", "250ms").ShouldNot(Succeed())
 			}
-			Expect(k8sClient.Delete(context.Background(), ns)).To(Succeed())
-
-			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteNamespace}, &v1.Namespace{})
-			}, "10s", "250ms").ShouldNot(Succeed())
+			// Do not delete the namespace here to avoid 'NamespaceTerminating' flakiness in subsequent specs
 		}
 	})
 
@@ -129,10 +129,40 @@ var _ = Describe("controllerutils tests", Ordered, func() {
 		for _, a := range astartes.Items {
 			Expect(k8sClient.Delete(context.Background(), &a)).To(Succeed())
 
+			// If finalizers block deletion in envtest, remove them and retry
+			nn := types.NamespacedName{Name: a.Name, Namespace: a.Namespace}
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &v2alpha1.Astarte{})
+				current := &v2alpha1.Astarte{}
+				if err := k8sClient.Get(context.Background(), nn, current); err != nil {
+					if errors.IsNotFound(err) {
+						return nil
+					}
+					return err
+				}
+				if len(current.Finalizers) == 0 {
+					return nil
+				}
+				current.Finalizers = nil
+				if err := k8sClient.Update(context.Background(), current); err != nil {
+					if errors.IsNotFound(err) {
+						return nil
+					}
+					return err
+				}
+				return nil
+			}, "10s", "250ms").Should(Succeed())
+
+			Eventually(func() error {
+				return k8sClient.Get(context.Background(), nn, &v2alpha1.Astarte{})
 			}, "10s", "250ms").ShouldNot(Succeed())
 		}
+		Eventually(func() int {
+			list := &v2alpha1.AstarteList{}
+			if err := k8sClient.List(context.Background(), list, &client.ListOptions{Namespace: CustomAstarteNamespace}); err != nil {
+				return -1
+			}
+			return len(list.Items)
+		}, "10s", "250ms").Should(Equal(0))
 	})
 
 	Describe("TestFunction", func() {

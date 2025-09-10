@@ -20,21 +20,56 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"time"
 
+	"github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.openly.dev/pointy"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var _ = Describe("Astarte Controller", func() {
+const CustomAstarteNamespace = "astarte-controller-test"
+
+var _ = Describe("Astarte Controller", Ordered, Serial, func() {
+
+	BeforeAll(func() {
+		if CustomAstarteNamespace != "default" {
+			ns := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}}
+			Eventually(func() error {
+				err := k8sClient.Create(context.Background(), ns)
+				if apierrors.IsAlreadyExists(err) {
+					return nil
+				}
+				return err
+			}, "10s", "250ms").Should(Succeed())
+		}
+	})
+
+	AfterAll(func() {
+		if CustomAstarteNamespace != "default" {
+			astartes := &apiv2alpha1.AstarteList{}
+			_ = k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace})
+			for _, a := range astartes.Items {
+				_ = k8sClient.Delete(context.Background(), &a)
+				Eventually(func() error {
+					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &v2alpha1.Astarte{})
+				}, "10s", "250ms").ShouldNot(Succeed())
+			}
+			_ = k8sClient.Delete(context.Background(), &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}})
+		}
+	})
+
 	Context("When reconciling a resource", func() {
 		const resourceName = "test-resource"
 		var controllerReconciler *AstarteReconciler
@@ -42,7 +77,7 @@ var _ = Describe("Astarte Controller", func() {
 
 		typeNamespacedName := types.NamespacedName{
 			Name:      resourceName,
-			Namespace: "default",
+			Namespace: CustomAstarteNamespace,
 		}
 		astarte := &apiv2alpha1.Astarte{}
 
@@ -61,7 +96,7 @@ var _ = Describe("Astarte Controller", func() {
 				resource := &apiv2alpha1.Astarte{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
-						Namespace: "default",
+						Namespace: CustomAstarteNamespace,
 					},
 					Spec: apiv2alpha1.AstarteSpec{
 						Version: "1.3.0",
@@ -126,10 +161,37 @@ var _ = Describe("Astarte Controller", func() {
 				By("deleting the created resource")
 				err = k8sClient.Delete(ctx, resource)
 				Expect(err).ToNot(HaveOccurred())
+
+				// If the reconciler added a finalizer, remove it to unblock deletion
+				Eventually(func() error {
+					current := &apiv2alpha1.Astarte{}
+					if getErr := k8sClient.Get(ctx, typeNamespacedName, current); getErr != nil {
+						if errors.IsNotFound(getErr) {
+							return nil // already gone
+						}
+						return getErr
+					}
+					if len(current.Finalizers) == 0 {
+						return nil
+					}
+					current.Finalizers = nil
+					if updErr := k8sClient.Update(ctx, current); updErr != nil {
+						if errors.IsNotFound(updErr) {
+							return nil
+						}
+						return updErr
+					}
+					return nil
+				}, "10s", "250ms").Should(Succeed())
+
 			} else if !errors.IsNotFound(err) {
 				// If error is something other than NotFound, it's unexpected
 				Expect(err).ToNot(HaveOccurred())
 			}
+			// Ensure the CR is gone
+			Eventually(func() error {
+				return k8sClient.Get(ctx, typeNamespacedName, &apiv2alpha1.Astarte{})
+			}, "10s", "250ms").ShouldNot(Succeed())
 		})
 
 		It("should successfully reconcile the resource", func() {
@@ -180,7 +242,7 @@ var _ = Describe("Astarte Controller", func() {
 			res, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      "non-existing",
-					Namespace: "default",
+					Namespace: CustomAstarteNamespace,
 				},
 			})
 			Expect(err).ToNot(HaveOccurred())
@@ -202,7 +264,7 @@ var _ = Describe("Astarte Controller", func() {
 			astarteInstance = &apiv2alpha1.Astarte{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:              "test-finalizer",
-					Namespace:         "default",
+					Namespace:         CustomAstarteNamespace,
 					Finalizers:        []string{astarteFinalizer},
 					DeletionTimestamp: &metav1.Time{Time: metav1.Now().Time},
 				},
@@ -270,14 +332,38 @@ var _ = Describe("Astarte Controller", func() {
 			resource := &apiv2alpha1.Astarte{}
 			err := k8sClient.Get(ctx, types.NamespacedName{
 				Name:      "test-finalizer",
-				Namespace: "default",
+				Namespace: CustomAstarteNamespace,
 			}, resource)
 
 			if err == nil {
 				Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
+				// Remove finalizers if present to unblock deletion in envtest
+				Eventually(func() error {
+					current := &apiv2alpha1.Astarte{}
+					if getErr := k8sClient.Get(ctx, types.NamespacedName{Name: "test-finalizer", Namespace: CustomAstarteNamespace}, current); getErr != nil {
+						if errors.IsNotFound(getErr) {
+							return nil
+						}
+						return getErr
+					}
+					if len(current.Finalizers) == 0 {
+						return nil
+					}
+					current.Finalizers = nil
+					if updErr := k8sClient.Update(ctx, current); updErr != nil {
+						if errors.IsNotFound(updErr) {
+							return nil
+						}
+						return updErr
+					}
+					return nil
+				}, "10s", "250ms").Should(Succeed())
 			} else if !errors.IsNotFound(err) {
 				Expect(err).ToNot(HaveOccurred())
 			}
+			Eventually(func() error {
+				return k8sClient.Get(ctx, types.NamespacedName{Name: "test-finalizer", Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
+			}, "10s", "250ms").ShouldNot(Succeed())
 		})
 
 		It("should handle finalization", func() {
@@ -285,7 +371,7 @@ var _ = Describe("Astarte Controller", func() {
 			result, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      "test-finalizer",
-					Namespace: "default",
+					Namespace: CustomAstarteNamespace,
 				},
 			})
 
@@ -305,7 +391,7 @@ var _ = Describe("Astarte Controller", func() {
 			astarteInstance = &apiv2alpha1.Astarte{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-add-finalizer",
-					Namespace: "default",
+					Namespace: CustomAstarteNamespace,
 				},
 				Spec: apiv2alpha1.AstarteSpec{
 					Version: "1.3.0",
@@ -368,14 +454,38 @@ var _ = Describe("Astarte Controller", func() {
 			resource := &apiv2alpha1.Astarte{}
 			err := k8sClient.Get(ctx, types.NamespacedName{
 				Name:      "test-add-finalizer",
-				Namespace: "default",
+				Namespace: CustomAstarteNamespace,
 			}, resource)
 
 			if err == nil {
 				Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
+				// Remove finalizers if present to unblock deletion in envtest
+				Eventually(func() error {
+					current := &apiv2alpha1.Astarte{}
+					if getErr := k8sClient.Get(ctx, types.NamespacedName{Name: "test-add-finalizer", Namespace: CustomAstarteNamespace}, current); getErr != nil {
+						if errors.IsNotFound(getErr) {
+							return nil
+						}
+						return getErr
+					}
+					if len(current.Finalizers) == 0 {
+						return nil
+					}
+					current.Finalizers = nil
+					if updErr := k8sClient.Update(ctx, current); updErr != nil {
+						if errors.IsNotFound(updErr) {
+							return nil
+						}
+						return updErr
+					}
+					return nil
+				}, "10s", "250ms").Should(Succeed())
 			} else if !errors.IsNotFound(err) {
 				Expect(err).ToNot(HaveOccurred())
 			}
+			Eventually(func() error {
+				return k8sClient.Get(ctx, types.NamespacedName{Name: "test-add-finalizer", Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
+			}, "10s", "250ms").ShouldNot(Succeed())
 		})
 
 		It("should add a finalizer to an Astarte resource", func() {
@@ -387,7 +497,7 @@ var _ = Describe("Astarte Controller", func() {
 			updatedResource := &apiv2alpha1.Astarte{}
 			err = k8sClient.Get(ctx, types.NamespacedName{
 				Name:      "test-add-finalizer",
-				Namespace: "default",
+				Namespace: CustomAstarteNamespace,
 			}, updatedResource)
 
 			Expect(err).ToNot(HaveOccurred())
@@ -401,11 +511,29 @@ var _ = Describe("Standalone Tests", func() {
 		It("should handle non-existent resources", func() {
 			ctx := context.Background()
 
+			// Ensure the test namespace exists and isn't terminating
+			Eventually(func() error {
+				ns := &v1.Namespace{}
+				if err := k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteNamespace}, ns); err != nil {
+					// Try to create if it's missing
+					cErr := k8sClient.Create(ctx, &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}})
+					if apierrors.IsAlreadyExists(cErr) {
+						return nil
+					}
+					return cErr
+				}
+				// If it's terminating, return an error to retry
+				if ns.Status.Phase == v1.NamespaceTerminating {
+					return fmt.Errorf("namespace terminating")
+				}
+				return nil
+			}, "20s", "250ms").Should(Succeed())
+
 			// Create a test resource
 			astarte := &apiv2alpha1.Astarte{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-direct-reconcile",
-					Namespace: "default",
+					Namespace: CustomAstarteNamespace,
 				},
 				Spec: apiv2alpha1.AstarteSpec{
 					Version: "1.3.0",
@@ -468,7 +596,7 @@ var _ = Describe("Standalone Tests", func() {
 			result, err := reconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      "non-existent",
-					Namespace: "default",
+					Namespace: CustomAstarteNamespace,
 				},
 			})
 
@@ -477,6 +605,9 @@ var _ = Describe("Standalone Tests", func() {
 
 			// Clean up
 			Expect(k8sClient.Delete(ctx, astarte)).To(Succeed())
+			Eventually(func() error {
+				return k8sClient.Get(ctx, types.NamespacedName{Name: "test-direct-reconcile", Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
+			}, "10s", "250ms").ShouldNot(Succeed())
 		})
 	})
 

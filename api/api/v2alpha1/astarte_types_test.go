@@ -27,15 +27,16 @@ import (
 	. "github.com/onsi/gomega"
 	"go.openly.dev/pointy"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var _ = Describe("Astarte types testing", Ordered, func() {
+var _ = Describe("Astarte types testing", Ordered, Serial, func() {
 	const (
 		CustomAstarteName      = "my-astarte"
-		CustomAstarteNamespace = "default"
+		CustomAstarteNamespace = "astarte-types-test"
 		CustomRabbitMQHost     = "custom-rabbitmq-host"
 		CustomRabbitMQPort     = 5673
 		CustomVerneMQHost      = "vernemq.example.com"
@@ -47,7 +48,7 @@ var _ = Describe("Astarte types testing", Ordered, func() {
 	var log logr.Logger
 
 	BeforeAll(func() {
-		log = log.WithValues("test", "astarte_types.go")
+		log = logr.Discard()
 		log.Info("Starting astarte_types tests")
 		if CustomAstarteNamespace != "default" {
 			ns := &v1.Namespace{
@@ -57,23 +58,29 @@ var _ = Describe("Astarte types testing", Ordered, func() {
 			}
 
 			Eventually(func() error {
-				return k8sClient.Create(context.Background(), ns)
+				err := k8sClient.Create(context.Background(), ns)
+				if apierrors.IsAlreadyExists(err) {
+					return nil
+				}
+				return err
 			}, "10s", "250ms").Should(Succeed())
 		}
 	})
 
 	AfterAll(func() {
 		if CustomAstarteNamespace != "default" {
+			// Delete any leftover Astarte CRs in the namespace
 			astartes := &AstarteList{}
 			Expect(k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace})).To(Succeed())
-
 			for _, a := range astartes.Items {
 				Expect(k8sClient.Delete(context.Background(), &a)).To(Succeed())
+				Eventually(func() error {
+					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &Astarte{})
+				}, "10s", "250ms").ShouldNot(Succeed())
 			}
 
-			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteNamespace}, &v1.Namespace{})
-			}, "10s", "250ms").ShouldNot(Succeed())
+			// Attempt namespace deletion but don't block on it in envtest
+			_ = k8sClient.Delete(context.Background(), &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}})
 		}
 	})
 
@@ -85,7 +92,9 @@ var _ = Describe("Astarte types testing", Ordered, func() {
 				Namespace: CustomAstarteNamespace,
 			},
 			Spec: AstarteSpec{
-				Version: AstarteVersion,
+				// Use a unique AstarteInstanceID to satisfy webhook uniqueness checks across the cluster
+				AstarteInstanceID: "astarteinstancetypes",
+				Version:           AstarteVersion,
 				API: AstarteAPISpec{
 					Host: "api.example.com",
 				},
@@ -132,6 +141,15 @@ var _ = Describe("Astarte types testing", Ordered, func() {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &Astarte{})
 			}, "10s", "250ms").ShouldNot(Succeed())
 		}
+
+		// Ensure all Astarte CRs are gone in the test namespace
+		Eventually(func() int {
+			list := &AstarteList{}
+			if err := k8sClient.List(context.Background(), list, &client.ListOptions{Namespace: CustomAstarteNamespace}); err != nil {
+				return -1
+			}
+			return len(list.Items)
+		}, "10s", "250ms").Should(Equal(0))
 
 	})
 
