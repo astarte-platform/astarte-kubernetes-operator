@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Support the NetworkTopologyStrategy replication strategy for Cassandra.
 - Add kubernetes 1.30.x, 1.31.x, 1.32.x and 1.33.x to the test matrix of the Helm chart installation tests.
 - Added env vars required by Astarte v1.3+.
-- Unit tests for `astarte_webhook.go`.
+- Unit and integration tests.
 
 ### Changed
 - Forward port changes from release-24.5
