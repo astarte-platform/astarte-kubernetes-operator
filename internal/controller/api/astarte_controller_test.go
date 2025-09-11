@@ -66,7 +66,7 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &v2alpha1.Astarte{})
 				}, "10s", "250ms").ShouldNot(Succeed())
 			}
-			_ = k8sClient.Delete(context.Background(), &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}})
+			// Do not delete the namespace here to avoid 'NamespaceTerminating' flakiness in subsequent specs
 		}
 	})
 
