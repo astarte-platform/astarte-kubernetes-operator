@@ -56,3 +56,26 @@ kubectl apply -f adi-backup.yaml
 At the end of this step, your cluster is restored. Please, notice that the external IP of the
 ingress services might have changed. Take action to ensure that the changes of the IP are reflected
 anywhere appropriate in your deployment.
+
+## Set up an instance id
+
+`AstarteInstanceID` is the unique identifier associated with an Astarte instance.  
+This parameter is optional and defaults to an empty string (`""`) for backward
+compatibility with existing installations.  
+
+When set, `AstarteInstanceID` allows multiple Astarte instances to share the same
+database infrastructure by isolating their keyspaces. The identifier is used as a
+prefix in Cassandra keyspace names.
+The Operator validates AstarteInstanceID against the following regular expression:
+`^[a-z]?[a-z0-9]{0,47}$` (must start with a lowercase letter, followed by up to 
+47 lowercase letters or digits). If the value does not match this pattern, the 
+validation webhook will reject the resource and Astarte will not start.
+
+To enable this feature in a Kubernetes environment, the value must be provided in
+the Astarte resource specification (`Spec.AstarteInstanceID`). At runtime, the
+value is propagated through the environment variables:
+
+- `ASTARTE_INSTANCE_ID`
+- `DOCKER_VERNEMQ_ASTARTE_VMQ_PLUGIN__ASTARTE_INSTANCE_ID`
+
+Note that once an `AstarteInstanceID` is configured, it cannot be changed.
