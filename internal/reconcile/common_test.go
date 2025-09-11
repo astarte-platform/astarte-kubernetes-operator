@@ -23,7 +23,6 @@ import (
 	"context"
 
 	"github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
-	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.openly.dev/pointy"
@@ -64,12 +63,12 @@ var _ = Describe("Common reconcile testing", Ordered, func() {
 
 	AfterAll(func() {
 		if CustomAstarteNamespace != "default" {
-			astartes := &apiv2alpha1.AstarteList{}
+			astartes := &v2alpha1.AstarteList{}
 			Expect(k8sClient.List(context.Background(), astartes, client.InNamespace(CustomAstarteNamespace))).To(Succeed())
 			for _, a := range astartes.Items {
 				_ = k8sClient.Delete(context.Background(), &a)
 				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &apiv2alpha1.Astarte{})
+					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &v2alpha1.Astarte{})
 				}, "10s", "250ms").ShouldNot(Succeed())
 			}
 			_ = k8sClient.Delete(context.Background(), &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}})
