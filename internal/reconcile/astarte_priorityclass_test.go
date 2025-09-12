@@ -52,6 +52,22 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 	var cr *apiv2alpha1.Astarte
 
 	BeforeAll(func() {
+		// Since priorityclasses are cluster-wide, we need to ensure no other tests left them behind
+		// Cleanup of priorityclasses that might remain from previous test runs
+		for _, name := range []string{AstarteHighPriorityName, AstarteMidPriorityName, AstarteLowPriorityName} {
+			pc := &schedulingv1.PriorityClass{}
+			err := k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)
+			if err == nil {
+				_ = k8sClient.Delete(context.Background(), pc)
+			}
+
+			// Ensure they are gone
+			Eventually(func() bool {
+				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)
+				return apierrors.IsNotFound(err)
+			}, "10s", "250ms").Should(BeTrue())
+		}
+
 		if CustomAstarteNamespace != "default" {
 			ns := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}}
 			Eventually(func() error {
@@ -117,6 +133,12 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 			if err == nil {
 				_ = k8sClient.Delete(context.Background(), pc)
 			}
+
+			// Ensure they are gone
+			Eventually(func() bool {
+				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)
+				return apierrors.IsNotFound(err)
+			}, "10s", "250ms").Should(BeTrue())
 		}
 
 		Eventually(func() bool {
@@ -142,7 +164,9 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 			// Objects should not exist
 			for _, name := range []string{AstarteHighPriorityName, AstarteMidPriorityName, AstarteLowPriorityName} {
 				pc := &schedulingv1.PriorityClass{}
-				Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)).ToNot(Succeed())
+				Eventually(func() error {
+					return k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)
+				}, "10s", "250ms").ShouldNot(Succeed())
 			}
 
 			// Explicitly disable
@@ -154,7 +178,9 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 			Expect(EnsureAstartePriorityClasses(cr, k8sClient, scheme.Scheme)).To(Succeed())
 			for _, name := range []string{AstarteHighPriorityName, AstarteMidPriorityName, AstarteLowPriorityName} {
 				pc := &schedulingv1.PriorityClass{}
-				Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)).ToNot(Succeed())
+				Eventually(func() error {
+					return k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)
+				}, "10s", "250ms").ShouldNot(Succeed())
 			}
 		})
 
