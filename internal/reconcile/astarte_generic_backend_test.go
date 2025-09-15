@@ -1,0 +1,470 @@
+/*
+This file is part of Astarte.
+
+Copyright 2020-25 SECO Mind Srl.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+//nolint:goconst,dupl
+package reconcile
+
+import (
+	"context"
+
+	"go.openly.dev/pointy"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
+	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/kubernetes/scheme"
+
+	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
+)
+
+var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
+	const (
+		CustomAstarteName      = "test-astarte-backend"
+		CustomAstarteNamespace = "astarte-generic-backend-test"
+		CustomRabbitMQHost     = "rabbitmq.example.com"
+		CustomRabbitMQPort     = 5672
+		CustomVerneMQHost      = "vernemq.example.com"
+		CustomVerneMQPort      = 8883
+		AstarteVersion         = "1.3.0"
+	)
+
+	var cr *apiv2alpha1.Astarte
+
+	BeforeAll(func() {
+		if CustomAstarteNamespace != "default" {
+			ns := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}}
+			Eventually(func() error {
+				err := k8sClient.Create(context.Background(), ns)
+				if apierrors.IsAlreadyExists(err) {
+					return nil
+				}
+				return err
+			}, "10s", "250ms").Should(Succeed())
+		}
+	})
+
+	AfterAll(func() {
+		if CustomAstarteNamespace != "default" {
+			astartes := &apiv2alpha1.AstarteList{}
+			Expect(k8sClient.List(context.Background(), astartes, client.InNamespace(CustomAstarteNamespace))).To(Succeed())
+			for _, a := range astartes.Items {
+				_ = k8sClient.Delete(context.Background(), &a)
+				Eventually(func() error {
+					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &apiv2alpha1.Astarte{})
+				}, "10s", "250ms").ShouldNot(Succeed())
+			}
+		}
+	})
+
+	BeforeEach(func() {
+		// Create and initialize a basic Astarte CR
+		cr = &apiv2alpha1.Astarte{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      CustomAstarteName,
+				Namespace: CustomAstarteNamespace,
+			},
+			Spec: apiv2alpha1.AstarteSpec{
+				Version: AstarteVersion,
+				RabbitMQ: apiv2alpha1.AstarteRabbitMQSpec{
+					Connection: &apiv2alpha1.AstarteRabbitMQConnectionSpec{
+						HostAndPort: apiv2alpha1.HostAndPort{
+							Host: CustomRabbitMQHost,
+							Port: pointy.Int32(CustomRabbitMQPort),
+						},
+					},
+				},
+				VerneMQ: apiv2alpha1.AstarteVerneMQSpec{
+					HostAndPort: apiv2alpha1.HostAndPort{
+						Host: CustomVerneMQHost,
+						Port: pointy.Int32(CustomVerneMQPort),
+					},
+				},
+				Cassandra: apiv2alpha1.AstarteCassandraSpec{
+					Connection: &apiv2alpha1.AstarteCassandraConnectionSpec{
+						Nodes: []apiv2alpha1.HostAndPort{
+							{
+								Host: "cassandra.example.com",
+								Port: pointy.Int32(9042),
+							},
+						},
+					},
+				},
+			},
+		}
+
+		Expect(k8sClient.Create(context.Background(), cr)).To(Succeed())
+		Eventually(func() error {
+			return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+		}, "10s", "250ms").Should(Succeed())
+	})
+
+	AfterEach(func() {
+		astartes := &apiv2alpha1.AstarteList{}
+		Expect(k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace})).To(Succeed())
+		for _, a := range astartes.Items {
+			Expect(k8sClient.Delete(context.Background(), &a)).To(Succeed())
+
+			Eventually(func() error {
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &apiv2alpha1.Astarte{})
+			}, "10s", "250ms").ShouldNot(Succeed())
+		}
+
+		deployments := &appsv1.DeploymentList{}
+		Expect(k8sClient.List(context.Background(), deployments, &client.ListOptions{Namespace: CustomAstarteNamespace})).To(Succeed())
+		for _, d := range deployments.Items {
+			Expect(k8sClient.Delete(context.Background(), &d)).To(Succeed())
+
+			Eventually(func() error {
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: d.Name, Namespace: d.Namespace}, &appsv1.Deployment{})
+			}, "10s", "250ms").ShouldNot(Succeed())
+		}
+
+		Eventually(func() int {
+			list := &apiv2alpha1.AstarteList{}
+			if err := k8sClient.List(context.Background(), list, &client.ListOptions{Namespace: CustomAstarteNamespace}); err != nil {
+				return -1
+			}
+			return len(list.Items)
+		}, "10s", "250ms").Should(Equal(0))
+	})
+
+	Describe("Test EnsureAstarteGenericBackend", func() {
+		Context("with AppEngine API backend", func() {
+			It("should create deployment and service for enabled AppEngine API", func() {
+				backend := apiv2alpha1.AstarteGenericClusteredResource{
+					Deploy:   pointy.Bool(true),
+					Replicas: pointy.Int32(2),
+				}
+
+				component := apiv2alpha1.AppEngineAPI
+				Expect(EnsureAstarteGenericBackend(cr, backend, component, k8sClient, scheme.Scheme)).To(Succeed())
+
+				// Verify deployment was created
+				deployment := &appsv1.Deployment{}
+				deploymentName := cr.Name + "-" + component.DashedString()
+				Eventually(func() error {
+					return k8sClient.Get(context.Background(), types.NamespacedName{
+						Name:      deploymentName,
+						Namespace: CustomAstarteNamespace,
+					}, deployment)
+				}, "10s", "250ms").Should(Succeed())
+
+				Expect(*deployment.Spec.Replicas).To(Equal(int32(2)))
+				Expect(deployment.Labels["astarte-component"]).To(Equal(component.DashedString()))
+				Expect(deployment.Labels["app"]).To(Equal(deploymentName))
+				Expect(deployment.Labels["component"]).To(Equal("astarte"))
+
+				// Verify pod spec details
+				container := deployment.Spec.Template.Spec.Containers[0]
+				Expect(container.Ports).ToNot(BeEmpty())
+				Expect(container.Ports[0].Name).To(Equal("http"))
+				Expect(container.Ports[0].ContainerPort).To(Equal(astarteServicesPort))
+				Expect(deployment.Spec.Template.Spec.ServiceAccountName).To(Equal(deploymentName))
+				// Default probes on /health
+				Expect(container.LivenessProbe).ToNot(BeNil())
+				Expect(container.ReadinessProbe).ToNot(BeNil())
+				Expect(container.LivenessProbe.HTTPGet.Path).To(Equal("/health"))
+				Expect(container.ReadinessProbe.HTTPGet.Path).To(Equal("/health"))
+
+				// Verify service was created
+				service := &v1.Service{}
+				serviceName := cr.Name + "-" + component.ServiceName()
+				Eventually(func() error {
+					return k8sClient.Get(context.Background(), types.NamespacedName{
+						Name:      serviceName,
+						Namespace: CustomAstarteNamespace,
+					}, service)
+				}, "10s", "250ms").Should(Succeed())
+
+				Expect(service.Spec.Selector["app"]).To(Equal(deploymentName))
+				// Verify service spec details
+				Expect(service.Spec.Type).To(Equal(v1.ServiceTypeClusterIP))
+				Expect(service.Spec.Ports).To(HaveLen(1))
+				Expect(service.Spec.Ports[0].Name).To(Equal("http"))
+				Expect(service.Spec.Ports[0].Port).To(Equal(astarteServicesPort))
+				Expect(service.Spec.Ports[0].TargetPort).To(Equal(intstr.FromString("http")))
+			})
+
+			It("should skip deployment when deploy is false", func() {
+				backend := apiv2alpha1.AstarteGenericClusteredResource{
+					Deploy: pointy.Bool(false),
+				}
+
+				component := apiv2alpha1.AppEngineAPI
+				Expect(EnsureAstarteGenericBackend(cr, backend, component, k8sClient, scheme.Scheme)).To(Succeed())
+
+				// Verify deployment was not created
+				deployment := &appsv1.Deployment{}
+				deploymentName := cr.Name + "-" + component.DashedString()
+				Consistently(func() error {
+					return k8sClient.Get(context.Background(), types.NamespacedName{
+						Name:      deploymentName,
+						Namespace: CustomAstarteNamespace,
+					}, deployment)
+				}, "2s", "250ms").ShouldNot(Succeed())
+			})
+
+			It("should delete existing deployment when deploy is changed to false", func() {
+				backend := apiv2alpha1.AstarteGenericClusteredResource{
+					Deploy:   pointy.Bool(true),
+					Replicas: pointy.Int32(1),
+				}
+
+				component := apiv2alpha1.AppEngineAPI
+				// First create the deployment
+				Expect(EnsureAstarteGenericBackend(cr, backend, component, k8sClient, scheme.Scheme)).To(Succeed())
+
+				deployment := &appsv1.Deployment{}
+				deploymentName := cr.Name + "-" + component.DashedString()
+				Eventually(func() error {
+					return k8sClient.Get(context.Background(), types.NamespacedName{
+						Name:      deploymentName,
+						Namespace: CustomAstarteNamespace,
+					}, deployment)
+				}, "10s", "250ms").Should(Succeed())
+
+				// Now disable deployment
+				backend.Deploy = pointy.Bool(false)
+				Expect(EnsureAstarteGenericBackend(cr, backend, component, k8sClient, scheme.Scheme)).To(Succeed())
+
+				// Verify deployment was deleted
+				Eventually(func() error {
+					return k8sClient.Get(context.Background(), types.NamespacedName{
+						Name:      deploymentName,
+						Namespace: CustomAstarteNamespace,
+					}, deployment)
+				}, "10s", "250ms").ShouldNot(Succeed())
+			})
+		})
+
+		Context("with TriggerEngine backend", func() {
+			It("should create deployment with proper environment variables", func() {
+				// Shall we test all variables?
+			})
+		})
+
+		Context("with DataUpdaterPlant backend", func() {
+			It("should create deployment with data queue configuration", func() {
+				backend := apiv2alpha1.AstarteGenericClusteredResource{
+					Deploy:   pointy.Bool(true),
+					Replicas: pointy.Int32(3),
+				}
+
+				cr.Spec.Components.DataUpdaterPlant.PrefetchCount = pointy.Int(500)
+				cr.Spec.RabbitMQ.DataQueuesPrefix = "custom_prefix"
+				cr.Spec.VerneMQ.DeviceHeartbeatSeconds = 60
+
+				component := apiv2alpha1.DataUpdaterPlant
+				Expect(EnsureAstarteGenericBackend(cr, backend, component, k8sClient, scheme.Scheme)).To(Succeed())
+
+				deployment := &appsv1.Deployment{}
+				deploymentName := cr.Name + "-" + component.DashedString()
+				Eventually(func() error {
+					return k8sClient.Get(context.Background(), types.NamespacedName{
+						Name:      deploymentName,
+						Namespace: CustomAstarteNamespace,
+					}, deployment)
+				}, "10s", "250ms").Should(Succeed())
+			})
+		})
+
+		Context("with Dashboard backend", func() {
+			It("should create deployment for Dashboard component", func() {
+				backend := apiv2alpha1.AstarteGenericClusteredResource{
+					Deploy:   pointy.Bool(true),
+					Replicas: pointy.Int32(1),
+				}
+
+				component := apiv2alpha1.Dashboard
+				Expect(EnsureAstarteGenericBackend(cr, backend, component, k8sClient, scheme.Scheme)).To(Succeed())
+
+				deployment := &appsv1.Deployment{}
+				deploymentName := cr.Name + "-" + component.DashedString()
+				Eventually(func() error {
+					return k8sClient.Get(context.Background(), types.NamespacedName{
+						Name:      deploymentName,
+						Namespace: CustomAstarteNamespace,
+					}, deployment)
+				}, "10s", "250ms").Should(Succeed())
+
+				Expect(deployment.Labels["astarte-component"]).To(Equal(component.DashedString()))
+			})
+		})
+
+		Context("with custom probe", func() {
+			It("should create deployment with custom probe", func() {
+				backend := apiv2alpha1.AstarteGenericClusteredResource{
+					Deploy:   pointy.Bool(true),
+					Replicas: pointy.Int32(1),
+				}
+
+				customProbe := &v1.Probe{
+					ProbeHandler: v1.ProbeHandler{
+						HTTPGet: &v1.HTTPGetAction{
+							Path: "/custom-health",
+							Port: intstr.FromString("http"),
+						},
+					},
+					InitialDelaySeconds: 30,
+					TimeoutSeconds:      10,
+					PeriodSeconds:       45,
+					FailureThreshold:    3,
+				}
+
+				component := apiv2alpha1.AppEngineAPI
+				Expect(EnsureAstarteGenericBackendWithCustomProbe(cr, backend, component, k8sClient, scheme.Scheme, customProbe)).To(Succeed())
+
+				deployment := &appsv1.Deployment{}
+				deploymentName := cr.Name + "-" + component.DashedString()
+				Eventually(func() error {
+					return k8sClient.Get(context.Background(), types.NamespacedName{
+						Name:      deploymentName,
+						Namespace: CustomAstarteNamespace,
+					}, deployment)
+				}, "10s", "250ms").Should(Succeed())
+
+				container := deployment.Spec.Template.Spec.Containers[0]
+				Expect(container.LivenessProbe).ToNot(BeNil())
+				Expect(container.ReadinessProbe).ToNot(BeNil())
+				Expect(container.LivenessProbe.HTTPGet.Path).To(Equal("/custom-health"))
+				Expect(container.LivenessProbe.InitialDelaySeconds).To(Equal(int32(30)))
+				Expect(container.ReadinessProbe.HTTPGet.Path).To(Equal("/custom-health"))
+				Expect(container.ReadinessProbe.InitialDelaySeconds).To(Equal(int32(30)))
+			})
+		})
+
+		Context("with resource requirements and additional configuration", func() {
+			It("should create deployment with custom resources and environment variables", func() {
+				backend := apiv2alpha1.AstarteGenericClusteredResource{
+					Deploy:   pointy.Bool(true),
+					Replicas: pointy.Int32(1),
+					Resources: &v1.ResourceRequirements{
+						Requests: v1.ResourceList{
+							v1.ResourceCPU:    resource.MustParse("100m"),
+							v1.ResourceMemory: resource.MustParse("128Mi"),
+						},
+						Limits: v1.ResourceList{
+							v1.ResourceCPU:    resource.MustParse("500m"),
+							v1.ResourceMemory: resource.MustParse("512Mi"),
+						},
+					},
+					AdditionalEnv: []v1.EnvVar{
+						{Name: "CUSTOM_ENV_VAR", Value: "custom_value"},
+						{Name: "ANOTHER_VAR", Value: "another_value"},
+					},
+					PodLabels: map[string]string{
+						"custom-label": "custom-value",
+						"env":          "test",
+					},
+				}
+
+				component := apiv2alpha1.AppEngineAPI
+				Expect(EnsureAstarteGenericBackend(cr, backend, component, k8sClient, scheme.Scheme)).To(Succeed())
+
+				deployment := &appsv1.Deployment{}
+				deploymentName := cr.Name + "-" + component.DashedString()
+				Eventually(func() error {
+					return k8sClient.Get(context.Background(), types.NamespacedName{
+						Name:      deploymentName,
+						Namespace: CustomAstarteNamespace,
+					}, deployment)
+				}, "10s", "250ms").Should(Succeed())
+
+				container := deployment.Spec.Template.Spec.Containers[0]
+
+				// Check resource requirements
+				Expect(container.Resources.Requests[v1.ResourceCPU]).To(Equal(resource.MustParse("100m")))
+				Expect(container.Resources.Requests[v1.ResourceMemory]).To(Equal(resource.MustParse("128Mi")))
+				Expect(container.Resources.Limits[v1.ResourceCPU]).To(Equal(resource.MustParse("500m")))
+				Expect(container.Resources.Limits[v1.ResourceMemory]).To(Equal(resource.MustParse("512Mi")))
+
+				// Check pod labels
+				Expect(deployment.Spec.Template.ObjectMeta.Labels["custom-label"]).To(Equal("custom-value"))
+				Expect(deployment.Spec.Template.ObjectMeta.Labels["env"]).To(Equal("test"))
+			})
+		})
+	})
+
+	Describe("Test getAstarteGenericBackendEnvVars", func() {
+		Context("for different components", func() {
+			It("should return correct environment variables for ...", func() {
+				// Shall we test all variables?
+			})
+		})
+	})
+
+	Describe("Test getAstarteDataUpdaterPlantQueuesEnvVars", func() {
+		// Shall we test all variables?
+	})
+
+	Describe("Test getAstarteBackendProbe", func() {
+		It("should return custom probe when provided", func() {
+			customProbe := &v1.Probe{
+				ProbeHandler: v1.ProbeHandler{
+					HTTPGet: &v1.HTTPGetAction{
+						Path: "/custom",
+						Port: intstr.FromString("http"),
+					},
+				},
+				InitialDelaySeconds: 20,
+			}
+
+			result := getAstarteBackendProbe(apiv2alpha1.AppEngineAPI, customProbe)
+			Expect(result).To(Equal(customProbe))
+		})
+
+		It("should return housekeeping probe with longer threshold", func() {
+			result := getAstarteBackendProbe(apiv2alpha1.Housekeeping, nil)
+
+			Expect(result.HTTPGet.Path).To(Equal("/health"))
+			Expect(result.FailureThreshold).To(Equal(int32(15)))
+			Expect(result.InitialDelaySeconds).To(Equal(int32(10)))
+		})
+
+		It("should return generic probe for other components", func() {
+			result := getAstarteBackendProbe(apiv2alpha1.AppEngineAPI, nil)
+
+			Expect(result.HTTPGet.Path).To(Equal("/health"))
+			Expect(result.FailureThreshold).To(Equal(int32(5)))
+			Expect(result.InitialDelaySeconds).To(Equal(int32(10)))
+		})
+	})
+
+	Describe("Test error handling", func() {
+		It("should handle invalid namespace gracefully", func() {
+			brokenCR := cr.DeepCopy()
+			brokenCR.Namespace = "non-existing-namespace"
+
+			backend := apiv2alpha1.AstarteGenericClusteredResource{
+				Deploy:   pointy.Bool(true),
+				Replicas: pointy.Int32(1),
+			}
+
+			err := EnsureAstarteGenericBackend(brokenCR, backend, apiv2alpha1.AppEngineAPI, k8sClient, scheme.Scheme)
+			Expect(err).To(HaveOccurred())
+		})
+	})
+})
