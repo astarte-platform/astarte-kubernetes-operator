@@ -208,9 +208,11 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: secretName, Namespace: CustomAstarteNamespace}, &v1.Secret{})
 			}, "10s", "250ms").Should(Succeed())
 
-			errs := cr.validateSSLListener()
-			Expect(errs).ToNot(BeNil())
-			Expect(errs).To(BeEmpty())
+			// Wait for the validation to pass
+			Eventually(func() bool {
+				errs := cr.validateSSLListener()
+				return errs != nil && len(errs) == 0
+			}, "10s", "250ms").Should(BeTrue())
 
 			// Cleanup the secret
 			Expect(k8sClient.Delete(context.Background(), secret)).To(Succeed())
@@ -1212,10 +1214,11 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr2.Name = "second-astarte-" + cr.Name
 			cr2.Spec.AstarteInstanceID = instanceID
 
-			err := cr2.validateCreateAstarteInstanceID()
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
-			Expect(err.Field).To(Equal("spec.astarteInstanceID"))
-			Expect(err.Type).To(Equal(field.ErrorTypeInvalid))
+			// Wait for the validation to detect the conflict (gives time for webhook client cache to update)
+			Eventually(func() bool {
+				err := cr2.validateCreateAstarteInstanceID()
+				return err != nil && err.Field == "spec.astarteInstanceID" && err.Type == field.ErrorTypeInvalid
+			}, "10s", "250ms").Should(BeTrue())
 
 			// Cleanup the first instance
 			Expect(k8sClient.Delete(context.Background(), cr1)).To(Succeed())
