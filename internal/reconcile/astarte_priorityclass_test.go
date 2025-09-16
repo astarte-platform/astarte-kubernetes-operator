@@ -26,16 +26,16 @@ import (
 	"context"
 
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
+	builder "github.com/astarte-platform/astarte-kubernetes-operator/test/builder"
+	"github.com/astarte-platform/astarte-kubernetes-operator/test/integrationutils"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.openly.dev/pointy"
 	v1 "k8s.io/api/core/v1"
 	schedulingv1 "k8s.io/api/scheduling/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func() {
@@ -50,105 +50,24 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 	)
 
 	var cr *apiv2alpha1.Astarte
+	var b *builder.TestAstarteBuilder
 
 	BeforeAll(func() {
-		// Since priorityclasses are cluster-wide, we need to ensure no other tests left them behind
-		// Cleanup of priorityclasses that might remain from previous test runs
-		for _, name := range []string{AstarteHighPriorityName, AstarteMidPriorityName, AstarteLowPriorityName} {
-			pc := &schedulingv1.PriorityClass{}
-			err := k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)
-			if err == nil {
-				_ = k8sClient.Delete(context.Background(), pc)
-			}
-
-			// Ensure they are gone
-			Eventually(func() bool {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)
-				return apierrors.IsNotFound(err)
-			}, Timeout, Interval).Should(BeTrue())
-		}
-
-		if CustomAstarteNamespace != "default" {
-			ns := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}}
-			Eventually(func() error {
-				err := k8sClient.Create(context.Background(), ns)
-				if apierrors.IsAlreadyExists(err) {
-					return nil
-				}
-				return err
-			}, Timeout, Interval).Should(Succeed())
-		}
+		integrationutils.CreateNamespace(k8sClient, CustomAstarteNamespace)
 	})
 
 	AfterAll(func() {
-		if CustomAstarteNamespace != "default" {
-			astartes := &apiv2alpha1.AstarteList{}
-			Expect(k8sClient.List(context.Background(), astartes, client.InNamespace(CustomAstarteNamespace))).To(Succeed())
-			for _, a := range astartes.Items {
-				_ = k8sClient.Delete(context.Background(), &a)
-				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &apiv2alpha1.Astarte{})
-				}, Timeout, Interval).ShouldNot(Succeed())
-			}
-			// Do not delete the namespace here to avoid 'NamespaceTerminating' flakiness in subsequent specs
-			//_ = k8sClient.Delete(context.Background(), &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}})
-		}
+		integrationutils.TeardownNamespace(k8sClient, CustomAstarteNamespace)
 	})
 
 	BeforeEach(func() {
-		cr = &apiv2alpha1.Astarte{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      CustomAstarteName,
-				Namespace: CustomAstarteNamespace,
-			},
-			Spec: apiv2alpha1.AstarteSpec{
-				Version:    AstarteVersion,
-				RabbitMQ:   apiv2alpha1.AstarteRabbitMQSpec{Connection: &apiv2alpha1.AstarteRabbitMQConnectionSpec{HostAndPort: apiv2alpha1.HostAndPort{Host: CustomRabbitMQHost, Port: pointy.Int32(CustomRabbitMQPort)}}},
-				VerneMQ:    apiv2alpha1.AstarteVerneMQSpec{HostAndPort: apiv2alpha1.HostAndPort{Host: CustomVerneMQHost, Port: pointy.Int32(CustomVerneMQPort)}},
-				Cassandra:  apiv2alpha1.AstarteCassandraSpec{Connection: &apiv2alpha1.AstarteCassandraConnectionSpec{Nodes: []apiv2alpha1.HostAndPort{{Host: "cassandra.example.com", Port: pointy.Int32(9042)}}}},
-				Components: apiv2alpha1.AstarteComponentsSpec{},
-			},
-		}
-
-		Expect(k8sClient.Create(context.Background(), cr)).To(Succeed())
-		Eventually(func() error {
-			return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-		}, Timeout, Interval).Should(Succeed())
+		b = builder.NewTestAstarteBuilder(CustomAstarteName, CustomAstarteNamespace)
+		cr = b.Build()
+		integrationutils.DeployAstarte(k8sClient, CustomAstarteName, CustomAstarteNamespace, cr)
 	})
 
 	AfterEach(func() {
-		astartes := &apiv2alpha1.AstarteList{}
-		Expect(k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace})).To(Succeed())
-		for _, a := range astartes.Items {
-			Expect(k8sClient.Delete(context.Background(), &a)).To(Succeed())
-			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &apiv2alpha1.Astarte{})
-			}, Timeout, Interval).ShouldNot(Succeed())
-		}
-
-		// Cleanup of priorityclasses that might remain from tests
-		for _, name := range []string{AstarteHighPriorityName, AstarteMidPriorityName, AstarteLowPriorityName} {
-			pc := &schedulingv1.PriorityClass{}
-			err := k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)
-			if err == nil {
-				_ = k8sClient.Delete(context.Background(), pc)
-			}
-
-			// Ensure they are gone
-			Eventually(func() bool {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)
-				return apierrors.IsNotFound(err)
-			}, Timeout, Interval).Should(BeTrue())
-		}
-
-		Eventually(func() bool {
-			// Ensure no CRs left
-			list := &apiv2alpha1.AstarteList{}
-			if err := k8sClient.List(context.Background(), list, &client.ListOptions{Namespace: CustomAstarteNamespace}); err != nil {
-				return false
-			}
-			return len(list.Items) == 0
-		}, Timeout, Interval).Should(BeTrue())
+		integrationutils.TeardownResources(context.Background(), k8sClient, CustomAstarteNamespace)
 	})
 
 	Describe("EnsureAstartePriorityClasses", func() {

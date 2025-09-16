@@ -25,6 +25,7 @@ import (
 	"time"
 
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/test/integrationutils"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
@@ -34,7 +35,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -45,27 +45,12 @@ const (
 var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 
 	BeforeAll(func() {
-		if CustomAstarteNamespace != "default" {
-			ns := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}}
-			Eventually(func() error {
-				err := k8sClient.Create(context.Background(), ns)
-				if apierrors.IsAlreadyExists(err) {
-					return nil
-				}
-				return err
-			}, Timeout, Interval).Should(Succeed())
-		}
+		integrationutils.CreateNamespace(k8sClient, CustomAstarteNamespace)
 	})
 
 	AfterAll(func() {
-		if CustomAstarteNamespace != "default" {
-			astartes := &apiv2alpha1.AstarteList{}
-			_ = k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace})
-			for _, a := range astartes.Items {
-				cleanupAstarteResource(context.Background(), k8sClient, types.NamespacedName{Name: a.Name, Namespace: a.Namespace})
-			}
-			// Do not delete the namespace here to avoid 'NamespaceTerminating' flakiness in subsequent specs
-		}
+		// Do not delete the namespace here to avoid 'NamespaceTerminating' flakiness in subsequent specs
+		integrationutils.TeardownResources(context.Background(), k8sClient, CustomAstarteNamespace)
 	})
 
 	Context("When reconciling a resource", func() {
@@ -98,8 +83,7 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 		})
 
 		AfterEach(func() {
-			By("Cleaning up the test resource")
-			cleanupAstarteResource(ctx, k8sClient, typeNamespacedName)
+			integrationutils.TeardownResources(ctx, k8sClient, CustomAstarteNamespace)
 		})
 
 		It("should successfully reconcile the resource", func() {
@@ -180,7 +164,7 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 		})
 
 		AfterEach(func() {
-			cleanupAstarteResource(ctx, k8sClient, types.NamespacedName{Name: finalizerTestName, Namespace: CustomAstarteNamespace})
+			integrationutils.TeardownResources(ctx, k8sClient, CustomAstarteNamespace)
 		})
 
 		It("should handle finalization", func() {
@@ -215,7 +199,7 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 		})
 
 		AfterEach(func() {
-			cleanupAstarteResource(ctx, k8sClient, types.NamespacedName{Name: addFinalizerTestName, Namespace: CustomAstarteNamespace})
+			integrationutils.TeardownResources(ctx, k8sClient, CustomAstarteNamespace)
 		})
 
 		It("should add a finalizer to an Astarte resource", func() {
