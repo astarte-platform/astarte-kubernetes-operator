@@ -65,7 +65,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 					return nil
 				}
 				return err
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 		}
 	})
 
@@ -77,7 +77,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 				_ = k8sClient.Delete(context.Background(), &a)
 				Eventually(func() error {
 					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &apiv2alpha1.Astarte{})
-				}, "10s", "250ms").ShouldNot(Succeed())
+				}, Timeout, Interval).ShouldNot(Succeed())
 			}
 			// Do not delete the namespace here to avoid 'NamespaceTerminating' flakiness in subsequent specs
 			// _ = k8sClient.Delete(context.Background(), &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}})
@@ -130,7 +130,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 		Expect(k8sClient.Create(context.Background(), cr)).To(Succeed())
 		Eventually(func() error {
 			return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-		}, "10s", "250ms").Should(Succeed())
+		}, Timeout, Interval).Should(Succeed())
 	})
 
 	AfterEach(func() {
@@ -140,7 +140,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			Expect(k8sClient.Delete(context.Background(), &a)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &apiv2alpha1.Astarte{})
-			}, "10s", "250ms").ShouldNot(Succeed())
+			}, Timeout, Interval).ShouldNot(Succeed())
 		}
 
 		// Clean up any deployments left behind
@@ -172,7 +172,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			list := &apiv2alpha1.AstarteList{}
 			_ = k8sClient.List(context.Background(), list, &client.ListOptions{Namespace: CustomAstarteNamespace})
 			return len(list.Items)
-		}, "10s", "250ms").Should(Equal(0))
+		}, Timeout, Interval).Should(Equal(0))
 	})
 
 	Describe("Test EnsureAstarteGenericAPIComponent", func() {
@@ -201,7 +201,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 				Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 				Eventually(func() error {
 					return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-				}, "10s", "250ms").Should(Succeed())
+				}, Timeout, Interval).Should(Succeed())
 
 				Expect(EnsureAstarteGenericAPIComponent(cr, apiSpec, component, k8sClient, scheme.Scheme)).To(Succeed())
 
@@ -273,7 +273,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.AppengineAPI.AstarteGenericAPIComponentSpec, component, k8sClient, scheme.Scheme)).To(Succeed())
 
@@ -292,7 +292,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.AppengineAPI.AstarteGenericAPIComponentSpec, component, k8sClient, scheme.Scheme)).To(Succeed())
 
@@ -305,14 +305,14 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.AppengineAPI.AstarteGenericAPIComponentSpec, component, k8sClient, scheme.Scheme)).To(Succeed())
 
 			// Deployment should be deleted
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)
-			}, "10s", "250ms").ShouldNot(Succeed())
+			}, Timeout, Interval).ShouldNot(Succeed())
 		})
 
 		It("should apply custom resource requirements", func() {
@@ -331,7 +331,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.AppengineAPI.AstarteGenericAPIComponentSpec, component, k8sClient, scheme.Scheme)).To(Succeed())
 
@@ -353,7 +353,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.AppengineAPI.AstarteGenericAPIComponentSpec, component, k8sClient, scheme.Scheme)).To(Succeed())
 
@@ -371,7 +371,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.AppengineAPI.AstarteGenericAPIComponentSpec, component, k8sClient, scheme.Scheme)).To(Succeed())
 
@@ -400,7 +400,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.AppengineAPI.AstarteGenericAPIComponentSpec, component, k8sClient, scheme.Scheme)).To(Succeed())
 
@@ -437,7 +437,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 
 			// Create PriorityClasses first
 			Expect(EnsureAstartePriorityClasses(cr, k8sClient, scheme.Scheme)).To(Succeed())
@@ -459,7 +459,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 
 			customProbe := &v1.Probe{
 				ProbeHandler: v1.ProbeHandler{
@@ -589,7 +589,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.Housekeeping, component, k8sClient, scheme.Scheme)).To(Succeed())
 
@@ -620,7 +620,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.Pairing, component, k8sClient, scheme.Scheme)).To(Succeed())
 
@@ -658,7 +658,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.AppengineAPI.AstarteGenericAPIComponentSpec, component, k8sClient, scheme.Scheme)).To(Succeed())
 

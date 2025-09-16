@@ -48,6 +48,9 @@ var ctx context.Context
 var cancel context.CancelFunc
 var testEnv *envtest.Environment
 
+const Timeout = "30s"
+const Interval = "1s"
+
 func TestReconcile(t *testing.T) {
 	RegisterFailHandler(Fail)
 

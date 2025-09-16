@@ -62,7 +62,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 					return nil
 				}
 				return err
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 		}
 	})
 
@@ -74,7 +74,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 				_ = k8sClient.Delete(context.Background(), &a)
 				Eventually(func() error {
 					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &apiv2alpha1.Astarte{})
-				}, "10s", "250ms").ShouldNot(Succeed())
+				}, Timeout, Interval).ShouldNot(Succeed())
 			}
 		}
 	})
@@ -118,7 +118,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 		Expect(k8sClient.Create(context.Background(), cr)).To(Succeed())
 		Eventually(func() error {
 			return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-		}, "10s", "250ms").Should(Succeed())
+		}, Timeout, Interval).Should(Succeed())
 	})
 
 	AfterEach(func() {
@@ -129,7 +129,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &apiv2alpha1.Astarte{})
-			}, "10s", "250ms").ShouldNot(Succeed())
+			}, Timeout, Interval).ShouldNot(Succeed())
 		}
 
 		deployments := &appsv1.DeploymentList{}
@@ -139,7 +139,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: d.Name, Namespace: d.Namespace}, &appsv1.Deployment{})
-			}, "10s", "250ms").ShouldNot(Succeed())
+			}, Timeout, Interval).ShouldNot(Succeed())
 		}
 
 		Eventually(func() int {
@@ -148,7 +148,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 				return -1
 			}
 			return len(list.Items)
-		}, "10s", "250ms").Should(Equal(0))
+		}, Timeout, Interval).Should(Equal(0))
 	})
 
 	Describe("Test EnsureAstarteGenericBackend", func() {
@@ -170,7 +170,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 						Name:      deploymentName,
 						Namespace: CustomAstarteNamespace,
 					}, deployment)
-				}, "10s", "250ms").Should(Succeed())
+				}, Timeout, Interval).Should(Succeed())
 
 				Expect(*deployment.Spec.Replicas).To(Equal(int32(2)))
 				Expect(deployment.Labels["astarte-component"]).To(Equal(component.DashedString()))
@@ -197,7 +197,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 						Name:      serviceName,
 						Namespace: CustomAstarteNamespace,
 					}, service)
-				}, "10s", "250ms").Should(Succeed())
+				}, Timeout, Interval).Should(Succeed())
 
 				Expect(service.Spec.Selector["app"]).To(Equal(deploymentName))
 				// Verify service spec details
@@ -224,7 +224,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 						Name:      deploymentName,
 						Namespace: CustomAstarteNamespace,
 					}, deployment)
-				}, "2s", "250ms").ShouldNot(Succeed())
+				}, "2s", Interval).ShouldNot(Succeed())
 			})
 
 			It("should delete existing deployment when deploy is changed to false", func() {
@@ -244,7 +244,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 						Name:      deploymentName,
 						Namespace: CustomAstarteNamespace,
 					}, deployment)
-				}, "10s", "250ms").Should(Succeed())
+				}, Timeout, Interval).Should(Succeed())
 
 				// Now disable deployment
 				backend.Deploy = pointy.Bool(false)
@@ -256,7 +256,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 						Name:      deploymentName,
 						Namespace: CustomAstarteNamespace,
 					}, deployment)
-				}, "10s", "250ms").ShouldNot(Succeed())
+				}, Timeout, Interval).ShouldNot(Succeed())
 			})
 		})
 
@@ -287,7 +287,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 						Name:      deploymentName,
 						Namespace: CustomAstarteNamespace,
 					}, deployment)
-				}, "10s", "250ms").Should(Succeed())
+				}, Timeout, Interval).Should(Succeed())
 			})
 		})
 
@@ -308,7 +308,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 						Name:      deploymentName,
 						Namespace: CustomAstarteNamespace,
 					}, deployment)
-				}, "10s", "250ms").Should(Succeed())
+				}, Timeout, Interval).Should(Succeed())
 
 				Expect(deployment.Labels["astarte-component"]).To(Equal(component.DashedString()))
 			})
@@ -344,7 +344,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 						Name:      deploymentName,
 						Namespace: CustomAstarteNamespace,
 					}, deployment)
-				}, "10s", "250ms").Should(Succeed())
+				}, Timeout, Interval).Should(Succeed())
 
 				container := deployment.Spec.Template.Spec.Containers[0]
 				Expect(container.LivenessProbe).ToNot(BeNil())
@@ -391,7 +391,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 						Name:      deploymentName,
 						Namespace: CustomAstarteNamespace,
 					}, deployment)
-				}, "10s", "250ms").Should(Succeed())
+				}, Timeout, Interval).Should(Succeed())
 
 				container := deployment.Spec.Template.Spec.Containers[0]
 

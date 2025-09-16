@@ -45,6 +45,9 @@ var cfg *rest.Config
 var k8sClient client.Client
 var testEnv *envtest.Environment
 
+const Timeout = "30s"
+const Interval = "1s"
+
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
 

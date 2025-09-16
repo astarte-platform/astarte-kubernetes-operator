@@ -66,7 +66,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 					return nil
 				}
 				return err
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 		}
 	})
 
@@ -79,7 +79,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 				Expect(k8sClient.Delete(context.Background(), &a)).To(Succeed())
 				Eventually(func() error {
 					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &Astarte{})
-				}, "10s", "250ms").ShouldNot(Succeed())
+				}, Timeout, Interval).ShouldNot(Succeed())
 			}
 
 			// Attempt namespace deletion but don't block on it in envtest
@@ -88,6 +88,21 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	})
 
 	BeforeEach(func() {
+		// Ensure we start with a clean namespace
+		astartes := &AstarteList{}
+		Expect(k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace})).To(Succeed())
+
+		// If there are any leftover resources, wait for them to be cleaned up
+		if len(astartes.Items) > 0 {
+			Eventually(func() bool {
+				list := &AstarteList{}
+				if err := k8sClient.List(context.Background(), list, &client.ListOptions{Namespace: CustomAstarteNamespace}); err != nil {
+					return false
+				}
+				return len(list.Items) == 0
+			}, Timeout, Interval).Should(BeTrue())
+		}
+
 		// Create and initialize a basic Astarte CR
 		cr = &Astarte{
 			ObjectMeta: metav1.ObjectMeta{
@@ -126,28 +141,45 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 		Expect(k8sClient.Create(context.Background(), cr)).To(Succeed())
 		Eventually(func() error {
 			return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-		}, "10s", "250ms").Should(Succeed())
+		}, Timeout, Interval).Should(Succeed())
 	})
 
 	AfterEach(func() {
+		// Get a fresh list to avoid stale references
 		astartes := &AstarteList{}
 		Expect(k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace})).To(Succeed())
-		for _, a := range astartes.Items {
-			Expect(k8sClient.Delete(context.Background(), &a)).To(Succeed())
+
+		for i := range astartes.Items {
+			a := &astartes.Items[i]
+
+			// Delete each Astarte resource
+			Eventually(func() error {
+				return k8sClient.Delete(context.Background(), &astartes.Items[i])
+			}, Timeout, Interval).Should(Succeed())
+
+			// Wait for deletion to complete
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &Astarte{})
-			}, "10s", "250ms").ShouldNot(Succeed())
+			}, Timeout, Interval).ShouldNot(Succeed())
 		}
 
-		// Ensure all Astarte CRs are gone in the test namespace
-		Eventually(func() int {
-			list := &AstarteList{}
-			if err := k8sClient.List(context.Background(), list, &client.ListOptions{Namespace: CustomAstarteNamespace}); err != nil {
-				return -1
-			}
-			return len(list.Items)
-		}, "10s", "250ms").Should(Equal(0))
+		// Also clean up any leftover secrets
+		secrets := &v1.SecretList{}
+		if err := k8sClient.List(context.Background(), secrets, &client.ListOptions{Namespace: CustomAstarteNamespace}); err == nil {
+			for i := range secrets.Items {
+				secret := &secrets.Items[i]
 
+				// Delete the secret
+				Eventually(func() error {
+					return k8sClient.Delete(context.Background(), secret)
+				}, Timeout, Interval).Should(Succeed())
+
+				// Wait for deletion to complete
+				Eventually(func() error {
+					return k8sClient.Get(context.Background(), types.NamespacedName{Name: secret.Name, Namespace: CustomAstarteNamespace}, &v1.Secret{})
+				}, Timeout, Interval).ShouldNot(Succeed())
+			}
+		}
 	})
 
 	Describe("TestValidateSSLListener", func() {
@@ -203,23 +235,23 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			}
 			Expect(k8sClient.Create(context.Background(), secret)).To(Succeed())
 
-			// Ensure the secret is created
+			// Ensure the secret is created and available in the client cache
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: secretName, Namespace: CustomAstarteNamespace}, &v1.Secret{})
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 
-			// Wait for the validation to pass
+			// Wait for the validation to pass - give more time for webhook client cache sync
 			Eventually(func() bool {
 				errs := cr.validateSSLListener()
 				return errs != nil && len(errs) == 0
-			}, "10s", "250ms").Should(BeTrue())
+			}, Timeout, Interval).Should(BeTrue())
 
 			// Cleanup the secret
 			Expect(k8sClient.Delete(context.Background(), secret)).To(Succeed())
 
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: secretName, Namespace: CustomAstarteNamespace}, &v1.Secret{})
-			}, "10s", "250ms").ShouldNot(Succeed())
+			}, Timeout, Interval).ShouldNot(Succeed())
 		})
 	})
 
@@ -1142,107 +1174,139 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	})
 
 	Describe("TestValidateCreateAstarteInstanceID", func() {
-		It("should return error if it cannot list astarte instances", func() {
-			// This is difficult to test with the current architecture as the client
-			// is a package variable. In a real scenario, a mock client could be injected.
-			Skip("Cannot easily simulate client.List error with current architecture")
-		})
-
-		It("should not return error for empty instance ID", func() {
-			// Note: The current implementation validates that instance IDs are unique,
-			// but empty instance IDs ("") are considered equal, causing validation to fail.
-			// This test demonstrates the current behavior - empty IDs are not special-cased.
+		It("should not return error for instance ID when no other same IDs exist", func() {
+			// In the beforeEach of the parent Describe, a CR with empty ID is created
 			newCr := cr.DeepCopy()
-			newCr.Spec.AstarteInstanceID = ""
-			newCr.Name = "empty-id-astarte"
+			newCr.ObjectMeta.Name = "test-empty-id-no-conflict"
+			newCr.Spec.AstarteInstanceID = "a1"
+			newCr.ResourceVersion = ""
 
-			err := newCr.validateCreateAstarteInstanceID()
-			// Current implementation treats empty IDs as duplicates if another instance exists with empty ID
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
-			Expect(err.Field).To(Equal("spec.astarteInstanceID"))
+			// Create should succeed
+			Eventually(func() error {
+				return k8sClient.Create(context.Background(), newCr)
+			}, Timeout, Interval).Should(Succeed())
+
+			// Fetch to ensure it's created
+			Eventually(func() error {
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: newCr.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
+			}, Timeout, Interval).Should(Succeed())
+
+			// Cleanup
+			Eventually(func() error {
+				return k8sClient.Delete(context.Background(), newCr)
+			}, Timeout, Interval).Should(Succeed())
+
+			Eventually(func() error {
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: newCr.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
+			}, Timeout, Interval).ShouldNot(Succeed())
 		})
 
-		It("should not return error when no conflicts exist for empty ID", func() {
-			// First, clean up existing CR to avoid empty ID conflict
-			astartes := &AstarteList{}
-			Expect(k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace})).To(Succeed())
-			for _, a := range astartes.Items {
-				Expect(k8sClient.Delete(context.Background(), &a)).To(Succeed())
-			}
+		It("should return error for empty instance ID when another empty ID exists", func() {
+			// A CR with empty ID is already created in the beforeEach of the parent Describe
+			// Now try to create another with empty ID - should fail
+			newCr := cr.DeepCopy()
+			newCr.ObjectMeta.Name = "test-empty-id-conflict"
+			newCr.Spec.AstarteInstanceID = ""
+			newCr.ResourceVersion = ""
 
-			// Wait for cleanup
+			// Create should fail due to webhook rejection
+			Eventually(func() error {
+				return k8sClient.Create(context.Background(), newCr)
+			}, Timeout, Interval).ShouldNot(Succeed())
+
+			// Test the validator directly
 			Eventually(func() bool {
-				astartes := &AstarteList{}
-				if err := k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace}); err != nil {
-					return false
-				}
-				return len(astartes.Items) == 0
-			}, "10s", "250ms").Should(BeTrue())
-
-			// Now test empty ID with no conflicts
-			newCr := &Astarte{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-empty-id",
-					Namespace: CustomAstarteNamespace,
-				},
-				Spec: AstarteSpec{
-					AstarteInstanceID: "",
-				},
-			}
-
-			err := newCr.validateCreateAstarteInstanceID()
-			Expect(err).ToNot(HaveOccurred())
+				err := newCr.validateCreateAstarteInstanceID()
+				return err != nil && err.Field == "spec.astarteInstanceID" && err.Type == field.ErrorTypeInvalid
+			}, Timeout, Interval).Should(BeTrue())
 		})
 
 		It("should return error if other Astarte instances exists with same instanceID", func() {
-			instanceID := "myuniqueinstanceid001"
-
-			// Instance a new CR with a custom instanceID (1)
+			// We create a CR with a specific instanceID, then try to create another with the same ID
+			// Create a CR with a specific instanceID
 			cr1 := cr.DeepCopy()
+			cr1.ObjectMeta.Name = "first-astarte-unique"
+			cr1.Spec.AstarteInstanceID = "myuniqueinstanceid001"
 			cr1.ResourceVersion = ""
-			cr1.Name = "first-astarte-" + cr.Name
-			cr1.Spec.AstarteInstanceID = instanceID
-			Expect(k8sClient.Create(context.Background(), cr1)).To(Succeed())
-			// Ensure the instance is created
+
+			// Create should succeed
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, cr1)
-			}, "10s", "250ms").Should(Succeed())
+				return k8sClient.Create(context.Background(), cr1)
+			}, Timeout, Interval).Should(Succeed())
 
-			// Try to validate a new CR with the same instanceID (2)
-			cr2 := cr.DeepCopy()
+			// Fetch to ensure it's created
+			Eventually(func() error {
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
+			}, Timeout, Interval).Should(Succeed())
+
+			// Try to validate a new CR with the same instanceID
+			cr2 := cr1.DeepCopy()
+			cr2.ObjectMeta.Name = "second-astarte-unique"
 			cr2.ResourceVersion = ""
-			cr2.Name = "second-astarte-" + cr.Name
-			cr2.Spec.AstarteInstanceID = instanceID
+			// Keep same instanceID
+			// Create should fail due to webhook rejection
 
-			// Wait for the validation to detect the conflict (gives time for webhook client cache to update)
+			// Create should not succeed
+			Eventually(func() error {
+				return k8sClient.Create(context.Background(), cr2)
+			}, Timeout, Interval).Should(Not(Succeed()))
+
+			// Test the validator directly
 			Eventually(func() bool {
 				err := cr2.validateCreateAstarteInstanceID()
 				return err != nil && err.Field == "spec.astarteInstanceID" && err.Type == field.ErrorTypeInvalid
-			}, "10s", "250ms").Should(BeTrue())
+			}, Timeout, Interval).Should(BeTrue())
 
-			// Cleanup the first instance
+			// Cleanup
 			Expect(k8sClient.Delete(context.Background(), cr1)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, cr1)
-			}, "10s", "250ms").ShouldNot(Succeed())
-
-			// No need to cleanup the second instance, as it was never created
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
+			}, Timeout, Interval).ShouldNot(Succeed())
 		})
 
 		It("should not return error if no other Astarte instances exists with same instanceID", func() {
-			newCr := cr.DeepCopy()
-			newCr.Spec.AstarteInstanceID = "myuniqueinstanceid002"
-			newCr.Name = "another-astarte-" + cr.Name
+			// We create a CR with a specific instanceID, then try to create another with a different ID
+			cr1 := cr.DeepCopy()
+			cr1.ObjectMeta.Name = "first-astarte-unique"
+			cr1.Spec.AstarteInstanceID = "myuniqueinstanceid002a"
+			cr1.ResourceVersion = ""
 
-			err := newCr.validateCreateAstarteInstanceID()
-			Expect(err).ToNot(HaveOccurred())
-
-			// Verify the original CR still exists
+			// Create should succeed
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+				return k8sClient.Create(context.Background(), cr1)
+			}, Timeout, Interval).Should(Succeed())
 
-			// No need to cleanup the instance, as it was never created
+			// Fetch to ensure it's created
+			Eventually(func() error {
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
+			}, Timeout, Interval).Should(Succeed())
+
+			// Create another with a different instanceID
+			cr2 := cr1.DeepCopy()
+			cr2.ObjectMeta.Name = "second-astarte-unique"
+			cr2.Spec.AstarteInstanceID = "myuniqueinstanceid002b"
+			cr2.ResourceVersion = ""
+
+			// Create should succeed
+			Eventually(func() error {
+				return k8sClient.Create(context.Background(), cr2)
+			}, Timeout, Interval).Should(Succeed())
+
+			// Fetch to ensure it's created
+			Eventually(func() error {
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr2.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
+			}, Timeout, Interval).Should(Succeed())
+
+			// Cleanup
+			Expect(k8sClient.Delete(context.Background(), cr1)).To(Succeed())
+			Eventually(func() error {
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
+			}, Timeout, Interval).ShouldNot(Succeed())
+
+			Expect(k8sClient.Delete(context.Background(), cr2)).To(Succeed())
+			Eventually(func() error {
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr2.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
+			}, Timeout, Interval).ShouldNot(Succeed())
 		})
 	})
 })

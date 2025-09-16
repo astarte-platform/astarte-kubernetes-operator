@@ -58,7 +58,7 @@ var _ = Describe("Astarte Dashboard reconcile tests", Ordered, Serial, func() {
 					return nil
 				}
 				return err
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 		}
 	})
 
@@ -70,7 +70,7 @@ var _ = Describe("Astarte Dashboard reconcile tests", Ordered, Serial, func() {
 				_ = k8sClient.Delete(context.Background(), &a)
 				Eventually(func() error {
 					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &apiv2alpha1.Astarte{})
-				}, "10s", "250ms").ShouldNot(Succeed())
+				}, Timeout, Interval).ShouldNot(Succeed())
 			}
 			_ = k8sClient.Delete(context.Background(), &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}})
 		}
@@ -105,7 +105,7 @@ var _ = Describe("Astarte Dashboard reconcile tests", Ordered, Serial, func() {
 		Expect(k8sClient.Create(context.Background(), cr)).To(Succeed())
 		Eventually(func() error {
 			return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-		}, "10s", "250ms").Should(Succeed())
+		}, Timeout, Interval).Should(Succeed())
 	})
 
 	AfterEach(func() {
@@ -115,7 +115,7 @@ var _ = Describe("Astarte Dashboard reconcile tests", Ordered, Serial, func() {
 			Expect(k8sClient.Delete(context.Background(), &a)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &apiv2alpha1.Astarte{})
-			}, "10s", "250ms").ShouldNot(Succeed())
+			}, Timeout, Interval).ShouldNot(Succeed())
 		}
 
 		// Clean up any deployments left behind (defensive)
@@ -131,7 +131,7 @@ var _ = Describe("Astarte Dashboard reconcile tests", Ordered, Serial, func() {
 				return -1
 			}
 			return len(list.Items)
-		}, "10s", "250ms").Should(Equal(0))
+		}, Timeout, Interval).Should(Equal(0))
 	})
 
 	Describe("Test EnsureAstarteDashboard", func() {
@@ -140,7 +140,7 @@ var _ = Describe("Astarte Dashboard reconcile tests", Ordered, Serial, func() {
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteDashboard(cr, cr.Spec.Components.Dashboard, k8sClient, scheme.Scheme)).To(Succeed())
 
@@ -154,7 +154,7 @@ var _ = Describe("Astarte Dashboard reconcile tests", Ordered, Serial, func() {
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteDashboard(cr, cr.Spec.Components.Dashboard, k8sClient, scheme.Scheme)).To(Succeed())
 
@@ -206,7 +206,7 @@ var _ = Describe("Astarte Dashboard reconcile tests", Ordered, Serial, func() {
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 			Expect(EnsureAstarteDashboard(cr, cr.Spec.Components.Dashboard, k8sClient, scheme.Scheme)).To(Succeed())
 			dep := &appsv1.Deployment{}
 			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name + "-dashboard", Namespace: cr.Namespace}, dep)).To(Succeed())
@@ -216,13 +216,13 @@ var _ = Describe("Astarte Dashboard reconcile tests", Ordered, Serial, func() {
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 			Expect(EnsureAstarteDashboard(cr, cr.Spec.Components.Dashboard, k8sClient, scheme.Scheme)).To(Succeed())
 
 			Eventually(func() bool {
 				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name + "-dashboard", Namespace: cr.Namespace}, &appsv1.Deployment{})
 				return err != nil
-			}, "10s", "250ms").Should(BeTrue())
+			}, Timeout, Interval).Should(BeTrue())
 		})
 
 		It("should enable flow preview when Flow component is deployed", func() {
@@ -232,7 +232,7 @@ var _ = Describe("Astarte Dashboard reconcile tests", Ordered, Serial, func() {
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteDashboard(cr, cr.Spec.Components.Dashboard, k8sClient, scheme.Scheme)).To(Succeed())
 
@@ -266,7 +266,7 @@ var _ = Describe("Astarte Dashboard reconcile tests", Ordered, Serial, func() {
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteDashboard(cr, dashboardSpec, k8sClient, scheme.Scheme)).To(Succeed())
 
