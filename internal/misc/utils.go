@@ -339,6 +339,10 @@ func IsAstarteComponentDeployed(cr *apiv2alpha1.Astarte, component apiv2alpha1.A
 
 // GetRabbitMQHostnameAndPort returns the Cluster-accessible Hostname and AMQP port for RabbitMQ
 func GetRabbitMQHostnameAndPort(cr *apiv2alpha1.Astarte) (string, int32) {
+	if cr == nil || cr.Spec.RabbitMQ.Connection == nil {
+		return "", 5672
+	}
+
 	return cr.Spec.RabbitMQ.Connection.Host, pointy.Int32Value(cr.Spec.RabbitMQ.Connection.Port, 5672)
 }
 
@@ -346,7 +350,7 @@ func GetRabbitMQHostnameAndPort(cr *apiv2alpha1.Astarte) (string, int32) {
 func GetRabbitMQUserCredentialsSecret(cr *apiv2alpha1.Astarte) (string, string, string) {
 	// TODO: allow `connectionStringSecret` to be used too
 
-	if cr.Spec.RabbitMQ.Connection.CredentialsSecret != nil {
+	if cr.Spec.RabbitMQ.Connection != nil && cr.Spec.RabbitMQ.Connection.CredentialsSecret != nil {
 		return cr.Spec.RabbitMQ.Connection.CredentialsSecret.Name, cr.Spec.RabbitMQ.Connection.CredentialsSecret.UsernameKey, cr.Spec.RabbitMQ.Connection.CredentialsSecret.PasswordKey
 	}
 	return cr.Name + "-rabbitmq-user-credentials", RabbitMQDefaultUserCredentialsUsernameKey, RabbitMQDefaultUserCredentialsPasswordKey
