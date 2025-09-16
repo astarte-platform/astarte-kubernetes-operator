@@ -371,7 +371,7 @@ func GetRabbitMQCredentialsFor(cr *apiv2alpha1.Astarte, c client.Client) (string
 // GetCassandraUserCredentialsSecret gets the secret holding Cassandra credentials in the form <secret name>, <username key>, <password key>
 func GetCassandraUserCredentialsSecret(cr *apiv2alpha1.Astarte) (string, string, string) {
 	// TODO: allow `connectionStringSecret` to be used too
-	if cr.Spec.Cassandra.Connection.CredentialsSecret != nil {
+	if cr.Spec.Cassandra.Connection != nil && cr.Spec.Cassandra.Connection.CredentialsSecret != nil {
 		return cr.Spec.Cassandra.Connection.CredentialsSecret.Name, cr.Spec.Cassandra.Connection.CredentialsSecret.UsernameKey, cr.Spec.Cassandra.Connection.CredentialsSecret.PasswordKey
 	}
 	return cr.Name + "-cassandra-user-credentials", CassandraDefaultUserCredentialsUsernameKey, CassandraDefaultUserCredentialsPasswordKey
