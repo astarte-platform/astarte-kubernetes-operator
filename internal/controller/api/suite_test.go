@@ -19,6 +19,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"runtime"
@@ -26,7 +27,11 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.openly.dev/pointy"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -93,3 +98,97 @@ var _ = AfterSuite(func() {
 	err := testEnv.Stop()
 	Expect(err).ToNot(HaveOccurred())
 })
+
+// Helper function to create a standard Astarte resource for testing
+func createTestAstarteResource(name, namespace string) *apiv2alpha1.Astarte {
+	return &apiv2alpha1.Astarte{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: apiv2alpha1.AstarteSpec{
+			Version: "1.3.0",
+			API: apiv2alpha1.AstarteAPISpec{
+				Host: "api.example.com",
+			},
+			RabbitMQ: apiv2alpha1.AstarteRabbitMQSpec{
+				Connection: &apiv2alpha1.AstarteRabbitMQConnectionSpec{
+					HostAndPort: apiv2alpha1.HostAndPort{
+						Host: "rabbitmq.example.com",
+						Port: pointy.Int32(5672),
+					},
+					GenericConnectionSpec: apiv2alpha1.GenericConnectionSpec{
+						CredentialsSecret: &apiv2alpha1.LoginCredentialsSecret{
+							Name:        "rabbitmq-credentials",
+							UsernameKey: "username",
+							PasswordKey: "password",
+						},
+					},
+				},
+			},
+			VerneMQ: apiv2alpha1.AstarteVerneMQSpec{
+				HostAndPort: apiv2alpha1.HostAndPort{
+					Host: "vernemq.example.com",
+					Port: pointy.Int32(1883),
+				},
+				AstarteGenericClusteredResource: apiv2alpha1.AstarteGenericClusteredResource{
+					Image: "docker.io/astarte/vernemq:1.3-snapshot",
+				},
+			},
+			Cassandra: apiv2alpha1.AstarteCassandraSpec{
+				Connection: &apiv2alpha1.AstarteCassandraConnectionSpec{
+					Nodes: []apiv2alpha1.HostAndPort{
+						{
+							Host: "cassandra1.example.com",
+							Port: pointy.Int32(9042),
+						},
+					},
+					GenericConnectionSpec: apiv2alpha1.GenericConnectionSpec{
+						CredentialsSecret: &apiv2alpha1.LoginCredentialsSecret{
+							Name:        "cassandra-credentials",
+							UsernameKey: "username",
+							PasswordKey: "password",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+// Helper function to clean up test resources
+func cleanupAstarteResource(ctx context.Context, client client.Client, namespacedName types.NamespacedName) {
+	resource := &apiv2alpha1.Astarte{}
+	err := client.Get(ctx, namespacedName, resource)
+	if err == nil {
+		Expect(client.Delete(ctx, resource)).To(Succeed())
+		// Remove finalizers if present to unblock deletion in envtest
+		Eventually(func() error {
+			current := &apiv2alpha1.Astarte{}
+			if getErr := client.Get(ctx, namespacedName, current); getErr != nil {
+				if errors.IsNotFound(getErr) {
+					return nil
+				}
+				return getErr
+			}
+			if len(current.Finalizers) == 0 {
+				return nil
+			}
+			current.Finalizers = nil
+			if updErr := client.Update(ctx, current); updErr != nil {
+				if errors.IsNotFound(updErr) {
+					return nil
+				}
+				return updErr
+			}
+			return nil
+		}, Timeout, Interval).Should(Succeed())
+	} else if !errors.IsNotFound(err) {
+		Expect(err).ToNot(HaveOccurred())
+	}
+
+	// Ensure the CR is gone
+	Eventually(func() error {
+		return client.Get(ctx, namespacedName, &apiv2alpha1.Astarte{})
+	}, Timeout, Interval).ShouldNot(Succeed())
+}

@@ -24,11 +24,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"go.openly.dev/pointy"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -40,7 +38,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const CustomAstarteNamespace = "astarte-controller-test"
+const (
+	CustomAstarteNamespace = "astarte-controller-test"
+)
 
 var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 
@@ -62,10 +62,7 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 			astartes := &apiv2alpha1.AstarteList{}
 			_ = k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace})
 			for _, a := range astartes.Items {
-				_ = k8sClient.Delete(context.Background(), &a)
-				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &v2alpha1.Astarte{})
-				}, Timeout, Interval).ShouldNot(Succeed())
+				cleanupAstarteResource(context.Background(), k8sClient, types.NamespacedName{Name: a.Name, Namespace: a.Namespace})
 			}
 			// Do not delete the namespace here to avoid 'NamespaceTerminating' flakiness in subsequent specs
 		}
@@ -80,7 +77,6 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 			Name:      resourceName,
 			Namespace: CustomAstarteNamespace,
 		}
-		astarte := &apiv2alpha1.Astarte{}
 
 		BeforeEach(func() {
 			By("Initializing the controller reconciler")
@@ -92,107 +88,18 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 			}
 
 			By("creating the custom resource for the Kind Astarte")
-			err := k8sClient.Get(ctx, typeNamespacedName, astarte)
+			resource := createTestAstarteResource(resourceName, CustomAstarteNamespace)
+			err := k8sClient.Get(ctx, typeNamespacedName, &apiv2alpha1.Astarte{})
 			if err != nil && errors.IsNotFound(err) {
-				resource := &apiv2alpha1.Astarte{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      resourceName,
-						Namespace: CustomAstarteNamespace,
-					},
-					Spec: apiv2alpha1.AstarteSpec{
-						Version: "1.3.0",
-						API: apiv2alpha1.AstarteAPISpec{
-							Host: "api.example.com",
-						},
-						RabbitMQ: apiv2alpha1.AstarteRabbitMQSpec{
-							Connection: &apiv2alpha1.AstarteRabbitMQConnectionSpec{
-								HostAndPort: apiv2alpha1.HostAndPort{
-									Host: "rabbitmq.example.com",
-									Port: pointy.Int32(5672),
-								},
-								GenericConnectionSpec: apiv2alpha1.GenericConnectionSpec{
-									CredentialsSecret: &apiv2alpha1.LoginCredentialsSecret{
-										Name:        "rabbitmq-credentials",
-										UsernameKey: "username",
-										PasswordKey: "password",
-									},
-								},
-							},
-						},
-						VerneMQ: apiv2alpha1.AstarteVerneMQSpec{
-							HostAndPort: apiv2alpha1.HostAndPort{
-								Host: "vernemq.example.com",
-								Port: pointy.Int32(1883),
-							},
-							AstarteGenericClusteredResource: apiv2alpha1.AstarteGenericClusteredResource{
-								Image: "docker.io/astarte/vernemq:1.3-snapshot",
-							},
-						},
-						Cassandra: apiv2alpha1.AstarteCassandraSpec{
-							Connection: &apiv2alpha1.AstarteCassandraConnectionSpec{
-								Nodes: []apiv2alpha1.HostAndPort{
-									{
-										Host: "cassandra1.example.com",
-										Port: pointy.Int32(9042),
-									},
-								},
-								GenericConnectionSpec: apiv2alpha1.GenericConnectionSpec{
-									CredentialsSecret: &apiv2alpha1.LoginCredentialsSecret{
-										Name:        "cassandra-credentials",
-										UsernameKey: "username",
-										PasswordKey: "password",
-									},
-								},
-							},
-						},
-					},
-				}
-
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
+			} else if err != nil {
+				Fail(fmt.Sprintf("Unexpected error getting resource: %v", err))
 			}
 		})
 
 		AfterEach(func() {
-			// After each test, let's make sure the resource exists
-			By("getting the created resource")
-			resource := &apiv2alpha1.Astarte{}
-			err := k8sClient.Get(ctx, typeNamespacedName, resource)
-			if err == nil {
-				// ... and then delete it only if it exists
-				By("deleting the created resource")
-				err = k8sClient.Delete(ctx, resource)
-				Expect(err).ToNot(HaveOccurred())
-
-				// If the reconciler added a finalizer, remove it to unblock deletion
-				Eventually(func() error {
-					current := &apiv2alpha1.Astarte{}
-					if getErr := k8sClient.Get(ctx, typeNamespacedName, current); getErr != nil {
-						if errors.IsNotFound(getErr) {
-							return nil // already gone
-						}
-						return getErr
-					}
-					if len(current.Finalizers) == 0 {
-						return nil
-					}
-					current.Finalizers = nil
-					if updErr := k8sClient.Update(ctx, current); updErr != nil {
-						if errors.IsNotFound(updErr) {
-							return nil
-						}
-						return updErr
-					}
-					return nil
-				}, Timeout, Interval).Should(Succeed())
-
-			} else if !errors.IsNotFound(err) {
-				// If error is something other than NotFound, it's unexpected
-				Expect(err).ToNot(HaveOccurred())
-			}
-			// Ensure the CR is gone
-			Eventually(func() error {
-				return k8sClient.Get(ctx, typeNamespacedName, &apiv2alpha1.Astarte{})
-			}, Timeout, Interval).ShouldNot(Succeed())
+			By("Cleaning up the test resource")
+			cleanupAstarteResource(ctx, k8sClient, typeNamespacedName)
 		})
 
 		It("should successfully reconcile the resource", func() {
@@ -249,129 +156,38 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(res.Requeue).To(BeFalse())
 		})
-
 	})
 
 	Context("Testing the Astarte finalizer", func() {
+		const finalizerTestName = "test-finalizer"
 		var controllerReconciler *AstarteReconciler
-		var astarteInstance *apiv2alpha1.Astarte
-		var ctx context.Context
+		ctx := context.Background()
 
 		BeforeEach(func() {
-			// Create a new context for this test
-			ctx = context.Background()
-
-			// Setup a client for testing the finalizer
-			astarteInstance = &apiv2alpha1.Astarte{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:              "test-finalizer",
-					Namespace:         CustomAstarteNamespace,
-					Finalizers:        []string{astarteFinalizer},
-					DeletionTimestamp: &metav1.Time{Time: metav1.Now().Time},
-				},
-				Spec: apiv2alpha1.AstarteSpec{
-					Version: "1.3.0",
-					VerneMQ: apiv2alpha1.AstarteVerneMQSpec{
-						HostAndPort: apiv2alpha1.HostAndPort{
-							Host: "vernemq.example.com",
-							Port: pointy.Int32(1883),
-						},
-					},
-					RabbitMQ: apiv2alpha1.AstarteRabbitMQSpec{
-						Connection: &apiv2alpha1.AstarteRabbitMQConnectionSpec{
-							HostAndPort: apiv2alpha1.HostAndPort{
-								Host: "rabbitmq.example.com",
-								Port: pointy.Int32(5672),
-							},
-							GenericConnectionSpec: apiv2alpha1.GenericConnectionSpec{
-								CredentialsSecret: &apiv2alpha1.LoginCredentialsSecret{
-									Name:        "rabbitmq-credentials",
-									UsernameKey: "username",
-									PasswordKey: "password",
-								},
-							},
-						},
-					},
-					Cassandra: apiv2alpha1.AstarteCassandraSpec{
-						Connection: &apiv2alpha1.AstarteCassandraConnectionSpec{
-							Nodes: []apiv2alpha1.HostAndPort{
-								{
-									Host: "cassandra1.example.com",
-									Port: pointy.Int32(9042),
-								},
-							},
-							GenericConnectionSpec: apiv2alpha1.GenericConnectionSpec{
-								CredentialsSecret: &apiv2alpha1.LoginCredentialsSecret{
-									Name:        "cassandra-credentials",
-									UsernameKey: "username",
-									PasswordKey: "password",
-								},
-							},
-						},
-					},
-					API: apiv2alpha1.AstarteAPISpec{
-						Host: "api.example.com",
-					},
-				},
-			}
-
-			// Create a new reconciler with the test client
-			scheme := k8sClient.Scheme()
 			controllerReconciler = &AstarteReconciler{
 				Client:   k8sClient,
-				Scheme:   scheme,
+				Scheme:   k8sClient.Scheme(),
 				Log:      ctrl.Log.WithName("test-finalizer-reconciler"),
 				Recorder: record.NewFakeRecorder(1024),
 			}
 
-			// Create the resource with finalizer
+			// Create the resource with finalizer and deletion timestamp
+			astarteInstance := createTestAstarteResource(finalizerTestName, CustomAstarteNamespace)
+			astarteInstance.Finalizers = []string{"astarte-operator.astarte-platform.org/finalizer"}
+			astarteInstance.DeletionTimestamp = &metav1.Time{Time: time.Now()}
+
 			Expect(k8sClient.Create(ctx, astarteInstance)).To(Succeed())
 		})
 
 		AfterEach(func() {
-			// Clean up
-			resource := &apiv2alpha1.Astarte{}
-			err := k8sClient.Get(ctx, types.NamespacedName{
-				Name:      "test-finalizer",
-				Namespace: CustomAstarteNamespace,
-			}, resource)
-
-			if err == nil {
-				Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
-				// Remove finalizers if present to unblock deletion in envtest
-				Eventually(func() error {
-					current := &apiv2alpha1.Astarte{}
-					if getErr := k8sClient.Get(ctx, types.NamespacedName{Name: "test-finalizer", Namespace: CustomAstarteNamespace}, current); getErr != nil {
-						if errors.IsNotFound(getErr) {
-							return nil
-						}
-						return getErr
-					}
-					if len(current.Finalizers) == 0 {
-						return nil
-					}
-					current.Finalizers = nil
-					if updErr := k8sClient.Update(ctx, current); updErr != nil {
-						if errors.IsNotFound(updErr) {
-							return nil
-						}
-						return updErr
-					}
-					return nil
-				}, Timeout, Interval).Should(Succeed())
-			} else if !errors.IsNotFound(err) {
-				Expect(err).ToNot(HaveOccurred())
-			}
-			Eventually(func() error {
-				return k8sClient.Get(ctx, types.NamespacedName{Name: "test-finalizer", Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
-			}, Timeout, Interval).ShouldNot(Succeed())
+			cleanupAstarteResource(ctx, k8sClient, types.NamespacedName{Name: finalizerTestName, Namespace: CustomAstarteNamespace})
 		})
 
 		It("should handle finalization", func() {
 			By("Reconciling a resource with deletion timestamp")
 			result, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: types.NamespacedName{
-					Name:      "test-finalizer",
+					Name:      finalizerTestName,
 					Namespace: CustomAstarteNamespace,
 				},
 			})
@@ -382,127 +198,41 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 	})
 
 	Context("Testing the addFinalizer function", func() {
+		const addFinalizerTestName = "test-add-finalizer"
 		var controllerReconciler *AstarteReconciler
-		var astarteInstance *apiv2alpha1.Astarte
-		var ctx context.Context
+		ctx := context.Background()
 
 		BeforeEach(func() {
-			ctx = context.Background()
-
-			astarteInstance = &apiv2alpha1.Astarte{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-add-finalizer",
-					Namespace: CustomAstarteNamespace,
-				},
-				Spec: apiv2alpha1.AstarteSpec{
-					Version: "1.3.0",
-					VerneMQ: apiv2alpha1.AstarteVerneMQSpec{
-						HostAndPort: apiv2alpha1.HostAndPort{
-							Host: "vernemq.example.com",
-							Port: pointy.Int32(1883),
-						},
-					},
-					RabbitMQ: apiv2alpha1.AstarteRabbitMQSpec{
-						Connection: &apiv2alpha1.AstarteRabbitMQConnectionSpec{
-							HostAndPort: apiv2alpha1.HostAndPort{
-								Host: "rabbitmq.example.com",
-								Port: pointy.Int32(5672),
-							},
-							GenericConnectionSpec: apiv2alpha1.GenericConnectionSpec{
-								CredentialsSecret: &apiv2alpha1.LoginCredentialsSecret{
-									Name:        "rabbitmq-credentials",
-									UsernameKey: "username",
-									PasswordKey: "password",
-								},
-							},
-						},
-					},
-					Cassandra: apiv2alpha1.AstarteCassandraSpec{
-						Connection: &apiv2alpha1.AstarteCassandraConnectionSpec{
-							Nodes: []apiv2alpha1.HostAndPort{
-								{
-									Host: "cassandra1.example.com",
-									Port: pointy.Int32(9042),
-								},
-							},
-							GenericConnectionSpec: apiv2alpha1.GenericConnectionSpec{
-								CredentialsSecret: &apiv2alpha1.LoginCredentialsSecret{
-									Name:        "cassandra-credentials",
-									UsernameKey: "username",
-									PasswordKey: "password",
-								},
-							},
-						},
-					},
-					API: apiv2alpha1.AstarteAPISpec{
-						Host: "api.example.com",
-					},
-				},
-			}
-
-			scheme := k8sClient.Scheme()
 			controllerReconciler = &AstarteReconciler{
 				Client:   k8sClient,
-				Scheme:   scheme,
+				Scheme:   k8sClient.Scheme(),
 				Log:      ctrl.Log.WithName("test-add-finalizer-reconciler"),
 				Recorder: record.NewFakeRecorder(1024),
 			}
 
+			astarteInstance := createTestAstarteResource(addFinalizerTestName, CustomAstarteNamespace)
 			Expect(k8sClient.Create(ctx, astarteInstance)).To(Succeed())
 		})
 
 		AfterEach(func() {
-			resource := &apiv2alpha1.Astarte{}
-			err := k8sClient.Get(ctx, types.NamespacedName{
-				Name:      "test-add-finalizer",
-				Namespace: CustomAstarteNamespace,
-			}, resource)
-
-			if err == nil {
-				Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
-				// Remove finalizers if present to unblock deletion in envtest
-				Eventually(func() error {
-					current := &apiv2alpha1.Astarte{}
-					if getErr := k8sClient.Get(ctx, types.NamespacedName{Name: "test-add-finalizer", Namespace: CustomAstarteNamespace}, current); getErr != nil {
-						if errors.IsNotFound(getErr) {
-							return nil
-						}
-						return getErr
-					}
-					if len(current.Finalizers) == 0 {
-						return nil
-					}
-					current.Finalizers = nil
-					if updErr := k8sClient.Update(ctx, current); updErr != nil {
-						if errors.IsNotFound(updErr) {
-							return nil
-						}
-						return updErr
-					}
-					return nil
-				}, Timeout, Interval).Should(Succeed())
-			} else if !errors.IsNotFound(err) {
-				Expect(err).ToNot(HaveOccurred())
-			}
-			Eventually(func() error {
-				return k8sClient.Get(ctx, types.NamespacedName{Name: "test-add-finalizer", Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
-			}, Timeout, Interval).ShouldNot(Succeed())
+			cleanupAstarteResource(ctx, k8sClient, types.NamespacedName{Name: addFinalizerTestName, Namespace: CustomAstarteNamespace})
 		})
 
 		It("should add a finalizer to an Astarte resource", func() {
+			By("Getting the resource")
+			astarteInstance := &apiv2alpha1.Astarte{}
+			err := k8sClient.Get(ctx, types.NamespacedName{Name: addFinalizerTestName, Namespace: CustomAstarteNamespace}, astarteInstance)
+			Expect(err).ToNot(HaveOccurred())
+
 			By("Adding a finalizer to the resource")
-			err := controllerReconciler.addFinalizer(astarteInstance)
+			err = controllerReconciler.addFinalizer(astarteInstance)
 			Expect(err).ToNot(HaveOccurred())
 
-			// Check that the finalizer was added
+			By("Checking that the finalizer was added")
 			updatedResource := &apiv2alpha1.Astarte{}
-			err = k8sClient.Get(ctx, types.NamespacedName{
-				Name:      "test-add-finalizer",
-				Namespace: CustomAstarteNamespace,
-			}, updatedResource)
-
+			err = k8sClient.Get(ctx, types.NamespacedName{Name: addFinalizerTestName, Namespace: CustomAstarteNamespace}, updatedResource)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(updatedResource.Finalizers).To(ContainElement(astarteFinalizer))
+			Expect(updatedResource.Finalizers).To(ContainElement("astarte.astarte-platform.org/finalizer"))
 		})
 	})
 })
@@ -531,58 +261,7 @@ var _ = Describe("Standalone Tests", func() {
 			}, "20s", Interval).Should(Succeed())
 
 			// Create a test resource
-			astarte := &apiv2alpha1.Astarte{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test-direct-reconcile",
-					Namespace: CustomAstarteNamespace,
-				},
-				Spec: apiv2alpha1.AstarteSpec{
-					Version: "1.3.0",
-					VerneMQ: apiv2alpha1.AstarteVerneMQSpec{
-						HostAndPort: apiv2alpha1.HostAndPort{
-							Host: "vernemq.example.com",
-							Port: pointy.Int32(1883),
-						},
-					},
-					RabbitMQ: apiv2alpha1.AstarteRabbitMQSpec{
-						Connection: &apiv2alpha1.AstarteRabbitMQConnectionSpec{
-							HostAndPort: apiv2alpha1.HostAndPort{
-								Host: "rabbitmq.example.com",
-								Port: pointy.Int32(5672),
-							},
-							GenericConnectionSpec: apiv2alpha1.GenericConnectionSpec{
-								CredentialsSecret: &apiv2alpha1.LoginCredentialsSecret{
-									Name:        "rabbitmq-credentials",
-									UsernameKey: "username",
-									PasswordKey: "password",
-								},
-							},
-						},
-					},
-					Cassandra: apiv2alpha1.AstarteCassandraSpec{
-						Connection: &apiv2alpha1.AstarteCassandraConnectionSpec{
-							Nodes: []apiv2alpha1.HostAndPort{
-								{
-									Host: "cassandra1.example.com",
-									Port: pointy.Int32(9042),
-								},
-							},
-							GenericConnectionSpec: apiv2alpha1.GenericConnectionSpec{
-								CredentialsSecret: &apiv2alpha1.LoginCredentialsSecret{
-									Name:        "cassandra-credentials",
-									UsernameKey: "username",
-									PasswordKey: "password",
-								},
-							},
-						},
-					},
-					API: apiv2alpha1.AstarteAPISpec{
-						Host: "api.example.com",
-					},
-				},
-			}
-
-			// Create the resource in the test environment
+			astarte := createTestAstarteResource("test-direct-reconcile", CustomAstarteNamespace)
 			Expect(k8sClient.Create(ctx, astarte)).To(Succeed())
 
 			// Create the reconciler with the test client
@@ -604,11 +283,7 @@ var _ = Describe("Standalone Tests", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(result.Requeue).To(BeFalse())
 
-			// Clean up
-			Expect(k8sClient.Delete(ctx, astarte)).To(Succeed())
-			Eventually(func() error {
-				return k8sClient.Get(ctx, types.NamespacedName{Name: "test-direct-reconcile", Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
-			}, Timeout, Interval).ShouldNot(Succeed())
+			cleanupAstarteResource(ctx, k8sClient, types.NamespacedName{Name: "test-direct-reconcile", Namespace: CustomAstarteNamespace})
 		})
 	})
 
