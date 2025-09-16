@@ -52,7 +52,7 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 					return nil
 				}
 				return err
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 		}
 	})
 
@@ -64,7 +64,7 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 				_ = k8sClient.Delete(context.Background(), &a)
 				Eventually(func() error {
 					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &v2alpha1.Astarte{})
-				}, "10s", "250ms").ShouldNot(Succeed())
+				}, Timeout, Interval).ShouldNot(Succeed())
 			}
 			// Do not delete the namespace here to avoid 'NamespaceTerminating' flakiness in subsequent specs
 		}
@@ -182,7 +182,7 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 						return updErr
 					}
 					return nil
-				}, "10s", "250ms").Should(Succeed())
+				}, Timeout, Interval).Should(Succeed())
 
 			} else if !errors.IsNotFound(err) {
 				// If error is something other than NotFound, it's unexpected
@@ -191,7 +191,7 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 			// Ensure the CR is gone
 			Eventually(func() error {
 				return k8sClient.Get(ctx, typeNamespacedName, &apiv2alpha1.Astarte{})
-			}, "10s", "250ms").ShouldNot(Succeed())
+			}, Timeout, Interval).ShouldNot(Succeed())
 		})
 
 		It("should successfully reconcile the resource", func() {
@@ -357,13 +357,13 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 						return updErr
 					}
 					return nil
-				}, "10s", "250ms").Should(Succeed())
+				}, Timeout, Interval).Should(Succeed())
 			} else if !errors.IsNotFound(err) {
 				Expect(err).ToNot(HaveOccurred())
 			}
 			Eventually(func() error {
 				return k8sClient.Get(ctx, types.NamespacedName{Name: "test-finalizer", Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
-			}, "10s", "250ms").ShouldNot(Succeed())
+			}, Timeout, Interval).ShouldNot(Succeed())
 		})
 
 		It("should handle finalization", func() {
@@ -479,13 +479,13 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 						return updErr
 					}
 					return nil
-				}, "10s", "250ms").Should(Succeed())
+				}, Timeout, Interval).Should(Succeed())
 			} else if !errors.IsNotFound(err) {
 				Expect(err).ToNot(HaveOccurred())
 			}
 			Eventually(func() error {
 				return k8sClient.Get(ctx, types.NamespacedName{Name: "test-add-finalizer", Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
-			}, "10s", "250ms").ShouldNot(Succeed())
+			}, Timeout, Interval).ShouldNot(Succeed())
 		})
 
 		It("should add a finalizer to an Astarte resource", func() {
@@ -527,7 +527,7 @@ var _ = Describe("Standalone Tests", func() {
 					return fmt.Errorf("namespace terminating")
 				}
 				return nil
-			}, "20s", "250ms").Should(Succeed())
+			}, "20s", Interval).Should(Succeed())
 
 			// Create a test resource
 			astarte := &apiv2alpha1.Astarte{
@@ -607,7 +607,7 @@ var _ = Describe("Standalone Tests", func() {
 			Expect(k8sClient.Delete(ctx, astarte)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(ctx, types.NamespacedName{Name: "test-direct-reconcile", Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
-			}, "10s", "250ms").ShouldNot(Succeed())
+			}, Timeout, Interval).ShouldNot(Succeed())
 		})
 	})
 

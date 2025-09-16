@@ -46,8 +46,6 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 		CustomVerneMQHost      = "vernemq.example.com"
 		CustomVerneMQPort      = 8884
 		AstarteVersion         = "1.3.0"
-		Timeout                = "30s"
-		Interval               = "1s"
 	)
 
 	var cr *Astarte

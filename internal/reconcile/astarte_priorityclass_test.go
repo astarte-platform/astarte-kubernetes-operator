@@ -65,7 +65,7 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 			Eventually(func() bool {
 				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)
 				return apierrors.IsNotFound(err)
-			}, "10s", "250ms").Should(BeTrue())
+			}, Timeout, Interval).Should(BeTrue())
 		}
 
 		if CustomAstarteNamespace != "default" {
@@ -76,7 +76,7 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 					return nil
 				}
 				return err
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 		}
 	})
 
@@ -88,7 +88,7 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 				_ = k8sClient.Delete(context.Background(), &a)
 				Eventually(func() error {
 					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &apiv2alpha1.Astarte{})
-				}, "10s", "250ms").ShouldNot(Succeed())
+				}, Timeout, Interval).ShouldNot(Succeed())
 			}
 			// Do not delete the namespace here to avoid 'NamespaceTerminating' flakiness in subsequent specs
 			//_ = k8sClient.Delete(context.Background(), &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}})
@@ -113,7 +113,7 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 		Expect(k8sClient.Create(context.Background(), cr)).To(Succeed())
 		Eventually(func() error {
 			return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-		}, "10s", "250ms").Should(Succeed())
+		}, Timeout, Interval).Should(Succeed())
 	})
 
 	AfterEach(func() {
@@ -123,7 +123,7 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 			Expect(k8sClient.Delete(context.Background(), &a)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &apiv2alpha1.Astarte{})
-			}, "10s", "250ms").ShouldNot(Succeed())
+			}, Timeout, Interval).ShouldNot(Succeed())
 		}
 
 		// Cleanup of priorityclasses that might remain from tests
@@ -138,7 +138,7 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 			Eventually(func() bool {
 				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)
 				return apierrors.IsNotFound(err)
-			}, "10s", "250ms").Should(BeTrue())
+			}, Timeout, Interval).Should(BeTrue())
 		}
 
 		Eventually(func() bool {
@@ -148,7 +148,7 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 				return false
 			}
 			return len(list.Items) == 0
-		}, "10s", "250ms").Should(BeTrue())
+		}, Timeout, Interval).Should(BeTrue())
 	})
 
 	Describe("EnsureAstartePriorityClasses", func() {
@@ -158,7 +158,7 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 			Expect(EnsureAstartePriorityClasses(cr, k8sClient, scheme.Scheme)).To(Succeed())
 
 			// Objects should not exist
@@ -166,7 +166,7 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 				pc := &schedulingv1.PriorityClass{}
 				Eventually(func() error {
 					return k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)
-				}, "10s", "250ms").ShouldNot(Succeed())
+				}, Timeout, Interval).ShouldNot(Succeed())
 			}
 
 			// Explicitly disable
@@ -174,13 +174,13 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 			Expect(EnsureAstartePriorityClasses(cr, k8sClient, scheme.Scheme)).To(Succeed())
 			for _, name := range []string{AstarteHighPriorityName, AstarteMidPriorityName, AstarteLowPriorityName} {
 				pc := &schedulingv1.PriorityClass{}
 				Eventually(func() error {
 					return k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)
-				}, "10s", "250ms").ShouldNot(Succeed())
+				}, Timeout, Interval).ShouldNot(Succeed())
 			}
 		})
 
@@ -194,7 +194,7 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstartePriorityClasses(cr, k8sClient, scheme.Scheme)).To(Succeed())
 
@@ -224,7 +224,7 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstartePriorityClasses(cr, k8sClient, scheme.Scheme)).To(Succeed())
 

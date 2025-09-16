@@ -67,7 +67,7 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 					return nil
 				}
 				return err
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 		}
 	})
 
@@ -79,7 +79,7 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 				_ = k8sClient.Delete(context.Background(), &a)
 				Eventually(func() error {
 					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &v2alpha1.Astarte{})
-				}, "10s", "250ms").ShouldNot(Succeed())
+				}, Timeout, Interval).ShouldNot(Succeed())
 			}
 			_ = k8sClient.Delete(context.Background(), &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}})
 		}
@@ -124,7 +124,7 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 		Expect(k8sClient.Create(context.Background(), cr)).To(Succeed())
 		Eventually(func() error {
 			return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-		}, "10s", "250ms").Should(Succeed())
+		}, Timeout, Interval).Should(Succeed())
 	})
 
 	AfterEach(func() {
@@ -135,7 +135,7 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &v2alpha1.Astarte{})
-			}, "10s", "250ms").ShouldNot(Succeed())
+			}, Timeout, Interval).ShouldNot(Succeed())
 		}
 
 		Eventually(func() int {
@@ -144,7 +144,7 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 				return -1
 			}
 			return len(list.Items)
-		}, "10s", "250ms").Should(Equal(0))
+		}, Timeout, Interval).Should(Equal(0))
 	})
 
 	Describe("ReconcileConfigMap", func() {
