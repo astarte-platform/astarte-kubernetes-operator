@@ -58,7 +58,7 @@ var _ = Describe("Common reconcile testing", Ordered, func() {
 
 			Eventually(func() error {
 				return k8sClient.Create(context.Background(), ns)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 		}
 	})
 
@@ -70,7 +70,7 @@ var _ = Describe("Common reconcile testing", Ordered, func() {
 				_ = k8sClient.Delete(context.Background(), &a)
 				Eventually(func() error {
 					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &apiv2alpha1.Astarte{})
-				}, "10s", "250ms").ShouldNot(Succeed())
+				}, Timeout, Interval).ShouldNot(Succeed())
 			}
 			_ = k8sClient.Delete(context.Background(), &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}})
 		}
@@ -116,7 +116,7 @@ var _ = Describe("Common reconcile testing", Ordered, func() {
 		Expect(k8sClient.Create(context.Background(), cr)).To(Succeed())
 		Eventually(func() error {
 			return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-		}, "10s", "250ms").Should(Succeed())
+		}, Timeout, Interval).Should(Succeed())
 	})
 
 	AfterEach(func() {
@@ -127,7 +127,7 @@ var _ = Describe("Common reconcile testing", Ordered, func() {
 
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &v2alpha1.Astarte{})
-			}, "10s", "250ms").ShouldNot(Succeed())
+			}, Timeout, Interval).ShouldNot(Succeed())
 		}
 
 		deployments := &appsv1.DeploymentList{}
@@ -137,7 +137,7 @@ var _ = Describe("Common reconcile testing", Ordered, func() {
 
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: d.Name, Namespace: d.Namespace}, &appsv1.Deployment{})
-			}, "10s", "250ms").ShouldNot(Succeed())
+			}, Timeout, Interval).ShouldNot(Succeed())
 		}
 	})
 
@@ -153,7 +153,7 @@ var _ = Describe("Common reconcile testing", Ordered, func() {
 					Name:      CustomAstarteName + "-housekeeping-private-key",
 					Namespace: CustomAstarteNamespace,
 				}, secret_private)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 			Expect(secret_private.Data).To(HaveKey("private-key"))
 
 			secret_public := &v1.Secret{}
@@ -162,7 +162,7 @@ var _ = Describe("Common reconcile testing", Ordered, func() {
 					Name:      CustomAstarteName + "-housekeeping-public-key",
 					Namespace: CustomAstarteNamespace,
 				}, secret_public)
-			}, "10s", "250ms").Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 			Expect(secret_public.Data).To(HaveKey("public-key"))
 		})
 
@@ -176,7 +176,7 @@ var _ = Describe("Common reconcile testing", Ordered, func() {
 						Name:      CustomAstarteName + "-generic-erlang-configuration",
 						Namespace: CustomAstarteNamespace,
 					}, cm)
-				}, "10s", "250ms").Should(Succeed())
+				}, Timeout, Interval).Should(Succeed())
 				Expect(cm.Data["vm.args"]).To(ContainSubstring("-name ${RELEASE_NAME}@${MY_POD_IP}"))
 			})
 		})
@@ -191,7 +191,7 @@ var _ = Describe("Common reconcile testing", Ordered, func() {
 						Name:      CustomAstarteName + "-erlang-clustering-cookie",
 						Namespace: CustomAstarteNamespace,
 					}, secret)
-				}, "10s", "250ms").Should(Succeed())
+				}, Timeout, Interval).Should(Succeed())
 				Expect(secret.Data["erlang-cookie"]).ToNot(BeEmpty())
 			})
 		})

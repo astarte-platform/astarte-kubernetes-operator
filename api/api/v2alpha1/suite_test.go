@@ -46,6 +46,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
+const Timeout = "30s"
+const Interval = "1s"
+
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 

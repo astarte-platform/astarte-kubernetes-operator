@@ -46,8 +46,6 @@ var _ = Describe("VerneMQ testing", Ordered, Serial, func() {
 		CustomVerneMQHost      = "vernemq.example.com"
 		CustomVerneMQPort      = 8884
 		AstarteVersion         = "1.3.0"
-		DefaultTimeout         = "10s"
-		DefaultPollingInterval = "250ms"
 	)
 
 	var cr *apiv2alpha1.Astarte
@@ -61,7 +59,7 @@ var _ = Describe("VerneMQ testing", Ordered, Serial, func() {
 					return nil
 				}
 				return err
-			}, DefaultTimeout, DefaultPollingInterval).Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 		}
 	})
 
@@ -73,7 +71,7 @@ var _ = Describe("VerneMQ testing", Ordered, Serial, func() {
 				_ = k8sClient.Delete(context.Background(), &a)
 				Eventually(func() error {
 					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &apiv2alpha1.Astarte{})
-				}, DefaultTimeout, DefaultPollingInterval).ShouldNot(Succeed())
+				}, Timeout, Interval).ShouldNot(Succeed())
 			}
 			_ = k8sClient.Delete(context.Background(), &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}})
 		}
@@ -119,7 +117,7 @@ var _ = Describe("VerneMQ testing", Ordered, Serial, func() {
 		Expect(k8sClient.Create(context.Background(), cr)).To(Succeed())
 		Eventually(func() error {
 			return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-		}, DefaultTimeout, DefaultPollingInterval).Should(Succeed())
+		}, Timeout, Interval).Should(Succeed())
 	})
 
 	AfterEach(func() {
@@ -130,7 +128,7 @@ var _ = Describe("VerneMQ testing", Ordered, Serial, func() {
 
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &apiv2alpha1.Astarte{})
-			}, DefaultTimeout, DefaultPollingInterval).ShouldNot(Succeed())
+			}, Timeout, Interval).ShouldNot(Succeed())
 		}
 
 		deployments := &appsv1.DeploymentList{}
@@ -140,7 +138,7 @@ var _ = Describe("VerneMQ testing", Ordered, Serial, func() {
 
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: d.Name, Namespace: d.Namespace}, &appsv1.Deployment{})
-			}, DefaultTimeout, DefaultPollingInterval).ShouldNot(Succeed())
+			}, Timeout, Interval).ShouldNot(Succeed())
 		}
 
 		Eventually(func() int {
@@ -149,7 +147,7 @@ var _ = Describe("VerneMQ testing", Ordered, Serial, func() {
 				return -1
 			}
 			return len(list.Items)
-		}, DefaultTimeout, DefaultPollingInterval).Should(Equal(0))
+		}, Timeout, Interval).Should(Equal(0))
 	})
 
 	Describe("Test EnsureVerneMQ", func() {
@@ -161,7 +159,7 @@ var _ = Describe("VerneMQ testing", Ordered, Serial, func() {
 			Expect(statefulSetName).To(Equal(CustomAstarteName + "-vernemq"))
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: statefulSetName, Namespace: cr.Namespace}, &appsv1.StatefulSet{})
-			}, DefaultTimeout, DefaultPollingInterval).Should(Succeed())
+			}, Timeout, Interval).Should(Succeed())
 
 			// Update the VerneMQ spec to use a different image
 			originalStatefulSet := &appsv1.StatefulSet{}
@@ -186,7 +184,7 @@ var _ = Describe("VerneMQ testing", Ordered, Serial, func() {
 					return ""
 				}
 				return updatedStatefulSet.Spec.Template.Spec.Containers[0].Image
-			}, DefaultTimeout, DefaultPollingInterval).Should(Equal("vernemq/vernemq:0.12.3"))
+			}, Timeout, Interval).Should(Equal("vernemq/vernemq:0.12.3"))
 
 			// Now, set cr.spec.vernemq.deploy to false and ensure the statefulSet is deleted
 			cr.Spec.VerneMQ.Deploy = pointy.Bool(false)
@@ -194,7 +192,7 @@ var _ = Describe("VerneMQ testing", Ordered, Serial, func() {
 			Expect(EnsureVerneMQ(cr, k8sClient, scheme.Scheme)).To(Succeed())
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: statefulSetName, Namespace: cr.Namespace}, &appsv1.StatefulSet{})
-			}, DefaultTimeout, DefaultPollingInterval).ShouldNot(Succeed())
+			}, Timeout, Interval).ShouldNot(Succeed())
 
 		})
 	})
