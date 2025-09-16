@@ -504,46 +504,48 @@ func appendCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astarte) 
 func appendRabbitMQConnectionEnvVars(ret []v1.EnvVar, prefix string, cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	spec := cr.Spec.RabbitMQ.Connection
 
+	if spec == nil {
+		return ret
+	}
+
 	// Let's verify Virtualhost and default to "/" where needed. Al
 	virtualHost := "/"
-	if spec != nil {
-		if spec.VirtualHost != "" {
-			virtualHost = spec.VirtualHost
+	if spec.VirtualHost != "" {
+		virtualHost = spec.VirtualHost
+		ret = append(ret, v1.EnvVar{
+			Name:  prefix + "_VIRTUAL_HOST",
+			Value: spec.VirtualHost,
+		})
+	}
+
+	// SSL
+	if spec.SSLConfiguration.Enable {
+		ret = append(ret, v1.EnvVar{
+			Name:  prefix + "_SSL_ENABLED",
+			Value: "true",
+		})
+
+		// CA configuration
+		if spec.SSLConfiguration.CustomCASecret.Name != "" {
+			// getAstarteCommonVolumes will mount the volume for us, if we're here. So trust the rest of our code.
 			ret = append(ret, v1.EnvVar{
-				Name:  prefix + "_VIRTUAL_HOST",
-				Value: spec.VirtualHost,
+				Name:  prefix + "_SSL_CA_FILE",
+				Value: "/rabbitmq-ssl/ca.crt",
 			})
 		}
 
-		// SSL
-		if spec.SSLConfiguration.Enable {
+		// SNI configuration
+		switch {
+		case spec.SSLConfiguration.CustomSNI != "":
 			ret = append(ret, v1.EnvVar{
-				Name:  prefix + "_SSL_ENABLED",
+				Name:  prefix + "_SSL_CUSTOM_SNI",
+				Value: spec.SSLConfiguration.CustomSNI,
+			})
+		case !pointy.BoolValue(spec.SSLConfiguration.SNI, true):
+			ret = append(ret, v1.EnvVar{
+				Name:  prefix + "_SSL_DISABLE_SNI",
 				Value: "true",
 			})
-
-			// CA configuration
-			if spec.SSLConfiguration.CustomCASecret.Name != "" {
-				// getAstarteCommonVolumes will mount the volume for us, if we're here. So trust the rest of our code.
-				ret = append(ret, v1.EnvVar{
-					Name:  prefix + "_SSL_CA_FILE",
-					Value: "/rabbitmq-ssl/ca.crt",
-				})
-			}
-
-			// SNI configuration
-			switch {
-			case spec.SSLConfiguration.CustomSNI != "":
-				ret = append(ret, v1.EnvVar{
-					Name:  prefix + "_SSL_CUSTOM_SNI",
-					Value: spec.SSLConfiguration.CustomSNI,
-				})
-			case !pointy.BoolValue(spec.SSLConfiguration.SNI, true):
-				ret = append(ret, v1.EnvVar{
-					Name:  prefix + "_SSL_DISABLE_SNI",
-					Value: "true",
-				})
-			}
 		}
 	}
 
