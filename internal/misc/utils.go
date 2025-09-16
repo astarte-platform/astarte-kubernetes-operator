@@ -339,6 +339,10 @@ func IsAstarteComponentDeployed(cr *apiv2alpha1.Astarte, component apiv2alpha1.A
 
 // GetRabbitMQHostnameAndPort returns the Cluster-accessible Hostname and AMQP port for RabbitMQ
 func GetRabbitMQHostnameAndPort(cr *apiv2alpha1.Astarte) (string, int32) {
+	if cr == nil || cr.Spec.RabbitMQ.Connection == nil {
+		return "", 5672
+	}
+
 	return cr.Spec.RabbitMQ.Connection.Host, pointy.Int32Value(cr.Spec.RabbitMQ.Connection.Port, 5672)
 }
 
@@ -346,7 +350,7 @@ func GetRabbitMQHostnameAndPort(cr *apiv2alpha1.Astarte) (string, int32) {
 func GetRabbitMQUserCredentialsSecret(cr *apiv2alpha1.Astarte) (string, string, string) {
 	// TODO: allow `connectionStringSecret` to be used too
 
-	if cr.Spec.RabbitMQ.Connection.CredentialsSecret != nil {
+	if cr.Spec.RabbitMQ.Connection != nil && cr.Spec.RabbitMQ.Connection.CredentialsSecret != nil {
 		return cr.Spec.RabbitMQ.Connection.CredentialsSecret.Name, cr.Spec.RabbitMQ.Connection.CredentialsSecret.UsernameKey, cr.Spec.RabbitMQ.Connection.CredentialsSecret.PasswordKey
 	}
 	return cr.Name + "-rabbitmq-user-credentials", RabbitMQDefaultUserCredentialsUsernameKey, RabbitMQDefaultUserCredentialsPasswordKey
@@ -371,7 +375,7 @@ func GetRabbitMQCredentialsFor(cr *apiv2alpha1.Astarte, c client.Client) (string
 // GetCassandraUserCredentialsSecret gets the secret holding Cassandra credentials in the form <secret name>, <username key>, <password key>
 func GetCassandraUserCredentialsSecret(cr *apiv2alpha1.Astarte) (string, string, string) {
 	// TODO: allow `connectionStringSecret` to be used too
-	if cr.Spec.Cassandra.Connection.CredentialsSecret != nil {
+	if cr.Spec.Cassandra.Connection != nil && cr.Spec.Cassandra.Connection.CredentialsSecret != nil {
 		return cr.Spec.Cassandra.Connection.CredentialsSecret.Name, cr.Spec.Cassandra.Connection.CredentialsSecret.UsernameKey, cr.Spec.Cassandra.Connection.CredentialsSecret.PasswordKey
 	}
 	return cr.Name + "-cassandra-user-credentials", CassandraDefaultUserCredentialsUsernameKey, CassandraDefaultUserCredentialsPasswordKey
