@@ -24,16 +24,17 @@ import (
 	"strconv"
 
 	"github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
+	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/test/builder"
+	"github.com/astarte-platform/astarte-kubernetes-operator/test/integrationutils"
 	"github.com/go-logr/logr"
 	"go.openly.dev/pointy"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	v1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -46,105 +47,33 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 		CustomPasswordKey      = "pwd"
 		CustomAstarteName      = "my-astarte"
 		CustomAstarteNamespace = "utils-test"
-		CustomRabbitMQHost     = "custom-rabbitmq-host"
-		CustomRabbitMQPort     = 5673
+		CustomRabbitMQHost     = "rabbitmq.example.com"
+		CustomRabbitMQPort     = 5672
 		CustomVerneMQHost      = "vernemq.example.com"
-		CustomVerneMQPort      = 8884
+		CustomVerneMQPort      = 8883
 		AstarteVersion         = "1.3.0"
 	)
 
-	var cr *v2alpha1.Astarte
 	var log logr.Logger
+	var cr *apiv2alpha1.Astarte
+	var b *builder.TestAstarteBuilder
 
 	BeforeAll(func() {
-		// Use a safe no-op logger to avoid panics when utils log
-		log = logr.Discard()
-		if CustomAstarteNamespace != "default" {
-			ns := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}}
-			Eventually(func() error {
-				err := k8sClient.Create(context.Background(), ns)
-				if apierrors.IsAlreadyExists(err) {
-					return nil
-				}
-				return err
-			}, Timeout, Interval).Should(Succeed())
-		}
+		integrationutils.CreateNamespace(k8sClient, CustomAstarteNamespace)
 	})
 
 	AfterAll(func() {
-		if CustomAstarteNamespace != "default" {
-			astartes := &v2alpha1.AstarteList{}
-			Expect(k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace})).To(Succeed())
-			for _, a := range astartes.Items {
-				_ = k8sClient.Delete(context.Background(), &a)
-				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &v2alpha1.Astarte{})
-				}, Timeout, Interval).ShouldNot(Succeed())
-			}
-			_ = k8sClient.Delete(context.Background(), &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}})
-		}
+		integrationutils.TeardownNamespace(k8sClient, CustomAstarteNamespace)
 	})
 
 	BeforeEach(func() {
-		// Create and initialize a basic Astarte CR
-		cr = &v2alpha1.Astarte{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      CustomAstarteName,
-				Namespace: CustomAstarteNamespace,
-			},
-			Spec: v2alpha1.AstarteSpec{
-				Version: AstarteVersion,
-				RabbitMQ: v2alpha1.AstarteRabbitMQSpec{
-					Connection: &v2alpha1.AstarteRabbitMQConnectionSpec{
-						HostAndPort: v2alpha1.HostAndPort{
-							Host: CustomRabbitMQHost,
-							Port: pointy.Int32(CustomRabbitMQPort),
-						},
-					},
-				},
-				VerneMQ: v2alpha1.AstarteVerneMQSpec{
-					HostAndPort: v2alpha1.HostAndPort{
-						Host: CustomVerneMQHost,
-						Port: pointy.Int32(CustomVerneMQPort),
-					},
-				},
-				Cassandra: v2alpha1.AstarteCassandraSpec{
-					Connection: &v2alpha1.AstarteCassandraConnectionSpec{
-						Nodes: []v2alpha1.HostAndPort{
-							{
-								Host: "cassandra.example.com",
-								Port: pointy.Int32(9042),
-							},
-						},
-					},
-				},
-			},
-		}
-
-		Expect(k8sClient.Create(context.Background(), cr)).To(Succeed())
-		Eventually(func() error {
-			return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-		}, Timeout, Interval).Should(Succeed())
+		b = builder.NewTestAstarteBuilder(CustomAstarteName, CustomAstarteNamespace)
+		cr = b.Build()
+		integrationutils.DeployAstarte(k8sClient, CustomAstarteName, CustomAstarteNamespace, cr)
 	})
 
 	AfterEach(func() {
-		astartes := &v2alpha1.AstarteList{}
-		Expect(k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace})).To(Succeed())
-		for _, a := range astartes.Items {
-			Expect(k8sClient.Delete(context.Background(), &a)).To(Succeed())
-
-			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &v2alpha1.Astarte{})
-			}, Timeout, Interval).ShouldNot(Succeed())
-		}
-
-		Eventually(func() int {
-			list := &v2alpha1.AstarteList{}
-			if err := k8sClient.List(context.Background(), list, &client.ListOptions{Namespace: CustomAstarteNamespace}); err != nil {
-				return -1
-			}
-			return len(list.Items)
-		}, Timeout, Interval).Should(Equal(0))
+		integrationutils.TeardownResources(context.Background(), k8sClient, CustomAstarteNamespace)
 	})
 
 	Describe("ReconcileConfigMap", func() {

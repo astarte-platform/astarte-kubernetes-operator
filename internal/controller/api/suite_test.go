@@ -100,7 +100,8 @@ var _ = AfterSuite(func() {
 })
 
 // Helper function to create a standard Astarte resource for testing
-func createTestAstarteResource(name, namespace string) *apiv2alpha1.Astarte {
+// nolint:unparam
+func createTestAstarteResource(name string, namespace string) *apiv2alpha1.Astarte {
 	return &apiv2alpha1.Astarte{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
