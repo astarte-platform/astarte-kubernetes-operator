@@ -22,7 +22,6 @@ package v2alpha1
 import (
 	"context"
 
-	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.openly.dev/pointy"
@@ -49,17 +48,10 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	)
 
 	var cr *Astarte
-	var log logr.Logger
 
 	BeforeAll(func() {
-		log.Info("Starting controllerutils tests")
 		if CustomAstarteNamespace != "default" {
-			ns := &v1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: CustomAstarteNamespace,
-				},
-			}
-
+			ns := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}}
 			Eventually(func() error {
 				err := k8sClient.Create(context.Background(), ns)
 				if apierrors.IsAlreadyExists(err) {
@@ -73,16 +65,13 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	AfterAll(func() {
 		if CustomAstarteNamespace != "default" {
 			astartes := &AstarteList{}
-			Expect(k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace})).To(Succeed())
-
+			Expect(k8sClient.List(context.Background(), astartes, client.InNamespace(CustomAstarteNamespace))).To(Succeed())
 			for _, a := range astartes.Items {
-				Expect(k8sClient.Delete(context.Background(), &a)).To(Succeed())
+				_ = k8sClient.Delete(context.Background(), &a)
 				Eventually(func() error {
 					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &Astarte{})
 				}, Timeout, Interval).ShouldNot(Succeed())
 			}
-
-			// Attempt namespace deletion but don't block on it in envtest
 			_ = k8sClient.Delete(context.Background(), &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}})
 		}
 	})
