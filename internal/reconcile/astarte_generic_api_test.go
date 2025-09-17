@@ -46,11 +46,6 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 		CustomAstarteName       = "my-astarte-generic-api"
 		CustomAstarteNamespace  = "astarte-generic-api-test"
 		CustomAstarteInstanceID = "myastarteinstanceid"
-		AstarteVersion          = "1.3.0"
-		CustomRabbitMQHost      = "rabbitmq.example.com"
-		CustomRabbitMQPort      = 5672
-		CustomVerneMQHost       = "vernemq.example.com"
-		CustomVerneMQPort       = 8883
 	)
 
 	var cr *apiv2alpha1.Astarte

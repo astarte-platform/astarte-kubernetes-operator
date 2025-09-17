@@ -42,11 +42,6 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 	const (
 		CustomAstarteName      = "my-astarte-priorityclasses"
 		CustomAstarteNamespace = "astarte-priorityclass-test"
-		AstarteVersion         = "1.3.0"
-		CustomRabbitMQHost     = "rabbitmq.example.com"
-		CustomRabbitMQPort     = 5672
-		CustomVerneMQHost      = "vernemq.example.com"
-		CustomVerneMQPort      = 8883
 	)
 
 	var cr *apiv2alpha1.Astarte

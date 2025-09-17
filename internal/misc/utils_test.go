@@ -51,7 +51,6 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 		CustomRabbitMQPort     = 5672
 		CustomVerneMQHost      = "vernemq.example.com"
 		CustomVerneMQPort      = 8883
-		AstarteVersion         = "1.3.0"
 	)
 
 	var log logr.Logger

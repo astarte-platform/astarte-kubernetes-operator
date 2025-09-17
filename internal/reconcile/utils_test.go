@@ -48,11 +48,6 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 	const (
 		CustomAstarteName      = "test-astarte-utils"
 		CustomAstarteNamespace = "astarte-utils-test"
-		CustomRabbitMQHost     = "rabbitmq.example.com"
-		CustomRabbitMQPort     = 5672
-		CustomVerneMQHost      = "vernemq.example.com"
-		CustomVerneMQPort      = 8883
-		AstarteVersion         = "1.3.0"
 	)
 
 	var cr *apiv2alpha1.Astarte
