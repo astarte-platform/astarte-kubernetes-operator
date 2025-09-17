@@ -498,6 +498,14 @@ func appendCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astarte) 
 		)
 	}
 
+	// Enable or disable the keepalive option for the xandra connection. Default to true.
+	ret = append(ret,
+		v1.EnvVar{
+			Name:  "CASSANDRA_ENABLE_KEEPALIVE",
+			Value: strconv.FormatBool(pointy.BoolValue(spec.EnableKeepalive, true)),
+		},
+	)
+
 	return ret
 }
 

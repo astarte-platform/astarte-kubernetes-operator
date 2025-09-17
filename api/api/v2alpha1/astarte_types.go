@@ -368,6 +368,10 @@ type AstarteCassandraConnectionSpec struct {
 	Nodes                 []HostAndPort `json:"nodes,omitempty"`
 	// +kubebuilder:validation:Optional
 	PoolSize *int `json:"poolSize,omitempty"`
+	// Enable or disable the keepalive option for the xandra connection.
+	// Default: true
+	// +kubebuilder:validation:Optional
+	EnableKeepalive *bool `json:"enableKeepalive,omitempty"`
 }
 
 type AstarteCassandraSpec struct {
