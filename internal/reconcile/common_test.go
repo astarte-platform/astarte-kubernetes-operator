@@ -36,11 +36,6 @@ var _ = Describe("Common reconcile testing", Ordered, func() {
 	const (
 		CustomAstarteName      = "my-astarte"
 		CustomAstarteNamespace = "common-test"
-		CustomRabbitMQHost     = "custom-rabbitmq-host"
-		CustomRabbitMQPort     = 5673
-		CustomVerneMQHost      = "vernemq.example.com"
-		CustomVerneMQPort      = 8884
-		AstarteVersion         = "1.3.0"
 	)
 
 	var cr *apiv2alpha1.Astarte

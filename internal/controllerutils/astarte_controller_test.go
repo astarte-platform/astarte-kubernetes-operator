@@ -30,16 +30,8 @@ import (
 
 var _ = Describe("controllerutils tests", Ordered, Serial, func() {
 	const (
-		CustomSecretName       = "custom-secret"
-		CustomUsernameKey      = "usr"
-		CustomPasswordKey      = "pwd"
 		CustomAstarteName      = "my-astarte"
 		CustomAstarteNamespace = "astarte-controllerutils-tests"
-		CustomRabbitMQHost     = "custom-rabbitmq-host"
-		CustomRabbitMQPort     = 5673
-		CustomVerneMQHost      = "vernemq.example.com"
-		CustomVerneMQPort      = 8884
-		AstarteVersion         = "1.3.0"
 	)
 
 	var cr *v2alpha1.Astarte

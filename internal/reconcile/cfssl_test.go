@@ -39,11 +39,6 @@ var _ = Describe("CFSSL testing", Ordered, Serial, func() {
 	const (
 		CustomAstarteName      = "my-astarte"
 		CustomAstarteNamespace = "cfssl-test"
-		CustomRabbitMQHost     = "custom-rabbitmq-host"
-		CustomRabbitMQPort     = 5673
-		CustomVerneMQHost      = "vernemq.example.com"
-		CustomVerneMQPort      = 8884
-		AstarteVersion         = "1.3.0"
 	)
 
 	var cr *apiv2alpha1.Astarte
