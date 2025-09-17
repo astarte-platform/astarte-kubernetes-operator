@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add kubernetes 1.30.x, 1.31.x, 1.32.x and 1.33.x to the test matrix of the Helm chart installation tests.
 - Added env vars required by Astarte v1.3+.
 - Unit and integration tests.
+- Add AstarteCassandraConnectionSpec.EnableKeepalive field to the Astarte CRD.
 
 ### Changed
 - Forward port changes from release-24.5
