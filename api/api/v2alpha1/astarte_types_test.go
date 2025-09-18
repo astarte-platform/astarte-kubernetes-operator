@@ -22,7 +22,7 @@ package v2alpha1
 import (
 	"context"
 
-	"github.com/astarte-platform/astarte-kubernetes-operator/test/integrationutils"
+	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.openly.dev/pointy"

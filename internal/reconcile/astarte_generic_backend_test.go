@@ -22,7 +22,7 @@ package reconcile
 import (
 	"context"
 
-	"github.com/astarte-platform/astarte-kubernetes-operator/test/integrationutils"
+	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 	"go.openly.dev/pointy"
 
 	. "github.com/onsi/ginkgo/v2"

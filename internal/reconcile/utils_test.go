@@ -31,7 +31,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/astarte-platform/astarte-kubernetes-operator/test/integrationutils"
+	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
