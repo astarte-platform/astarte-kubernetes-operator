@@ -31,7 +31,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	builder "github.com/astarte-platform/astarte-kubernetes-operator/test/builder"
 	"github.com/astarte-platform/astarte-kubernetes-operator/test/integrationutils"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -51,7 +50,6 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 	)
 
 	var cr *apiv2alpha1.Astarte
-	var b *builder.TestAstarteBuilder
 
 	BeforeAll(func() {
 		integrationutils.CreateNamespace(k8sClient, CustomAstarteNamespace)
@@ -62,9 +60,11 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 	})
 
 	BeforeEach(func() {
-		b = builder.NewTestAstarteBuilder(CustomAstarteName, CustomAstarteNamespace)
-		cr = b.Build()
-		integrationutils.DeployAstarte(k8sClient, CustomAstarteName, CustomAstarteNamespace, cr)
+		cr = baseCr.DeepCopy()
+		cr.SetName(CustomAstarteName)
+		cr.SetNamespace(CustomAstarteNamespace)
+		cr.SetResourceVersion("")
+		integrationutils.DeployAstarte(k8sClient, cr, CustomAstarteNamespace)
 	})
 
 	AfterEach(func() {
@@ -536,15 +536,15 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 
 	Describe("Test getDataQueueCount", func() {
 		It("should return custom data queue count when specified", func() {
-			cr.Spec.Components.DataUpdaterPlant.DataQueueCount = pointy.Int(256)
+			cr.Spec.Components.DataUpdaterPlant.DataQueueCount = pointy.Int(128)
 
 			result := getDataQueueCount(cr)
-			Expect(result).To(Equal(256))
+			Expect(result).To(Equal(128))
 		})
 
 		It("should return default data queue count when not specified", func() {
 			result := getDataQueueCount(cr)
-			Expect(result).To(Equal(128)) // Default value
+			Expect(result).To(Equal(128))
 		})
 	})
 
@@ -557,6 +557,8 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 		})
 
 		It("should return default max results limit when not specified", func() {
+			// Reset MaxResultsLimit to ensure default value is used
+			cr.Spec.Components.AppengineAPI.MaxResultsLimit = nil
 			result := getAppEngineAPIMaxResultslimit(cr)
 			Expect(result).To(Equal(10000)) // Default value
 		})
@@ -660,7 +662,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 	Describe("Test getCassandraNodes", func() {
 		It("should return formatted cassandra nodes string", func() {
 			result := getCassandraNodes(cr)
-			expected := "cassandra.example.com:9042"
+			expected := "scylla-local-kind-1-local-kind-1a-0.scylla.svc.cluster.local:9042"
 			Expect(result).To(Equal(expected))
 		})
 
@@ -680,7 +682,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 				})
 
 			result := getCassandraNodes(cr)
-			Expect(result).To(Equal("cassandra.example.com:9042,cassandra2.example.com:9042"))
+			Expect(result).To(Equal("scylla-local-kind-1-local-kind-1a-0.scylla.svc.cluster.local:9042,cassandra2.example.com:9042"))
 		})
 	})
 

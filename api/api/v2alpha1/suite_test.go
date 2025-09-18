@@ -23,6 +23,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -30,6 +31,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"gopkg.in/yaml.v2"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	// +kubebuilder:scaffold:imports
@@ -57,6 +59,7 @@ var k8sClient client.Client
 var testEnv *envtest.Environment
 var ctx context.Context
 var cancel context.CancelFunc
+var baseCr *Astarte
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -120,6 +123,14 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&Astarte{}).SetupWebhookWithManager(mgr)
+	Expect(err).ToNot(HaveOccurred())
+
+	manifestPath := filepath.Join("..", "..", "..", "test", "manifests", "api_v2alpha1_astarte_1.3.yaml")
+	manifestBytes, err := os.ReadFile(manifestPath)
+	Expect(err).ToNot(HaveOccurred())
+
+	baseCr = &Astarte{}
+	err = yaml.Unmarshal(manifestBytes, baseCr)
 	Expect(err).ToNot(HaveOccurred())
 
 	// +kubebuilder:scaffold:webhook

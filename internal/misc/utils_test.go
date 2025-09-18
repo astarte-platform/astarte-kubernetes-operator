@@ -24,8 +24,6 @@ import (
 	"strconv"
 
 	"github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
-	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/test/builder"
 	"github.com/astarte-platform/astarte-kubernetes-operator/test/integrationutils"
 	"github.com/go-logr/logr"
 	"go.openly.dev/pointy"
@@ -45,17 +43,16 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 		CustomSecretName       = "custom-secret"
 		CustomUsernameKey      = "usr"
 		CustomPasswordKey      = "pwd"
-		CustomAstarteName      = "my-astarte"
+		CustomAstarteName      = "example-astarte"
 		CustomAstarteNamespace = "utils-test"
 		CustomRabbitMQHost     = "rabbitmq.example.com"
 		CustomRabbitMQPort     = 5672
-		CustomVerneMQHost      = "vernemq.example.com"
+		CustomVerneMQHost      = "broker.astarte-example.com"
 		CustomVerneMQPort      = 8883
 	)
 
 	var log logr.Logger
-	var cr *apiv2alpha1.Astarte
-	var b *builder.TestAstarteBuilder
+	var cr *v2alpha1.Astarte
 
 	BeforeAll(func() {
 		integrationutils.CreateNamespace(k8sClient, CustomAstarteNamespace)
@@ -66,9 +63,11 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 	})
 
 	BeforeEach(func() {
-		b = builder.NewTestAstarteBuilder(CustomAstarteName, CustomAstarteNamespace)
-		cr = b.Build()
-		integrationutils.DeployAstarte(k8sClient, CustomAstarteName, CustomAstarteNamespace, cr)
+		cr = baseCr.DeepCopy()
+		cr.SetName(CustomAstarteName)
+		cr.SetNamespace(CustomAstarteNamespace)
+		cr.SetResourceVersion("")
+		integrationutils.DeployAstarte(k8sClient, cr, CustomAstarteNamespace)
 	})
 
 	AfterEach(func() {
@@ -269,6 +268,12 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 	})
 
 	Describe("GetVerneMQBrokerURL", func() {
+		BeforeEach(func() {
+			// Ensure VerneMQ configuration is set
+			cr.Spec.VerneMQ.Host = CustomVerneMQHost
+			cr.Spec.VerneMQ.Port = pointy.Int32(CustomVerneMQPort)
+		})
+
 		It("should return the correct VerneMQ broker URL", func() {
 			url := GetVerneMQBrokerURL(cr)
 			Expect(url).To(Equal("mqtts://" + CustomVerneMQHost + ":" + strconv.Itoa(CustomVerneMQPort)))
@@ -416,26 +421,37 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 		})
 
 		Context("When only one component is deployed", func() {
-			BeforeEach(func() {
-				cr.Spec.Components.AppengineAPI.Deploy = pointy.Bool(true)
-			})
 			It("should return the number of deployed components as float", func() {
+				// Disable all but one
+				cr.Spec.Components.AppengineAPI.Deploy = pointy.Bool(true)
+				cr.Spec.Components.Housekeeping.Deploy = pointy.Bool(false)
+				cr.Spec.Components.Dashboard.Deploy = pointy.Bool(false)
+				cr.Spec.Components.DataUpdaterPlant.Deploy = pointy.Bool(false)
+				cr.Spec.Components.Flow.Deploy = pointy.Bool(false)
+				cr.Spec.Components.Pairing.Deploy = pointy.Bool(false)
+				cr.Spec.Components.RealmManagement.Deploy = pointy.Bool(false)
+				cr.Spec.Components.TriggerEngine.Deploy = pointy.Bool(false)
 				Expect(getNumberOfDeployedAstarteComponentsAsFloat(cr)).To(Equal(1.0))
 			})
 		})
 
 		Context("When two components are deployed", func() {
-			BeforeEach(func() {
+			It("should return the number of deployed components as float", func() {
+				// Disable all but two
 				cr.Spec.Components.AppengineAPI.Deploy = pointy.Bool(true)
 				cr.Spec.Components.Housekeeping.Deploy = pointy.Bool(true)
-			})
-			It("should return the number of deployed components as float", func() {
+				cr.Spec.Components.Dashboard.Deploy = pointy.Bool(false)
+				cr.Spec.Components.DataUpdaterPlant.Deploy = pointy.Bool(false)
+				cr.Spec.Components.Flow.Deploy = pointy.Bool(false)
+				cr.Spec.Components.Pairing.Deploy = pointy.Bool(false)
+				cr.Spec.Components.RealmManagement.Deploy = pointy.Bool(false)
+				cr.Spec.Components.TriggerEngine.Deploy = pointy.Bool(false)
 				Expect(getNumberOfDeployedAstarteComponentsAsFloat(cr)).To(Equal(2.0))
 			})
 		})
 
 		Context("When all components are deployed", func() {
-			BeforeEach(func() {
+			It("should return the number of deployed components as float", func() {
 				cr.Spec.Components.AppengineAPI.Deploy = pointy.Bool(true)
 				cr.Spec.Components.Housekeeping.Deploy = pointy.Bool(true)
 				cr.Spec.Components.Dashboard.Deploy = pointy.Bool(true)
@@ -444,8 +460,6 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 				cr.Spec.Components.Pairing.Deploy = pointy.Bool(true)
 				cr.Spec.Components.RealmManagement.Deploy = pointy.Bool(true)
 				cr.Spec.Components.TriggerEngine.Deploy = pointy.Bool(true)
-			})
-			It("should return the number of deployed components as float", func() {
 				Expect(getNumberOfDeployedAstarteComponentsAsFloat(cr)).To(Equal(8.0))
 			})
 		})
@@ -545,7 +559,16 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 
 	Describe("getWeightedDefaultAllocationFor", func() {
 		It("should return default allocation when no leftovers", func() {
-			// All deployed by default
+			// Force all components to be deployed
+			cr.Spec.Components.Flow.Deploy = pointy.Bool(true)
+			cr.Spec.Components.Dashboard.Deploy = pointy.Bool(true)
+			cr.Spec.Components.AppengineAPI.Deploy = pointy.Bool(true)
+			cr.Spec.Components.DataUpdaterPlant.Deploy = pointy.Bool(true)
+			cr.Spec.Components.Housekeeping.Deploy = pointy.Bool(true)
+			cr.Spec.Components.Pairing.Deploy = pointy.Bool(true)
+			cr.Spec.Components.RealmManagement.Deploy = pointy.Bool(true)
+			cr.Spec.Components.TriggerEngine.Deploy = pointy.Bool(true)
+
 			ac := getWeightedDefaultAllocationFor(cr, v2alpha1.AppEngineAPI)
 			def := defaultComponentAllocations[v2alpha1.AppEngineAPI]
 			Expect(ac.CPUCoefficient).To(BeNumerically("~", def.CPUCoefficient, 1e-9))
@@ -771,6 +794,15 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 
 	// Test GetRabbitMQHostnameAndPort
 	Describe("GetRabbitMQHostnameAndPort", func() {
+		BeforeEach(func() {
+			// Initialize RabbitMQ.Connection if it's nil
+			if cr.Spec.RabbitMQ.Connection == nil {
+				cr.Spec.RabbitMQ.Connection = &v2alpha1.AstarteRabbitMQConnectionSpec{}
+			}
+			cr.Spec.RabbitMQ.Connection.Host = CustomRabbitMQHost
+			cr.Spec.RabbitMQ.Connection.Port = pointy.Int32(CustomRabbitMQPort)
+		})
+
 		Context("When retrieving RabbitMQ host and port", func() {
 			It("should return the custom host and port", func() {
 				host, port := GetRabbitMQHostnameAndPort(cr)

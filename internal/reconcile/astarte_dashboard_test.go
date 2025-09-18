@@ -24,7 +24,6 @@ import (
 	"encoding/json"
 
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
-	builder "github.com/astarte-platform/astarte-kubernetes-operator/test/builder"
 	"github.com/astarte-platform/astarte-kubernetes-operator/test/integrationutils"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -37,12 +36,11 @@ import (
 
 var _ = Describe("Astarte Dashboard reconcile tests", Ordered, Serial, func() {
 	const (
-		CustomAstarteName      = "my-astarte-dashboard"
+		CustomAstarteName      = "example-astarte-dashboard"
 		CustomAstarteNamespace = "astarte-dashboard-test"
 	)
 
 	var cr *apiv2alpha1.Astarte
-	var b *builder.TestAstarteBuilder
 
 	BeforeAll(func() {
 		integrationutils.CreateNamespace(k8sClient, CustomAstarteNamespace)
@@ -53,9 +51,11 @@ var _ = Describe("Astarte Dashboard reconcile tests", Ordered, Serial, func() {
 	})
 
 	BeforeEach(func() {
-		b = builder.NewTestAstarteBuilder(CustomAstarteName, CustomAstarteNamespace)
-		cr = b.Build()
-		integrationutils.DeployAstarte(k8sClient, CustomAstarteName, CustomAstarteNamespace, cr)
+		cr = baseCr.DeepCopy()
+		cr.SetName(CustomAstarteName)
+		cr.SetNamespace(CustomAstarteNamespace)
+		cr.SetResourceVersion("")
+		integrationutils.DeployAstarte(k8sClient, cr, CustomAstarteNamespace)
 	})
 
 	AfterEach(func() {
