@@ -37,11 +37,6 @@ var _ = Describe("Astarte Finalizer testing", Ordered, Serial, func() {
 	const (
 		CustomAstarteName      = "test-astarte-finalizer"
 		CustomAstarteNamespace = "astarte-finalizer-tests"
-		AstarteVersion         = "1.3.0"
-		CustomRabbitMQHost     = "custom-rabbitmq-host"
-		CustomRabbitMQPort     = 5673
-		CustomVerneMQHost      = "vernemq.example.com"
-		CustomVerneMQPort      = 8884
 	)
 
 	var cr *apiv2alpha1.Astarte
