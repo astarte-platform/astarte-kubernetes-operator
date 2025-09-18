@@ -29,7 +29,6 @@ import (
 
 	"github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/test/builder"
 	"github.com/astarte-platform/astarte-kubernetes-operator/test/integrationutils"
 )
 
@@ -39,9 +38,8 @@ var _ = Describe("Astarte Finalizer testing", Ordered, Serial, func() {
 		CustomAstarteNamespace = "astarte-finalizer-tests"
 	)
 
-	var cr *apiv2alpha1.Astarte
-	var b *builder.TestAstarteBuilder
 	var reconciler *AstarteReconciler
+	var cr *apiv2alpha1.Astarte
 
 	BeforeAll(func() {
 		integrationutils.CreateNamespace(k8sClient, CustomAstarteNamespace)
@@ -52,13 +50,15 @@ var _ = Describe("Astarte Finalizer testing", Ordered, Serial, func() {
 	})
 
 	BeforeEach(func() {
-		// Initialize reconciler
 		reconciler = &AstarteReconciler{
 			Client: k8sClient,
+			Scheme: k8sClient.Scheme(),
 		}
-
-		b = builder.NewTestAstarteBuilder(CustomAstarteName, CustomAstarteNamespace)
-		cr = b.Build()
+		cr = baseCr.DeepCopy()
+		cr.SetName(CustomAstarteName)
+		cr.SetNamespace(CustomAstarteNamespace)
+		cr.SetResourceVersion("")
+		integrationutils.DeployAstarte(k8sClient, cr, CustomAstarteNamespace)
 	})
 
 	AfterEach(func() {
@@ -67,11 +67,16 @@ var _ = Describe("Astarte Finalizer testing", Ordered, Serial, func() {
 
 	Describe("Test HandleFinalization", func() {
 		It("should successfully finalize Astarte instance with finalizer", func() {
+			// First get the existing CR to update it with finalizer
+			Eventually(func() error {
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
+			}, Timeout, Interval).Should(Succeed())
+
 			// Add finalizer to the CR
 			cr.SetFinalizers([]string{astarteFinalizer})
 
 			Eventually(func() error {
-				return k8sClient.Create(context.Background(), cr)
+				return k8sClient.Update(context.Background(), cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			// Verify CR was created with finalizer

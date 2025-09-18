@@ -22,138 +22,57 @@ package v2alpha1
 import (
 	"context"
 
+	"github.com/astarte-platform/astarte-kubernetes-operator/test/integrationutils"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.openly.dev/pointy"
-	v1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("Astarte types testing", Ordered, Serial, func() {
 	const (
-		CustomAstarteName      = "my-astarte"
+		CustomAstarteName      = "example-astarte"
 		CustomAstarteNamespace = "astarte-types-test"
 		CustomRabbitMQHost     = "custom-rabbitmq-host"
 		CustomRabbitMQPort     = 5673
-		CustomVerneMQHost      = "vernemq.example.com"
+		CustomVerneMQHost      = "broker.astarte-example.com"
 		CustomVerneMQPort      = 8884
-		AstarteVersion         = "1.3.0"
 	)
 
 	var cr *Astarte
 
 	BeforeAll(func() {
-		if CustomAstarteNamespace != "default" {
-			ns := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}}
-			Eventually(func() error {
-				err := k8sClient.Create(context.Background(), ns)
-				if apierrors.IsAlreadyExists(err) {
-					return nil
-				}
-				return err
-			}, Timeout, Interval).Should(Succeed())
-		}
+		integrationutils.CreateNamespace(k8sClient, CustomAstarteNamespace)
 	})
 
 	AfterAll(func() {
-		if CustomAstarteNamespace != "default" {
-			astartes := &AstarteList{}
-			Expect(k8sClient.List(context.Background(), astartes, client.InNamespace(CustomAstarteNamespace))).To(Succeed())
-			for _, a := range astartes.Items {
-				_ = k8sClient.Delete(context.Background(), &a)
-				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &Astarte{})
-				}, Timeout, Interval).ShouldNot(Succeed())
-			}
-			_ = k8sClient.Delete(context.Background(), &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}})
-		}
+		integrationutils.TeardownNamespace(k8sClient, CustomAstarteNamespace)
 	})
 
 	BeforeEach(func() {
-		// Create and initialize a basic Astarte CR
-		cr = &Astarte{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      CustomAstarteName,
-				Namespace: CustomAstarteNamespace,
-			},
-			Spec: AstarteSpec{
-				// Use a unique AstarteInstanceID to satisfy webhook uniqueness checks across the cluster
-				AstarteInstanceID: "astarteinstancetypes",
-				Version:           AstarteVersion,
-				API: AstarteAPISpec{
-					Host: "api.example.com",
-				},
-				RabbitMQ: AstarteRabbitMQSpec{
-					Connection: &AstarteRabbitMQConnectionSpec{
-						HostAndPort: HostAndPort{
-							Host: CustomRabbitMQHost,
-							Port: pointy.Int32(CustomRabbitMQPort),
-						},
-					},
-				},
-				VerneMQ: AstarteVerneMQSpec{
-					HostAndPort: HostAndPort{
-						Host: CustomVerneMQHost,
-						Port: pointy.Int32(CustomVerneMQPort),
-					},
-				},
-				Cassandra: AstarteCassandraSpec{
-					Connection: &AstarteCassandraConnectionSpec{
-						Nodes: []HostAndPort{
-							{
-								Host: "cassandra.example.com",
-								Port: pointy.Int32(9042),
-							},
-						},
-					},
-				},
-			},
-		}
-
-		Expect(k8sClient.Create(context.Background(), cr)).To(Succeed())
-		Eventually(func() error {
-			return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-		}, Timeout, Interval).Should(Succeed())
+		cr = baseCr.DeepCopy()
+		cr.SetName(CustomAstarteName)
+		cr.SetNamespace(CustomAstarteNamespace)
+		cr.Spec.RabbitMQ.Connection.Host = CustomRabbitMQHost
+		cr.Spec.RabbitMQ.Connection.Port = pointy.Int32(CustomRabbitMQPort)
+		cr.Spec.VerneMQ.Host = CustomVerneMQHost
+		cr.Spec.VerneMQ.Port = pointy.Int32(CustomVerneMQPort)
+		integrationutils.DeployAstarte(k8sClient, cr, CustomAstarteNamespace)
 	})
 
 	AfterEach(func() {
-		astartes := &AstarteList{}
-		Expect(k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace})).To(Succeed())
-		for _, a := range astartes.Items {
-			Expect(k8sClient.Delete(context.Background(), &a)).To(Succeed())
-
-			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &Astarte{})
-			}, Timeout, Interval).ShouldNot(Succeed())
-		}
-
-		// Ensure all Astarte CRs are gone in the test namespace
-		Eventually(func() int {
-			list := &AstarteList{}
-			if err := k8sClient.List(context.Background(), list, &client.ListOptions{Namespace: CustomAstarteNamespace}); err != nil {
-				return -1
-			}
-			return len(list.Items)
-		}, Timeout, Interval).Should(Equal(0))
-
+		integrationutils.TeardownResources(context.Background(), k8sClient, CustomAstarteNamespace)
 	})
 
 	Describe("Test AstartePodPriorities.IsEnabled()", func() {
 		It("should return true if AstartePodPrioritiesSpec is enabled", func() {
-			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
-				Enable: true,
-			}
-
+			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{}
+			cr.Spec.Features.AstartePodPriorities.Enable = true
 			enabled := cr.Spec.Features.AstartePodPriorities.IsEnabled()
 			Expect(enabled).To(BeTrue())
 		})
 		It("should return false if AstartePodPrioritiesSpec is disabled", func() {
-			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
-				Enable: false,
-			}
+			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{}
+			cr.Spec.Features.AstartePodPriorities.Enable = false
 			disabled := cr.Spec.Features.AstartePodPriorities.IsEnabled()
 			Expect(disabled).To(BeFalse())
 		})
@@ -167,10 +86,8 @@ var _ = Describe("Astarte types testing", Ordered, Serial, func() {
 	Describe("Test CFSSL.GetPodLabels()", func() {
 		It("should return a map with the correct pod labels", func() {
 			// Set some labels to AstarteCFSSLSpec
-			cr.Spec.CFSSL = AstarteCFSSLSpec{
-				PodLabels: map[string]string{
-					"cfssl-label": "cfssl",
-				},
+			cr.Spec.CFSSL.PodLabels = map[string]string{
+				"cfssl-label": "cfssl",
 			}
 			// Check the returned map
 			labels := cr.Spec.CFSSL.GetPodLabels()

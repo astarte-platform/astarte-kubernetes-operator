@@ -24,7 +24,6 @@ import (
 	"strconv"
 
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
-	builder "github.com/astarte-platform/astarte-kubernetes-operator/test/builder"
 	"github.com/astarte-platform/astarte-kubernetes-operator/test/integrationutils"
 
 	"go.openly.dev/pointy"
@@ -40,12 +39,11 @@ import (
 
 var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 	const (
-		CustomAstarteName      = "my-astarte"
+		CustomAstarteName      = "example-astarte"
 		CustomAstarteNamespace = "astarte-data-updater-plant-test"
 	)
 
 	var cr *apiv2alpha1.Astarte
-	var b *builder.TestAstarteBuilder
 
 	BeforeAll(func() {
 		integrationutils.CreateNamespace(k8sClient, CustomAstarteNamespace)
@@ -56,9 +54,11 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 	})
 
 	BeforeEach(func() {
-		b = builder.NewTestAstarteBuilder(CustomAstarteName, CustomAstarteNamespace)
-		cr = b.Build()
-		integrationutils.DeployAstarte(k8sClient, CustomAstarteName, CustomAstarteNamespace, cr)
+		cr = baseCr.DeepCopy()
+		cr.SetName(CustomAstarteName)
+		cr.SetNamespace(CustomAstarteNamespace)
+		cr.SetResourceVersion("")
+		integrationutils.DeployAstarte(k8sClient, cr, CustomAstarteNamespace)
 	})
 
 	AfterEach(func() {

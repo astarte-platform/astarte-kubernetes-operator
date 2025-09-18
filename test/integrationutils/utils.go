@@ -25,15 +25,14 @@ import (
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	schedulingv1 "k8s.io/api/scheduling/v1"
-
-	"github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	schedulingv1 "k8s.io/api/scheduling/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const Timeout string = "30s"
@@ -56,12 +55,20 @@ func TeardownResources(ctx context.Context, k8sClient client.Client, namespace s
 }
 
 func teardownAstarte(ctx context.Context, k8sClient client.Client, namespace string) {
-	astartes := &v2alpha1.AstarteList{}
+	// Since we cannot import the api package here due to circular dependencies, we use unstructured.UnstructuredList
+	// instead of: &v2alpha1.AstarteList{}
+	astartes := &unstructured.UnstructuredList{}
+	astartes.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "api.astarte-platform.org",
+		Version: "v2alpha1",
+		Kind:    "AstarteList",
+	})
+
 	Expect(k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: namespace})).To(Succeed())
 
 	for _, a := range astartes.Items {
 		// Remove finalizer to avoid issues
-		a.Finalizers = []string{}
+		a.SetFinalizers([]string{})
 		Eventually(func() error {
 			return k8sClient.Update(ctx, &a)
 		}, Timeout, Interval).Should(Succeed())
@@ -73,7 +80,13 @@ func teardownAstarte(ctx context.Context, k8sClient client.Client, namespace str
 
 		// Ensure the Astarte resource is deleted
 		Eventually(func() error {
-			return k8sClient.Get(context.Background(), client.ObjectKey{Name: a.Name, Namespace: a.Namespace}, &v2alpha1.Astarte{})
+			astarte := &unstructured.Unstructured{}
+			astarte.SetGroupVersionKind(schema.GroupVersionKind{
+				Group:   "api.astarte-platform.org",
+				Version: "v2alpha1",
+				Kind:    "Astarte",
+			})
+			return k8sClient.Get(context.Background(), client.ObjectKey{Name: a.GetName(), Namespace: a.GetNamespace()}, astarte)
 		}, Timeout, Interval).ShouldNot(Succeed())
 	}
 }
@@ -262,12 +275,40 @@ func CreateNamespace(k8sClient client.Client, namespace string) {
 	}
 }
 
-func DeployAstarte(k8sClient client.Client, CustomAstarteName string, CustomAstarteNamespace string, cr *v2alpha1.Astarte) {
+// DeployCustomResource creates any custom resource and waits for it to be available
+// This works with any Kubernetes custom resource type, including Astarte CRs
+func DeployCustomResource(k8sClient client.Client, cr client.Object) {
 	Eventually(func() error {
 		return k8sClient.Create(context.Background(), cr)
 	}, Timeout, Interval).Should(Succeed())
 
 	Eventually(func() error {
-		return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+		return k8sClient.Get(context.Background(), client.ObjectKeyFromObject(cr), cr)
 	}, Timeout, Interval).Should(Succeed())
+}
+
+func DeleteCustomResource(ctx context.Context, k8sClient client.Client, cr client.Object) {
+	// Remove finalizers to avoid deletion issues
+	cr.SetFinalizers([]string{})
+	Eventually(func() error {
+		return k8sClient.Update(ctx, cr)
+	}, Timeout, Interval).Should(Succeed())
+
+	// Delete the resource
+	Eventually(func() error {
+		return k8sClient.Delete(ctx, cr)
+	}, Timeout, Interval).Should(Succeed())
+
+	// Ensure the resource is deleted
+	Eventually(func() error {
+		return k8sClient.Get(ctx, client.ObjectKeyFromObject(cr), cr)
+	}, Timeout, Interval).ShouldNot(Succeed())
+}
+
+// Wrapper around DeployCustomResource for Astarte resources
+func DeployAstarte(k8sClient client.Client, cr client.Object, namespace string) {
+	CreateNamespace(k8sClient, namespace)
+	cr.SetNamespace(namespace)
+	cr.SetResourceVersion("")
+	DeployCustomResource(k8sClient, cr)
 }
