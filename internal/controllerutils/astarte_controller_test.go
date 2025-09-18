@@ -48,7 +48,7 @@ var _ = Describe("controllerutils tests", Ordered, Serial, func() {
 		cr.SetName(CustomAstarteName)
 		cr.SetNamespace(CustomAstarteNamespace)
 		cr.SetResourceVersion("")
-		integrationutils.DeployAstarte(k8sClient, cr, CustomAstarteNamespace)
+		integrationutils.DeployAstarte(k8sClient, cr)
 	})
 
 	AfterEach(func() {

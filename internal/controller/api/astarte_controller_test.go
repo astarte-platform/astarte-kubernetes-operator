@@ -77,7 +77,7 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 			cr.SetName(resourceName)
 			cr.SetNamespace(CustomAstarteNamespace)
 			cr.SetResourceVersion("")
-			integrationutils.DeployAstarte(k8sClient, cr, CustomAstarteNamespace)
+			integrationutils.DeployAstarte(k8sClient, cr)
 		})
 
 		AfterEach(func() {
@@ -201,7 +201,7 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 			cr.SetName(addFinalizerTestName)
 			cr.SetNamespace(CustomAstarteNamespace)
 			cr.SetResourceVersion("")
-			integrationutils.DeployAstarte(k8sClient, cr, CustomAstarteNamespace)
+			integrationutils.DeployAstarte(k8sClient, cr)
 		})
 
 		AfterEach(func() {
@@ -255,7 +255,7 @@ var _ = Describe("Standalone Tests", func() {
 			cr.SetName("test-direct-reconcile")
 			cr.SetNamespace(CustomAstarteNamespace)
 			cr.SetResourceVersion("")
-			integrationutils.DeployAstarte(k8sClient, cr, CustomAstarteNamespace)
+			integrationutils.DeployAstarte(k8sClient, cr)
 
 			// Create the reconciler with the test client
 			reconciler := &AstarteReconciler{

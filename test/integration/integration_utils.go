@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//nolint:lll
+//nolint:lll,goconst
 package integration
 
 import (
@@ -272,6 +272,11 @@ func CreateNamespace(k8sClient client.Client, namespace string) {
 			}
 			return err
 		}, Timeout, Interval).Should(Succeed())
+
+		// Ensure the namespace is created
+		Eventually(func() error {
+			return k8sClient.Get(context.Background(), types.NamespacedName{Name: namespace}, ns)
+		}, Timeout, Interval).Should(Succeed())
 	}
 }
 
@@ -306,9 +311,15 @@ func DeleteCustomResource(ctx context.Context, k8sClient client.Client, cr clien
 }
 
 // Wrapper around DeployCustomResource for Astarte resources
-func DeployAstarte(k8sClient client.Client, cr client.Object, namespace string) {
-	CreateNamespace(k8sClient, namespace)
-	cr.SetNamespace(namespace)
+func DeployAstarte(k8sClient client.Client, cr client.Object) {
+	if cr.GetNamespace() == "" {
+		cr.SetNamespace("default")
+	}
+
+	if cr.GetNamespace() != "default" {
+		CreateNamespace(k8sClient, cr.GetNamespace())
+	}
+
 	cr.SetResourceVersion("")
 	DeployCustomResource(k8sClient, cr)
 }
