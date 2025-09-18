@@ -62,7 +62,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 		cr.Spec.RabbitMQ.Connection.Port = pointy.Int32(CustomRabbitMQPort)
 		cr.Spec.VerneMQ.Host = CustomVerneMQHost
 		cr.Spec.VerneMQ.Port = pointy.Int32(CustomVerneMQPort)
-		integrationutils.DeployAstarte(k8sClient, cr, CustomAstarteNamespace)
+		integrationutils.DeployAstarte(k8sClient, cr)
 	})
 
 	AfterEach(func() {

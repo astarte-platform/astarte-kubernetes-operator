@@ -66,7 +66,7 @@ var _ = Describe("VerneMQ testing", Ordered, Serial, func() {
 		cr.Spec.VerneMQ.Host = CustomVerneMQHost
 		cr.Spec.VerneMQ.Port = pointy.Int32(CustomVerneMQPort)
 		cr.Spec.Version = AstarteVersion
-		integrationutils.DeployAstarte(k8sClient, cr, CustomAstarteNamespace)
+		integrationutils.DeployAstarte(k8sClient, cr)
 	})
 
 	AfterEach(func() {
