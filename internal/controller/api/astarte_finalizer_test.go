@@ -29,7 +29,7 @@ import (
 
 	"github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/test/integrationutils"
+	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 )
 
 var _ = Describe("Astarte Finalizer testing", Ordered, Serial, func() {

@@ -17,7 +17,7 @@ limitations under the License.
 */
 
 //nolint:lll
-package integrationutils
+package integration
 
 import (
 	"context"

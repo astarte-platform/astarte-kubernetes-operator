@@ -24,7 +24,7 @@ import (
 	"strconv"
 
 	"github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/test/integrationutils"
+	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 	"github.com/go-logr/logr"
 	"go.openly.dev/pointy"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
