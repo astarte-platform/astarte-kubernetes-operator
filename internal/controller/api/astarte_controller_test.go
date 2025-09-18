@@ -25,11 +25,10 @@ import (
 	"time"
 
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
-	"github.com/astarte-platform/astarte-kubernetes-operator/test/integrationutils"
+	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -56,6 +55,7 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 	Context("When reconciling a resource", func() {
 		const resourceName = "test-resource"
 		var controllerReconciler *AstarteReconciler
+		var cr *apiv2alpha1.Astarte
 		ctx := context.Background()
 
 		typeNamespacedName := types.NamespacedName{
@@ -73,13 +73,11 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 			}
 
 			By("creating the custom resource for the Kind Astarte")
-			resource := createTestAstarteResource(resourceName, CustomAstarteNamespace)
-			err := k8sClient.Get(ctx, typeNamespacedName, &apiv2alpha1.Astarte{})
-			if err != nil && errors.IsNotFound(err) {
-				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
-			} else if err != nil {
-				Fail(fmt.Sprintf("Unexpected error getting resource: %v", err))
-			}
+			cr = baseCr.DeepCopy()
+			cr.SetName(resourceName)
+			cr.SetNamespace(CustomAstarteNamespace)
+			cr.SetResourceVersion("")
+			integrationutils.DeployAstarte(k8sClient, cr)
 		})
 
 		AfterEach(func() {
@@ -145,6 +143,7 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 	Context("Testing the Astarte finalizer", func() {
 		const finalizerTestName = "test-finalizer"
 		var controllerReconciler *AstarteReconciler
+		var cr *apiv2alpha1.Astarte
 		ctx := context.Background()
 
 		BeforeEach(func() {
@@ -156,11 +155,14 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 			}
 
 			// Create the resource with finalizer and deletion timestamp
-			astarteInstance := createTestAstarteResource(finalizerTestName, CustomAstarteNamespace)
-			astarteInstance.Finalizers = []string{"astarte-operator.astarte-platform.org/finalizer"}
-			astarteInstance.DeletionTimestamp = &metav1.Time{Time: time.Now()}
+			cr = baseCr.DeepCopy()
+			cr.SetName(finalizerTestName)
+			cr.SetNamespace(CustomAstarteNamespace)
+			cr.SetResourceVersion("")
+			cr.Finalizers = []string{"astarte-operator.astarte-platform.org/finalizer"}
+			cr.DeletionTimestamp = &metav1.Time{Time: time.Now()}
 
-			Expect(k8sClient.Create(ctx, astarteInstance)).To(Succeed())
+			Expect(k8sClient.Create(ctx, cr)).To(Succeed())
 		})
 
 		AfterEach(func() {
@@ -184,6 +186,7 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 	Context("Testing the addFinalizer function", func() {
 		const addFinalizerTestName = "test-add-finalizer"
 		var controllerReconciler *AstarteReconciler
+		var cr *apiv2alpha1.Astarte
 		ctx := context.Background()
 
 		BeforeEach(func() {
@@ -194,8 +197,11 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 				Recorder: record.NewFakeRecorder(1024),
 			}
 
-			astarteInstance := createTestAstarteResource(addFinalizerTestName, CustomAstarteNamespace)
-			Expect(k8sClient.Create(ctx, astarteInstance)).To(Succeed())
+			cr = baseCr.DeepCopy()
+			cr.SetName(addFinalizerTestName)
+			cr.SetNamespace(CustomAstarteNamespace)
+			cr.SetResourceVersion("")
+			integrationutils.DeployAstarte(k8sClient, cr)
 		})
 
 		AfterEach(func() {
@@ -245,8 +251,11 @@ var _ = Describe("Standalone Tests", func() {
 			}, "20s", Interval).Should(Succeed())
 
 			// Create a test resource
-			astarte := createTestAstarteResource("test-direct-reconcile", CustomAstarteNamespace)
-			Expect(k8sClient.Create(ctx, astarte)).To(Succeed())
+			cr := baseCr.DeepCopy()
+			cr.SetName("test-direct-reconcile")
+			cr.SetNamespace(CustomAstarteNamespace)
+			cr.SetResourceVersion("")
+			integrationutils.DeployAstarte(k8sClient, cr)
 
 			// Create the reconciler with the test client
 			reconciler := &AstarteReconciler{
@@ -267,7 +276,7 @@ var _ = Describe("Standalone Tests", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(result.Requeue).To(BeFalse())
 
-			cleanupAstarteResource(ctx, k8sClient, types.NamespacedName{Name: "test-direct-reconcile", Namespace: CustomAstarteNamespace})
+			// Cleanup is handled by the test framework
 		})
 	})
 

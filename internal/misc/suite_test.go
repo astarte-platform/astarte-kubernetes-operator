@@ -21,6 +21,7 @@ package misc
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -28,6 +29,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,6 +49,7 @@ var k8sClient client.Client
 var ctx context.Context
 var cancel context.CancelFunc
 var testEnv *envtest.Environment
+var baseCr *apiv2alpha1.Astarte
 
 const Timeout = "30s"
 const Interval = "1s"
@@ -91,6 +94,13 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
+	manifestPath := filepath.Join("..", "..", "test", "manifests", "api_v2alpha1_astarte_1.3.yaml")
+	manifestBytes, err := os.ReadFile(manifestPath)
+	Expect(err).ToNot(HaveOccurred())
+
+	baseCr = &apiv2alpha1.Astarte{}
+	err = yaml.Unmarshal(manifestBytes, baseCr)
+	Expect(err).ToNot(HaveOccurred())
 })
 
 var _ = AfterSuite(func() {

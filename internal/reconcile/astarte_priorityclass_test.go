@@ -26,8 +26,7 @@ import (
 	"context"
 
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
-	builder "github.com/astarte-platform/astarte-kubernetes-operator/test/builder"
-	"github.com/astarte-platform/astarte-kubernetes-operator/test/integrationutils"
+	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -40,12 +39,11 @@ import (
 
 var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func() {
 	const (
-		CustomAstarteName      = "my-astarte-priorityclasses"
+		CustomAstarteName      = "example-astarte-priorityclasses"
 		CustomAstarteNamespace = "astarte-priorityclass-test"
 	)
 
 	var cr *apiv2alpha1.Astarte
-	var b *builder.TestAstarteBuilder
 
 	BeforeAll(func() {
 		integrationutils.CreateNamespace(k8sClient, CustomAstarteNamespace)
@@ -56,9 +54,11 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 	})
 
 	BeforeEach(func() {
-		b = builder.NewTestAstarteBuilder(CustomAstarteName, CustomAstarteNamespace)
-		cr = b.Build()
-		integrationutils.DeployAstarte(k8sClient, CustomAstarteName, CustomAstarteNamespace, cr)
+		cr = baseCr.DeepCopy()
+		cr.SetName(CustomAstarteName)
+		cr.SetNamespace(CustomAstarteNamespace)
+		cr.SetResourceVersion("")
+		integrationutils.DeployAstarte(k8sClient, cr)
 	})
 
 	AfterEach(func() {

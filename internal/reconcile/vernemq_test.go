@@ -23,8 +23,7 @@ import (
 	"context"
 
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
-	builder "github.com/astarte-platform/astarte-kubernetes-operator/test/builder"
-	"github.com/astarte-platform/astarte-kubernetes-operator/test/integrationutils"
+	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 	"go.openly.dev/pointy"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -37,17 +36,16 @@ import (
 
 var _ = Describe("VerneMQ testing", Ordered, Serial, func() {
 	const (
-		CustomAstarteName      = "my-astarte"
+		CustomAstarteName      = "example-astarte"
 		CustomAstarteNamespace = "vernemq-test"
 		CustomRabbitMQHost     = "custom-rabbitmq-host"
 		CustomRabbitMQPort     = 5673
-		CustomVerneMQHost      = "vernemq.example.com"
+		CustomVerneMQHost      = "broker.astarte-example.com"
 		CustomVerneMQPort      = 8884
 		AstarteVersion         = "1.3.0"
 	)
 
 	var cr *apiv2alpha1.Astarte
-	var b *builder.TestAstarteBuilder
 
 	BeforeAll(func() {
 		integrationutils.CreateNamespace(k8sClient, CustomAstarteNamespace)
@@ -58,9 +56,17 @@ var _ = Describe("VerneMQ testing", Ordered, Serial, func() {
 	})
 
 	BeforeEach(func() {
-		b = builder.NewTestAstarteBuilder(CustomAstarteName, CustomAstarteNamespace)
-		cr = b.Build()
-		integrationutils.DeployAstarte(k8sClient, CustomAstarteName, CustomAstarteNamespace, cr)
+		cr = baseCr.DeepCopy()
+		cr.SetName(CustomAstarteName)
+		cr.SetNamespace(CustomAstarteNamespace)
+		cr.SetResourceVersion("")
+		cr.Spec.RabbitMQ.Connection.Host = CustomRabbitMQHost
+		cr.Spec.RabbitMQ.Connection.Port = pointy.Int32(CustomRabbitMQPort)
+		cr.Spec.VerneMQ.Deploy = pointy.Bool(true)
+		cr.Spec.VerneMQ.Host = CustomVerneMQHost
+		cr.Spec.VerneMQ.Port = pointy.Int32(CustomVerneMQPort)
+		cr.Spec.Version = AstarteVersion
+		integrationutils.DeployAstarte(k8sClient, cr)
 	})
 
 	AfterEach(func() {

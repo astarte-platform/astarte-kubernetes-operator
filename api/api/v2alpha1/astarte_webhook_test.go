@@ -22,6 +22,7 @@ package v2alpha1
 import (
 	"context"
 
+	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.openly.dev/pointy"
@@ -30,148 +31,50 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	const (
 		CustomSecretName       = "custom-secret"
-		CustomUsernameKey      = "usr"
-		CustomPasswordKey      = "pwd"
-		CustomAstarteName      = "my-astarte"
+		CustomAstarteName      = "example-astarte"
 		CustomAstarteNamespace = "astarte-webhook-tests"
 		CustomRabbitMQHost     = "custom-rabbitmq-host"
 		CustomRabbitMQPort     = 5673
-		CustomVerneMQHost      = "vernemq.example.com"
+		CustomVerneMQHost      = "broker.astarte-example.com"
 		CustomVerneMQPort      = 8884
-		AstarteVersion         = "1.3.0"
 	)
 
 	var cr *Astarte
 
 	BeforeAll(func() {
-		if CustomAstarteNamespace != "default" {
-			ns := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}}
-			Eventually(func() error {
-				err := k8sClient.Create(context.Background(), ns)
-				if apierrors.IsAlreadyExists(err) {
-					return nil
-				}
-				return err
-			}, Timeout, Interval).Should(Succeed())
-		}
+		integrationutils.CreateNamespace(k8sClient, CustomAstarteNamespace)
 	})
 
 	AfterAll(func() {
-		if CustomAstarteNamespace != "default" {
-			astartes := &AstarteList{}
-			Expect(k8sClient.List(context.Background(), astartes, client.InNamespace(CustomAstarteNamespace))).To(Succeed())
-			for _, a := range astartes.Items {
-				_ = k8sClient.Delete(context.Background(), &a)
-				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &Astarte{})
-				}, Timeout, Interval).ShouldNot(Succeed())
-			}
-			_ = k8sClient.Delete(context.Background(), &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}})
-		}
+		integrationutils.TeardownNamespace(k8sClient, CustomAstarteNamespace)
 	})
 
 	BeforeEach(func() {
-		// Ensure we start with a clean namespace
-		astartes := &AstarteList{}
-		Expect(k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace})).To(Succeed())
-
-		// If there are any leftover resources, wait for them to be cleaned up
-		if len(astartes.Items) > 0 {
-			Eventually(func() bool {
-				list := &AstarteList{}
-				if err := k8sClient.List(context.Background(), list, &client.ListOptions{Namespace: CustomAstarteNamespace}); err != nil {
-					return false
-				}
-				return len(list.Items) == 0
-			}, Timeout, Interval).Should(BeTrue())
-		}
-
-		// Create and initialize a basic Astarte CR
-		cr = &Astarte{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      CustomAstarteName,
-				Namespace: CustomAstarteNamespace,
-			},
-			Spec: AstarteSpec{
-				Version: AstarteVersion,
-				RabbitMQ: AstarteRabbitMQSpec{
-					Connection: &AstarteRabbitMQConnectionSpec{
-						HostAndPort: HostAndPort{
-							Host: CustomRabbitMQHost,
-							Port: pointy.Int32(CustomRabbitMQPort),
-						},
-					},
-				},
-				VerneMQ: AstarteVerneMQSpec{
-					HostAndPort: HostAndPort{
-						Host: CustomVerneMQHost,
-						Port: pointy.Int32(CustomVerneMQPort),
-					},
-				},
-				Cassandra: AstarteCassandraSpec{
-					Connection: &AstarteCassandraConnectionSpec{
-						Nodes: []HostAndPort{
-							{
-								Host: "cassandra.example.com",
-								Port: pointy.Int32(9042),
-							},
-						},
-					},
-				},
-			},
-		}
-
-		Expect(k8sClient.Create(context.Background(), cr)).To(Succeed())
-		Eventually(func() error {
-			return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-		}, Timeout, Interval).Should(Succeed())
+		cr = baseCr.DeepCopy()
+		cr.SetName(CustomAstarteName)
+		cr.SetNamespace(CustomAstarteNamespace)
+		cr.Spec.RabbitMQ.Connection.Host = CustomRabbitMQHost
+		cr.Spec.RabbitMQ.Connection.Port = pointy.Int32(CustomRabbitMQPort)
+		cr.Spec.VerneMQ.Host = CustomVerneMQHost
+		cr.Spec.VerneMQ.Port = pointy.Int32(CustomVerneMQPort)
+		integrationutils.DeployAstarte(k8sClient, cr)
 	})
 
 	AfterEach(func() {
-		// Get a fresh list to avoid stale references
-		astartes := &AstarteList{}
-		Expect(k8sClient.List(context.Background(), astartes, &client.ListOptions{Namespace: CustomAstarteNamespace})).To(Succeed())
-
-		for i := range astartes.Items {
-			a := &astartes.Items[i]
-
-			// Delete each Astarte resource
-			Eventually(func() error {
-				return k8sClient.Delete(context.Background(), &astartes.Items[i])
-			}, Timeout, Interval).Should(Succeed())
-
-			// Wait for deletion to complete
-			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: a.Name, Namespace: a.Namespace}, &Astarte{})
-			}, Timeout, Interval).ShouldNot(Succeed())
-		}
-
-		// Also clean up any leftover secrets
-		secrets := &v1.SecretList{}
-		if err := k8sClient.List(context.Background(), secrets, &client.ListOptions{Namespace: CustomAstarteNamespace}); err == nil {
-			for i := range secrets.Items {
-				secret := &secrets.Items[i]
-
-				// Delete the secret
-				Eventually(func() error {
-					return k8sClient.Delete(context.Background(), secret)
-				}, Timeout, Interval).Should(Succeed())
-
-				// Wait for deletion to complete
-				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{Name: secret.Name, Namespace: CustomAstarteNamespace}, &v1.Secret{})
-				}, Timeout, Interval).ShouldNot(Succeed())
-			}
-		}
+		integrationutils.TeardownResources(context.Background(), k8sClient, CustomAstarteNamespace)
 	})
 
 	Describe("TestValidateSSLListener", func() {
+		BeforeEach(func() {
+			// Customize cr for SSL listener testing
+			cr.Spec.VerneMQ = AstarteVerneMQSpec{}
+		})
+
 		It("should return no errors when SSL Listener is disabled", func() {
 			cr.Spec.VerneMQ.SSLListener = pointy.Bool(false)
 			errs := cr.validateSSLListener()
@@ -245,169 +148,109 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	})
 
 	Describe("TestValidateUpdateAstarteInstanceID", func() {
-		It("should return an error when trying to change the instanceID", func() {
-			oldAstarte := &Astarte{
-				Spec: AstarteSpec{
-					AstarteInstanceID: "old-instance-id",
-				},
-			}
-			newAstarte := &Astarte{
-				Spec: AstarteSpec{
-					AstarteInstanceID: "new-instance-id",
-				},
-			}
+		var oldAstarte *Astarte
 
-			err := newAstarte.validateUpdateAstarteInstanceID(oldAstarte)
+		BeforeEach(func() {
+			// Set up old Astarte instance for update validation
+			oldAstarte = cr.DeepCopy()
+		})
+
+		It("should return an error when trying to change the instanceID", func() {
+			oldAstarte.Spec.AstarteInstanceID = "old-instance-id"
+			cr.Spec.AstarteInstanceID = "new-instance-id"
+
+			err := cr.validateUpdateAstarteInstanceID(oldAstarte)
 			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err.Type).To(Equal(field.ErrorTypeInvalid))
 			Expect(err.Field).To(Equal("spec.astarteInstanceID"))
 		})
 
 		It("should NOT return an error when the instanceID is unchanged", func() {
-			oldAstarte := &Astarte{
-				Spec: AstarteSpec{
-					AstarteInstanceID: "same-instance-id",
-				},
-			}
-			newAstarte := &Astarte{
-				Spec: AstarteSpec{
-					AstarteInstanceID: "same-instance-id",
-				},
-			}
+			oldAstarte.Spec.AstarteInstanceID = "same-instance-id"
+			cr.Spec.AstarteInstanceID = "same-instance-id"
 
-			err := newAstarte.validateUpdateAstarteInstanceID(oldAstarte)
+			err := cr.validateUpdateAstarteInstanceID(oldAstarte)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should NOT return an error when the instanceID is empty in both old and new spec", func() {
-			oldAstarte := &Astarte{
-				Spec: AstarteSpec{
-					AstarteInstanceID: "",
-				},
-			}
-			newAstarte := &Astarte{
-				Spec: AstarteSpec{
-					AstarteInstanceID: "",
-				},
-			}
+			oldAstarte.Spec.AstarteInstanceID = ""
+			cr.Spec.AstarteInstanceID = ""
 
-			err := newAstarte.validateUpdateAstarteInstanceID(oldAstarte)
+			err := cr.validateUpdateAstarteInstanceID(oldAstarte)
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
 	Describe("TestValidatePodLabelsForClusteredResources", func() {
-		testComponents := map[string]AstarteSpec{
-			"DataUpdaterPlant": {Components: AstarteComponentsSpec{DataUpdaterPlant: AstarteDataUpdaterPlantSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}}}},
-			"TriggerEngine":    {Components: AstarteComponentsSpec{TriggerEngine: AstarteTriggerEngineSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}}}},
-			"Flow":             {Components: AstarteComponentsSpec{Flow: AstarteGenericAPIComponentSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}}}},
-			"Housekeeping":     {Components: AstarteComponentsSpec{Housekeeping: AstarteGenericAPIComponentSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}}}},
-			"RealmManagement":  {Components: AstarteComponentsSpec{RealmManagement: AstarteGenericAPIComponentSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}}}},
-			"Pairing":          {Components: AstarteComponentsSpec{Pairing: AstarteGenericAPIComponentSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}}}},
-			"VerneMQ":          {VerneMQ: AstarteVerneMQSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}}},
-		}
+		var allowedLabels, notAllowedLabels map[string]string
 
-		allowedLabels := map[string]string{
-			"custom-label":           "lbl",
-			"my.custom.domain/label": "value",
-		}
+		BeforeEach(func() {
+			// Set up test labels
+			allowedLabels = map[string]string{
+				"custom-label":           "lbl",
+				"my.custom.domain/label": "value",
+			}
 
-		notAllowedLabels := map[string]string{
-			"app":          "my-app",
-			"component":    "my-component",
-			"astarte-role": "my-role",
-			"flow-role":    "my-role",
-		}
+			notAllowedLabels = map[string]string{
+				"app":          "my-app",
+				"component":    "my-component",
+				"astarte-role": "my-role",
+				"flow-role":    "my-role",
+			}
+
+			// Initialize components for testing
+			cr.Spec.Components = AstarteComponentsSpec{
+				DataUpdaterPlant: AstarteDataUpdaterPlantSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}},
+				TriggerEngine:    AstarteTriggerEngineSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}},
+				Flow:             AstarteGenericAPIComponentSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}},
+				Housekeeping:     AstarteGenericAPIComponentSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}},
+				RealmManagement:  AstarteGenericAPIComponentSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}},
+				Pairing:          AstarteGenericAPIComponentSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}},
+			}
+			cr.Spec.VerneMQ = AstarteVerneMQSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}}
+		})
 
 		It("should not return errors when using allowed custom labels", func() {
-			for componentName, baseSpec := range testComponents {
-				cr := &Astarte{Spec: baseSpec}
+			cr.Spec.Components.DataUpdaterPlant.PodLabels = allowedLabels
+			cr.Spec.Components.TriggerEngine.PodLabels = allowedLabels
+			cr.Spec.Components.Flow.PodLabels = allowedLabels
+			cr.Spec.Components.Housekeeping.PodLabels = allowedLabels
+			cr.Spec.Components.RealmManagement.PodLabels = allowedLabels
+			cr.Spec.Components.Pairing.PodLabels = allowedLabels
+			cr.Spec.VerneMQ.PodLabels = allowedLabels
 
-				switch componentName {
-				case "DataUpdaterPlant":
-					cr.Spec.Components.DataUpdaterPlant.PodLabels = allowedLabels
-				case "TriggerEngine":
-					cr.Spec.Components.TriggerEngine.PodLabels = allowedLabels
-				case "Flow":
-					cr.Spec.Components.Flow.PodLabels = allowedLabels
-				case "Housekeeping":
-					cr.Spec.Components.Housekeeping.PodLabels = allowedLabels
-				case "RealmManagement":
-					cr.Spec.Components.RealmManagement.PodLabels = allowedLabels
-				case "Pairing":
-					cr.Spec.Components.Pairing.PodLabels = allowedLabels
-				case "VerneMQ":
-					cr.Spec.VerneMQ.PodLabels = allowedLabels
-				}
-
-				err := cr.validatePodLabelsForClusteredResources()
-				Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
-				Expect(err).To(BeEmpty())
-			}
+			err := cr.validatePodLabelsForClusteredResources()
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).To(BeEmpty())
 		})
 
 		It("should return errors when using unallowed reserved labels", func() {
-			for componentName, baseSpec := range testComponents {
-				cr := &Astarte{Spec: baseSpec}
+			cr.Spec.Components.DataUpdaterPlant.PodLabels = notAllowedLabels
 
-				switch componentName {
-				case "DataUpdaterPlant":
-					cr.Spec.Components.DataUpdaterPlant.PodLabels = notAllowedLabels
-				case "TriggerEngine":
-					cr.Spec.Components.TriggerEngine.PodLabels = notAllowedLabels
-				case "Flow":
-					cr.Spec.Components.Flow.PodLabels = notAllowedLabels
-				case "Housekeeping":
-					cr.Spec.Components.Housekeeping.PodLabels = notAllowedLabels
-				case "RealmManagement":
-					cr.Spec.Components.RealmManagement.PodLabels = notAllowedLabels
-				case "Pairing":
-					cr.Spec.Components.Pairing.PodLabels = notAllowedLabels
-				case "VerneMQ":
-					cr.Spec.VerneMQ.PodLabels = notAllowedLabels
-				}
-
-				err := cr.validatePodLabelsForClusteredResources()
-				Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
-				Expect(err).ToNot(BeEmpty())
-			}
+			err := cr.validatePodLabelsForClusteredResources()
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeEmpty())
 		})
 
 		It("should not return errors when no labels are set", func() {
-			for componentName, baseSpec := range testComponents {
-				cr := &Astarte{Spec: baseSpec}
+			cr.Spec.Components.DataUpdaterPlant.PodLabels = nil
+			cr.Spec.Components.TriggerEngine.PodLabels = nil
+			cr.Spec.Components.Flow.PodLabels = nil
+			cr.Spec.Components.Housekeeping.PodLabels = nil
+			cr.Spec.Components.RealmManagement.PodLabels = nil
+			cr.Spec.Components.Pairing.PodLabels = nil
+			cr.Spec.VerneMQ.PodLabels = nil
 
-				switch componentName {
-				case "DataUpdaterPlant":
-					cr.Spec.Components.DataUpdaterPlant.PodLabels = nil
-				case "TriggerEngine":
-					cr.Spec.Components.TriggerEngine.PodLabels = nil
-				case "Flow":
-					cr.Spec.Components.Flow.PodLabels = nil
-				case "Housekeeping":
-					cr.Spec.Components.Housekeeping.PodLabels = nil
-				case "RealmManagement":
-					cr.Spec.Components.RealmManagement.PodLabels = nil
-				case "Pairing":
-					cr.Spec.Components.Pairing.PodLabels = nil
-				case "VerneMQ":
-					cr.Spec.VerneMQ.PodLabels = nil
-				}
-
-				err := cr.validatePodLabelsForClusteredResources()
-				Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
-				Expect(err).To(BeEmpty())
-			}
+			err := cr.validatePodLabelsForClusteredResources()
+			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).To(BeEmpty())
 		})
 
 		It("should handle CFSSL component pod labels validation", func() {
-			cr := &Astarte{
-				Spec: AstarteSpec{
-					CFSSL: AstarteCFSSLSpec{
-						PodLabels: map[string]string{
-							"app": "invalid", // Should trigger error
-						},
-					},
+			cr.Spec.CFSSL = AstarteCFSSLSpec{
+				PodLabels: map[string]string{
+					"app": "invalid", // Should trigger error
 				},
 			}
 			err := cr.validatePodLabelsForClusteredResources()
@@ -472,10 +315,10 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 		It("should allow labels with astarte- and flow- in the middle or end", func() {
 			r := &AstarteGenericClusteredResource{
 				PodLabels: map[string]string{
-					"my-astarte-label": "valid", // astarte- in middle is OK
-					"label-flow-end":   "valid", // flow- in middle is OK
-					"myflow":           "valid", // flow without dash is OK
-					"myastarte":        "valid", // astarte without dash is OK
+					"example-astarte-label": "valid", // astarte- in middle is OK
+					"label-flow-end":        "valid", // flow- in middle is OK
+					"myflow":                "valid", // flow without dash is OK
+					"myastarte":             "valid", // astarte without dash is OK
 				},
 			}
 			err := validatePodLabelsForClusteredResource(PodLabelsGetter(r))
@@ -485,288 +328,202 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	})
 
 	Describe("TestValidateAutoscalerForClusteredResources", func() {
-		It("should return error when autoscaling horizontally on excluded components with autoscaling enabled", func() {
-			astarte := &Astarte{
-				Spec: AstarteSpec{
-					Features: AstarteFeatures{Autoscaling: true},
-					Components: AstarteComponentsSpec{
-						DataUpdaterPlant: AstarteDataUpdaterPlantSpec{
-							AstarteGenericClusteredResource: AstarteGenericClusteredResource{
-								Autoscale: &AstarteGenericClusteredResourceAutoscalerSpec{Horizontal: "hpa"},
-							},
-						},
-					},
+		BeforeEach(func() {
+			// Initialize components for autoscaler testing
+			cr.Spec.Components = AstarteComponentsSpec{
+				DataUpdaterPlant: AstarteDataUpdaterPlantSpec{
+					AstarteGenericClusteredResource: AstarteGenericClusteredResource{},
 				},
 			}
+		})
 
-			err := validateAutoscalerForClusteredResources(astarte)
+		It("should return error when autoscaling horizontally on excluded components with autoscaling enabled", func() {
+			cr.Spec.Features = AstarteFeatures{Autoscaling: true}
+			cr.Spec.Components.DataUpdaterPlant.Autoscale = &AstarteGenericClusteredResourceAutoscalerSpec{Horizontal: "hpa"}
+
+			err := validateAutoscalerForClusteredResources(cr)
 			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 		})
 
 		It("should not return error when autoscaling disabled", func() {
-			astarte := &Astarte{
-				Spec: AstarteSpec{
-					Features: AstarteFeatures{Autoscaling: false},
-					Components: AstarteComponentsSpec{
-						DataUpdaterPlant: AstarteDataUpdaterPlantSpec{
-							AstarteGenericClusteredResource: AstarteGenericClusteredResource{
-								Autoscale: &AstarteGenericClusteredResourceAutoscalerSpec{Horizontal: "hpa"},
-							},
-						},
-					},
-				},
-			}
+			cr.Spec.Features = AstarteFeatures{Autoscaling: false}
+			cr.Spec.Components.DataUpdaterPlant.Autoscale = &AstarteGenericClusteredResourceAutoscalerSpec{Horizontal: "hpa"}
 
-			err := validateAutoscalerForClusteredResources(astarte)
+			err := validateAutoscalerForClusteredResources(cr)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should not return error when autoscaling enabled but Autoscale is nil", func() {
-			astarte := &Astarte{
-				Spec: AstarteSpec{
-					Features: AstarteFeatures{Autoscaling: true},
-					Components: AstarteComponentsSpec{
-						DataUpdaterPlant: AstarteDataUpdaterPlantSpec{
-							AstarteGenericClusteredResource: AstarteGenericClusteredResource{
-								Autoscale: nil,
-							},
-						},
-					},
-				},
-			}
+			cr.Spec.Features = AstarteFeatures{Autoscaling: true}
+			cr.Spec.Components.DataUpdaterPlant.Autoscale = nil
 
-			err := validateAutoscalerForClusteredResources(astarte)
+			err := validateAutoscalerForClusteredResources(cr)
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
 	Describe("TestValidateAutoscalerForClusteredResourcesExcluding", func() {
-		It("should return error when excluded resources include a horizontally autoscaled component", func() {
-			astarte := &Astarte{
-				Spec: AstarteSpec{
-					Features: AstarteFeatures{Autoscaling: true},
-					Components: AstarteComponentsSpec{
-						DataUpdaterPlant: AstarteDataUpdaterPlantSpec{
-							AstarteGenericClusteredResource: AstarteGenericClusteredResource{
-								Autoscale: &AstarteGenericClusteredResourceAutoscalerSpec{Horizontal: "hpa"},
-							},
-						},
-					},
+		BeforeEach(func() {
+			// Initialize components for autoscaler excluding testing
+			cr.Spec.Components = AstarteComponentsSpec{
+				DataUpdaterPlant: AstarteDataUpdaterPlantSpec{
+					AstarteGenericClusteredResource: AstarteGenericClusteredResource{},
 				},
 			}
-			excluded := []AstarteGenericClusteredResource{astarte.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource}
-			err := validateAutoscalerForClusteredResourcesExcluding(astarte, excluded)
+		})
+
+		It("should return error when excluded resources include a horizontally autoscaled component", func() {
+			cr.Spec.Features = AstarteFeatures{Autoscaling: true}
+			cr.Spec.Components.DataUpdaterPlant.Autoscale = &AstarteGenericClusteredResourceAutoscalerSpec{Horizontal: "hpa"}
+
+			excluded := []AstarteGenericClusteredResource{cr.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource}
+			err := validateAutoscalerForClusteredResourcesExcluding(cr, excluded)
 			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 		})
 
 		It("should not return error when excluded resources include a horizontally autoscaled component but Autoscale is nil", func() {
-			astarte := &Astarte{
-				Spec: AstarteSpec{
-					Features: AstarteFeatures{Autoscaling: true},
-					Components: AstarteComponentsSpec{
-						DataUpdaterPlant: AstarteDataUpdaterPlantSpec{
-							AstarteGenericClusteredResource: AstarteGenericClusteredResource{
-								Autoscale: nil,
-							},
-						},
-					},
-				},
-			}
-			excluded := []AstarteGenericClusteredResource{astarte.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource}
-			err := validateAutoscalerForClusteredResourcesExcluding(astarte, excluded)
+			cr.Spec.Features = AstarteFeatures{Autoscaling: true}
+			cr.Spec.Components.DataUpdaterPlant.Autoscale = nil
+
+			excluded := []AstarteGenericClusteredResource{cr.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource}
+			err := validateAutoscalerForClusteredResourcesExcluding(cr, excluded)
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
 	Describe("TestValidateAstartePriorityClasses", func() {
+		BeforeEach(func() {
+			// Initialize features for priority class testing
+			cr.Spec.Features = AstarteFeatures{}
+		})
+
 		It("should not return an error when pod priorities are disabled and values are in correct order", func() {
-			astarte := &Astarte{
-				Spec: AstarteSpec{
-					Features: AstarteFeatures{
-						AstartePodPriorities: &AstartePodPrioritiesSpec{
-							Enable:              false,
-							AstarteHighPriority: pointy.Int(1000),
-							AstarteMidPriority:  pointy.Int(500),
-							AstarteLowPriority:  pointy.Int(100),
-						},
-					},
-				},
+			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
+				Enable:              false,
+				AstarteHighPriority: pointy.Int(1000),
+				AstarteMidPriority:  pointy.Int(500),
+				AstarteLowPriority:  pointy.Int(100),
 			}
 
-			err := astarte.validateAstartePriorityClasses()
+			err := cr.validateAstartePriorityClasses()
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should not return an error when pod priorities are nil", func() {
-			astarte := &Astarte{
-				Spec: AstarteSpec{
-					Features: AstarteFeatures{
-						AstartePodPriorities: nil,
-					},
-				},
-			}
+			cr.Spec.Features.AstartePodPriorities = nil
 
-			err := astarte.validateAstartePriorityClasses()
+			err := cr.validateAstartePriorityClasses()
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should not return an error when pod priorities are disabled and values are not in correct order", func() {
-			astarte := &Astarte{
-				Spec: AstarteSpec{
-					Features: AstarteFeatures{
-						AstartePodPriorities: &AstartePodPrioritiesSpec{
-							Enable:              false,
-							AstarteHighPriority: pointy.Int(0),
-							AstarteMidPriority:  pointy.Int(500),
-							AstarteLowPriority:  pointy.Int(1000),
-						},
-					},
-				},
+			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
+				Enable:              false,
+				AstarteHighPriority: pointy.Int(0),
+				AstarteMidPriority:  pointy.Int(500),
+				AstarteLowPriority:  pointy.Int(1000),
 			}
 
-			err := astarte.validateAstartePriorityClasses()
+			err := cr.validateAstartePriorityClasses()
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should return an error when pod priorities are enabled and values are not in correct order", func() {
-			astarte := &Astarte{
-				Spec: AstarteSpec{
-					Features: AstarteFeatures{
-						AstartePodPriorities: &AstartePodPrioritiesSpec{
-							Enable:              true,
-							AstarteHighPriority: pointy.Int(500),
-							AstarteMidPriority:  pointy.Int(500),
-							AstarteLowPriority:  pointy.Int(1000),
-						},
-					},
-				},
+			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
+				Enable:              true,
+				AstarteHighPriority: pointy.Int(500),
+				AstarteMidPriority:  pointy.Int(500),
+				AstarteLowPriority:  pointy.Int(1000),
 			}
 
-			err := astarte.validateAstartePriorityClasses()
+			err := cr.validateAstartePriorityClasses()
 			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err.Field).To(Equal("spec.features.astarte{Low|Medium|High}Priority"))
 		})
 
 		It("should not return an error when pod priorities are enabled and values are in correct order", func() {
-			astarte := &Astarte{
-				Spec: AstarteSpec{
-					Features: AstarteFeatures{
-						AstartePodPriorities: &AstartePodPrioritiesSpec{
-							Enable:              true,
-							AstarteHighPriority: pointy.Int(1000),
-							AstarteMidPriority:  pointy.Int(500),
-							AstarteLowPriority:  pointy.Int(100),
-						},
-					},
-				},
+			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
+				Enable:              true,
+				AstarteHighPriority: pointy.Int(1000),
+				AstarteMidPriority:  pointy.Int(500),
+				AstarteLowPriority:  pointy.Int(100),
 			}
 
-			err := astarte.validateAstartePriorityClasses()
+			err := cr.validateAstartePriorityClasses()
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
 	Describe("TestValidatePriorityClassesValues", func() {
+		BeforeEach(func() {
+			// Initialize features for priority class values testing
+			cr.Spec.Features = AstarteFeatures{}
+		})
+
 		It("should not return an error when priorities are in correct order", func() {
-			astarte := &Astarte{
-				Spec: AstarteSpec{
-					Features: AstarteFeatures{
-						AstartePodPriorities: &AstartePodPrioritiesSpec{
-							Enable:              true,
-							AstarteHighPriority: pointy.Int(1000),
-							AstarteMidPriority:  pointy.Int(500),
-							AstarteLowPriority:  pointy.Int(100),
-						},
-					},
-				},
+			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
+				Enable:              true,
+				AstarteHighPriority: pointy.Int(1000),
+				AstarteMidPriority:  pointy.Int(500),
+				AstarteLowPriority:  pointy.Int(100),
 			}
 
-			err := astarte.validatePriorityClassesValues()
+			err := cr.validatePriorityClassesValues()
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should return an error when high priority is less than mid priority", func() {
-			astarte := &Astarte{
-				Spec: AstarteSpec{
-					Features: AstarteFeatures{
-						AstartePodPriorities: &AstartePodPrioritiesSpec{
-							Enable:              true,
-							AstarteHighPriority: pointy.Int(400),
-							AstarteMidPriority:  pointy.Int(500),
-							AstarteLowPriority:  pointy.Int(100),
-						},
-					},
-				},
+			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
+				Enable:              true,
+				AstarteHighPriority: pointy.Int(400),
+				AstarteMidPriority:  pointy.Int(500),
+				AstarteLowPriority:  pointy.Int(100),
 			}
 
-			err := astarte.validatePriorityClassesValues()
+			err := cr.validatePriorityClassesValues()
 			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err.Field).To(Equal("spec.features.astarte{Low|Medium|High}Priority"))
 		})
 
 		It("should return an error when mid priority is less than low priority", func() {
-			astarte := &Astarte{
-				Spec: AstarteSpec{
-					Features: AstarteFeatures{
-						AstartePodPriorities: &AstartePodPrioritiesSpec{
-							Enable:              true,
-							AstarteHighPriority: pointy.Int(1000),
-							AstarteMidPriority:  pointy.Int(50),
-							AstarteLowPriority:  pointy.Int(100),
-						},
-					},
-				},
+			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
+				Enable:              true,
+				AstarteHighPriority: pointy.Int(1000),
+				AstarteMidPriority:  pointy.Int(50),
+				AstarteLowPriority:  pointy.Int(100),
 			}
 
-			err := astarte.validatePriorityClassesValues()
+			err := cr.validatePriorityClassesValues()
 			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err.Field).To(Equal("spec.features.astarte{Low|Medium|High}Priority"))
 		})
 
 		It("should not return an error when priorities are equal", func() {
-			astarte := &Astarte{
-				Spec: AstarteSpec{
-					Features: AstarteFeatures{
-						AstartePodPriorities: &AstartePodPrioritiesSpec{
-							Enable:              true,
-							AstarteHighPriority: pointy.Int(500),
-							AstarteMidPriority:  pointy.Int(500),
-							AstarteLowPriority:  pointy.Int(100),
-						},
-					},
-				},
+			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
+				Enable:              true,
+				AstarteHighPriority: pointy.Int(500),
+				AstarteMidPriority:  pointy.Int(500),
+				AstarteLowPriority:  pointy.Int(100),
 			}
 
-			err := astarte.validatePriorityClassesValues()
+			err := cr.validatePriorityClassesValues()
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
 	Describe("TestValidateUpdateAstarteSystemKeyspace", func() {
-		oldAstarte := &Astarte{}
-		newAstarte := &Astarte{}
+		var oldAstarte *Astarte
 
 		BeforeEach(func() {
-			oldAstarte = &Astarte{
-				Spec: AstarteSpec{
-					Cassandra: AstarteCassandraSpec{
-						AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{},
-					},
-				},
+			// Initialize Cassandra configuration for keyspace update testing
+			cr.Spec.Cassandra = AstarteCassandraSpec{
+				AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{},
 			}
 
-			newAstarte = &Astarte{
-				Spec: AstarteSpec{
-					Cassandra: AstarteCassandraSpec{
-						AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{},
-					},
-				},
+			oldAstarte = cr.DeepCopy()
+			oldAstarte.Spec.Cassandra = AstarteCassandraSpec{
+				AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{},
 			}
-		})
-
-		AfterEach(func() {
-			oldAstarte = nil
-			newAstarte = nil
 		})
 
 		It("should return an error when trying to change the keyspace", func() {
@@ -775,13 +532,13 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 				ReplicationFactor:     1,
 				DataCenterReplication: "dc1:3,dc2:2",
 			}
-			newAstarte.Spec.Cassandra.AstarteSystemKeyspace = AstarteSystemKeyspaceSpec{
+			cr.Spec.Cassandra.AstarteSystemKeyspace = AstarteSystemKeyspaceSpec{
 				ReplicationStrategy:   "NetworkTopologyStrategy",
 				ReplicationFactor:     2,
 				DataCenterReplication: "dc1:2,dc2:3",
 			}
 
-			err := newAstarte.validateUpdateAstarteSystemKeyspace(oldAstarte)
+			err := cr.validateUpdateAstarteSystemKeyspace(oldAstarte)
 			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
 			Expect(err.Field).To(Equal("spec.cassandra.astarteSystemKeyspace"))
 		})
@@ -793,37 +550,29 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 				DataCenterReplication: "dc1:3,dc2:2",
 			}
 
-			newAstarte.Spec.Cassandra.AstarteSystemKeyspace = AstarteSystemKeyspaceSpec{
+			cr.Spec.Cassandra.AstarteSystemKeyspace = AstarteSystemKeyspaceSpec{
 				ReplicationStrategy:   "SimpleStrategy",
 				ReplicationFactor:     1,
 				DataCenterReplication: "dc1:3,dc2:2",
 			}
 
-			err := newAstarte.validateUpdateAstarteSystemKeyspace(oldAstarte)
+			err := cr.validateUpdateAstarteSystemKeyspace(oldAstarte)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should NOT return an error when the keyspace is empty in both old and new spec", func() {
 			oldAstarte.Spec.Cassandra.AstarteSystemKeyspace = AstarteSystemKeyspaceSpec{}
-			newAstarte.Spec.Cassandra.AstarteSystemKeyspace = AstarteSystemKeyspaceSpec{}
+			cr.Spec.Cassandra.AstarteSystemKeyspace = AstarteSystemKeyspaceSpec{}
 
-			err := newAstarte.validateUpdateAstarteSystemKeyspace(oldAstarte)
+			err := cr.validateUpdateAstarteSystemKeyspace(oldAstarte)
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
 	Describe("TestValidateCFSSLDefinition", func() {
-		cr := &Astarte{}
 		BeforeEach(func() {
-			cr = &Astarte{
-				Spec: AstarteSpec{
-					CFSSL: AstarteCFSSLSpec{},
-				},
-			}
-		})
-
-		AfterEach(func() {
-			cr = nil
+			// Initialize CFSSL configuration for testing
+			cr.Spec.CFSSL = AstarteCFSSLSpec{}
 		})
 
 		It("should return an error when Deploy is false and URL is empty", func() {
@@ -885,8 +634,10 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 	Describe("TestValidateCreateAstarteSystemKeyspace", func() {
 		BeforeEach(func() {
-			// Reset keyspace to empty state
-			cr.Spec.Cassandra.AstarteSystemKeyspace = AstarteSystemKeyspaceSpec{}
+			// Initialize Cassandra keyspace configuration for create testing
+			cr.Spec.Cassandra = AstarteCassandraSpec{
+				AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{},
+			}
 		})
 
 		It("should not return error with SimpleStrategy and valid odd replication factor", func() {
@@ -1013,60 +764,38 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	})
 
 	Describe("TestValidateCreate", func() {
-		It("should succeed when spec passes all validations", func() {
-			obj := &Astarte{
-				ObjectMeta: metav1.ObjectMeta{Name: "vc-astarte", Namespace: CustomAstarteNamespace},
-				Spec: AstarteSpec{
-					Version:           AstarteVersion,
-					AstarteInstanceID: "coverageid1",
-					VerneMQ:           AstarteVerneMQSpec{SSLListener: pointy.Bool(false)},
-					Cassandra: AstarteCassandraSpec{AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
-						ReplicationStrategy: "SimpleStrategy",
-						ReplicationFactor:   3,
-					}},
-					API: AstarteAPISpec{Host: "test.example.com"},
+		BeforeEach(func() {
+			// Set up basic configuration for create validation testing
+			cr.Spec.API = AstarteAPISpec{Host: "test.example.com"}
+			cr.Spec.VerneMQ = AstarteVerneMQSpec{SSLListener: pointy.Bool(false)}
+			cr.Spec.Cassandra = AstarteCassandraSpec{
+				AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+					ReplicationStrategy: "SimpleStrategy",
+					ReplicationFactor:   3,
 				},
 			}
-			w, err := obj.ValidateCreate()
+		})
+
+		It("should succeed when spec passes all validations", func() {
+			cr.Spec.AstarteInstanceID = "coverageid1"
+			w, err := cr.ValidateCreate()
 			Expect(w).To(BeNil())
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should return invalid when SSL listener enabled without secret", func() {
-			obj := &Astarte{
-				ObjectMeta: metav1.ObjectMeta{Name: "vc-astarte-invalid", Namespace: CustomAstarteNamespace},
-				Spec: AstarteSpec{
-					Version:           AstarteVersion,
-					AstarteInstanceID: "coverageid2",
-					API:               AstarteAPISpec{Host: "test.example.com"},
-					VerneMQ:           AstarteVerneMQSpec{SSLListener: pointy.Bool(true), SSLListenerCertSecretName: ""},
-					Cassandra: AstarteCassandraSpec{AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
-						ReplicationStrategy: "SimpleStrategy",
-						ReplicationFactor:   3,
-					}},
-				},
-			}
-			w, err := obj.ValidateCreate()
+			cr.Spec.AstarteInstanceID = "coverageid2"
+			cr.Spec.VerneMQ = AstarteVerneMQSpec{SSLListener: pointy.Bool(true), SSLListenerCertSecretName: ""}
+			w, err := cr.ValidateCreate()
 			Expect(w).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(apierrors.IsInvalid(err)).To(BeTrue())
 		})
 
 		It("should return invalid when keyspace has invalid replication factor", func() {
-			obj := &Astarte{
-				ObjectMeta: metav1.ObjectMeta{Name: "vc-astarte-keyspace", Namespace: CustomAstarteNamespace},
-				Spec: AstarteSpec{
-					Version:           AstarteVersion,
-					AstarteInstanceID: "coverageid3",
-					API:               AstarteAPISpec{Host: "test.example.com"},
-					VerneMQ:           AstarteVerneMQSpec{SSLListener: pointy.Bool(false)},
-					Cassandra: AstarteCassandraSpec{AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
-						ReplicationStrategy: "SimpleStrategy",
-						ReplicationFactor:   2, // Even number - invalid
-					}},
-				},
-			}
-			w, err := obj.ValidateCreate()
+			cr.Spec.AstarteInstanceID = "coverageid3"
+			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationFactor = 2 // Even number - invalid
+			w, err := cr.ValidateCreate()
 			Expect(w).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(apierrors.IsInvalid(err)).To(BeTrue())
@@ -1074,79 +803,83 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	})
 
 	Describe("TestValidateUpdate", func() {
+		var oldObj *Astarte
+
+		BeforeEach(func() {
+			// Set up old object for update validation testing
+			oldObj = cr.DeepCopy()
+		})
+
 		It("should return invalid when astarteInstanceID changes", func() {
-			oldObj := &Astarte{Spec: AstarteSpec{AstarteInstanceID: "old"}}
-			newObj := &Astarte{Spec: AstarteSpec{AstarteInstanceID: "new"}}
-			w, err := newObj.ValidateUpdate(oldObj)
+			oldObj.Spec.AstarteInstanceID = "old"
+			cr.Spec.AstarteInstanceID = "new"
+			w, err := cr.ValidateUpdate(oldObj)
 			Expect(w).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(apierrors.IsInvalid(err)).To(BeTrue())
 		})
 
 		It("should return invalid when keyspace changes", func() {
-			oldObj := &Astarte{
-				Spec: AstarteSpec{
-					Cassandra: AstarteCassandraSpec{
-						AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
-							ReplicationStrategy: "SimpleStrategy",
-							ReplicationFactor:   3,
-						},
-					},
+			oldObj.Spec.Cassandra = AstarteCassandraSpec{
+				AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+					ReplicationStrategy: "SimpleStrategy",
+					ReplicationFactor:   3,
 				},
 			}
-			newObj := &Astarte{
-				Spec: AstarteSpec{
-					Cassandra: AstarteCassandraSpec{
-						AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
-							ReplicationStrategy: "NetworkTopologyStrategy",
-							ReplicationFactor:   1,
-						},
-					},
+			cr.Spec.Cassandra = AstarteCassandraSpec{
+				AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+					ReplicationStrategy: "NetworkTopologyStrategy",
+					ReplicationFactor:   1,
 				},
 			}
-			w, err := newObj.ValidateUpdate(oldObj)
+			w, err := cr.ValidateUpdate(oldObj)
 			Expect(w).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(apierrors.IsInvalid(err)).To(BeTrue())
 		})
 
 		It("should succeed when no changes violate validations", func() {
-			oldObj := &Astarte{Spec: AstarteSpec{AstarteInstanceID: "same", Cassandra: AstarteCassandraSpec{AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{}}}}
-			newObj := &Astarte{Spec: AstarteSpec{AstarteInstanceID: "same", Cassandra: AstarteCassandraSpec{AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{}}}}
-			w, err := newObj.ValidateUpdate(oldObj)
+			oldObj.Spec.AstarteInstanceID = "same"
+			oldObj.Spec.Cassandra = AstarteCassandraSpec{AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{}}
+			cr.Spec.AstarteInstanceID = "same"
+			cr.Spec.Cassandra = AstarteCassandraSpec{AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{}}
+			w, err := cr.ValidateUpdate(oldObj)
 			Expect(w).To(BeNil())
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
 	Describe("TestValidateAstarte", func() {
-		It("should aggregate multiple errors across validators", func() {
-			obj := &Astarte{
-				ObjectMeta: metav1.ObjectMeta{Name: "va-astarte", Namespace: CustomAstarteNamespace},
-				Spec: AstarteSpec{
-					VerneMQ: AstarteVerneMQSpec{
-						SSLListener:               pointy.Bool(true),
-						SSLListenerCertSecretName: "missing-secret",
-						AstarteGenericClusteredResource: AstarteGenericClusteredResource{
-							PodLabels: map[string]string{"app": "bad"},
-						},
-					},
-					Features: AstarteFeatures{
-						Autoscaling: true,
-						AstartePodPriorities: &AstartePodPrioritiesSpec{
-							Enable:              true,
-							AstarteHighPriority: pointy.Int(500),
-							AstarteMidPriority:  pointy.Int(600),
-							AstarteLowPriority:  pointy.Int(700),
-						},
-					},
-					Components: AstarteComponentsSpec{
-						DataUpdaterPlant: AstarteDataUpdaterPlantSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{Autoscale: &AstarteGenericClusteredResourceAutoscalerSpec{Horizontal: "hpa"}}},
-					},
-					CFSSL: AstarteCFSSLSpec{Deploy: pointy.Bool(false), URL: ""},
+		BeforeEach(func() {
+			// Set up configuration that will trigger multiple validation errors
+			cr.Spec.VerneMQ = AstarteVerneMQSpec{
+				SSLListener:               pointy.Bool(true),
+				SSLListenerCertSecretName: "missing-secret",
+				AstarteGenericClusteredResource: AstarteGenericClusteredResource{
+					PodLabels: map[string]string{"app": "bad"},
 				},
 			}
-			errs := obj.validateAstarte()
+			cr.Spec.Features = AstarteFeatures{
+				Autoscaling: true,
+				AstartePodPriorities: &AstartePodPrioritiesSpec{
+					Enable:              true,
+					AstarteHighPriority: pointy.Int(500),
+					AstarteMidPriority:  pointy.Int(600),
+					AstarteLowPriority:  pointy.Int(700),
+				},
+			}
+			cr.Spec.Components = AstarteComponentsSpec{
+				DataUpdaterPlant: AstarteDataUpdaterPlantSpec{
+					AstarteGenericClusteredResource: AstarteGenericClusteredResource{
+						Autoscale: &AstarteGenericClusteredResourceAutoscalerSpec{Horizontal: "hpa"},
+					},
+				},
+			}
+			cr.Spec.CFSSL = AstarteCFSSLSpec{Deploy: pointy.Bool(false), URL: ""}
+		})
+
+		It("should aggregate multiple errors across validators", func() {
+			errs := cr.validateAstarte()
 			Expect(errs).ToNot(BeNil())
 			Expect(len(errs)).To(BeNumerically(">=", 4))
 		})

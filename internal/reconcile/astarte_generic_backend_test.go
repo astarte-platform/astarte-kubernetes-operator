@@ -22,8 +22,7 @@ package reconcile
 import (
 	"context"
 
-	builder "github.com/astarte-platform/astarte-kubernetes-operator/test/builder"
-	"github.com/astarte-platform/astarte-kubernetes-operator/test/integrationutils"
+	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 	"go.openly.dev/pointy"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -46,7 +45,6 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 	)
 
 	var cr *apiv2alpha1.Astarte
-	var b *builder.TestAstarteBuilder
 
 	BeforeAll(func() {
 		integrationutils.CreateNamespace(k8sClient, CustomAstarteNamespace)
@@ -57,9 +55,11 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 	})
 
 	BeforeEach(func() {
-		b = builder.NewTestAstarteBuilder(CustomAstarteName, CustomAstarteNamespace)
-		cr = b.Build()
-		integrationutils.DeployAstarte(k8sClient, CustomAstarteName, CustomAstarteNamespace, cr)
+		cr = baseCr.DeepCopy()
+		cr.SetName(CustomAstarteName)
+		cr.SetNamespace(CustomAstarteNamespace)
+		cr.SetResourceVersion("")
+		integrationutils.DeployAstarte(k8sClient, cr)
 	})
 
 	AfterEach(func() {
