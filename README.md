@@ -85,9 +85,12 @@ Key:
 
 | Astarte Operator Version | Astarte Version | Kubernetes Version |
 |:------------------------:|:---------------:|:------------------:|
-| v22.11                   | v1.0+           | v1.22+             |
-| v23.5                    | v1.0+           | v1.22+             |
-| v24.5                    | v1.0+           | v1.24+             |
+| v22.11                   | v1.0 - v1.1.0   | v1.22+             |
+| v23.5                    | v1.0 - v1.1.1   | v1.22+             |
+| v24.5                    | v1.0 - v1.2.0   | v1.24+             |
+| v24.5.2*                 | v1.0 - v1.2.1   | v1.24+             |
+
+* Operator 24.5.2 is the only Operator version that is able to handle Astarte `1.2.1`.
 
 ## Development
 
