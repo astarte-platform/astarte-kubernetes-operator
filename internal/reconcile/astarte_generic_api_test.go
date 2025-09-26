@@ -16,10 +16,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Why is there a no-lint here? Well, golangci-lint is failing on this whole file
-// and it is not giving any useful information on why. Probably a bug in golangci-lint
-// that is outdated. Disabling linting for this file for now, until we can upgrade golangci-lint.
-// nolint
 package reconcile
 
 import (
@@ -113,7 +109,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 				svc := &v1.Service{}
 				Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: serviceName, Namespace: cr.Namespace}, svc)).To(Succeed())
 				Expect(svc.Spec.Ports).To(HaveLen(1))
-				Expect(svc.Spec.Ports[0].Port).To(Equal(int32(astarteServicesPort)))
+				Expect(svc.Spec.Ports[0].Port).To(Equal(astarteServicesPort))
 
 				// Cookie secret should exist
 				cookieSecret := &v1.Secret{}
@@ -127,7 +123,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 				Expect(container.Image).To(ContainSubstring(component.DockerImageName()))
 				Expect(container.Ports).To(HaveLen(1))
 				Expect(container.Ports[0].Name).To(Equal("http"))
-				Expect(container.Ports[0].ContainerPort).To(Equal(int32(astarteServicesPort)))
+				Expect(container.Ports[0].ContainerPort).To(Equal(astarteServicesPort))
 
 				// Verify probes
 				Expect(container.ReadinessProbe).ToNot(BeNil())
@@ -285,7 +281,6 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 		})
 
 		It("should create ServiceAccount for FlowComponent", func() {
-
 		})
 
 		It("should create ServiceAccount for AppEngineAPI", func() {

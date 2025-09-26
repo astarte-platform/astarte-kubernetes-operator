@@ -16,7 +16,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//nolint:goconst
 package reconcile
 
 import (
@@ -116,7 +115,6 @@ var _ = Describe("VerneMQ testing", Ordered, Serial, func() {
 			Eventually(func() error {
 				return k8sClient.Get(context.Background(), types.NamespacedName{Name: statefulSetName, Namespace: cr.Namespace}, &appsv1.StatefulSet{})
 			}, Timeout, Interval).ShouldNot(Succeed())
-
 		})
 	})
 })

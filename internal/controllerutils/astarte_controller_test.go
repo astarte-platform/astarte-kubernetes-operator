@@ -16,7 +16,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//nolint:goconst
 package controllerutils
 
 import (
@@ -56,6 +55,5 @@ var _ = Describe("controllerutils tests", Ordered, Serial, func() {
 	})
 
 	Describe("TestFunction", func() {
-
 	})
 })

@@ -16,7 +16,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//nolint:goconst,dupl
 package reconcile
 
 import (
@@ -47,6 +46,10 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 	const (
 		CustomAstarteName      = "test-astarte-utils"
 		CustomAstarteNamespace = "astarte-utils-test"
+		CustomAPIHost          = "api.astarte.example.com"
+		CassandraCASecret      = "cassandra-ca-secret"
+		CustomPVCName          = "test-pvc"
+		RabbitMQCASecret       = "rabbitmq-ca-secret"
 	)
 
 	var cr *apiv2alpha1.Astarte
@@ -331,7 +334,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 
 	Describe("Test computePersistentVolumeClaim", func() {
 		It("should return correct PVC with default settings", func() {
-			defaultName := "test-pvc"
+			defaultName := CustomPVCName
 			defaultSize := resource.MustParse("10Gi")
 
 			name, pvc := computePersistentVolumeClaim(defaultName, &defaultSize, nil, cr)
@@ -345,7 +348,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 		})
 
 		It("should use custom storage spec when provided", func() {
-			defaultName := "test-pvc"
+			defaultName := CustomPVCName
 			defaultSize := resource.MustParse("10Gi")
 			customSize := resource.MustParse("20Gi")
 			customClassName := "fast-ssd"
@@ -364,7 +367,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 		})
 
 		It("should return volume name and nil PVC when VolumeDefinition is provided", func() {
-			defaultName := "test-pvc"
+			defaultName := CustomPVCName
 			defaultSize := resource.MustParse("10Gi")
 			volumeName := "existing-volume"
 
@@ -381,7 +384,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 		})
 
 		It("should use global storage class when not specified in storage spec", func() {
-			defaultName := "test-pvc"
+			defaultName := CustomPVCName
 			defaultSize := resource.MustParse("10Gi")
 			globalStorageClass := "global-storage"
 
@@ -567,25 +570,25 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 	Describe("Test getBaseAstarteAPIURL", func() {
 		It("should return HTTPS URL when SSL is enabled", func() {
 			cr.Spec.API.SSL = pointy.Bool(true)
-			cr.Spec.API.Host = "api.astarte.example.com"
+			cr.Spec.API.Host = CustomAPIHost
 
 			result := getBaseAstarteAPIURL(cr)
-			Expect(result).To(Equal("https://api.astarte.example.com"))
+			Expect(result).To(Equal("https://" + CustomAPIHost))
 		})
 
 		It("should return HTTP URL when SSL is disabled", func() {
 			cr.Spec.API.SSL = pointy.Bool(false)
-			cr.Spec.API.Host = "api.astarte.example.com"
+			cr.Spec.API.Host = CustomAPIHost
 
 			result := getBaseAstarteAPIURL(cr)
-			Expect(result).To(Equal("http://api.astarte.example.com"))
+			Expect(result).To(Equal("http://" + CustomAPIHost))
 		})
 
 		It("should return HTTPS URL by default when SSL is not specified", func() {
-			cr.Spec.API.Host = "api.astarte.example.com"
+			cr.Spec.API.Host = CustomAPIHost
 
 			result := getBaseAstarteAPIURL(cr)
-			Expect(result).To(Equal("https://api.astarte.example.com"))
+			Expect(result).To(Equal("https://" + CustomAPIHost))
 		})
 	})
 
@@ -739,7 +742,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 		})
 
 		It("should include RabbitMQ SSL volume when configured", func() {
-			cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name = "rabbitmq-ca-secret"
+			cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name = RabbitMQCASecret
 
 			volumes := getAstarteCommonVolumes(cr)
 
@@ -750,7 +753,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 				if vol.Name == "rabbitmq-ssl-ca" {
 					foundRabbitMQVolume = true
 					Expect(vol.VolumeSource.Secret).ToNot(BeNil())
-					Expect(vol.VolumeSource.Secret.SecretName).To(Equal("rabbitmq-ca-secret"))
+					Expect(vol.VolumeSource.Secret.SecretName).To(Equal(RabbitMQCASecret))
 					Expect(vol.VolumeSource.Secret.Items).To(HaveLen(1))
 					Expect(vol.VolumeSource.Secret.Items[0].Key).To(Equal("ca.crt"))
 					Expect(vol.VolumeSource.Secret.Items[0].Path).To(Equal("ca.crt"))
@@ -760,7 +763,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 		})
 
 		It("should include Cassandra SSL volume when configured", func() {
-			cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name = "cassandra-ca-secret"
+			cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name = CassandraCASecret
 
 			volumes := getAstarteCommonVolumes(cr)
 
@@ -771,7 +774,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 				if vol.Name == "cassandra-ssl-ca" {
 					foundCassandraVolume = true
 					Expect(vol.VolumeSource.Secret).ToNot(BeNil())
-					Expect(vol.VolumeSource.Secret.SecretName).To(Equal("cassandra-ca-secret"))
+					Expect(vol.VolumeSource.Secret.SecretName).To(Equal(CassandraCASecret))
 					Expect(vol.VolumeSource.Secret.Items).To(HaveLen(1))
 					Expect(vol.VolumeSource.Secret.Items[0].Key).To(Equal("ca.crt"))
 					Expect(vol.VolumeSource.Secret.Items[0].Path).To(Equal("ca.crt"))
@@ -781,8 +784,8 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 		})
 
 		It("should include both SSL volumes when both are configured", func() {
-			cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name = "rabbitmq-ca-secret"
-			cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name = "cassandra-ca-secret"
+			cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name = RabbitMQCASecret
+			cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name = CassandraCASecret
 
 			volumes := getAstarteCommonVolumes(cr)
 
@@ -813,7 +816,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 		})
 
 		It("should include RabbitMQ SSL mount when configured", func() {
-			cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name = "rabbitmq-ca-secret"
+			cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name = RabbitMQCASecret
 
 			mounts := getAstarteCommonVolumeMounts(cr)
 
@@ -831,7 +834,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 		})
 
 		It("should include Cassandra SSL mount when configured", func() {
-			cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name = "cassandra-ca-secret"
+			cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name = CassandraCASecret
 
 			mounts := getAstarteCommonVolumeMounts(cr)
 
@@ -849,8 +852,8 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 		})
 
 		It("should include both SSL mounts when both are configured", func() {
-			cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name = "rabbitmq-ca-secret"
-			cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name = "cassandra-ca-secret"
+			cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name = RabbitMQCASecret
+			cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name = CassandraCASecret
 
 			mounts := getAstarteCommonVolumeMounts(cr)
 
