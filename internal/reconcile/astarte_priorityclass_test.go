@@ -16,10 +16,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Why is there a no-lint here? Well, golangci-lint is failing on this whole file
-// and it is not giving any useful information on why. Probably a bug in golangci-lint
-// that is outdated. Disabling linting for this file for now, until we can upgrade golangci-lint.
-// nolint
 package reconcile
 
 import (

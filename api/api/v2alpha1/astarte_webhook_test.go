@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//nolint:goconst,dupl
+//nolint:goconst
 package v2alpha1
 
 import (
@@ -160,7 +160,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.AstarteInstanceID = "new-instance-id"
 
 			err := cr.validateUpdateAstarteInstanceID(oldAstarte)
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err.Type).To(Equal(field.ErrorTypeInvalid))
 			Expect(err.Field).To(Equal("spec.astarteInstanceID"))
 		})
@@ -221,7 +221,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.VerneMQ.PodLabels = allowedLabels
 
 			err := cr.validatePodLabelsForClusteredResources()
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err).To(BeEmpty())
 		})
 
@@ -229,7 +229,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.Components.DataUpdaterPlant.PodLabels = notAllowedLabels
 
 			err := cr.validatePodLabelsForClusteredResources()
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err).ToNot(BeEmpty())
 		})
 
@@ -243,7 +243,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.VerneMQ.PodLabels = nil
 
 			err := cr.validatePodLabelsForClusteredResources()
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err).To(BeEmpty())
 		})
 
@@ -254,7 +254,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 				},
 			}
 			err := cr.validatePodLabelsForClusteredResources()
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err).ToNot(BeEmpty())
 			Expect(err[0].Field).To(Equal("podLabels"))
 		})
@@ -269,7 +269,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 				},
 			}
 			err := validatePodLabelsForClusteredResource(PodLabelsGetter(r))
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err).To(BeEmpty())
 		})
 
@@ -283,7 +283,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 				},
 			}
 			err := validatePodLabelsForClusteredResource(PodLabelsGetter(r))
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err).ToNot(BeEmpty())
 		})
 
@@ -292,7 +292,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 				PodLabels: nil,
 			}
 			err := validatePodLabelsForClusteredResource(PodLabelsGetter(r))
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err).To(BeEmpty())
 		})
 
@@ -308,7 +308,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 				},
 			}
 			err := validatePodLabelsForClusteredResource(PodLabelsGetter(r))
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err).To(HaveLen(6)) // All 6 labels should be invalid
 		})
 
@@ -322,7 +322,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 				},
 			}
 			err := validatePodLabelsForClusteredResource(PodLabelsGetter(r))
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err).To(BeEmpty())
 		})
 	})
@@ -342,7 +342,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.Components.DataUpdaterPlant.Autoscale = &AstarteGenericClusteredResourceAutoscalerSpec{Horizontal: "hpa"}
 
 			err := validateAutoscalerForClusteredResources(cr)
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 		})
 
 		It("should not return error when autoscaling disabled", func() {
@@ -378,7 +378,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 			excluded := []AstarteGenericClusteredResource{cr.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource}
 			err := validateAutoscalerForClusteredResourcesExcluding(cr, excluded)
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 		})
 
 		It("should not return error when excluded resources include a horizontally autoscaled component but Autoscale is nil", func() {
@@ -437,7 +437,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			}
 
 			err := cr.validateAstartePriorityClasses()
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err.Field).To(Equal("spec.features.astarte{Low|Medium|High}Priority"))
 		})
 
@@ -481,7 +481,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			}
 
 			err := cr.validatePriorityClassesValues()
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err.Field).To(Equal("spec.features.astarte{Low|Medium|High}Priority"))
 		})
 
@@ -494,7 +494,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			}
 
 			err := cr.validatePriorityClassesValues()
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err.Field).To(Equal("spec.features.astarte{Low|Medium|High}Priority"))
 		})
 
@@ -539,7 +539,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			}
 
 			err := cr.validateUpdateAstarteSystemKeyspace(oldAstarte)
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err.Field).To(Equal("spec.cassandra.astarteSystemKeyspace"))
 		})
 
@@ -580,7 +580,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.CFSSL.URL = ""
 
 			err := cr.validateCFSSLDefinition()
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err.Field).To(Equal("spec.cfssl.url"))
 		})
 
@@ -645,7 +645,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationFactor = 3
 
 			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err).To(BeEmpty())
 		})
 
@@ -654,7 +654,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationFactor = 0
 
 			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err).To(HaveLen(1))
 			Expect(err[0].Field).To(Equal("spec.cassandra.astarteSystemKeyspace.replicationFactor"))
 		})
@@ -664,7 +664,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:3"
 
 			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err).To(BeEmpty())
 		})
 
@@ -673,7 +673,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:3,dc2:5,dc3:1"
 
 			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err).To(BeEmpty())
 		})
 
@@ -682,7 +682,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationFactor = 2
 
 			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err).To(HaveLen(1))
 		})
 
@@ -706,7 +706,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:three"
 			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err).To(HaveLen(2))
 		})
 
@@ -714,34 +714,31 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:4"
 			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err).To(HaveLen(1))
-
 		})
 
 		It("should return an error with NetworkTopologyStrategy and mixed valid and invalid DCs", func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:3,dc2:4" // dc2 is invalid
 			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err).To(HaveLen(1))
-
 		})
 
 		It("should return multiple errors with NetworkTopologyStrategy and multiple invalid entries", func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:2,dc2:not-a-number,dc3:5"
 			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err).To(HaveLen(3))
-
 		})
 
 		It("should return an error with empty replication strategy", func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = ""
 			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err).To(HaveLen(1))
 			Expect(err[0].Field).To(Equal("spec.cassandra.astarteSystemKeyspace.dataCenterReplication"))
 		})
@@ -750,7 +747,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = ""
 			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err).To(HaveLen(1))
 		})
 
@@ -758,7 +755,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "UnknownStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:3"
 			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil()) //nolint:ginkgolinter
+			Expect(err).ToNot(BeNil())
 			Expect(err).To(BeEmpty())
 		})
 	})
@@ -883,7 +880,6 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			Expect(errs).ToNot(BeNil())
 			Expect(len(errs)).To(BeNumerically(">=", 4))
 		})
-
 	})
 
 	Describe("TestValidateDelete", func() {
