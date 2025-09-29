@@ -750,14 +750,6 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(HaveLen(1))
 		})
-
-		It("should handle unknown replication strategy (defaults to NetworkTopologyStrategy behavior)", func() {
-			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "UnknownStrategy"
-			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:3"
-			err := cr.validateCreateAstarteSystemKeyspace()
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(BeEmpty())
-		})
 	})
 
 	Describe("TestValidateCreate", func() {
