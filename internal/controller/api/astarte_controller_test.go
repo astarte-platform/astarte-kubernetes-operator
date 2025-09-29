@@ -16,7 +16,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//nolint:goconst
 package controller
 
 import (
@@ -42,7 +41,6 @@ const (
 )
 
 var _ = Describe("Astarte Controller", Ordered, Serial, func() {
-
 	BeforeAll(func() {
 		integrationutils.CreateNamespace(k8sClient, CustomAstarteNamespace)
 	})
