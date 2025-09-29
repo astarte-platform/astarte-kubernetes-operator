@@ -534,7 +534,6 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			}
 			cr.Spec.Cassandra.AstarteSystemKeyspace = AstarteSystemKeyspaceSpec{
 				ReplicationStrategy:   "NetworkTopologyStrategy",
-				ReplicationFactor:     2,
 				DataCenterReplication: "dc1:2,dc2:3",
 			}
 
@@ -826,7 +825,6 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.Cassandra = AstarteCassandraSpec{
 				AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
 					ReplicationStrategy: "NetworkTopologyStrategy",
-					ReplicationFactor:   1,
 				},
 			}
 			w, err := cr.ValidateUpdate(oldObj)
