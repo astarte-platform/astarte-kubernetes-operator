@@ -42,19 +42,20 @@ const AstarteHighPriorityName string = "astarte-high-priority-non-preemptive"
 const AstarteMidPriorityName string = "astarte-mid-priority-non-preemptive"
 const AstarteLowPriorityName string = "astarte-low-priority-non-preemptive"
 
-func TeardownResources(ctx context.Context, k8sClient client.Client, namespace string) {
-	teardownAstarte(ctx, k8sClient, namespace)
-	teardownDeployments(ctx, k8sClient, namespace)
-	teardownStatefulSets(ctx, k8sClient, namespace)
-	teardownConfigMaps(ctx, k8sClient, namespace)
-	teardownSecrets(ctx, k8sClient, namespace)
-	teardownPVCs(ctx, k8sClient, namespace)
-	teardownServices(ctx, k8sClient, namespace)
-	teardownRBAC(k8sClient, namespace)
-	teardownPriorityClasses(k8sClient)
+func TeardownResourcesInNamespace(ctx context.Context, k8sClient client.Client, namespace string) {
+	deleteAstartesInNamespace(ctx, k8sClient, namespace)
+	deleteDeploymentsInNamespace(ctx, k8sClient, namespace)
+	deleteStatefulSetsInNamespace(ctx, k8sClient, namespace)
+	deleteConfigMapsInNamespace(ctx, k8sClient, namespace)
+	deleteSecretsInNamespace(ctx, k8sClient, namespace)
+	deletePVCsInNamespace(ctx, k8sClient, namespace)
+	deleteServicesInNamespace(ctx, k8sClient, namespace)
+	deleteRBACInNamespace(k8sClient, namespace)
+	deletePriorityClasses(k8sClient)
 }
 
-func teardownAstarte(ctx context.Context, k8sClient client.Client, namespace string) {
+// deleteAstartesInNamespace deletes all Astarte custom resources in the given namespace
+func deleteAstartesInNamespace(ctx context.Context, k8sClient client.Client, namespace string) {
 	// Since we cannot import the api package here due to circular dependencies, we use unstructured.UnstructuredList
 	// instead of: &v2alpha1.AstarteList{}
 	astartes := &unstructured.UnstructuredList{}
@@ -91,7 +92,8 @@ func teardownAstarte(ctx context.Context, k8sClient client.Client, namespace str
 	}
 }
 
-func teardownDeployments(ctx context.Context, k8sClient client.Client, namespace string) {
+// deleteDeploymentsInNamespace deletes all Deployment resources in the given namespace.
+func deleteDeploymentsInNamespace(ctx context.Context, k8sClient client.Client, namespace string) {
 	deployments := &appsv1.DeploymentList{}
 	Expect(k8sClient.List(context.Background(), deployments, &client.ListOptions{Namespace: namespace})).To(Succeed())
 
@@ -106,7 +108,8 @@ func teardownDeployments(ctx context.Context, k8sClient client.Client, namespace
 	}
 }
 
-func teardownStatefulSets(ctx context.Context, k8sClient client.Client, namespace string) {
+// deleteStatefulSetsInNamespace deletes all StatefulSet resources in the given namespace.
+func deleteStatefulSetsInNamespace(ctx context.Context, k8sClient client.Client, namespace string) {
 	statefulsets := &appsv1.StatefulSetList{}
 	Expect(k8sClient.List(context.Background(), statefulsets, &client.ListOptions{Namespace: namespace})).To(Succeed())
 
@@ -121,7 +124,8 @@ func teardownStatefulSets(ctx context.Context, k8sClient client.Client, namespac
 	}
 }
 
-func teardownConfigMaps(ctx context.Context, k8sClient client.Client, namespace string) {
+// deleteConfigMapsInNamespace deletes all ConfigMap resources in the given namespace.
+func deleteConfigMapsInNamespace(ctx context.Context, k8sClient client.Client, namespace string) {
 	configMaps := &v1.ConfigMapList{}
 	Expect(k8sClient.List(context.Background(), configMaps, &client.ListOptions{Namespace: namespace})).To(Succeed())
 
@@ -136,7 +140,8 @@ func teardownConfigMaps(ctx context.Context, k8sClient client.Client, namespace 
 	}
 }
 
-func teardownSecrets(ctx context.Context, k8sClient client.Client, namespace string) {
+// deleteSecretsInNamespace deletes all Secret resources in the given namespace.
+func deleteSecretsInNamespace(ctx context.Context, k8sClient client.Client, namespace string) {
 	secrets := &v1.SecretList{}
 
 	Expect(k8sClient.List(context.Background(), secrets, &client.ListOptions{Namespace: namespace})).To(Succeed())
@@ -152,7 +157,8 @@ func teardownSecrets(ctx context.Context, k8sClient client.Client, namespace str
 	}
 }
 
-func teardownPVCs(ctx context.Context, k8sClient client.Client, namespace string) {
+// deletePVCsInNamespace deletes all PersistentVolumeClaim resources in the given namespace.
+func deletePVCsInNamespace(ctx context.Context, k8sClient client.Client, namespace string) {
 	pvcs := &v1.PersistentVolumeClaimList{}
 	Expect(k8sClient.List(context.Background(), pvcs, &client.ListOptions{Namespace: namespace})).To(Succeed())
 
@@ -167,7 +173,8 @@ func teardownPVCs(ctx context.Context, k8sClient client.Client, namespace string
 	}
 }
 
-func teardownServices(ctx context.Context, k8sClient client.Client, namespace string) {
+// deleteServicesInNamespace deletes all Service resources in the given namespace.
+func deleteServicesInNamespace(ctx context.Context, k8sClient client.Client, namespace string) {
 	services := &v1.ServiceList{}
 	Expect(k8sClient.List(context.Background(), services, &client.ListOptions{Namespace: namespace})).To(Succeed())
 	for _, s := range services.Items {
@@ -183,7 +190,8 @@ func teardownServices(ctx context.Context, k8sClient client.Client, namespace st
 	}
 }
 
-func teardownRBAC(k8sClient client.Client, namespace string) {
+// deleteRBACInNamespace deletes all RBAC resources in the given namespace.
+func deleteRBACInNamespace(k8sClient client.Client, namespace string) {
 	serviceAccounts := &v1.ServiceAccountList{}
 	Expect(k8sClient.List(context.Background(), serviceAccounts, &client.ListOptions{Namespace: namespace})).To(Succeed())
 	for _, sa := range serviceAccounts.Items {
@@ -236,7 +244,8 @@ func teardownRBAC(k8sClient client.Client, namespace string) {
 	}, Timeout, Interval).Should(Equal(0))
 }
 
-func teardownPriorityClasses(k8sClient client.Client) {
+// deletePriorityClasses deletes all PriorityClass resources in the cluster.
+func deletePriorityClasses(k8sClient client.Client) {
 	// Cleanup of priorityclasses that might remain from tests
 	for _, name := range []string{AstarteHighPriorityName, AstarteMidPriorityName, AstarteLowPriorityName} {
 		pc := &schedulingv1.PriorityClass{}
@@ -253,7 +262,7 @@ func teardownPriorityClasses(k8sClient client.Client) {
 	}
 }
 
-func TeardownNamespace(k8sClient client.Client, namespace string) {
+func DeleteNamespace(k8sClient client.Client, namespace string) {
 	if namespace != "default" {
 		// Just give the namespace deletion a try, do not repeat on timeout
 		// as it would return "namespace terminating" errors

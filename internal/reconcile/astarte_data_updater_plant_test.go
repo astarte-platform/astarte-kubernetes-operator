@@ -49,7 +49,7 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 	})
 
 	AfterAll(func() {
-		integrationutils.TeardownNamespace(k8sClient, CustomAstarteNamespace)
+		integrationutils.DeleteNamespace(k8sClient, CustomAstarteNamespace)
 	})
 
 	BeforeEach(func() {
@@ -61,7 +61,7 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 	})
 
 	AfterEach(func() {
-		integrationutils.TeardownResources(context.Background(), k8sClient, CustomAstarteNamespace)
+		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomAstarteNamespace)
 	})
 	Describe("Test EnsureAstarteDataUpdaterPlant", func() {
 		It("should return error if it is not possible to list current DUP Deployments", func() {
