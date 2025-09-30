@@ -498,7 +498,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			Expect(err.Field).To(Equal("spec.features.astarte{Low|Medium|High}Priority"))
 		})
 
-		It("should not return an error when priorities are equal", func() {
+		It("should return an error when priorities are equal", func() {
 			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
 				Enable:              true,
 				AstarteHighPriority: pointy.Int(500),
@@ -507,7 +507,30 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			}
 
 			err := cr.validatePriorityClassesValues()
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(BeNil())
+			Expect(err.Field).To(Equal("spec.features.astarte{Low|Medium|High}Priority"))
+
+			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
+				Enable:              true,
+				AstarteHighPriority: pointy.Int(100),
+				AstarteMidPriority:  pointy.Int(500),
+				AstarteLowPriority:  pointy.Int(500),
+			}
+
+			err = cr.validatePriorityClassesValues()
+			Expect(err).ToNot(BeNil())
+			Expect(err.Field).To(Equal("spec.features.astarte{Low|Medium|High}Priority"))
+
+			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
+				Enable:              true,
+				AstarteHighPriority: pointy.Int(500),
+				AstarteMidPriority:  pointy.Int(100),
+				AstarteLowPriority:  pointy.Int(500),
+			}
+
+			err = cr.validatePriorityClassesValues()
+			Expect(err).ToNot(BeNil())
+			Expect(err.Field).To(Equal("spec.features.astarte{Low|Medium|High}Priority"))
 		})
 	})
 
