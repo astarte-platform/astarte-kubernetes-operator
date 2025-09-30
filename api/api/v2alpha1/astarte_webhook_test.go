@@ -621,13 +621,27 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("should handle URL with whitespace", func() {
+		It("should return an error when URL is not compliant with RFC 3986", func() {
+			// Whitespaces are not allowed
 			cr.Spec.CFSSL.Deploy = pointy.Bool(false)
-			cr.Spec.CFSSL.URL = "   " // Whitespace only
+			cr.Spec.CFSSL.URL = "http://my-c fssl.com"
 			err := cr.validateCFSSLDefinition()
-			// Current implementation only checks for empty string, not whitespace
-			// This is a potential improvement area - whitespace-only URLs should probably be invalid
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ToNot(BeNil())
+			Expect(err.Field).To(Equal("spec.cfssl.url"))
+
+			// Trailing spaces are not allowed
+			cr.Spec.CFSSL.Deploy = pointy.Bool(false)
+			cr.Spec.CFSSL.URL = "http://my-cfssl.com "
+			err = cr.validateCFSSLDefinition()
+			Expect(err).ToNot(BeNil())
+			Expect(err.Field).To(Equal("spec.cfssl.url"))
+
+			// Other invalid URL
+			cr.Spec.CFSSL.Deploy = pointy.Bool(false)
+			cr.Spec.CFSSL.URL = "http://192.168.0.%31/"
+			err = cr.validateCFSSLDefinition()
+			Expect(err).ToNot(BeNil())
+			Expect(err.Field).To(Equal("spec.cfssl.url"))
 		})
 	})
 

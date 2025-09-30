@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -379,8 +380,22 @@ func (r *Astarte) validateUpdateAstarteSystemKeyspace(oldAstarte *Astarte) *fiel
 }
 
 func (r *Astarte) validateCFSSLDefinition() *field.Error {
-	if !pointy.BoolValue(r.Spec.CFSSL.Deploy, true) && r.Spec.CFSSL.URL == "" {
+	if pointy.BoolValue(r.Spec.CFSSL.Deploy, true) {
+		return nil
+	}
+
+	// If we are here, CFSSL is not being deployed. Ensure URL is set.
+	if r.Spec.CFSSL.URL == "" {
 		err := errors.New("When not deploying CFSSL, the 'url' must be specified")
+		fldPath := field.NewPath("spec").Child("cfssl").Child("url")
+		astartelog.Info(err.Error())
+		return field.Invalid(fldPath, r.Spec.CFSSL.URL, err.Error())
+	}
+
+	// If URL is set, ensure it is compliant with RFC 3986
+	_, err := url.Parse(r.Spec.CFSSL.URL)
+	if err != nil {
+		err := errors.New("The provided URL is not valid")
 		fldPath := field.NewPath("spec").Child("cfssl").Child("url")
 		astartelog.Info(err.Error())
 		return field.Invalid(fldPath, r.Spec.CFSSL.URL, err.Error())
