@@ -39,7 +39,7 @@ var _ = Describe("controllerutils tests", Ordered, Serial, func() {
 	})
 
 	AfterAll(func() {
-		integrationutils.TeardownNamespace(k8sClient, CustomAstarteNamespace)
+		integrationutils.DeleteNamespace(k8sClient, CustomAstarteNamespace)
 	})
 
 	BeforeEach(func() {
@@ -51,7 +51,7 @@ var _ = Describe("controllerutils tests", Ordered, Serial, func() {
 	})
 
 	AfterEach(func() {
-		integrationutils.TeardownResources(context.Background(), k8sClient, CustomAstarteNamespace)
+		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomAstarteNamespace)
 	})
 
 	Describe("TestFunction", func() {

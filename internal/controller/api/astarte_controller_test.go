@@ -47,7 +47,7 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 
 	AfterAll(func() {
 		// Do not delete the namespace here to avoid 'NamespaceTerminating' flakiness in subsequent specs
-		integrationutils.TeardownResources(context.Background(), k8sClient, CustomAstarteNamespace)
+		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomAstarteNamespace)
 	})
 
 	Context("When reconciling a resource", func() {
@@ -79,7 +79,7 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 		})
 
 		AfterEach(func() {
-			integrationutils.TeardownResources(ctx, k8sClient, CustomAstarteNamespace)
+			integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
 		})
 
 		It("should successfully reconcile the resource", func() {
@@ -164,7 +164,7 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 		})
 
 		AfterEach(func() {
-			integrationutils.TeardownResources(ctx, k8sClient, CustomAstarteNamespace)
+			integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
 		})
 
 		It("should handle finalization", func() {
@@ -203,7 +203,7 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 		})
 
 		AfterEach(func() {
-			integrationutils.TeardownResources(ctx, k8sClient, CustomAstarteNamespace)
+			integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
 		})
 
 		It("should add a finalizer to an Astarte resource", func() {
