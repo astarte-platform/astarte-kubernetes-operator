@@ -292,7 +292,8 @@ func (r *Astarte) validatePriorityClassesValues() *field.Error {
 	highPriorityValue := *r.Spec.Features.AstartePodPriorities.AstarteHighPriority
 	midPriorityValue := *r.Spec.Features.AstartePodPriorities.AstarteMidPriority
 	lowPriorityValue := *r.Spec.Features.AstartePodPriorities.AstarteLowPriority
-	if midPriorityValue > highPriorityValue || lowPriorityValue > midPriorityValue {
+
+	if midPriorityValue >= highPriorityValue || lowPriorityValue >= midPriorityValue {
 		err := errors.New("Astarte PriorityClass values are incoherent")
 		astartelog.Info(err.Error())
 		fldPath := field.NewPath("spec").Child("features").Child("astarte{Low|Medium|High}Priority")
