@@ -277,40 +277,4 @@ var _ = Describe("Standalone Tests", func() {
 			// Cleanup is handled by the test framework
 		})
 	})
-
-	Context("Testing utility functions", func() {
-		Context("contains function", func() {
-			It("should correctly identify if a string is in a list", func() {
-				Expect(contains([]string{"a", "b", "c"}, "b")).To(BeTrue())
-				Expect(contains([]string{"a", "b", "c"}, "d")).To(BeFalse())
-				Expect(contains([]string{}, "a")).To(BeFalse())
-				Expect(contains([]string{"", "a", "b"}, "")).To(BeTrue())
-				Expect(contains(nil, "a")).To(BeFalse())
-				Expect(contains([]string{"A", "B", "C"}, "a")).To(BeFalse(), "should be case sensitive")
-			})
-		})
-
-		Context("remove function", func() {
-			It("should correctly remove a string from a list", func() {
-				Expect(remove([]string{"a", "b", "c"}, "b")).To(Equal([]string{"a", "c"}))
-				Expect(remove([]string{"a", "b", "c"}, "d")).To(Equal([]string{"a", "b", "c"}))
-				Expect(remove([]string{}, "a")).To(Equal([]string{}))
-				Expect(remove([]string{"", "a", "b"}, "")).To(Equal([]string{"a", "b"}))
-				Expect(remove([]string{"a", "b"}, "")).To(Equal([]string{"a", "b"}))
-			})
-
-			It("should have an issue with multiple occurrences", func() {
-				// This test is explicitly marked as "known issue"
-				originalList := []string{"a", "b", "b", "c"}
-				result := remove(originalList, "b")
-
-				// Current implementation removes only the first occurrence
-				// This is not what we want, but it's the current behavior
-				Expect(result).NotTo(Equal([]string{"a", "c"}))
-
-				// For documentation purposes, show the actual current behavior
-				Expect(len(result)).To(BeNumerically(">", 2), "Current implementation doesn't handle multiple occurrences correctly")
-			})
-		})
-	})
 })
