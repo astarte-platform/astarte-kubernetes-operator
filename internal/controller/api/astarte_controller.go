@@ -188,14 +188,11 @@ func (r *AstarteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return ctrl.Result{}, nil
 }
 
-// remove removes a string from a list of strings.
+// remove removes all occurrences of s from list.
 func remove(list []string, s string) []string {
-	for i, v := range list {
-		if v == s {
-			list = append(list[:i], list[i+1:]...)
-		}
-	}
-	return list
+	return slices.DeleteFunc(list, func(t string) bool {
+		return t == s
+	})
 }
 
 // SetupWithManager sets up the controller with the Manager.
