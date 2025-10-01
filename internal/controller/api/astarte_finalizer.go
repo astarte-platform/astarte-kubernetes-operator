@@ -20,6 +20,7 @@ package controller
 
 import (
 	"context"
+	"slices"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -30,7 +31,7 @@ import (
 const astarteFinalizer = "astarte.astarte-platform.org/finalizer"
 
 func (r *AstarteReconciler) handleFinalization(instance *v2alpha1.Astarte) (ctrl.Result, error) {
-	if contains(instance.GetFinalizers(), astarteFinalizer) {
+	if slices.Contains(instance.GetFinalizers(), astarteFinalizer) {
 		// Run finalization logic for astarteFinalizer. If the
 		// finalization logic fails, don't remove the finalizer so
 		// that we can retry during the next reconciliation.

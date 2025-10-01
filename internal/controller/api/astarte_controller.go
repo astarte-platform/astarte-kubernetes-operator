@@ -20,6 +20,7 @@ package controller
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -138,7 +139,7 @@ func (r *AstarteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	// Add finalizer for this CR
-	if !contains(instance.GetFinalizers(), astarteFinalizer) {
+	if !slices.Contains(instance.GetFinalizers(), astarteFinalizer) {
 		if e := r.addFinalizer(instance); e != nil {
 			return ctrl.Result{}, e
 		}
@@ -185,16 +186,6 @@ func (r *AstarteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// Reconciliation was successful. Log a message and return
 	reqLogger.Info("Astarte Reconciled successfully")
 	return ctrl.Result{}, nil
-}
-
-// contains checks if a string is present in a list of strings.
-func contains(list []string, s string) bool {
-	for _, v := range list {
-		if v == s {
-			return true
-		}
-	}
-	return false
 }
 
 // remove removes a string from a list of strings.
