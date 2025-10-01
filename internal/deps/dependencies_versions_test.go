@@ -19,31 +19,33 @@ limitations under the License.
 package deps
 
 import (
-	"fmt"
-	"testing"
+	"context"
 
+	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-// This test makes no sense as CFSSL version is hardcoded in the function.
-// We keep this here just as a reminder to update the test if we ever decide to
-// make changes to GetDefaultVersionForCFSSL.
-func TestGetDefaultVersionForCFSSL(t *testing.T) {
-	tests := []struct {
-		astarteVersion string
-		expected       string
-	}{
-		{
-			astarteVersion: "1.3.0",
-			expected:       "1.5.0-astarte.3",
-		},
-	}
+const (
+	CustomAstarteNamespace = "astarte-controller-test"
+)
 
-	g := NewGomegaWithT(t)
-	for _, tt := range tests {
-		t.Run(fmt.Sprintf("Astarte %s", tt.astarteVersion), func(t *testing.T) {
-			version := GetDefaultVersionForCFSSL(tt.astarteVersion)
-			g.Expect(version).To(Equal(tt.expected))
+var _ = Describe("Deps", Ordered, Serial, func() {
+	BeforeAll(func() {
+		integrationutils.CreateNamespace(k8sClient, CustomAstarteNamespace)
+	})
+
+	AfterAll(func() {
+		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomAstarteNamespace)
+	})
+
+	Context("Testing the GetDefaultVersionForCFSSL function", func() {
+		// This test makes no sense as CFSSL version is hardcoded in the function.
+		// We keep this here just as a reminder to update the test if we ever decide to
+		// make changes to GetDefaultVersionForCFSSL.
+		It("Should return the correct CFSSL version for Astarte 1.3.x", func() {
+			version := GetDefaultVersionForCFSSL("foo")
+			Expect(version).To(Equal("1.5.0-astarte.3"))
 		})
-	}
-}
+	})
+})
