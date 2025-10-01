@@ -19,57 +19,37 @@ limitations under the License.
 package flow
 
 import (
-	// "context"
+	context "context"
 
 	. "github.com/onsi/ginkgo/v2"
-	// . "github.com/onsi/gomega"
-	// "k8s.io/apimachinery/pkg/api/errors"
-	// "k8s.io/apimachinery/pkg/types"
-	// "sigs.k8s.io/controller-runtime/pkg/reconcile"
-	// metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	// flowv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/flow/v2alpha1"
+
+	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 )
 
-var _ = Describe("Flow Controller", func() {
-	Context("When reconciling a resource", func() {
+const (
+	CustomFlowNamespace = "flow-controller-test"
+)
 
-		BeforeEach(func() {
-			By("creating the custom resource for the Kind Flow")
-			// err := k8sClient.Get(ctx, typeNamespacedName, flow)
-			// if err != nil && errors.IsNotFound(err) {
-			// 	resource := &flowv2alpha1.Flow{
-			// 		ObjectMeta: metav1.ObjectMeta{
-			// 			Name:      resourceName,
-			// 			Namespace: "default",
-			// 		},
-			// 		// TODO(user): Specify other spec details if needed.
-			// 	}
-			// 	Expect(k8sClient.Create(ctx, resource)).To(Succeed())
-			// }
-		})
-
-		AfterEach(func() {
-			// // TODO(user): Cleanup logic after each test, like removing the resource instance.
-			// resource := &flowv2alpha1.Flow{}
-			// err := k8sClient.Get(ctx, typeNamespacedName, resource)
-			// Expect(err).ToNot(HaveOccurred())
-
-			// By("Cleanup the specific resource instance Flow")
-			// Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
-		})
-		It("should successfully reconcile the resource", func() {
-			// By("Reconciling the created resource")
-			// controllerReconciler := &FlowReconciler{
-			// 	Client: k8sClient,
-			// 	Scheme: k8sClient.Scheme(),
-			// }
-
-			// _, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
-			// 	NamespacedName: typeNamespacedName,
-			// })
-			// Expect(err).ToNot(HaveOccurred())
-			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
-			// Example: If you expect a certain status condition after reconciliation, verify it here.
-		})
+var _ = Describe("Flow Controller", Ordered, Serial, func() {
+	BeforeAll(func() {
+		integrationutils.CreateNamespace(k8sClient, CustomFlowNamespace)
 	})
+
+	AfterAll(func() {
+		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomFlowNamespace)
+	})
+
+	Context("Test Reconcile function", func() {
+		// To be implemented
+	})
+
+	Context("Test computeFlowStatusResource function", func() {
+		// To be implemented
+	})
+
+	Context("Test getResourcesForReconciliationFor function", func() {
+		// To be implemented
+	})
+
+	// Add more tests here
 })
