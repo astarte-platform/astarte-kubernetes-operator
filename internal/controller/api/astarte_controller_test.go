@@ -223,6 +223,23 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 			Expect(updatedResource.Finalizers).To(ContainElement("astarte.astarte-platform.org/finalizer"))
 		})
 	})
+
+	Context("Testing the remove function", func() {
+		It("should remove all occurrences of a string from a slice", func() {
+			list := []string{"a", "b", "c", "a", "d", "a"}
+			updatedList := remove(list, "a")
+			Expect(updatedList).To(Equal([]string{"b", "c", "d"}))
+
+			// Test removing an element not in the list
+			updatedList = remove(list, "x")
+			Expect(updatedList).To(Equal(list))
+
+			// Test removing from an empty list
+			emptyList := []string{}
+			updatedList = remove(emptyList, "a")
+			Expect(updatedList).To(BeEmpty())
+		})
+	})
 })
 
 var _ = Describe("Standalone Tests", func() {
