@@ -617,30 +617,26 @@ func getAstarteCommonVolumes(cr *apiv2alpha1.Astarte) []v1.Volume {
 		},
 	}
 
-	if cr.Spec.RabbitMQ.Connection != nil {
-		if cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name != "" {
-			// Mount the secret!
-			ret = append(ret, v1.Volume{
-				Name: "rabbitmq-ssl-ca",
-				VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{
-					SecretName: cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name,
-					Items:      []v1.KeyToPath{{Key: "ca.crt", Path: "ca.crt"}},
-				}},
-			})
-		}
+	if cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name != "" {
+		// Mount the secret!
+		ret = append(ret, v1.Volume{
+			Name: "rabbitmq-ssl-ca",
+			VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{
+				SecretName: cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name,
+				Items:      []v1.KeyToPath{{Key: "ca.crt", Path: "ca.crt"}},
+			}},
+		})
 	}
 
-	if cr.Spec.Cassandra.Connection != nil {
-		if cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name != "" {
-			// Mount the secret!
-			ret = append(ret, v1.Volume{
-				Name: "cassandra-ssl-ca",
-				VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{
-					SecretName: cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name,
-					Items:      []v1.KeyToPath{{Key: "ca.crt", Path: "ca.crt"}},
-				}},
-			})
-		}
+	if cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name != "" {
+		// Mount the secret!
+		ret = append(ret, v1.Volume{
+			Name: "cassandra-ssl-ca",
+			VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{
+				SecretName: cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name,
+				Items:      []v1.KeyToPath{{Key: "ca.crt", Path: "ca.crt"}},
+			}},
+		})
 	}
 
 	return ret
@@ -655,26 +651,22 @@ func getAstarteCommonVolumeMounts(cr *apiv2alpha1.Astarte) []v1.VolumeMount {
 		},
 	}
 
-	if cr.Spec.RabbitMQ.Connection != nil {
-		if cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name != "" {
-			// Mount the secret!
-			ret = append(ret, v1.VolumeMount{
-				Name:      "rabbitmq-ssl-ca",
-				MountPath: "/rabbitmq-ssl",
-				ReadOnly:  true,
-			})
-		}
+	if cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name != "" {
+		// Mount the secret!
+		ret = append(ret, v1.VolumeMount{
+			Name:      "rabbitmq-ssl-ca",
+			MountPath: "/rabbitmq-ssl",
+			ReadOnly:  true,
+		})
 	}
 
-	if cr.Spec.Cassandra.Connection != nil {
-		if cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name != "" {
-			// Mount the secret!
-			ret = append(ret, v1.VolumeMount{
-				Name:      "cassandra-ssl-ca",
-				MountPath: "/cassandra-ssl",
-				ReadOnly:  true,
-			})
-		}
+	if cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name != "" {
+		// Mount the secret!
+		ret = append(ret, v1.VolumeMount{
+			Name:      "cassandra-ssl-ca",
+			MountPath: "/cassandra-ssl",
+			ReadOnly:  true,
+		})
 	}
 
 	return ret
@@ -799,10 +791,6 @@ func getHPAStatusForResource(autoscalerName string, cr *apiv2alpha1.Astarte, c c
 
 // This stuff is useful for other components which need to interact with Cassandra
 func getCassandraNodes(cr *apiv2alpha1.Astarte) string {
-	if cr.Spec.Cassandra.Connection == nil {
-		return ""
-	}
-
 	nodes := []string{}
 	for _, node := range cr.Spec.Cassandra.Connection.Nodes {
 		nodes = append(nodes, fmt.Sprintf("%s:%d", node.Host, *node.Port))
@@ -812,11 +800,6 @@ func getCassandraNodes(cr *apiv2alpha1.Astarte) string {
 }
 
 func appendAstarteKeyspaceEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
-	// Return empty slice if Cassandra is not configured
-	if cr.Spec.Cassandra.Connection == nil {
-		return []v1.EnvVar{}
-	}
-
 	ask := cr.Spec.Cassandra.AstarteSystemKeyspace
 
 	ret := []v1.EnvVar{

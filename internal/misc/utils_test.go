@@ -794,10 +794,7 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 	// Test GetRabbitMQHostnameAndPort
 	Describe("GetRabbitMQHostnameAndPort", func() {
 		BeforeEach(func() {
-			// Initialize RabbitMQ.Connection if it's nil
-			if cr.Spec.RabbitMQ.Connection == nil {
-				cr.Spec.RabbitMQ.Connection = &v2alpha1.AstarteRabbitMQConnectionSpec{}
-			}
+			cr.Spec.RabbitMQ.Connection = &v2alpha1.AstarteRabbitMQConnectionSpec{}
 			cr.Spec.RabbitMQ.Connection.Host = CustomRabbitMQHost
 			cr.Spec.RabbitMQ.Connection.Port = pointy.Int32(CustomRabbitMQPort)
 		})
