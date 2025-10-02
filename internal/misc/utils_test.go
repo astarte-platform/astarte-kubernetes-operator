@@ -280,6 +280,60 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 
 	})
 
+	Describe(("getCpuScaledQuantity"), func() {
+		It("should scale CPU quantities by coefficient", func() {
+			base := resource.MustParse("1000m")
+			got := getCpuScaledQuantity(&base, 0.5)
+			Expect(got.MilliValue()).To(Equal(int64(500)))
+		})
+
+		It("should preserve format of original quantity", func() {
+			base := resource.MustParse("1500m")
+			got := getCpuScaledQuantity(&base, 0.5)
+			Expect(got.Format).To(Equal(base.Format))
+		})
+
+		It("should handle quantities in cores", func() {
+			base := resource.MustParse("2")
+			got := getCpuScaledQuantity(&base, 0.25)
+			Expect(got.MilliValue()).To(Equal(int64(500)))
+			Expect(got.Format).To(Equal(base.Format))
+		})
+	})
+
+	Describe("getMemoryScaledQuantity", func() {
+		It("should scale memory quantities without precision loss", func() {
+			// Test with Mi (binary) units
+			base := resource.MustParse("2000Mi")
+			got := getMemoryScaledQuantity(&base, 0.18)
+			// Expected: 0.18 * 2097152000 bytes = 377487360 bytes
+			Expect(got.Value()).To(Equal(int64(377487360)))
+		})
+
+		It("should preserve format of original quantity", func() {
+			base := resource.MustParse("1Gi")
+			got := getMemoryScaledQuantity(&base, 0.5)
+			// Should maintain binary format
+			Expect(got.Format).To(Equal(base.Format))
+		})
+
+		It("should handle quantities in decimal units", func() {
+			base := resource.MustParse("2000M")
+			got := getMemoryScaledQuantity(&base, 0.18)
+			// Expected: 0.18 * 2000000000 bytes = 360000000 bytes
+			Expect(got.Value()).To(Equal(int64(360000000)))
+			Expect(got.Format).To(Equal(base.Format))
+		})
+
+		It("should handle quantities in bytes", func() {
+			base := resource.MustParse("2048000")
+			got := getMemoryScaledQuantity(&base, 0.5)
+			// Expected: 0.5 * 2048000 bytes = 1024000 bytes
+			Expect(got.Value()).To(Equal(int64(1024000)))
+			Expect(got.Format).To(Equal(base.Format))
+		})
+	})
+
 	Describe("GetResourcesForAstarteComponent", func() {
 		It("should return requested resources when explicitly provided", func() {
 			req := v1.ResourceRequirements{
@@ -318,48 +372,140 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 			})
 
 			It("should scale and adjust small requests (thresholds)", func() {
+				// Test on AppEngineAPI where coeff: CPU 0.18, Mem 0.18
 				got := GetResourcesForAstarteComponent(cr, nil, v2alpha1.AppEngineAPI)
 
-				// Requests: CPU <150m -> 0, Memory <128Mi -> raised to 128M (decimal)
+				// Requests: CPU <150m -> 0
+				// Requests: Memory <128Mi -> 128M (decimal)
 				Expect(got.Requests.Cpu().MilliValue()).To(Equal(int64(0)))
 				Expect(got.Requests.Memory().Cmp(resource.MustParse("128M"))).To(Equal(0))
 
-				// Limits: CPU bumped to >=300m, Memory scaled by coeff and must be >= requests
+				// Limits: CPU bumped to >=300m
+				// Memory scaled by coeff and must be >= requests
 				Expect(got.Limits.Cpu().MilliValue()).To(Equal(int64(300)))
 				Expect(got.Limits.Memory().Cmp(*got.Requests.Memory())).To(BeNumerically(">=", 0))
 			})
 
-			It("should scale normally when above thresholds", func() {
+			It("should scale CPU normally when above thresholds", func() {
 				// Use larger totals
 				cr.Spec.Components.Resources = &v1.ResourceRequirements{
 					Limits: v1.ResourceList{
-						v1.ResourceCPU:    resource.MustParse("4000m"),
+						v1.ResourceCPU: resource.MustParse("4000m"),
+					},
+					Requests: v1.ResourceList{
+						v1.ResourceCPU: resource.MustParse("2000m"),
+					},
+				}
+				// Test on AppEngineAPI where coeff: CPU 0.18, Mem 0.18
+				got := GetResourcesForAstarteComponent(cr, nil, v2alpha1.AppEngineAPI)
+
+				// CPU scaled: 0.18 * 2000m = 360m (Request)
+				Expect(got.Requests.Cpu().MilliValue()).To(Equal(int64(360)))
+				// CPU scaled: 0.18 * 4000m = 720m (Limits)
+				Expect(got.Limits.Cpu().MilliValue()).To(Equal(int64(720)))
+
+			})
+
+			// Memory requests and limits can be defined both in pow2 (Mi) and decimal (M)
+			// See: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-memory
+			It("should scale memory (decimal - M) normally when above thresholds", func() {
+				cr.Spec.Components.Resources = &v1.ResourceRequirements{
+					Limits: v1.ResourceList{
+						v1.ResourceMemory: resource.MustParse("4000M"),
+					},
+					Requests: v1.ResourceList{
+						v1.ResourceMemory: resource.MustParse("2000M"),
+					},
+				}
+
+				// Test on AppEngineAPI where coeff: CPU 0.18, Mem 0.18
+				got := GetResourcesForAstarteComponent(cr, nil, v2alpha1.AppEngineAPI)
+
+				// Memory scaled: 0.18 * 2000M = 0.18 * 2000000000 bytes = 360000000 bytes (exact)
+				Expect(got.Requests.Memory().Value()).To(Equal(int64(360000000)))
+				// Memory scaled: 0.18 * 4000M = 0.18 * 4000000000 bytes = 720000000 bytes (exact)
+				Expect(got.Limits.Memory().Value()).To(Equal(int64(720000000)))
+
+			})
+
+			It("should scale memory (decimal - G) normally when above thresholds", func() {
+				cr.Spec.Components.Resources = &v1.ResourceRequirements{
+					Limits: v1.ResourceList{
+						v1.ResourceMemory: resource.MustParse("4G"),
+					},
+					Requests: v1.ResourceList{
+						v1.ResourceMemory: resource.MustParse("2G"),
+					},
+				}
+
+				// Test on AppEngineAPI where coeff: CPU 0.18, Mem 0.18
+				got := GetResourcesForAstarteComponent(cr, nil, v2alpha1.AppEngineAPI)
+
+				// Memory scaled: 0.18 * 2G = 0.18 * 2000000000 bytes = 360000000 bytes (exact)
+				Expect(got.Requests.Memory().Value()).To(Equal(int64(360000000)))
+				// Memory scaled: 0.18 * 4G = 0.18 * 4000000000 bytes = 720000000 bytes (exact)
+				Expect(got.Limits.Memory().Value()).To(Equal(int64(720000000)))
+			})
+
+			It("should scale memory (base2 - Mi) normally when above thresholds", func() {
+				cr.Spec.Components.Resources = &v1.ResourceRequirements{
+					Limits: v1.ResourceList{
 						v1.ResourceMemory: resource.MustParse("4000Mi"),
 					},
 					Requests: v1.ResourceList{
-						v1.ResourceCPU:    resource.MustParse("2000m"),
 						v1.ResourceMemory: resource.MustParse("2000Mi"),
 					},
 				}
+
+				// Test on AppEngineAPI where coeff: CPU 0.18, Mem 0.18
 				got := GetResourcesForAstarteComponent(cr, nil, v2alpha1.AppEngineAPI)
 
-				// Requests scaled: 0.18 * 2000m = 360m; Memory around 360-380Mi depending on decimal vs binary
-				Expect(got.Requests.Cpu().MilliValue()).To(Equal(int64(360)))
-				Expect(got.Requests.Memory().Cmp(resource.MustParse("300Mi"))).To(BeNumerically(">", 0))
-				Expect(got.Requests.Memory().Cmp(resource.MustParse("400Mi"))).To(BeNumerically("<", 0))
+				// Memory scaled: 0.18 * 2000Mi = 0.18 * 2097152000 bytes = 377487360 bytes (exact)
+				// Memory scaled: 0.18 * 4000Mi = 0.18 * 4194304000 bytes = 754974720 bytes (exact)
 
-				// Limits scaled: 0.18 * 4000m = 720m; Memory > 600Mi
-				Expect(got.Limits.Cpu().MilliValue()).To(Equal(int64(720)))
-				Expect(got.Limits.Memory().Cmp(resource.MustParse("600Mi"))).To(BeNumerically(">", 0))
+				Expect(got.Requests.Memory().Value()).To(Equal(int64(377487360)))
+				Expect(got.Limits.Memory().Value()).To(Equal(int64(754974720)))
 			})
-		})
-	})
 
-	Describe("getAllocationScaledQuantity", func() {
-		It("should scale a quantity by coefficient and scale", func() {
-			base := resource.NewScaledQuantity(1000, resource.Milli)
-			got := getAllocationScaledQuantity(base, resource.Milli, 0.5)
-			Expect(got.MilliValue()).To(Equal(int64(500)))
+			It("should scale memory (base2 - Gi) normally when above thresholds", func() {
+				cr.Spec.Components.Resources = &v1.ResourceRequirements{
+					Limits: v1.ResourceList{
+						v1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+					Requests: v1.ResourceList{
+						v1.ResourceMemory: resource.MustParse("2Gi"),
+					},
+				}
+
+				// Test on AppEngineAPI where coeff: CPU 0.18, Mem 0.18
+				got := GetResourcesForAstarteComponent(cr, nil, v2alpha1.AppEngineAPI)
+
+				// Memory scaled: 0.18 * 2Gi = 0.18 * 2147483648 bytes = 386547056.64 bytes = 386547056 bytes (truncated)
+				// Memory scaled: 0.18 * 4Gi = 0.18 * 4294967296 bytes = 773094113.28 bytes = 773094113 bytes (truncated)
+
+				Expect(got.Requests.Memory().Value()).To(Equal(int64(386547056)))
+				Expect(got.Limits.Memory().Value()).To(Equal(int64(773094113)))
+			})
+
+			It("should scale memory (base2 - Gi with decimals) normally when above thresholds", func() {
+				cr.Spec.Components.Resources = &v1.ResourceRequirements{
+					Limits: v1.ResourceList{
+						v1.ResourceMemory: resource.MustParse("4.2Gi"),
+					},
+					Requests: v1.ResourceList{
+						v1.ResourceMemory: resource.MustParse("2.7Gi"),
+					},
+				}
+
+				// Test on AppEngineAPI where coeff: CPU 0.18, Mem 0.18
+				got := GetResourcesForAstarteComponent(cr, nil, v2alpha1.AppEngineAPI)
+
+				// Memory scaled: 0.18 * 2.7Gi = 0.18 * 2899102924.8 bytes = 521838526.464 bytes = 521838526 bytes (truncated)
+				// Memory scaled: 0.18 * 4.2Gi = 0.18 * 4509715660.8 bytes = 811748818.944 bytes = 811748818 bytes (truncated)
+
+				Expect(got.Requests.Memory().Value()).To(Equal(int64(521838526)))
+				Expect(got.Limits.Memory().Value()).To(Equal(int64(811748818)))
+			})
 		})
 	})
 
