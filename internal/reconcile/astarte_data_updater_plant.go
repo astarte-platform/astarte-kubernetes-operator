@@ -118,7 +118,7 @@ func createIndexedDataUpdaterPlantDeployment(replicaIndex, replicas int, cr *api
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: computePodLabels(dup.AstarteGenericClusteredResource, labels),
 			},
-			Spec: getAstarteGenericBackendPodSpec(deploymentName, replicaIndex, replicas, cr, dup.AstarteGenericClusteredResource, component, nil),
+			Spec: getAstarteGenericBackendPodSpec(deploymentName, replicaIndex, replicas, cr, dup.AstarteGenericClusteredResource, component),
 		},
 	}
 

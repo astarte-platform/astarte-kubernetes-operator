@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added env vars required by Astarte v1.3+.
 - Unit and integration tests.
 - Add AstarteCassandraConnectionSpec.EnableKeepalive field to the Astarte CRD.
+- Support custom probes for all Astarte components. Default probes are still provided if none are specified.
 
 ### Changed
 - Forward port changes from release-24.5

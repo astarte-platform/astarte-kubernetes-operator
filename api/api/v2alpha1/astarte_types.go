@@ -264,6 +264,13 @@ type AstarteGenericClusteredResource struct {
 	// +kubebuilder:validation:Enum:=high;mid;low;""
 	// +kubebuilder:validation:Optional
 	PriorityClass string `json:"priorityClass,omitempty"`
+	// Custom probes
+	// +kubebuilder:validation:Optional
+	LivenessProbe *v1.Probe `json:"livenessProbe,omitempty"`
+	// +kubebuilder:validation:Optional
+	ReadinessProbe *v1.Probe `json:"readinessProbe,omitempty"`
+	// +kubebuilder:validation:Optional
+	StartupProbe *v1.Probe `json:"startupProbe,omitempty"`
 }
 
 type AstarteGenericClusteredResourceAutoscalerSpec struct {
