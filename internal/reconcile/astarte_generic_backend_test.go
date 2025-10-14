@@ -202,6 +202,22 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 						Namespace: CustomAstarteNamespace,
 					}, deployment)
 				}, Timeout, Interval).Should(Succeed())
+
+				// Ensure fields are set correctly
+				Expect(*deployment.Spec.Replicas).To(Equal(int32(3)))
+				Expect(deployment.Labels["astarte-component"]).To(Equal(component.DashedString()))
+
+				containers := deployment.Spec.Template.Spec.Containers
+				for _, container := range containers {
+					containerEnvs := map[string]string{}
+					for _, envVar := range container.Env {
+						containerEnvs[envVar.Name] = envVar.Value
+					}
+
+					Expect(containerEnvs).To(HaveKeyWithValue("DATA_UPDATER_PLANT_AMQP_CONSUMER_PREFETCH_COUNT", "500"))
+					Expect(containerEnvs).To(HaveKeyWithValue("DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_PREFIX", "custom_prefix"))
+					Expect(containerEnvs).To(HaveKeyWithValue("DATA_UPDATER_PLANT_DEVICE_HEARTBEAT_INTERVAL_MS", "60000"))
+				}
 			})
 		})
 
