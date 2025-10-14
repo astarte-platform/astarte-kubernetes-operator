@@ -155,6 +155,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			Entry("RealmManagement", apiv2alpha1.RealmManagement),
 			Entry("Pairing", apiv2alpha1.Pairing),
 			Entry("Housekeeping", apiv2alpha1.Housekeeping),
+			Entry("Flow", apiv2alpha1.FlowComponent),
 		)
 
 		It("should not create deployment when component is disabled", func() {
