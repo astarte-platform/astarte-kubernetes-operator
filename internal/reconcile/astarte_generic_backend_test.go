@@ -133,7 +133,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 				// Verify deployment was not created
 				deployment := &appsv1.Deployment{}
 				deploymentName := cr.Name + "-" + component.DashedString()
-				Consistently(func() error {
+				Eventually(func() error {
 					return k8sClient.Get(context.Background(), types.NamespacedName{
 						Name:      deploymentName,
 						Namespace: CustomAstarteNamespace,
