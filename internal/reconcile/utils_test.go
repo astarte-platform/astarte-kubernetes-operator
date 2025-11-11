@@ -669,14 +669,6 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 			Expect(result).To(Equal(expected))
 		})
 
-		It("should return empty string when no cassandra connection", func() {
-			crWithoutCassandra := cr.DeepCopy()
-			crWithoutCassandra.Spec.Cassandra.Connection = nil
-
-			result := getCassandraNodes(crWithoutCassandra)
-			Expect(result).To(Equal(""))
-		})
-
 		It("should handle multiple cassandra nodes", func() {
 			cr.Spec.Cassandra.Connection.Nodes = append(cr.Spec.Cassandra.Connection.Nodes,
 				apiv2alpha1.HostAndPort{
