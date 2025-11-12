@@ -84,8 +84,6 @@ var _ = Describe("VerneMQ testing", Ordered, Serial, func() {
 			}, Timeout, Interval).Should(Succeed())
 
 			// Update the VerneMQ spec to use a different image
-			originalStatefulSet := &appsv1.StatefulSet{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: statefulSetName, Namespace: cr.Namespace}, originalStatefulSet)).To(Succeed())
 			cr.Spec.VerneMQ.Image = "vernemq/vernemq:0.12.3"
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 
