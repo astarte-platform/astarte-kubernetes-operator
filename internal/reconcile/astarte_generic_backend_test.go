@@ -29,6 +29,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -133,12 +134,13 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 				// Verify deployment was not created
 				deployment := &appsv1.Deployment{}
 				deploymentName := cr.Name + "-" + component.DashedString()
-				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{
+				Eventually(func() bool {
+					err := k8sClient.Get(context.Background(), types.NamespacedName{
 						Name:      deploymentName,
 						Namespace: CustomAstarteNamespace,
 					}, deployment)
-				}, "2s", Interval).ShouldNot(Succeed())
+					return apierrors.IsNotFound(err)
+				}, "2s", Interval).Should(BeTrue())
 			})
 
 			It("should delete existing deployment when deploy is changed to false", func() {
@@ -165,12 +167,13 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 				Expect(EnsureAstarteGenericBackend(cr, backend, component, k8sClient, scheme.Scheme)).To(Succeed())
 
 				// Verify deployment was deleted
-				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{
+				Eventually(func() bool {
+					err := k8sClient.Get(context.Background(), types.NamespacedName{
 						Name:      deploymentName,
 						Namespace: CustomAstarteNamespace,
 					}, deployment)
-				}, Timeout, Interval).ShouldNot(Succeed())
+					return apierrors.IsNotFound(err)
+				}, Timeout, Interval).Should(BeTrue())
 			})
 		})
 

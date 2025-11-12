@@ -141,9 +141,10 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			// Cleanup the secret
 			Expect(k8sClient.Delete(context.Background(), secret)).To(Succeed())
 
-			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: secretName, Namespace: CustomAstarteNamespace}, &v1.Secret{})
-			}, Timeout, Interval).ShouldNot(Succeed())
+			Eventually(func() bool {
+				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: secretName, Namespace: CustomAstarteNamespace}, &v1.Secret{})
+				return apierrors.IsNotFound(err)
+			}, Timeout, Interval).Should(BeTrue())
 		})
 	})
 
@@ -941,9 +942,10 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 				return k8sClient.Delete(context.Background(), newCr)
 			}, Timeout, Interval).Should(Succeed())
 
-			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: newCr.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
-			}, Timeout, Interval).ShouldNot(Succeed())
+			Eventually(func() bool {
+				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: newCr.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
+				return apierrors.IsNotFound(err)
+			}, Timeout, Interval).Should(BeTrue())
 		})
 
 		It("should return error for empty instance ID when another empty ID exists", func() {
@@ -1004,9 +1006,10 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 			// Cleanup
 			Expect(k8sClient.Delete(context.Background(), cr1)).To(Succeed())
-			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
-			}, Timeout, Interval).ShouldNot(Succeed())
+			Eventually(func() bool {
+				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
+				return apierrors.IsNotFound(err)
+			}, Timeout, Interval).Should(BeTrue())
 		})
 
 		It("should not return error if no other Astarte instances exists with same instanceID", func() {
@@ -1044,14 +1047,16 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 			// Cleanup
 			Expect(k8sClient.Delete(context.Background(), cr1)).To(Succeed())
-			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
-			}, Timeout, Interval).ShouldNot(Succeed())
+			Eventually(func() bool {
+				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
+				return apierrors.IsNotFound(err)
+			}, Timeout, Interval).Should(BeTrue())
 
 			Expect(k8sClient.Delete(context.Background(), cr2)).To(Succeed())
-			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr2.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
-			}, Timeout, Interval).ShouldNot(Succeed())
+			Eventually(func() bool {
+				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: cr2.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
+				return apierrors.IsNotFound(err)
+			}, Timeout, Interval).Should(BeTrue())
 		})
 	})
 })

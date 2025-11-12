@@ -29,6 +29,7 @@ import (
 	"go.openly.dev/pointy"
 	v1 "k8s.io/api/core/v1"
 	schedulingv1 "k8s.io/api/scheduling/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -74,9 +75,10 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 			// Objects should not exist
 			for _, name := range []string{AstarteHighPriorityName, AstarteMidPriorityName, AstarteLowPriorityName} {
 				pc := &schedulingv1.PriorityClass{}
-				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)
-				}, Timeout, Interval).ShouldNot(Succeed())
+				Eventually(func() bool {
+					err := k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)
+					return apierrors.IsNotFound(err)
+				}, Timeout, Interval).Should(BeTrue())
 			}
 
 			// Explicitly disable
@@ -88,9 +90,10 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 			Expect(EnsureAstartePriorityClasses(cr, k8sClient, scheme.Scheme)).To(Succeed())
 			for _, name := range []string{AstarteHighPriorityName, AstarteMidPriorityName, AstarteLowPriorityName} {
 				pc := &schedulingv1.PriorityClass{}
-				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)
-				}, Timeout, Interval).ShouldNot(Succeed())
+				Eventually(func() bool {
+					err := k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)
+					return apierrors.IsNotFound(err)
+				}, Timeout, Interval).Should(BeTrue())
 			}
 		})
 

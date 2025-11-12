@@ -32,6 +32,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	appsv1 "k8s.io/api/apps/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -126,9 +127,10 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 
 			// Cleanup
 			Expect(k8sClient.Delete(context.Background(), cr1)).To(Succeed())
-			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: cr1.Namespace}, &apiv2alpha1.Astarte{})
-			}, Timeout, Interval).ShouldNot(Succeed())
+			Eventually(func() bool {
+				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: cr1.Namespace}, &apiv2alpha1.Astarte{})
+				return apierrors.IsNotFound(err)
+			}, Timeout, Interval).Should(BeTrue())
 		})
 	})
 
