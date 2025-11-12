@@ -194,10 +194,10 @@ func GetResourcesForAstarteComponent(cr *apiv2alpha1.Astarte, requestedResources
 		return v1.ResourceRequirements{}
 	}
 
-	cpuLimits := getAllocationScaledQuantity(cr.Spec.Components.Resources.Limits.Cpu(), resource.Milli, a.CPUCoefficient)
-	cpuRequests := getAllocationScaledQuantity(cr.Spec.Components.Resources.Requests.Cpu(), resource.Milli, a.CPUCoefficient)
-	memoryLimits := getAllocationScaledQuantity(cr.Spec.Components.Resources.Limits.Memory(), resource.Mega, a.MemoryCoefficient)
-	memoryRequests := getAllocationScaledQuantity(cr.Spec.Components.Resources.Requests.Memory(), resource.Mega, a.MemoryCoefficient)
+	cpuLimits := getCpuScaledQuantity(cr.Spec.Components.Resources.Limits.Cpu(), a.CPUCoefficient)
+	cpuRequests := getCpuScaledQuantity(cr.Spec.Components.Resources.Requests.Cpu(), a.CPUCoefficient)
+	memoryLimits := getMemoryScaledQuantity(cr.Spec.Components.Resources.Limits.Memory(), a.MemoryCoefficient)
+	memoryRequests := getMemoryScaledQuantity(cr.Spec.Components.Resources.Requests.Memory(), a.MemoryCoefficient)
 
 	realRequests := v1.ResourceList{}
 
@@ -215,7 +215,7 @@ func GetResourcesForAstarteComponent(cr *apiv2alpha1.Astarte, requestedResources
 	realRequests[v1.ResourceMemory] = *memoryRequests
 
 	// Ensure limits aren't out of boundaries if we changed the requests
-	if cpuLimits.Cmp(*cpuLimits) < 0 {
+	if cpuLimits.Cmp(*cpuRequests) < 0 {
 		cpuLimits = cpuRequests
 	}
 	if memoryLimits.Cmp(*memoryRequests) < 0 {
@@ -237,8 +237,22 @@ func GetResourcesForAstarteComponent(cr *apiv2alpha1.Astarte, requestedResources
 	}
 }
 
-func getAllocationScaledQuantity(qty *resource.Quantity, scale resource.Scale, coefficient float64) *resource.Quantity {
-	return resource.NewScaledQuantity(int64(float64(qty.ScaledValue(scale))*coefficient), scale)
+// getCpuScaledQuantity scales a resource quantity by a coefficient.
+// It works directly with the canonical milli representation to avoid precision loss
+// from unit conversions.
+// The returned quantity will be in milli format
+func getCpuScaledQuantity(qty *resource.Quantity, coefficient float64) *resource.Quantity {
+	scaledValue := int64(float64(qty.MilliValue()) * coefficient)
+	return resource.NewMilliQuantity(scaledValue, qty.Format)
+}
+
+// getMemoryScaledQuantity scales a resource quantity by a coefficient.
+// It works directly with the canonical byte/bibyte representations to avoid precision loss
+// from unit conversions.
+// The returned quantity will be in bytes format
+func getMemoryScaledQuantity(qty *resource.Quantity, coefficient float64) *resource.Quantity {
+	scaledValue := int64(float64(qty.Value()) * coefficient)
+	return resource.NewQuantity(scaledValue, qty.Format)
 }
 
 func getNumberOfDeployedAstarteComponentsAsFloat(cr *apiv2alpha1.Astarte) float64 {
@@ -345,7 +359,11 @@ func GetRabbitMQHostnameAndPort(cr *apiv2alpha1.Astarte) (string, int32) {
 // GetRabbitMQUserCredentialsSecret gets the secret holding RabbitMQ credentials in the form <secret name>, <username key>, <password key>
 func GetRabbitMQUserCredentialsSecret(cr *apiv2alpha1.Astarte) (string, string, string) {
 	// TODO: allow `connectionStringSecret` to be used too
-	return cr.Spec.RabbitMQ.Connection.CredentialsSecret.Name, cr.Spec.RabbitMQ.Connection.CredentialsSecret.UsernameKey, cr.Spec.RabbitMQ.Connection.CredentialsSecret.PasswordKey
+
+	if cr.Spec.RabbitMQ.Connection.CredentialsSecret != nil {
+		return cr.Spec.RabbitMQ.Connection.CredentialsSecret.Name, cr.Spec.RabbitMQ.Connection.CredentialsSecret.UsernameKey, cr.Spec.RabbitMQ.Connection.CredentialsSecret.PasswordKey
+	}
+	return cr.Name + "-rabbitmq-user-credentials", RabbitMQDefaultUserCredentialsUsernameKey, RabbitMQDefaultUserCredentialsPasswordKey
 }
 
 // GetRabbitMQCredentialsFor returns the RabbitMQ host, username and password for a given CR. This information

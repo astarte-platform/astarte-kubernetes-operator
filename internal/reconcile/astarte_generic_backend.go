@@ -200,49 +200,105 @@ func getAstarteGenericBackendEnvVars(deploymentName string, replicaIndex, replic
 		})
 	}
 
-	eventsExchangeName := cr.Spec.RabbitMQ.EventsExchangeName
-
-	// Depending on the component, we might need to add some more stuff.
+	// Depending on the component, add dedicated env vars for it
 	switch component {
 	case apiv2alpha1.DataUpdaterPlant:
-		ret = append(ret, getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas, eventsExchangeName, cr)...)
+		ret = append(ret, getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas, cr)...)
 	case apiv2alpha1.TriggerEngine:
-		// Add RabbitMQ variables
-		ret = appendRabbitMQConnectionEnvVars(ret, "TRIGGER_ENGINE_AMQP_CONSUMER", cr)
+		ret = append(ret, getTriggerEngineBackendEnvVars(cr)...)
+	case apiv2alpha1.AppEngineAPI:
+		ret = append(ret, getAppEngineAPIEnvVars(cr)...)
+	case apiv2alpha1.Dashboard:
+		// Nothing special for now
+	}
 
-		if eventsExchangeName != "" {
-			ret = append(ret,
-				v1.EnvVar{
-					Name:  "TRIGGER_ENGINE_AMQP_EVENTS_EXCHANGE_NAME",
-					Value: eventsExchangeName,
-				})
-		}
+	return ret
+}
 
-		if cr.Spec.Components.AppengineAPI.RoomEventsQueueName != "" {
-			ret = append(ret,
-				v1.EnvVar{
-					Name:  "TRIGGER_ENGINE_AMQP_EVENTS_QUEUE_NAME",
-					Value: cr.Spec.Components.AppengineAPI.RoomEventsQueueName,
-				})
-		}
+func getAppEngineAPIEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
+	ret := []v1.EnvVar{}
 
-		if cr.Spec.Components.TriggerEngine.EventsRoutingKey != "" {
-			ret = append(ret,
-				v1.EnvVar{
-					Name:  "TRIGGER_ENGINE_AMQP_EVENTS_ROUTING_KEY",
-					Value: cr.Spec.Components.TriggerEngine.EventsRoutingKey,
-				})
-		}
+	ret = appendRabbitMQConnectionEnvVars(ret, "APPENGINE_API_ROOMS_AMQP_CLIENT", cr)
+
+	if cr.Spec.AstarteInstanceID != "" {
+		ret = append(ret, v1.EnvVar{
+			Name:  "ASTARTE_INSTANCE_ID",
+			Value: cr.Spec.AstarteInstanceID,
+		})
+	}
+
+	// Add Cassandra Nodes
+	ret = append(ret, v1.EnvVar{
+		Name:  "CASSANDRA_NODES",
+		Value: getCassandraNodes(cr),
+	})
+
+	ret = append(ret,
+		v1.EnvVar{
+			Name:  "APPENGINE_API_MAX_RESULTS_LIMIT",
+			Value: strconv.Itoa(getAppEngineAPIMaxResultslimit(cr)),
+		},
+	)
+
+	if cr.Spec.Components.AppengineAPI.RoomEventsQueueName != "" {
+		ret = append(ret,
+			v1.EnvVar{
+				Name:  "APPENGINE_API_ROOMS_EVENTS_QUEUE_NAME",
+				Value: cr.Spec.Components.AppengineAPI.RoomEventsQueueName,
+			})
+	}
+
+	if cr.Spec.Components.AppengineAPI.RoomEventsExchangeName != "" {
+		ret = append(ret,
+			v1.EnvVar{
+				Name:  "APPENGINE_API_ROOMS_EVENTS_EXCHANGE_NAME",
+				Value: cr.Spec.Components.AppengineAPI.RoomEventsExchangeName,
+			})
 	}
 	return ret
 }
 
-func getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas int, eventsExchangeName string, cr *apiv2alpha1.Astarte) []v1.EnvVar {
+func getTriggerEngineBackendEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	ret := []v1.EnvVar{}
+	ret = appendRabbitMQConnectionEnvVars(ret, "TRIGGER_ENGINE_AMQP_CONSUMER", cr)
+
+	eventsExchangeName := cr.Spec.RabbitMQ.EventsExchangeName
+
+	if eventsExchangeName != "" {
+		ret = append(ret,
+			v1.EnvVar{
+				Name:  "TRIGGER_ENGINE_AMQP_EVENTS_EXCHANGE_NAME",
+				Value: eventsExchangeName,
+			})
+	}
+
+	if cr.Spec.Components.AppengineAPI.RoomEventsQueueName != "" {
+		ret = append(ret,
+			v1.EnvVar{
+				Name:  "TRIGGER_ENGINE_AMQP_EVENTS_QUEUE_NAME",
+				Value: cr.Spec.Components.AppengineAPI.RoomEventsQueueName,
+			})
+	}
+
+	if cr.Spec.Components.TriggerEngine.EventsRoutingKey != "" {
+		ret = append(ret,
+			v1.EnvVar{
+				Name:  "TRIGGER_ENGINE_AMQP_EVENTS_ROUTING_KEY",
+				Value: cr.Spec.Components.TriggerEngine.EventsRoutingKey,
+			})
+	}
+
+	return ret
+}
+
+func getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas int, cr *apiv2alpha1.Astarte) []v1.EnvVar {
+	ret := []v1.EnvVar{}
+	eventsExchangeName := cr.Spec.RabbitMQ.EventsExchangeName
 
 	// Append RabbitMQ variables for both Consumer and Producer
 	ret = appendRabbitMQConnectionEnvVars(ret, "DATA_UPDATER_PLANT_AMQP_CONSUMER", cr)
 	ret = appendRabbitMQConnectionEnvVars(ret, "DATA_UPDATER_PLANT_AMQP_PRODUCER", cr)
+	ret = appendRabbitMQConnectionEnvVars(ret, "DATA_UPDATER_PLANT_AMQP_TRIGGERS_PRODUCER", cr)
 
 	if eventsExchangeName != "" {
 		ret = append(ret,

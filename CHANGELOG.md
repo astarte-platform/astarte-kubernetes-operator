@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add v2alpha1 API version for the flow.astarte-platform.org group.
 - Support the NetworkTopologyStrategy replication strategy for Cassandra.
 - Add kubernetes 1.30.x, 1.31.x, 1.32.x and 1.33.x to the test matrix of the Helm chart installation tests.
+- Added env vars required by Astarte v1.3+.
+- Unit and integration tests.
+- Add AstarteCassandraConnectionSpec.EnableKeepalive field to the Astarte CRD.
 
 ### Changed
 - Forward port changes from release-24.5
@@ -22,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - [Breaking] Support Astarte v1.3+. Support to previous Astarte versions is dropped.
 - Moved CFSSL validation logic to the Astarte CRD validation webhook.
 - Updated Helm chart installation tests to work with Astarte v1.3+.
+- Refactor of env var injection logic for squashed services.
 
 ### Removed
 - [Breaking] Remove v1alpha2 and v1alpha3 API version for the api.astarte-platform.org group.
@@ -33,6 +37,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fix the propagation of replicaCount, installCrds, and pullPolicy values
   in values.yaml during Helm chart installation.
 - Fix E2E tests for Astarte v1.3+ and Astarte Operator v25.5+.
+- Fix HPA race condition on initialization (#397).
+  If the HPA reports 0 desired replicas, the operator will ignore the HPA and use
+  the replica count from the Astarte custom resource instead.
+- Fix index out of range bug in `astarte_webhook.go`.
 
 ## [24.5.2] - Unreleased
 ### Added

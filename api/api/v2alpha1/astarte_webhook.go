@@ -16,6 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+//nolint:goconst
 package v2alpha1
 
 import (
@@ -23,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -176,27 +178,12 @@ func (r *Astarte) validateUpdateAstarteInstanceID(oldAstarte *Astarte) *field.Er
 func (r *Astarte) validateAstarte() field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if pointy.BoolValue(r.Spec.VerneMQ.SSLListener, false) {
-		// check that SSLListenerCertSecretName is set
-		if r.Spec.VerneMQ.SSLListenerCertSecretName == "" {
-			fldPath := field.NewPath("spec").Child("vernemq").Child("sslListenerCertSecretName")
-			err := errors.New("sslListenerCertSecretName not set")
-			astartelog.Info(err.Error())
+	if errList := r.validateSSLListener(); len(errList) > 0 {
+		allErrs = append(allErrs, errList...)
+	}
 
-			allErrs = append(allErrs, field.Invalid(fldPath, r.Spec.VerneMQ.SSLListenerCertSecretName, err.Error()))
-		}
-
-		// ensure the TLS secret is present
-		theSecret := &v1.Secret{}
-		if err := c.Get(context.Background(), types.NamespacedName{Name: r.Spec.VerneMQ.SSLListenerCertSecretName, Namespace: r.Namespace}, theSecret); err != nil {
-			fldPath := field.NewPath("spec").Child("vernemq").Child("sslListenerCertSecretName")
-			astartelog.Info(err.Error())
-			allErrs = append(allErrs, field.NotFound(fldPath, err.Error()))
-		}
-
-		if err := r.validateAstartePriorityClasses(); err != nil {
-			allErrs = append(allErrs, err)
-		}
+	if err := r.validateAstartePriorityClasses(); err != nil {
+		allErrs = append(allErrs, err)
 	}
 
 	if errList := r.validatePodLabelsForClusteredResources(); len(errList) > 0 {
@@ -211,6 +198,31 @@ func (r *Astarte) validateAstarte() field.ErrorList {
 		allErrs = append(allErrs, err)
 	}
 
+	return allErrs
+}
+
+func (r *Astarte) validateSSLListener() field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	// Only validate if the SSL Listener is explicitly enabled.
+	if pointy.BoolValue(r.Spec.VerneMQ.SSLListener, false) {
+		fldPath := field.NewPath("spec").Child("vernemq").Child("sslListenerCertSecretName")
+		secretName := r.Spec.VerneMQ.SSLListenerCertSecretName
+
+		// First, check that SSLListenerCertSecretName is set.
+		if secretName == "" {
+			err := errors.New("must be set when sslListener is true")
+			astartelog.Info(err.Error())
+			allErrs = append(allErrs, field.Invalid(fldPath, secretName, err.Error()))
+		} else {
+			// If the name is set, then ensure the Secret resource exists.
+			secret := &v1.Secret{}
+			if err := c.Get(context.Background(), types.NamespacedName{Name: secretName, Namespace: r.Namespace}, secret); err != nil {
+				astartelog.Info(err.Error())
+				allErrs = append(allErrs, field.NotFound(fldPath, secretName))
+			}
+		}
+	}
 	return allErrs
 }
 
@@ -280,7 +292,8 @@ func (r *Astarte) validatePriorityClassesValues() *field.Error {
 	highPriorityValue := *r.Spec.Features.AstartePodPriorities.AstarteHighPriority
 	midPriorityValue := *r.Spec.Features.AstartePodPriorities.AstarteMidPriority
 	lowPriorityValue := *r.Spec.Features.AstartePodPriorities.AstarteLowPriority
-	if midPriorityValue > highPriorityValue || lowPriorityValue > midPriorityValue {
+
+	if midPriorityValue >= highPriorityValue || lowPriorityValue >= midPriorityValue {
 		err := errors.New("Astarte PriorityClass values are incoherent")
 		astartelog.Info(err.Error())
 		fldPath := field.NewPath("spec").Child("features").Child("astarte{Low|Medium|High}Priority")
@@ -316,33 +329,32 @@ func (r *Astarte) validateCreateAstarteSystemKeyspace() field.ErrorList {
 			err := errors.New("invalid datacenter replication: wrong format")
 			astartelog.Info(err.Error())
 			fldPath := field.NewPath("spec").Child("cassandra").Child("astarteSystemKeyspace").Child("dataCenterReplication")
-
 			allErrs = append(allErrs, field.Invalid(fldPath, strings.Join(dataCenterAndReplication, ":"), err.Error()))
-		}
-		// ensure the replication factor is an integer...
-		dc := dataCenterAndReplication[0]
-		dcReplication, err := strconv.Atoi(dataCenterAndReplication[1])
-
-		if err != nil {
-			astartelog.Info(fmt.Sprint("invalid datacenter replication: replication must be an integer", err.Error()))
-			fldPath := field.NewPath("spec").Child("cassandra").Child("astarteSystemKeyspace").Child("dataCenterReplication")
-
-			allErrs = append(allErrs, field.Invalid(fldPath, strings.Join(dataCenterAndReplication, ":"), err.Error()))
-
 		} else {
-			// populate the keyValuePairs map only after we validated the user input
-			keyValuePairs[dc] = dcReplication
+			// ensure the replication factor is an integer...
+			dc := dataCenterAndReplication[0]
+			dcReplication, err := strconv.Atoi(dataCenterAndReplication[1])
+
+			if err != nil {
+				astartelog.Info(fmt.Sprint("invalid datacenter replication: replication must be an integer", err.Error()))
+				fldPath := field.NewPath("spec").Child("cassandra").Child("astarteSystemKeyspace").Child("dataCenterReplication")
+
+				allErrs = append(allErrs, field.Invalid(fldPath, strings.Join(dataCenterAndReplication, ":"), err.Error()))
+
+			} else {
+				// populate the keyValuePairs map only after we validated the user input
+				keyValuePairs[dc] = dcReplication
+			}
+
+			// ...and it's odd
+			if dcReplication%2 == 0 {
+				err := errors.New("invalid datacenter replication: replication must be odd")
+				astartelog.Info(err.Error())
+				fldPath := field.NewPath("spec").Child("cassandra").Child("astarteSystemKeyspace").Child("dataCenterReplication")
+
+				allErrs = append(allErrs, field.Invalid(fldPath, strings.Join(dataCenterAndReplication, ":"), err.Error()))
+			}
 		}
-
-		// ...and it's odd
-		if dcReplication%2 == 0 {
-			err := errors.New("invalid datacenter replication: replication must be odd")
-			astartelog.Info(err.Error())
-			fldPath := field.NewPath("spec").Child("cassandra").Child("astarteSystemKeyspace").Child("dataCenterReplication")
-
-			allErrs = append(allErrs, field.Invalid(fldPath, strings.Join(dataCenterAndReplication, ":"), err.Error()))
-		}
-
 	}
 
 	// finally, ensure that it can be marshaled into json
@@ -369,8 +381,22 @@ func (r *Astarte) validateUpdateAstarteSystemKeyspace(oldAstarte *Astarte) *fiel
 }
 
 func (r *Astarte) validateCFSSLDefinition() *field.Error {
-	if !pointy.BoolValue(r.Spec.CFSSL.Deploy, true) && r.Spec.CFSSL.URL == "" {
+	if pointy.BoolValue(r.Spec.CFSSL.Deploy, true) {
+		return nil
+	}
+
+	// If we are here, CFSSL is not being deployed. Ensure URL is set.
+	if r.Spec.CFSSL.URL == "" {
 		err := errors.New("When not deploying CFSSL, the 'url' must be specified")
+		fldPath := field.NewPath("spec").Child("cfssl").Child("url")
+		astartelog.Info(err.Error())
+		return field.Invalid(fldPath, r.Spec.CFSSL.URL, err.Error())
+	}
+
+	// If URL is set, ensure it is compliant with RFC 3986
+	_, err := url.Parse(r.Spec.CFSSL.URL)
+	if err != nil {
+		err := errors.New("The provided URL is not valid")
 		fldPath := field.NewPath("spec").Child("cfssl").Child("url")
 		astartelog.Info(err.Error())
 		return field.Invalid(fldPath, r.Spec.CFSSL.URL, err.Error())

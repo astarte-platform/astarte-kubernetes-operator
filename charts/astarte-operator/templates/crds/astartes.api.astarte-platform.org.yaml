@@ -88,6 +88,8 @@ spec:
                             - passwordKey
                             - usernameKey
                           type: object
+                        enableKeepalive:
+                          type: boolean
                         nodes:
                           items:
                             properties:

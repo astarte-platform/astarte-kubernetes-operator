@@ -430,117 +430,130 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv2alpha1.Astarte, bac
 
 func appendCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	spec := cr.Spec.Cassandra.Connection
-	if spec != nil {
-		// pool size
-		if spec.PoolSize != nil {
-			ret = append(ret,
-				v1.EnvVar{
-					Name:  "CASSANDRA_POOL_SIZE",
-					Value: strconv.Itoa(*spec.PoolSize),
-				},
-			)
+	if spec == nil {
+		return ret
+	}
+
+	// pool size
+	if spec.PoolSize != nil {
+		ret = append(ret,
+			v1.EnvVar{
+				Name:  "CASSANDRA_POOL_SIZE",
+				Value: strconv.Itoa(*spec.PoolSize),
+			},
+		)
+	}
+
+	// SSL
+	if spec.SSLConfiguration.Enable {
+		ret = append(ret, v1.EnvVar{
+			Name:  "CASSANDRA_SSL_ENABLED",
+			Value: "true",
+		})
+
+		// CA configuration
+		if spec.SSLConfiguration.CustomCASecret.Name != "" {
+			// getAstarteCommonVolumes will mount the volume for us, if we're here. So trust the rest of our code.
+			ret = append(ret, v1.EnvVar{
+				Name:  "CASSANDRA_SSL_CA_FILE",
+				Value: "/cassandra-ssl/ca.crt",
+			})
 		}
 
-		// SSL
-		if spec.SSLConfiguration.Enable {
+		// SNI configuration
+		switch {
+		case spec.SSLConfiguration.CustomSNI != "":
 			ret = append(ret, v1.EnvVar{
-				Name:  "CASSANDRA_SSL_ENABLED",
+				Name:  "CASSANDRA_SSL_CUSTOM_SNI",
+				Value: spec.SSLConfiguration.CustomSNI,
+			})
+		case !pointy.BoolValue(spec.SSLConfiguration.SNI, true):
+			ret = append(ret, v1.EnvVar{
+				Name:  "CASSANDRA_SSL_DISABLE_SNI",
 				Value: "true",
 			})
-
-			// CA configuration
-			if spec.SSLConfiguration.CustomCASecret.Name != "" {
-				// getAstarteCommonVolumes will mount the volume for us, if we're here. So trust the rest of our code.
-				ret = append(ret, v1.EnvVar{
-					Name:  "CASSANDRA_SSL_CA_FILE",
-					Value: "/cassandra-ssl/ca.crt",
-				})
-			}
-
-			// SNI configuration
-			switch {
-			case spec.SSLConfiguration.CustomSNI != "":
-				ret = append(ret, v1.EnvVar{
-					Name:  "CASSANDRA_SSL_CUSTOM_SNI",
-					Value: spec.SSLConfiguration.CustomSNI,
-				})
-			case !pointy.BoolValue(spec.SSLConfiguration.SNI, true):
-				ret = append(ret, v1.EnvVar{
-					Name:  "CASSANDRA_SSL_DISABLE_SNI",
-					Value: "true",
-				})
-			}
-		}
-
-		if spec.CredentialsSecret != nil {
-			// Fetch our Credentials for Cassandra
-			userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetCassandraUserCredentialsSecret(cr)
-
-			// Standard Cassandra env vars that we need to plug in
-			ret = append(ret,
-				v1.EnvVar{
-					Name: "CASSANDRA_USERNAME",
-					ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-						LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-						Key:                  userCredentialsSecretUsernameKey,
-					}},
-				},
-				v1.EnvVar{
-					Name: "CASSANDRA_PASSWORD",
-					ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
-						LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
-						Key:                  userCredentialsSecretPasswordKey,
-					}},
-				},
-			)
 		}
 	}
+
+	if spec.CredentialsSecret != nil {
+		// Fetch our Credentials for Cassandra
+		userCredentialsSecretName, userCredentialsSecretUsernameKey, userCredentialsSecretPasswordKey := misc.GetCassandraUserCredentialsSecret(cr)
+
+		// Standard Cassandra env vars that we need to plug in
+		ret = append(ret,
+			v1.EnvVar{
+				Name: "CASSANDRA_USERNAME",
+				ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
+					LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
+					Key:                  userCredentialsSecretUsernameKey,
+				}},
+			},
+			v1.EnvVar{
+				Name: "CASSANDRA_PASSWORD",
+				ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
+					LocalObjectReference: v1.LocalObjectReference{Name: userCredentialsSecretName},
+					Key:                  userCredentialsSecretPasswordKey,
+				}},
+			},
+		)
+	}
+
+	// Enable or disable the keepalive option for the xandra connection. Default to true.
+	ret = append(ret,
+		v1.EnvVar{
+			Name:  "CASSANDRA_ENABLE_KEEPALIVE",
+			Value: strconv.FormatBool(pointy.BoolValue(spec.EnableKeepalive, true)),
+		},
+	)
+
 	return ret
 }
 
 func appendRabbitMQConnectionEnvVars(ret []v1.EnvVar, prefix string, cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	spec := cr.Spec.RabbitMQ.Connection
 
+	if spec == nil {
+		return ret
+	}
+
 	// Let's verify Virtualhost and default to "/" where needed. Al
 	virtualHost := "/"
-	if spec != nil {
-		if spec.VirtualHost != "" {
-			virtualHost = spec.VirtualHost
+	if spec.VirtualHost != "" {
+		virtualHost = spec.VirtualHost
+		ret = append(ret, v1.EnvVar{
+			Name:  prefix + "_VIRTUAL_HOST",
+			Value: spec.VirtualHost,
+		})
+	}
+
+	// SSL
+	if spec.SSLConfiguration.Enable {
+		ret = append(ret, v1.EnvVar{
+			Name:  prefix + "_SSL_ENABLED",
+			Value: "true",
+		})
+
+		// CA configuration
+		if spec.SSLConfiguration.CustomCASecret.Name != "" {
+			// getAstarteCommonVolumes will mount the volume for us, if we're here. So trust the rest of our code.
 			ret = append(ret, v1.EnvVar{
-				Name:  prefix + "_VIRTUAL_HOST",
-				Value: spec.VirtualHost,
+				Name:  prefix + "_SSL_CA_FILE",
+				Value: "/rabbitmq-ssl/ca.crt",
 			})
 		}
 
-		// SSL
-		if spec.SSLConfiguration.Enable {
+		// SNI configuration
+		switch {
+		case spec.SSLConfiguration.CustomSNI != "":
 			ret = append(ret, v1.EnvVar{
-				Name:  prefix + "_SSL_ENABLED",
+				Name:  prefix + "_SSL_CUSTOM_SNI",
+				Value: spec.SSLConfiguration.CustomSNI,
+			})
+		case !pointy.BoolValue(spec.SSLConfiguration.SNI, true):
+			ret = append(ret, v1.EnvVar{
+				Name:  prefix + "_SSL_DISABLE_SNI",
 				Value: "true",
 			})
-
-			// CA configuration
-			if spec.SSLConfiguration.CustomCASecret.Name != "" {
-				// getAstarteCommonVolumes will mount the volume for us, if we're here. So trust the rest of our code.
-				ret = append(ret, v1.EnvVar{
-					Name:  prefix + "_SSL_CA_FILE",
-					Value: "/rabbitmq-ssl/ca.crt",
-				})
-			}
-
-			// SNI configuration
-			switch {
-			case spec.SSLConfiguration.CustomSNI != "":
-				ret = append(ret, v1.EnvVar{
-					Name:  prefix + "_SSL_CUSTOM_SNI",
-					Value: spec.SSLConfiguration.CustomSNI,
-				})
-			case !pointy.BoolValue(spec.SSLConfiguration.SNI, true):
-				ret = append(ret, v1.EnvVar{
-					Name:  prefix + "_SSL_DISABLE_SNI",
-					Value: "true",
-				})
-			}
 		}
 	}
 
@@ -604,30 +617,26 @@ func getAstarteCommonVolumes(cr *apiv2alpha1.Astarte) []v1.Volume {
 		},
 	}
 
-	if cr.Spec.RabbitMQ.Connection != nil {
-		if cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name != "" {
-			// Mount the secret!
-			ret = append(ret, v1.Volume{
-				Name: "rabbitmq-ssl-ca",
-				VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{
-					SecretName: cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name,
-					Items:      []v1.KeyToPath{{Key: "ca.crt", Path: "ca.crt"}},
-				}},
-			})
-		}
+	if cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name != "" {
+		// Mount the secret!
+		ret = append(ret, v1.Volume{
+			Name: "rabbitmq-ssl-ca",
+			VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{
+				SecretName: cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name,
+				Items:      []v1.KeyToPath{{Key: "ca.crt", Path: "ca.crt"}},
+			}},
+		})
 	}
 
-	if cr.Spec.Cassandra.Connection != nil {
-		if cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name != "" {
-			// Mount the secret!
-			ret = append(ret, v1.Volume{
-				Name: "cassandra-ssl-ca",
-				VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{
-					SecretName: cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name,
-					Items:      []v1.KeyToPath{{Key: "ca.crt", Path: "ca.crt"}},
-				}},
-			})
-		}
+	if cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name != "" {
+		// Mount the secret!
+		ret = append(ret, v1.Volume{
+			Name: "cassandra-ssl-ca",
+			VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{
+				SecretName: cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name,
+				Items:      []v1.KeyToPath{{Key: "ca.crt", Path: "ca.crt"}},
+			}},
+		})
 	}
 
 	return ret
@@ -642,26 +651,22 @@ func getAstarteCommonVolumeMounts(cr *apiv2alpha1.Astarte) []v1.VolumeMount {
 		},
 	}
 
-	if cr.Spec.RabbitMQ.Connection != nil {
-		if cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name != "" {
-			// Mount the secret!
-			ret = append(ret, v1.VolumeMount{
-				Name:      "rabbitmq-ssl-ca",
-				MountPath: "/rabbitmq-ssl",
-				ReadOnly:  true,
-			})
-		}
+	if cr.Spec.RabbitMQ.Connection.SSLConfiguration.CustomCASecret.Name != "" {
+		// Mount the secret!
+		ret = append(ret, v1.VolumeMount{
+			Name:      "rabbitmq-ssl-ca",
+			MountPath: "/rabbitmq-ssl",
+			ReadOnly:  true,
+		})
 	}
 
-	if cr.Spec.Cassandra.Connection != nil {
-		if cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name != "" {
-			// Mount the secret!
-			ret = append(ret, v1.VolumeMount{
-				Name:      "cassandra-ssl-ca",
-				MountPath: "/cassandra-ssl",
-				ReadOnly:  true,
-			})
-		}
+	if cr.Spec.Cassandra.Connection.SSLConfiguration.CustomCASecret.Name != "" {
+		// Mount the secret!
+		ret = append(ret, v1.VolumeMount{
+			Name:      "cassandra-ssl-ca",
+			MountPath: "/cassandra-ssl",
+			ReadOnly:  true,
+		})
 	}
 
 	return ret
@@ -760,6 +765,14 @@ func computePodLabels(r apiv2alpha1.PodLabelsGetter, labels map[string]string) m
 func getReplicaCountForResource(resource *apiv2alpha1.AstarteGenericClusteredResource, cr *apiv2alpha1.Astarte, c client.Client, log logr.Logger) *int32 {
 	if cr.Spec.Features.Autoscaling && resource.Autoscale != nil {
 		if hpaStatus, err := getHPAStatusForResource(resource.Autoscale.Horizontal, cr, c, log); err == nil {
+			// This is a special case to avoid a race condition with HPA, which can lead to the Operator
+			// and HPA fighting over replica count, causing service disruption. This can happen when
+			// the HPA isn't able to fetch metrics for the pods, and decides to scale down to 0.
+			// This is a known issue in HPA, and this is a workaround to avoid it.
+			if hpaStatus.DesiredReplicas == 0 {
+				log.Info("HPA is reporting 0 desired replicas. This is likely a transient state. Ignoring HPA and using the spec's replica count", "HPA.Name", resource.Autoscale.Horizontal)
+				return resource.Replicas
+			}
 			log.Info("Getting replica count from HPA", "value", hpaStatus.DesiredReplicas)
 			return &hpaStatus.DesiredReplicas
 		}

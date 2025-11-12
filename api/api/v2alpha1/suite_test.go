@@ -16,13 +16,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v2alpha1
 
 import (
 	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -30,10 +31,13 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"gopkg.in/yaml.v2"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	// +kubebuilder:scaffold:imports
-	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
+
+	"k8s.io/client-go/kubernetes/scheme"
+
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,6 +48,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
+const Timeout = "30s"
+const Interval = "1s"
+
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
@@ -52,6 +59,7 @@ var k8sClient client.Client
 var testEnv *envtest.Environment
 var ctx context.Context
 var cancel context.CancelFunc
+var baseCr *Astarte
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -88,23 +96,22 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	scheme := apimachineryruntime.NewScheme()
-	err = AddToScheme(scheme)
+	err = AddToScheme(scheme.Scheme)
 	Expect(err).ToNot(HaveOccurred())
 
-	err = admissionv1.AddToScheme(scheme)
+	err = admissionv1.AddToScheme(scheme.Scheme)
 	Expect(err).ToNot(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
+	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
 	// start webhook server using Manager
 	webhookInstallOptions := &testEnv.WebhookInstallOptions
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme: scheme,
+		Scheme: scheme.Scheme,
 		WebhookServer: webhook.NewServer(webhook.Options{
 			Host:    webhookInstallOptions.LocalServingHost,
 			Port:    webhookInstallOptions.LocalServingPort,
@@ -115,7 +122,15 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	err = (&AstarteDefaultIngress{}).SetupWebhookWithManager(mgr)
+	err = (&Astarte{}).SetupWebhookWithManager(mgr)
+	Expect(err).ToNot(HaveOccurred())
+
+	manifestPath := filepath.Join("..", "..", "..", "test", "manifests", "api_v2alpha1_astarte_1.3.yaml")
+	manifestBytes, err := os.ReadFile(manifestPath)
+	Expect(err).ToNot(HaveOccurred())
+
+	baseCr = &Astarte{}
+	err = yaml.Unmarshal(manifestBytes, baseCr)
 	Expect(err).ToNot(HaveOccurred())
 
 	// +kubebuilder:scaffold:webhook

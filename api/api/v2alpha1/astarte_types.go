@@ -351,7 +351,7 @@ type AstarteRabbitMQConnectionSpec struct {
 }
 
 type AstarteRabbitMQSpec struct {
-	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Required
 	Connection *AstarteRabbitMQConnectionSpec `json:"connection,omitempty"`
 	// Configures the data queues prefix on RabbitMQ. You should change this setting only
 	// in custom RabbitMQ installations.
@@ -368,10 +368,14 @@ type AstarteCassandraConnectionSpec struct {
 	Nodes                 []HostAndPort `json:"nodes,omitempty"`
 	// +kubebuilder:validation:Optional
 	PoolSize *int `json:"poolSize,omitempty"`
+	// Enable or disable the keepalive option for the xandra connection.
+	// Default: true
+	// +kubebuilder:validation:Optional
+	EnableKeepalive *bool `json:"enableKeepalive,omitempty"`
 }
 
 type AstarteCassandraSpec struct {
-	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Required
 	Connection *AstarteCassandraConnectionSpec `json:"connection,omitempty"`
 	// +kubebuilder:validation:Optional
 	AstarteSystemKeyspace AstarteSystemKeyspaceSpec `json:"astarteSystemKeyspace,omitempty"`
