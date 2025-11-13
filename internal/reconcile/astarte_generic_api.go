@@ -323,6 +323,15 @@ func getAstarteHousekeepingEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
 
 	ret = append(ret,
 		v1.EnvVar{
+			// Even though the MANAGEMENT_PORT is part of RabbitMQ spec,
+			// we use it only for Housekeeping. Adding this to other components
+			// might be a problem, for example VerneMQ would fail to start if
+			// it finds this variable.
+
+			Name:  "HOUSEKEEPING_AMQP_MANAGEMENT_PORT",
+			Value: strconv.Itoa(15672),
+		},
+		v1.EnvVar{
 			Name:  "CASSANDRA_NODES",
 			Value: getCassandraNodes(cr),
 		},

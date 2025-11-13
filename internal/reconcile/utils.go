@@ -520,10 +520,6 @@ func appendRabbitMQConnectionEnvVars(ret []v1.EnvVar, prefix string, cr *apiv2al
 	virtualHost := "/"
 	if spec.VirtualHost != "" {
 		virtualHost = spec.VirtualHost
-		ret = append(ret, v1.EnvVar{
-			Name:  prefix + "_VIRTUAL_HOST",
-			Value: spec.VirtualHost,
-		})
 	}
 
 	// SSL
