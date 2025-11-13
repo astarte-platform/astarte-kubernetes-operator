@@ -371,6 +371,9 @@ func getAstartePairingEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
 			Value: misc.GetVerneMQBrokerURL(cr),
 		})
 
+	// AMQP Producer configuration is now mandatory
+	ret = appendRabbitMQConnectionEnvVars(ret, "ASTARTE_EVENTS_PRODUCER_AMQP", cr)
+
 	return ret
 }
 
