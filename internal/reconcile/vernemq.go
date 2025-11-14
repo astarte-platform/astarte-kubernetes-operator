@@ -282,6 +282,7 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv2alpha1.Astarte) []v1.Env
 	}
 
 	// Add any explicit additional env
+	// This comes last to allow users to override any env var we set
 	if len(cr.Spec.VerneMQ.AdditionalEnv) > 0 {
 		envVars = append(envVars, cr.Spec.VerneMQ.AdditionalEnv...)
 	}

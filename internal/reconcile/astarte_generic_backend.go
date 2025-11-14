@@ -177,7 +177,7 @@ func getAstarteGenericBackendVolumeMounts(cr *apiv2alpha1.Astarte) []v1.VolumeMo
 }
 
 func getAstarteGenericBackendEnvVars(deploymentName string, replicaIndex, replicas int, cr *apiv2alpha1.Astarte, backend apiv2alpha1.AstarteGenericClusteredResource, component apiv2alpha1.AstarteComponent) []v1.EnvVar {
-	ret := getAstarteCommonEnvVars(deploymentName, cr, backend, component)
+	ret := getAstarteCommonEnvVars(deploymentName, cr, component)
 
 	ret = appendCassandraConnectionEnvVars(ret, cr)
 
@@ -202,6 +202,13 @@ func getAstarteGenericBackendEnvVars(deploymentName string, replicaIndex, replic
 		ret = append(ret, getTriggerEngineBackendEnvVars(cr)...)
 	case apiv2alpha1.Dashboard:
 		// Nothing special for now
+	}
+
+	// Add any additional env vars
+	// This comes last to allow users to override any env var we set
+
+	if len(backend.AdditionalEnv) > 0 {
+		ret = append(ret, backend.AdditionalEnv...)
 	}
 
 	return ret

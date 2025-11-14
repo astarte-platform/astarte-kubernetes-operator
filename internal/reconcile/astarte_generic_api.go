@@ -230,7 +230,7 @@ func getAstarteGenericAPIComponentVolumeMounts(cr *apiv2alpha1.Astarte, componen
 }
 
 func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv2alpha1.Astarte, api apiv2alpha1.AstarteGenericAPIComponentSpec, component apiv2alpha1.AstarteComponent) []v1.EnvVar {
-	ret := getAstarteCommonEnvVars(deploymentName, cr, api.AstarteGenericClusteredResource, component)
+	ret := getAstarteCommonEnvVars(deploymentName, cr, component)
 
 	// Should we disable authentication?
 	if pointy.BoolValue(api.DisableAuthentication, false) {
@@ -267,6 +267,12 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv2alpha1.Astarte,
 		ret = append(ret, getAppEngineAPIEnvVars(cr)...)
 	case apiv2alpha1.RealmManagement:
 		// Nothing special for now
+	}
+
+	// Override with any additional env vars
+	// this comes last to allow users to override any env var we set
+	if len(api.AdditionalEnv) > 0 {
+		ret = append(ret, api.AdditionalEnv...)
 	}
 
 	return ret
