@@ -30,6 +30,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -201,9 +202,10 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.AppengineAPI.AstarteGenericAPIComponentSpec, component, k8sClient, scheme.Scheme)).To(Succeed())
 
 			// Deployment should be deleted
-			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)
-			}, Timeout, Interval).ShouldNot(Succeed())
+			Eventually(func() bool {
+				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)
+				return apierrors.IsNotFound(err)
+			}, Timeout, Interval).Should(BeTrue())
 		})
 
 		It("should apply custom resource requirements", func() {

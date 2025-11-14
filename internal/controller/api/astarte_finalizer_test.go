@@ -23,6 +23,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -110,9 +111,10 @@ var _ = Describe("Astarte Finalizer testing", Ordered, Serial, func() {
 			Expect(cr.GetFinalizers()).ToNot(ContainElement(astarteFinalizer))
 
 			// Verify CR is eventually deleted (handleFinalization should have updated it)
-			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, &v2alpha1.Astarte{})
-			}, Timeout, Interval).ShouldNot(Succeed())
+			Eventually(func() bool {
+				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, &v2alpha1.Astarte{})
+				return apierrors.IsNotFound(err)
+			}, Timeout, Interval).Should(BeTrue())
 		})
 	})
 

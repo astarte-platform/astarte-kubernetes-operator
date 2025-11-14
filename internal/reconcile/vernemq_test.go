@@ -29,6 +29,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	appsv1 "k8s.io/api/apps/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -110,9 +111,10 @@ var _ = Describe("VerneMQ testing", Ordered, Serial, func() {
 			cr.Spec.VerneMQ.Deploy = pointy.Bool(false)
 			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
 			Expect(EnsureVerneMQ(cr, k8sClient, scheme.Scheme)).To(Succeed())
-			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: statefulSetName, Namespace: cr.Namespace}, &appsv1.StatefulSet{})
-			}, Timeout, Interval).ShouldNot(Succeed())
+			Eventually(func() bool {
+				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: statefulSetName, Namespace: cr.Namespace}, &appsv1.StatefulSet{})
+				return apierrors.IsNotFound(err)
+			}, Timeout, Interval).Should(BeTrue())
 		})
 	})
 })
