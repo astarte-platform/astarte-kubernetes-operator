@@ -125,6 +125,8 @@ spec:
                               type: boolean
                           type: object
                       type: object
+                  required:
+                    - connection
                   type: object
                 cfssl:
                   properties:
@@ -6049,6 +6051,8 @@ spec:
                       type: string
                     eventsExchangeName:
                       type: string
+                  required:
+                    - connection
                   type: object
                 storageClassName:
                   type: string
