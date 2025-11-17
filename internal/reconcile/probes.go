@@ -24,8 +24,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// getAstarteStartupProbe returns the custom startup probe if set, nil otherwise
-func getAstarteStartupProbe(res apiv2alpha1.AstarteGenericClusteredResource) *v1.Probe {
+// getAstarteComponentStartupProbe returns the custom startup probe if set, nil otherwise
+func getAstarteComponentStartupProbe(res apiv2alpha1.AstarteGenericClusteredResource) *v1.Probe {
 	if res.StartupProbe != nil {
 		return res.StartupProbe
 	}
@@ -35,7 +35,7 @@ func getAstarteStartupProbe(res apiv2alpha1.AstarteGenericClusteredResource) *v1
 }
 
 // getAstarteBackendReadinessProbe returns the custom readyness probe if set, the default readyness probe otherwise
-func getAstarteReadinessProbe(component apiv2alpha1.AstarteComponent, res apiv2alpha1.AstarteGenericClusteredResource) *v1.Probe {
+func getAstarteComponentReadinessProbe(component apiv2alpha1.AstarteComponent, res apiv2alpha1.AstarteGenericClusteredResource) *v1.Probe {
 	if res.ReadinessProbe != nil {
 		return res.ReadinessProbe
 	}
@@ -44,7 +44,7 @@ func getAstarteReadinessProbe(component apiv2alpha1.AstarteComponent, res apiv2a
 }
 
 // getAstarteBackendLivenessProbe returns the custom liveness probe if set, the default liveness probe otherwise
-func getAstarteLivenessProbe(component apiv2alpha1.AstarteComponent, res apiv2alpha1.AstarteGenericClusteredResource) *v1.Probe {
+func getAstarteComponentLivenessProbe(component apiv2alpha1.AstarteComponent, res apiv2alpha1.AstarteGenericClusteredResource) *v1.Probe {
 	if res.LivenessProbe != nil {
 		return res.LivenessProbe
 	}

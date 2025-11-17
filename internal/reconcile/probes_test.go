@@ -75,10 +75,10 @@ var _ = Describe("Astarte Probes testing", Ordered, Serial, func() {
 	})
 
 	// Default probes (no custom overrides)
-	Describe("Test getAstarteReadinessProbe", func() {
+	Describe("Test getAstarteComponentReadinessProbe", func() {
 		Context("with default probe", func() {
 			It("returns the default readiness probe", func() {
-				readiness := getAstarteReadinessProbe(apiv2alpha1.AppEngineAPI, emptyRes)
+				readiness := getAstarteComponentReadinessProbe(apiv2alpha1.AppEngineAPI, emptyRes)
 				Expect(readiness).ToNot(BeNil())
 				Expect(readiness.HTTPGet).ToNot(BeNil())
 				Expect(readiness.HTTPGet.Path).To(Equal("/health"))
@@ -90,7 +90,7 @@ var _ = Describe("Astarte Probes testing", Ordered, Serial, func() {
 		Context("with custom probes", func() {
 			It("returns the custom readiness probe", func() {
 				res := apiv2alpha1.AstarteGenericClusteredResource{ReadinessProbe: customProbe}
-				readinessAPI := getAstarteReadinessProbe(apiv2alpha1.AppEngineAPI, res)
+				readinessAPI := getAstarteComponentReadinessProbe(apiv2alpha1.AppEngineAPI, res)
 				Expect(readinessAPI).ToNot(BeNil())
 				Expect(readinessAPI.HTTPGet).ToNot(BeNil())
 				Expect(readinessAPI.HTTPGet.Path).To(Equal("/custom"))
@@ -100,10 +100,10 @@ var _ = Describe("Astarte Probes testing", Ordered, Serial, func() {
 		})
 	})
 
-	Describe("Test getAstarteLivenessProbe", func() {
+	Describe("Test getAstarteComponentLivenessProbe", func() {
 		Context("with default probe", func() {
 			It("returns the default liveness probe", func() {
-				liveness := getAstarteLivenessProbe(apiv2alpha1.AppEngineAPI, emptyRes)
+				liveness := getAstarteComponentLivenessProbe(apiv2alpha1.AppEngineAPI, emptyRes)
 				Expect(liveness).ToNot(BeNil())
 				Expect(liveness.HTTPGet).ToNot(BeNil())
 				Expect(liveness.HTTPGet.Path).To(Equal("/health"))
@@ -115,7 +115,7 @@ var _ = Describe("Astarte Probes testing", Ordered, Serial, func() {
 		Context("with custom probes", func() {
 			It("returns the custom liveness probe", func() {
 				res := apiv2alpha1.AstarteGenericClusteredResource{LivenessProbe: customProbe}
-				livenessAPI := getAstarteLivenessProbe(apiv2alpha1.AppEngineAPI, res)
+				livenessAPI := getAstarteComponentLivenessProbe(apiv2alpha1.AppEngineAPI, res)
 				Expect(livenessAPI).ToNot(BeNil())
 				Expect(livenessAPI.HTTPGet).ToNot(BeNil())
 				Expect(livenessAPI.HTTPGet.Path).To(Equal("/custom"))
@@ -125,10 +125,10 @@ var _ = Describe("Astarte Probes testing", Ordered, Serial, func() {
 		})
 	})
 
-	Describe("Test getAstarteStartupProbe", func() {
+	Describe("Test getAstarteComponentStartupProbe", func() {
 		Context("with default probe", func() {
 			It("returns nil when no startup probe is configured", func() {
-				startup := getAstarteStartupProbe(emptyRes)
+				startup := getAstarteComponentStartupProbe(emptyRes)
 				Expect(startup).To(BeNil())
 			})
 		})
@@ -136,7 +136,7 @@ var _ = Describe("Astarte Probes testing", Ordered, Serial, func() {
 		Context("with custom probes", func() {
 			It("returns the custom startup probe", func() {
 				res := apiv2alpha1.AstarteGenericClusteredResource{StartupProbe: customProbe}
-				startupAPI := getAstarteStartupProbe(res)
+				startupAPI := getAstarteComponentStartupProbe(res)
 				Expect(startupAPI).ToNot(BeNil())
 				Expect(startupAPI.HTTPGet).ToNot(BeNil())
 				Expect(startupAPI.HTTPGet.Path).To(Equal("/custom"))
