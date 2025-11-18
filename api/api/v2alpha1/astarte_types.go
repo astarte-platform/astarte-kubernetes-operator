@@ -215,12 +215,9 @@ func (a *AstarteComponent) ServiceName() string {
 	return a.DashedString()
 }
 
-// ServiceRelativePath returns the relative path where the service will be served by the Astarte Voyager Ingress.
+// ServiceRelativePath returns the relative path where the service will be served by the Ingress
 // This will return a meaningful value only for API components or the Dashboard.
 func (a *AstarteComponent) ServiceRelativePath() string {
-	if !strings.Contains(a.String(), "api") && a.String() != "dashboard" && a.String() != "flow" {
-		return ""
-	}
 	ret := strings.ReplaceAll(a.DashedString(), "-", "")
 	return strings.ReplaceAll(ret, "api", "")
 }

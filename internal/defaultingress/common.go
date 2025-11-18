@@ -19,6 +19,7 @@ limitations under the License.
 package defaultingress
 
 import (
+	"fmt"
 	"strconv"
 
 	"go.openly.dev/pointy"
@@ -28,31 +29,84 @@ import (
 	ingressv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v2alpha1"
 )
 
+// getCommonIngressAnnotations returns the common annotations for AstarteDefaultIngress Ingresses
+// Depending on the Ingress Controller in use, different annotations are applied.
 func getCommonIngressAnnotations(cr *ingressv2alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) map[string]string {
+	var annotations map[string]string
 	apiSslRedirect := pointy.BoolValue(parent.Spec.API.SSL, true) || pointy.BoolValue(cr.Spec.Dashboard.SSL, true)
-	annotations := map[string]string{
-		"nginx.ingress.kubernetes.io/ssl-redirect":   strconv.FormatBool(apiSslRedirect),
-		"nginx.ingress.kubernetes.io/use-regex":      "true",
-		"nginx.ingress.kubernetes.io/rewrite-target": "/$2",
-		"nginx.ingress.kubernetes.io/configuration-snippet": "more_set_headers \"X-Frame-Options: SAMEORIGIN\";\n" +
-			"more_set_headers \"X-XSS-Protection: 1; mode=block\";\n" +
-			"more_set_headers \"X-Content-Type-Options: nosniff\";\n" +
-			"more_set_headers \"Referrer-Policy: no-referrer-when-downgrade\";",
+	enableCors := pointy.BoolValue(cr.Spec.API.Cors, false)
+
+	if !useHAProxyIngressController(cr) {
+		annotations = map[string]string{
+			"nginx.ingress.kubernetes.io/ssl-redirect":   strconv.FormatBool(apiSslRedirect),
+			"nginx.ingress.kubernetes.io/use-regex":      "true",
+			"nginx.ingress.kubernetes.io/rewrite-target": "/$2",
+			"nginx.ingress.kubernetes.io/enable-cors":    strconv.FormatBool(enableCors),
+			"nginx.ingress.kubernetes.io/configuration-snippet": "more_set_headers \"X-Frame-Options: SAMEORIGIN\";\n" +
+				"more_set_headers \"X-XSS-Protection: 1; mode=block\";\n" +
+				"more_set_headers \"X-Content-Type-Options: nosniff\";\n" +
+				"more_set_headers \"Referrer-Policy: no-referrer-when-downgrade\";",
+		}
+		return annotations
 	}
 
-	if pointy.BoolValue(cr.Spec.API.Cors, false) {
-		annotations["nginx.ingress.kubernetes.io/enable-cors"] = strconv.FormatBool(true)
+	// From here on, we assume HAProxy Ingress Controller is in use
+
+	annotations = map[string]string{
+		"haproxy.org/backend-config-snippet": getHAProxyBackendConfig(parent),
+		"haproxy.org/ssl-redirect":           strconv.FormatBool(apiSslRedirect),
+		"haproxy.org/response-set-header": "\n" +
+			"X-Frame-Options SAMEORIGIN\n" +
+			"X-XSS-Protection 1; mode=block\n" +
+			"X-Content-Type-Options nosniff\n" +
+			"Referrer-Policy no-referrer-when-downgrade",
 	}
+	annotations = appendHAProxyCorsAnnotations(enableCors, annotations)
 
 	return annotations
 }
 
-// TODO handle with kubebuilder defaults
-func getIngressClassName(cr *ingressv2alpha1.AstarteDefaultIngress) *string {
-	if cr.Spec.IngressClass == "" {
-		return pointy.String("nginx")
+// appendHAProxyCorsAnnotations appends the necessary HAProxy annotations
+// depending on whether CORS is enabled or not.
+func appendHAProxyCorsAnnotations(enableCors bool, annotations map[string]string) (ret map[string]string) {
+	if !enableCors {
+		annotations["haproxy.org/cors-enable"] = "false"
+		return annotations
 	}
-	return pointy.String(cr.Spec.IngressClass)
+
+	annotations["haproxy.org/cors-enable"] = "true"
+	annotations["haproxy.org/cors-allow-origin"] = "*"
+	annotations["haproxy.org/cors-allow-methods"] = "GET, POST, OPTIONS, PUT, DELETE"
+	annotations["haproxy.org/cors-allow-headers"] = "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+	annotations["haproxy.org/cors-expose-headers"] = "Content-Length,Content-Range"
+
+	return annotations
+}
+
+// getHAProxyBackendConfig returns the backend config snippet for HAProxy Ingresses
+// Performs path rewriting only for Astarte API paths, leaving others (like dashboard) untouched.
+func getHAProxyBackendConfig(cr *apiv2alpha1.Astarte) string {
+	return fmt.Sprintf(`http-request replace-path /(appengine|pairing|housekeeping|realmmanagement)/(.*) /\2 if { hdr(host) -i %s }`, cr.Spec.API.Host)
+}
+
+// getIngressClassName returns the Ingress Class Name to use
+// ADI annotation is used to select the proper default ingressClass
+func getIngressClassName(cr *ingressv2alpha1.AstarteDefaultIngress) string {
+	if cr.Spec.IngressClass == "" {
+		if useHAProxyIngressController(cr) {
+			return "haproxy"
+		}
+		return "nginx"
+	}
+	return cr.Spec.IngressClass
+}
+
+// useHAProxyIngressController checks if the selector annotation in the ADI
+// is set to use the HAProxy Ingress Controller.
+// By default, NGINX is assumed.
+func useHAProxyIngressController(cr *ingressv2alpha1.AstarteDefaultIngress) bool {
+	ingressController, exists := cr.Annotations[ingressv2alpha1.AnnotationIngressControllerSelector]
+	return exists && ingressController == "haproxy.org"
 }
 
 func getIngressTLS(cr *ingressv2alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte, includeDashboard bool) []networkingv1.IngressTLS {
