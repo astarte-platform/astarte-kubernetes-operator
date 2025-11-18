@@ -61,7 +61,10 @@ var _ webhook.Defaulter = &AstarteDefaultIngress{}
 func (r *AstarteDefaultIngress) Default() {
 	astartedefaultingresslog.Info("default", "name", r.Name)
 
-	// TODO(user): fill in your defaulting logic.
+	// Set default Ingress Controller annotation if not set
+	if _, ok := r.GetAnnotations()[AnnotationIngressControllerSelector]; !ok {
+		r.GetAnnotations()[AnnotationIngressControllerSelector] = "haproxy.org"
+	}
 }
 
 // +kubebuilder:webhook:path=/validate-ingress-astarte-platform-org-v2alpha1-astartedefaultingress,mutating=false,failurePolicy=fail,sideEffects=None,groups=ingress.astarte-platform.org,resources=astartedefaultingresses,verbs=create;update,versions=v2alpha1,name=vastartedefaultingress.kb.io,admissionReviewVersions=v1
@@ -111,6 +114,11 @@ func (r *AstarteDefaultIngress) validateAstarteDefaultIngress() error {
 	}
 
 	allErrors = append(allErrors, r.validateTLSSecretExistence(c)...)
+
+	// Validate Ingress Controller selector annotation
+	if err := r.validateIngressControllerSelectorAnnotation(); err != nil {
+		allErrors = append(allErrors, err)
+	}
 
 	if len(allErrors) == 0 {
 		return nil
@@ -193,6 +201,19 @@ func getSecret(c client.Client, secretName string, namespace string, fldPath *fi
 	if err := c.Get(context.Background(), types.NamespacedName{Name: secretName, Namespace: namespace}, theSecret); err != nil {
 		astartedefaultingresslog.Error(err, fmt.Sprintf("The secret %s does not exist in namespace %s.", secretName, namespace))
 		return field.NotFound(fldPath, secretName)
+	}
+	return nil
+}
+
+// validateIngressControllerSelectorAnnotation checks if the Ingress Controller selector annotation is valid
+func (r *AstarteDefaultIngress) validateIngressControllerSelectorAnnotation() *field.Error {
+	if r.GetAnnotations() != nil {
+		if ingressSelector, ok := r.GetAnnotations()[AnnotationIngressControllerSelector]; ok {
+			if ingressSelector != "nginx.ingress.kubernetes.io" && ingressSelector != "haproxy.org" {
+				fldPath := field.NewPath("metadata").Child("annotations").Key(AnnotationIngressControllerSelector)
+				return field.Invalid(fldPath, ingressSelector, "Unsupported Ingress Controller selector. Supported values are 'nginx.ingress.kubernetes.io' and 'haproxy.org'.")
+			}
+		}
 	}
 	return nil
 }

@@ -25,6 +25,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Support annotations for AstarteDefaultIngress objects.
+const (
+	// AnnotationIngressControllerSelector is used to specify the Ingress Controller to use with this AstarteDefaultIngress.
+	// This is not related to the ingressClass field, which is used to specify which Ingress class the Ingress object should belong to.
+	// Depending on the Ingress Controller in use, different annotations and configurations will be applied to the generated Ingress objects.
+	// By default, the Astarte Operator assumes the HAProxy Ingress Controller is in use.
+	// Value: "haproxy.org" or "nginx.ingress.kubernetes.io" (depending on the Ingress Controller in use)
+	AnnotationIngressControllerSelector = "ingress.astarte-platform.org/ingress-controller-selector"
+)
+
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // AstarteDefaultIngressSpec defines the desired state of AstarteDefaultIngress
