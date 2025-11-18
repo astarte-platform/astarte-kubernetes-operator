@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v2alpha1
 
 import (
 	"context"
@@ -53,7 +53,7 @@ func (r *AstarteDefaultIngress) SetupWebhookWithManager(mgr ctrl.Manager) error 
 		Complete()
 }
 
-// +kubebuilder:webhook:path=/mutate-ingress-astarte-platform-org-v1alpha1-astartedefaultingress,mutating=true,failurePolicy=fail,sideEffects=None,groups=ingress.astarte-platform.org,resources=astartedefaultingresses,verbs=create;update,versions=v1alpha1,name=mastartedefaultingress.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-ingress-astarte-platform-org-v2alpha1-astartedefaultingress,mutating=true,failurePolicy=fail,sideEffects=None,groups=ingress.astarte-platform.org,resources=astartedefaultingresses,verbs=create;update,versions=v2alpha1,name=mastartedefaultingress.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &AstarteDefaultIngress{}
 
@@ -64,7 +64,7 @@ func (r *AstarteDefaultIngress) Default() {
 	// TODO(user): fill in your defaulting logic.
 }
 
-// +kubebuilder:webhook:path=/validate-ingress-astarte-platform-org-v1alpha1-astartedefaultingress,mutating=false,failurePolicy=fail,sideEffects=None,groups=ingress.astarte-platform.org,resources=astartedefaultingresses,verbs=create;update,versions=v1alpha1,name=vastartedefaultingress.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/validate-ingress-astarte-platform-org-v2alpha1-astartedefaultingress,mutating=false,failurePolicy=fail,sideEffects=None,groups=ingress.astarte-platform.org,resources=astartedefaultingresses,verbs=create;update,versions=v2alpha1,name=vastartedefaultingress.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &AstarteDefaultIngress{}
 
@@ -107,9 +107,6 @@ func (r *AstarteDefaultIngress) validateAstarteDefaultIngress() error {
 		}
 	}
 	if err := r.validateDashboardTLSConfig(); err != nil {
-		allErrors = append(allErrors, err)
-	}
-	if err := r.validateMetricsIngressSetup(); err != nil {
 		allErrors = append(allErrors, err)
 	}
 
@@ -161,14 +158,6 @@ func (r *AstarteDefaultIngress) validateAPITLSConfig(astarte *apiv2alpha1.Astart
 		r.Spec.API.TLSSecret == "" && pointy.BoolValue(r.Spec.API.Deploy, true) {
 		fldPath := field.NewPath("spec").Child("api").Child("tlsSecret")
 		return field.Required(fldPath, "Requested SSL support for API, but no TLS Secret provided")
-	}
-	return nil
-}
-
-func (r *AstarteDefaultIngress) validateMetricsIngressSetup() *field.Error {
-	if !pointy.BoolValue(r.Spec.API.ServeMetrics, false) && r.Spec.API.ServeMetricsToSubnet != "" {
-		fldPath := field.NewPath("spec").Child("api").Child("serveMetricsToSubnet")
-		return field.Forbidden(fldPath, "serveMetricsToSubnet must not be set when serveMetrics is set to false.")
 	}
 	return nil
 }

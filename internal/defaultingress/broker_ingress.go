@@ -33,11 +33,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
-	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v1alpha1"
+	ingressv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v2alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/internal/misc"
 )
 
-func EnsureBrokerIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
+func EnsureBrokerIngress(cr *ingressv2alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
 	// we actually don't have an ingress, but a service which exposes the broker
 	brokerServiceName := getBrokerServiceName(cr)
 	if !pointy.BoolValue(cr.Spec.Broker.Deploy, true) {
@@ -84,6 +84,6 @@ func EnsureBrokerIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv
 	return err
 }
 
-func getBrokerServiceName(cr *ingressv1alpha1.AstarteDefaultIngress) string {
+func getBrokerServiceName(cr *ingressv2alpha1.AstarteDefaultIngress) string {
 	return cr.Name + "-broker-service"
 }

@@ -34,11 +34,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
-	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v1alpha1"
+	ingressv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v2alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/internal/misc"
 )
 
-func EnsureAPIIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
+func EnsureAPIIngress(cr *ingressv2alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
 	ingressName := getAPIIngressName(cr)
 	if !pointy.BoolValue(cr.Spec.API.Deploy, true) {
 		// We're not deploying the Ingress, so we're stopping here.
@@ -103,15 +103,15 @@ func EnsureAPIIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2al
 	return err
 }
 
-func getAPIIngressName(cr *ingressv1alpha1.AstarteDefaultIngress) string {
+func getAPIIngressName(cr *ingressv2alpha1.AstarteDefaultIngress) string {
 	return cr.Name + "-api-ingress"
 }
 
-func getConfigMapName(cr *ingressv1alpha1.AstarteDefaultIngress) string {
+func getConfigMapName(cr *ingressv2alpha1.AstarteDefaultIngress) string {
 	return cr.Name + "-api-ingress-config"
 }
 
-func getAPIIngressSpec(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) networkingv1.IngressSpec {
+func getAPIIngressSpec(cr *ingressv2alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) networkingv1.IngressSpec {
 	ingressSpec := networkingv1.IngressSpec{
 		// define which ingress controller will implement the ingress
 		IngressClassName: getIngressClassName(cr),
@@ -122,7 +122,7 @@ func getAPIIngressSpec(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2a
 	return ingressSpec
 }
 
-func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) []networkingv1.IngressRule {
+func getAPIIngressRules(cr *ingressv2alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) []networkingv1.IngressRule {
 	ingressRules := []networkingv1.IngressRule{}
 	pathTypePrefix := networkingv1.PathTypePrefix
 
@@ -187,7 +187,7 @@ func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2
 	return ingressRules
 }
 
-func getDashboardHost(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) string {
+func getDashboardHost(cr *ingressv2alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) string {
 	// Is the Dashboard deployed without a host?
 	if cr.Spec.Dashboard.Host == "" {
 		return parent.Spec.API.Host
@@ -195,7 +195,7 @@ func getDashboardHost(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2al
 	return cr.Spec.Dashboard.Host
 }
 
-func getDashboardServiceRelativePath(cr *ingressv1alpha1.AstarteDefaultIngress) string {
+func getDashboardServiceRelativePath(cr *ingressv2alpha1.AstarteDefaultIngress) string {
 	// Is the Dashboard deployed without a host?
 	theDashboard := apiv2alpha1.Dashboard
 	if cr.Spec.Dashboard.Host == "" {

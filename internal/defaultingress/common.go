@@ -19,17 +19,16 @@ limitations under the License.
 package defaultingress
 
 import (
-	"fmt"
 	"strconv"
 
 	"go.openly.dev/pointy"
 	networkingv1 "k8s.io/api/networking/v1"
 
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
-	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v1alpha1"
+	ingressv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v2alpha1"
 )
 
-func getCommonIngressAnnotations(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) map[string]string {
+func getCommonIngressAnnotations(cr *ingressv2alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) map[string]string {
 	apiSslRedirect := pointy.BoolValue(parent.Spec.API.SSL, true) || pointy.BoolValue(cr.Spec.Dashboard.SSL, true)
 	annotations := map[string]string{
 		"nginx.ingress.kubernetes.io/ssl-redirect":   strconv.FormatBool(apiSslRedirect),
@@ -41,13 +40,6 @@ func getCommonIngressAnnotations(cr *ingressv1alpha1.AstarteDefaultIngress, pare
 			"more_set_headers \"Referrer-Policy: no-referrer-when-downgrade\";",
 	}
 
-	// we don't want the metrics to be exposed on /<servicename>/metrics. Thus, always return 404
-	serverSnippetValue := fmt.Sprint("location ~* \"/(appengine|flow|housekeeping|pairing|realmmanagement)/metrics\" {\n" +
-		"  deny all;\n" +
-		"  return 404;\n" +
-		"}")
-	annotations["nginx.ingress.kubernetes.io/server-snippet"] = serverSnippetValue
-
 	if pointy.BoolValue(cr.Spec.API.Cors, false) {
 		annotations["nginx.ingress.kubernetes.io/enable-cors"] = strconv.FormatBool(true)
 	}
@@ -56,14 +48,14 @@ func getCommonIngressAnnotations(cr *ingressv1alpha1.AstarteDefaultIngress, pare
 }
 
 // TODO handle with kubebuilder defaults
-func getIngressClassName(cr *ingressv1alpha1.AstarteDefaultIngress) *string {
+func getIngressClassName(cr *ingressv2alpha1.AstarteDefaultIngress) *string {
 	if cr.Spec.IngressClass == "" {
 		return pointy.String("nginx")
 	}
 	return pointy.String(cr.Spec.IngressClass)
 }
 
-func getIngressTLS(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte, includeDashboard bool) []networkingv1.IngressTLS {
+func getIngressTLS(cr *ingressv2alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte, includeDashboard bool) []networkingv1.IngressTLS {
 	ingressTLSs := []networkingv1.IngressTLS{}
 
 	// Check API

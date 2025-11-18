@@ -1,6 +1,6 @@
 ## Append samples of your project ##
 resources:
-- ingress_v1alpha1_astartedefaultingress.yaml
+- ingress_v2alpha1_astartedefaultingress.yaml
 - api_v2alpha1_astarte.yaml
 - flow_v2alpha1_flow.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

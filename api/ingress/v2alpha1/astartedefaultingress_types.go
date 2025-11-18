@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v2alpha1
 
 import (
 	corev1 "k8s.io/api/core/v1"
@@ -102,17 +102,6 @@ type AstarteDefaultIngressAPISpec struct {
 	// When true, the housekeeping endpoint is publicly exposed. Default: true.
 	// +optional
 	ExposeHousekeeping *bool `json:"exposeHousekeeping,omitempty"`
-	// When true, all /metrics endpoints for Astarte services will be served by a dedicated metrics ingress.
-	// Metrics can be gathered by querying the /metrics/<service-name> path.
-	// Beware this might be a security hole. You can control which IPs can access /metrics
-	// with serveMetricsToSubnet. Default: false.
-	// +optional
-	ServeMetrics *bool `json:"serveMetrics,omitempty"`
-	// When specified and when serveMetrics is true, /metrics endpoints will be served only to IPs
-	// in the provided subnet range. The subnet has to be compatible with the HAProxy
-	// ACL src syntax (e.g.: "10.0.0.0/16"). Default: "".
-	// +optional
-	ServeMetricsToSubnet string `json:"serveMetricsToSubnet,omitempty"`
 }
 
 // AstarteDefaultIngressDashboardSpec defines how the Astarte Dashboard is served.
