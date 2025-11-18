@@ -166,17 +166,6 @@ func GetVerneMQStatefulSetName(cr *apiv2alpha1.Astarte) string {
 	return cr.Name + "-vernemq"
 }
 
-func getVerneMQProbe() *v1.Probe {
-	// Start checking after 1 minute, every 20 seconds, fail after the 3rd attempt
-	return &v1.Probe{
-		ProbeHandler:        v1.ProbeHandler{HTTPGet: &v1.HTTPGetAction{Path: "/metrics", Port: intstr.FromInt(8888)}},
-		InitialDelaySeconds: 60,
-		TimeoutSeconds:      10,
-		PeriodSeconds:       20,
-		FailureThreshold:    3,
-	}
-}
-
 func getVerneMQEnvVars(statefulSetName string, cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	dataQueueCount := getDataQueueCount(cr)
 	mirrorQueue := getMirrorQueue(cr)
@@ -368,8 +357,9 @@ func getVerneMQPodSpec(statefulSetName, dataVolumeName string, cr *apiv2alpha1.A
 					{ContainerPort: 9108},
 					{ContainerPort: 9109},
 				},
-				LivenessProbe:  getVerneMQProbe(),
-				ReadinessProbe: getVerneMQProbe(),
+				ReadinessProbe: getVerneMQReadinessProbe(cr),
+				LivenessProbe:  getVerneMQLivenessProbe(cr),
+				StartupProbe:   getVerneMQStartupProbe(cr),
 				Resources:      resources,
 				Env:            getVerneMQEnvVars(statefulSetName, cr),
 			},
