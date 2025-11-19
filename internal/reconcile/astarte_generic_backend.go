@@ -28,7 +28,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -39,12 +38,6 @@ import (
 // EnsureAstarteGenericBackend reconciles any component compatible with AstarteGenericClusteredResource
 func EnsureAstarteGenericBackend(cr *apiv2alpha1.Astarte, backend apiv2alpha1.AstarteGenericClusteredResource, component apiv2alpha1.AstarteComponent,
 	c client.Client, scheme *runtime.Scheme) error {
-	return EnsureAstarteGenericBackendWithCustomProbe(cr, backend, component, c, scheme, nil)
-}
-
-// EnsureAstarteGenericBackendWithCustomProbe reconciles any component compatible with AstarteGenericClusteredResource adding a custom probe
-func EnsureAstarteGenericBackendWithCustomProbe(cr *apiv2alpha1.Astarte, backend apiv2alpha1.AstarteGenericClusteredResource,
-	component apiv2alpha1.AstarteComponent, c client.Client, scheme *runtime.Scheme, customProbe *v1.Probe) error {
 	reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name, "Astarte.Component", component)
 	deploymentName := cr.Name + "-" + component.DashedString()
 	serviceName := cr.Name + "-" + component.ServiceName()
@@ -99,7 +92,7 @@ func EnsureAstarteGenericBackendWithCustomProbe(cr *apiv2alpha1.Astarte, backend
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: computePodLabels(backend, labels),
 			},
-			Spec: getAstarteGenericBackendPodSpec(deploymentName, 0, 0, cr, backend, component, customProbe),
+			Spec: getAstarteGenericBackendPodSpec(deploymentName, 0, 0, cr, backend, component),
 		},
 	}
 
@@ -126,7 +119,7 @@ func EnsureAstarteGenericBackendWithCustomProbe(cr *apiv2alpha1.Astarte, backend
 }
 
 func getAstarteGenericBackendPodSpec(deploymentName string, replicaIndex, replicas int, cr *apiv2alpha1.Astarte, backend apiv2alpha1.AstarteGenericClusteredResource,
-	component apiv2alpha1.AstarteComponent, customProbe *v1.Probe) v1.PodSpec {
+	component apiv2alpha1.AstarteComponent) v1.PodSpec {
 	serviceAccountName := deploymentName
 	ps := v1.PodSpec{
 		TerminationGracePeriodSeconds: pointy.Int64(30),
@@ -145,8 +138,9 @@ func getAstarteGenericBackendPodSpec(deploymentName string, replicaIndex, replic
 				ImagePullPolicy: getImagePullPolicy(cr, backend),
 				Resources:       misc.GetResourcesForAstarteComponent(cr, backend.Resources, component),
 				Env:             getAstarteGenericBackendEnvVars(deploymentName, replicaIndex, replicas, cr, backend, component),
-				ReadinessProbe:  getAstarteBackendProbe(component, customProbe),
-				LivenessProbe:   getAstarteBackendProbe(component, customProbe),
+				ReadinessProbe:  getAstarteComponentReadinessProbe(component, backend),
+				LivenessProbe:   getAstarteComponentLivenessProbe(component, backend),
+				StartupProbe:    getAstarteComponentStartupProbe(backend),
 			},
 		},
 		Volumes: getAstarteGenericBackendVolumes(cr),
@@ -373,38 +367,4 @@ func getAstarteDataUpdaterPlantQueuesEnvVars(replicaIndex, replicas int, cr *api
 			Name:  "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_RANGE_END",
 			Value: strconv.Itoa(rangeEnd),
 		}}
-}
-
-func getAstarteBackendProbe(component apiv2alpha1.AstarteComponent, customProbe *v1.Probe) *v1.Probe {
-	if customProbe != nil {
-		return customProbe
-	}
-
-	// Custom components
-	if component == apiv2alpha1.Housekeeping {
-		// We need a much longer timeout, as we have an initialization which happens 3 times
-		return getAstarteBackendGenericProbeWithThreshold("/health", 15)
-	}
-
-	// The rest are generic probes on /health
-	return getAstarteBackendGenericProbe("/health")
-}
-
-func getAstarteBackendGenericProbe(path string) *v1.Probe {
-	return getAstarteBackendGenericProbeWithThreshold(path, 5)
-}
-
-func getAstarteBackendGenericProbeWithThreshold(path string, threshold int32) *v1.Probe {
-	return &v1.Probe{
-		ProbeHandler: v1.ProbeHandler{
-			HTTPGet: &v1.HTTPGetAction{
-				Path: path,
-				Port: intstr.FromString("http"),
-			},
-		},
-		InitialDelaySeconds: 10,
-		TimeoutSeconds:      5,
-		PeriodSeconds:       30,
-		FailureThreshold:    threshold,
-	}
 }

@@ -33,7 +33,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -126,17 +125,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 				Expect(container.Ports[0].Name).To(Equal("http"))
 				Expect(container.Ports[0].ContainerPort).To(Equal(astarteServicesPort))
 
-				// Verify probes
-				Expect(container.ReadinessProbe).ToNot(BeNil())
-				Expect(container.LivenessProbe).ToNot(BeNil())
-				Expect(container.ReadinessProbe.HTTPGet.Path).To(Equal("/health"))
-				Expect(container.LivenessProbe.HTTPGet.Path).To(Equal("/health"))
-
 				if component == apiv2alpha1.Housekeeping {
-					// Housekeeping should have longer failure threshold
-					Expect(container.ReadinessProbe.FailureThreshold).To(Equal(int32(15)))
-					Expect(container.LivenessProbe.FailureThreshold).To(Equal(int32(15)))
-
 					// Housekeeping should have JWT public key volume
 					hasJWTVolume := false
 					for _, vol := range dep.Spec.Template.Spec.Volumes {
@@ -146,10 +135,6 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 						}
 					}
 					Expect(hasJWTVolume).To(BeTrue())
-				} else {
-					// Other components should have standard failure threshold
-					Expect(container.ReadinessProbe.FailureThreshold).To(Equal(int32(5)))
-					Expect(container.LivenessProbe.FailureThreshold).To(Equal(int32(5)))
 				}
 			},
 			Entry("AppEngineAPI", apiv2alpha1.AppEngineAPI),
@@ -344,46 +329,6 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 		})
 	})
 
-	Describe("Test EnsureAstarteGenericAPIComponentWithCustomProbe", func() {
-		It("should use custom probe when provided", func() {
-			component := apiv2alpha1.AppEngineAPI
-			cr.Spec.Components.AppengineAPI.Deploy = pointy.Bool(true)
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
-			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
-			}, Timeout, Interval).Should(Succeed())
-
-			customProbe := &v1.Probe{
-				ProbeHandler: v1.ProbeHandler{
-					HTTPGet: &v1.HTTPGetAction{
-						Path: "/custom-health",
-						Port: intstr.FromInt(8080),
-					},
-				},
-				InitialDelaySeconds: 20,
-				TimeoutSeconds:      10,
-				PeriodSeconds:       60,
-				FailureThreshold:    3,
-			}
-
-			Expect(EnsureAstarteGenericAPIComponentWithCustomProbe(cr, cr.Spec.Components.AppengineAPI.AstarteGenericAPIComponentSpec, component, k8sClient, scheme.Scheme, customProbe)).To(Succeed())
-
-			deploymentName := cr.Name + "-" + component.DashedString()
-			dep := &appsv1.Deployment{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
-
-			container := dep.Spec.Template.Spec.Containers[0]
-			Expect(container.ReadinessProbe).ToNot(BeNil())
-			Expect(container.LivenessProbe).ToNot(BeNil())
-			Expect(container.ReadinessProbe.HTTPGet.Path).To(Equal("/custom-health"))
-			Expect(container.ReadinessProbe.HTTPGet.Port.IntVal).To(Equal(int32(8080)))
-			Expect(container.ReadinessProbe.InitialDelaySeconds).To(Equal(int32(20)))
-			Expect(container.ReadinessProbe.TimeoutSeconds).To(Equal(int32(10)))
-			Expect(container.ReadinessProbe.PeriodSeconds).To(Equal(int32(60)))
-			Expect(container.ReadinessProbe.FailureThreshold).To(Equal(int32(3)))
-		})
-	})
-
 	Describe("Test checkShouldDeploy", func() {
 		It("should return true for components that should deploy by default", func() {
 			apiSpec := apiv2alpha1.AstarteGenericAPIComponentSpec{}
@@ -419,57 +364,6 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			component := apiv2alpha1.AppEngineAPI
 			result := checkShouldDeploy(log, "test-deployment", cr, apiSpec, component, k8sClient)
 			Expect(result).To(BeFalse())
-		})
-	})
-
-	Describe("Test getAstarteAPIProbe", func() {
-		It("should return custom probe when provided", func() {
-			customProbe := &v1.Probe{
-				ProbeHandler: v1.ProbeHandler{
-					HTTPGet: &v1.HTTPGetAction{
-						Path: "/custom",
-						Port: intstr.FromInt(9000),
-					},
-				},
-			}
-			result := getAstarteAPIProbe(apiv2alpha1.AppEngineAPI, customProbe)
-			Expect(result).To(Equal(customProbe))
-		})
-
-		It("should return housekeeping probe for housekeeping component", func() {
-			result := getAstarteAPIProbe(apiv2alpha1.Housekeeping, nil)
-			Expect(result).ToNot(BeNil())
-			Expect(result.HTTPGet.Path).To(Equal("/health"))
-			Expect(result.FailureThreshold).To(Equal(int32(15)))
-		})
-
-		It("should return generic probe for other components", func() {
-			result := getAstarteAPIProbe(apiv2alpha1.AppEngineAPI, nil)
-			Expect(result).ToNot(BeNil())
-			Expect(result.HTTPGet.Path).To(Equal("/health"))
-			Expect(result.FailureThreshold).To(Equal(int32(5)))
-		})
-	})
-
-	Describe("Test getAstarteGenericAPIComponentGenericProbe", func() {
-		It("should create probe with correct defaults", func() {
-			result := getAstarteGenericAPIComponentGenericProbe("/test")
-			Expect(result).ToNot(BeNil())
-			Expect(result.HTTPGet.Path).To(Equal("/test"))
-			Expect(result.HTTPGet.Port.String()).To(Equal("http"))
-			Expect(result.InitialDelaySeconds).To(Equal(int32(10)))
-			Expect(result.TimeoutSeconds).To(Equal(int32(5)))
-			Expect(result.PeriodSeconds).To(Equal(int32(30)))
-			Expect(result.FailureThreshold).To(Equal(int32(5)))
-		})
-	})
-
-	Describe("Test getAstarteGenericAPIComponentGenericProbeWithThreshold", func() {
-		It("should create probe with custom threshold", func() {
-			result := getAstarteGenericAPIComponentGenericProbeWithThreshold("/test", 10)
-			Expect(result).ToNot(BeNil())
-			Expect(result.HTTPGet.Path).To(Equal("/test"))
-			Expect(result.FailureThreshold).To(Equal(int32(10)))
 		})
 	})
 

@@ -169,17 +169,6 @@ func ensureCFSSLCommonSidecars(resourceName string, labels map[string]string, cr
 	return nil
 }
 
-func getCFSSLProbe() *v1.Probe {
-	// Start checking after 10 seconds, every 20 seconds, fail after the 3rd attempt
-	return &v1.Probe{
-		ProbeHandler:        v1.ProbeHandler{HTTPGet: &v1.HTTPGetAction{Path: "/api/v1/cfssl/health", Port: intstr.FromString("http")}},
-		InitialDelaySeconds: 10,
-		TimeoutSeconds:      5,
-		PeriodSeconds:       20,
-		FailureThreshold:    3,
-	}
-}
-
 func getCFSSLPodSpec(deploymentName, secretName string, cr *apiv2alpha1.Astarte) v1.PodSpec {
 	// Defaults to the custom image built in Astarte
 	cfsslImage := getAstarteImageFromChannel("cfssl", deps.GetDefaultVersionForCFSSL(cr.Spec.Version), cr)
@@ -259,8 +248,9 @@ func getCFSSLPodSpec(deploymentName, secretName string, cr *apiv2alpha1.Astarte)
 				Ports: []v1.ContainerPort{
 					{Name: "http", ContainerPort: 8080},
 				},
-				ReadinessProbe: getCFSSLProbe(),
-				LivenessProbe:  getCFSSLProbe(),
+				ReadinessProbe: getCFSSLReadinessProbe(cr),
+				LivenessProbe:  getCFSSLLivenessProbe(cr),
+				StartupProbe:   getCFSSLStartupProbe(cr),
 				Resources:      resources,
 			},
 		},

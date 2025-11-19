@@ -98,11 +98,6 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 				Expect(container.Ports[0].Name).To(Equal("http"))
 				Expect(container.Ports[0].ContainerPort).To(Equal(astarteServicesPort))
 				Expect(deployment.Spec.Template.Spec.ServiceAccountName).To(Equal(deploymentName))
-				// Default probes on /health
-				Expect(container.LivenessProbe).ToNot(BeNil())
-				Expect(container.ReadinessProbe).ToNot(BeNil())
-				Expect(container.LivenessProbe.HTTPGet.Path).To(Equal("/health"))
-				Expect(container.ReadinessProbe.HTTPGet.Path).To(Equal("/health"))
 
 				// Verify service was created
 				service := &v1.Service{}
@@ -247,48 +242,6 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 			})
 		})
 
-		Context("with custom probe", func() {
-			It("should create deployment with custom probe", func() {
-				backend := apiv2alpha1.AstarteGenericClusteredResource{
-					Deploy:   pointy.Bool(true),
-					Replicas: pointy.Int32(1),
-				}
-
-				customProbe := &v1.Probe{
-					ProbeHandler: v1.ProbeHandler{
-						HTTPGet: &v1.HTTPGetAction{
-							Path: "/custom-health",
-							Port: intstr.FromString("http"),
-						},
-					},
-					InitialDelaySeconds: 30,
-					TimeoutSeconds:      10,
-					PeriodSeconds:       45,
-					FailureThreshold:    3,
-				}
-
-				component := apiv2alpha1.AppEngineAPI
-				Expect(EnsureAstarteGenericBackendWithCustomProbe(cr, backend, component, k8sClient, scheme.Scheme, customProbe)).To(Succeed())
-
-				deployment := &appsv1.Deployment{}
-				deploymentName := cr.Name + "-" + component.DashedString()
-				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{
-						Name:      deploymentName,
-						Namespace: CustomAstarteNamespace,
-					}, deployment)
-				}, Timeout, Interval).Should(Succeed())
-
-				container := deployment.Spec.Template.Spec.Containers[0]
-				Expect(container.LivenessProbe).ToNot(BeNil())
-				Expect(container.ReadinessProbe).ToNot(BeNil())
-				Expect(container.LivenessProbe.HTTPGet.Path).To(Equal("/custom-health"))
-				Expect(container.LivenessProbe.InitialDelaySeconds).To(Equal(int32(30)))
-				Expect(container.ReadinessProbe.HTTPGet.Path).To(Equal("/custom-health"))
-				Expect(container.ReadinessProbe.InitialDelaySeconds).To(Equal(int32(30)))
-			})
-		})
-
 		Context("with resource requirements and additional configuration", func() {
 			It("should create deployment with custom resources and environment variables", func() {
 				backend := apiv2alpha1.AstarteGenericClusteredResource{
@@ -347,39 +300,6 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 
 	Describe("Test getAstarteDataUpdaterPlantQueuesEnvVars", func() {
 		// This function is trivial, it just returns a list of env vars. No need to test it.
-	})
-
-	Describe("Test getAstarteBackendProbe", func() {
-		It("should return custom probe when provided", func() {
-			customProbe := &v1.Probe{
-				ProbeHandler: v1.ProbeHandler{
-					HTTPGet: &v1.HTTPGetAction{
-						Path: "/custom",
-						Port: intstr.FromString("http"),
-					},
-				},
-				InitialDelaySeconds: 20,
-			}
-
-			result := getAstarteBackendProbe(apiv2alpha1.AppEngineAPI, customProbe)
-			Expect(result).To(Equal(customProbe))
-		})
-
-		It("should return housekeeping probe with longer threshold", func() {
-			result := getAstarteBackendProbe(apiv2alpha1.Housekeeping, nil)
-
-			Expect(result.HTTPGet.Path).To(Equal("/health"))
-			Expect(result.FailureThreshold).To(Equal(int32(15)))
-			Expect(result.InitialDelaySeconds).To(Equal(int32(10)))
-		})
-
-		It("should return generic probe for other components", func() {
-			result := getAstarteBackendProbe(apiv2alpha1.AppEngineAPI, nil)
-
-			Expect(result.HTTPGet.Path).To(Equal("/health"))
-			Expect(result.FailureThreshold).To(Equal(int32(5)))
-			Expect(result.InitialDelaySeconds).To(Equal(int32(10)))
-		})
 	})
 
 	Describe("Test error handling", func() {

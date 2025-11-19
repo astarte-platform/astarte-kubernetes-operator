@@ -31,7 +31,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -42,12 +41,7 @@ import (
 // EnsureAstarteGenericAPI reconciles any component compatible with AstarteGenericAPISpec with a custom Probe
 func EnsureAstarteGenericAPIComponent(cr *apiv2alpha1.Astarte, api apiv2alpha1.AstarteGenericAPIComponentSpec, component apiv2alpha1.AstarteComponent,
 	c client.Client, scheme *runtime.Scheme) error {
-	return EnsureAstarteGenericAPIComponentWithCustomProbe(cr, api, component, c, scheme, nil)
-}
 
-// EnsureAstarteGenericAPIWithCustomProbe reconciles any component compatible with AstarteGenericAPISpec with a custom Probe
-func EnsureAstarteGenericAPIComponentWithCustomProbe(cr *apiv2alpha1.Astarte, api apiv2alpha1.AstarteGenericAPIComponentSpec, component apiv2alpha1.AstarteComponent,
-	c client.Client, scheme *runtime.Scheme, customProbe *v1.Probe) error {
 	reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name, "Astarte.Component", component)
 	deploymentName := cr.Name + "-" + component.DashedString()
 	serviceName := cr.Name + "-" + component.ServiceName()
@@ -97,7 +91,7 @@ func EnsureAstarteGenericAPIComponentWithCustomProbe(cr *apiv2alpha1.Astarte, ap
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: computePodLabels(api.AstarteGenericClusteredResource, labels),
 			},
-			Spec: getAstarteGenericAPIPodSpec(deploymentName, cr, api, component, customProbe),
+			Spec: getAstarteGenericAPIPodSpec(deploymentName, cr, api, component),
 		},
 	}
 
@@ -152,7 +146,7 @@ func checkShouldDeploy(reqLogger logr.Logger, deploymentName string, cr *apiv2al
 }
 
 func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv2alpha1.Astarte, api apiv2alpha1.AstarteGenericAPIComponentSpec,
-	component apiv2alpha1.AstarteComponent, customProbe *v1.Probe) v1.PodSpec {
+	component apiv2alpha1.AstarteComponent) v1.PodSpec {
 	ps := v1.PodSpec{
 		TerminationGracePeriodSeconds: pointy.Int64(30),
 		ImagePullSecrets:              cr.Spec.ImagePullSecrets,
@@ -169,8 +163,9 @@ func getAstarteGenericAPIPodSpec(deploymentName string, cr *apiv2alpha1.Astarte,
 				ImagePullPolicy: getImagePullPolicy(cr, api.AstarteGenericClusteredResource),
 				Resources:       misc.GetResourcesForAstarteComponent(cr, api.Resources, component),
 				Env:             getAstarteGenericAPIEnvVars(deploymentName, cr, api, component),
-				ReadinessProbe:  getAstarteAPIProbe(component, customProbe),
-				LivenessProbe:   getAstarteAPIProbe(component, customProbe),
+				ReadinessProbe:  getAstarteComponentReadinessProbe(component, api.AstarteGenericClusteredResource),
+				LivenessProbe:   getAstarteComponentLivenessProbe(component, api.AstarteGenericClusteredResource),
+				StartupProbe:    getAstarteComponentStartupProbe(api.AstarteGenericClusteredResource),
 			},
 		},
 		Volumes: getAstarteGenericAPIComponentVolumes(cr, component),
@@ -358,38 +353,4 @@ func getAstarteFlowEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
 
 	// Append RabbitMQ variables
 	return appendRabbitMQConnectionEnvVars(ret, "FLOW_DEFAULT_AMQP_CONNECTION", cr)
-}
-
-func getAstarteAPIProbe(component apiv2alpha1.AstarteComponent, customProbe *v1.Probe) *v1.Probe {
-	if customProbe != nil {
-		return customProbe
-	}
-
-	// Custom components
-	if component == apiv2alpha1.Housekeeping {
-		// We need a much longer timeout, as we have an initialization which happens 3 times
-		return getAstarteGenericAPIComponentGenericProbeWithThreshold("/health", 15)
-	}
-
-	// The rest are generic probes on /health
-	return getAstarteGenericAPIComponentGenericProbe("/health")
-}
-
-func getAstarteGenericAPIComponentGenericProbe(path string) *v1.Probe {
-	return getAstarteGenericAPIComponentGenericProbeWithThreshold(path, 5)
-}
-
-func getAstarteGenericAPIComponentGenericProbeWithThreshold(path string, threshold int32) *v1.Probe {
-	return &v1.Probe{
-		ProbeHandler: v1.ProbeHandler{
-			HTTPGet: &v1.HTTPGetAction{
-				Path: path,
-				Port: intstr.FromString("http"),
-			},
-		},
-		InitialDelaySeconds: 10,
-		TimeoutSeconds:      5,
-		PeriodSeconds:       30,
-		FailureThreshold:    threshold,
-	}
 }

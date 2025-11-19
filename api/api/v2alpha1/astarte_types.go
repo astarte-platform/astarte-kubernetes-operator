@@ -264,6 +264,22 @@ type AstarteGenericClusteredResource struct {
 	// +kubebuilder:validation:Enum:=high;mid;low;""
 	// +kubebuilder:validation:Optional
 	PriorityClass string `json:"priorityClass,omitempty"`
+	// Override the default Liveness probe for this component.
+	// If not set, a default HTTP GET probe is configured to check the /health endpoint on the http port.
+	// Default settings: InitialDelaySeconds=10, TimeoutSeconds=5, PeriodSeconds=30, FailureThreshold=5 (15 for Housekeeping).
+	// Note: VerneMQ uses different defaults: /metrics endpoint on port 8888, InitialDelaySeconds=60, PeriodSeconds=20, FailureThreshold=3.
+	// +kubebuilder:validation:Optional
+	LivenessProbe *v1.Probe `json:"livenessProbe,omitempty"`
+	// Override the default Readiness probe for this component.
+	// If not set, a default HTTP GET probe is configured to check the /health endpoint on the http port.
+	// Default settings: InitialDelaySeconds=10, TimeoutSeconds=5, PeriodSeconds=30, FailureThreshold=5 (15 for Housekeeping).
+	// Note: VerneMQ uses different defaults: /metrics endpoint on port 8888, InitialDelaySeconds=60, PeriodSeconds=20, FailureThreshold=3.
+	// +kubebuilder:validation:Optional
+	ReadinessProbe *v1.Probe `json:"readinessProbe,omitempty"`
+	// Override the default Startup probe for this component.
+	// If not set, no startup probe is configured by default.
+	// +kubebuilder:validation:Optional
+	StartupProbe *v1.Probe `json:"startupProbe,omitempty"`
 }
 
 type AstarteGenericClusteredResourceAutoscalerSpec struct {
@@ -598,6 +614,20 @@ type AstarteCFSSLSpec struct {
 	// +kubebuilder:validation:Enum:=high;mid;low;""
 	// +kubebuilder:validation:Optional
 	PriorityClass string `json:"priorityClass,omitempty"`
+	// Override the default Liveness probe for CFSSL.
+	// If not set, a default HTTP GET probe is configured to check the /api/v1/cfssl/health endpoint on the http port.
+	// Default settings: InitialDelaySeconds=10, TimeoutSeconds=5, PeriodSeconds=20, FailureThreshold=3.
+	// +kubebuilder:validation:Optional
+	LivenessProbe *v1.Probe `json:"livenessProbe,omitempty"`
+	// Override the default Readiness probe for CFSSL.
+	// If not set, a default HTTP GET probe is configured to check the /api/v1/cfssl/health endpoint on the http port.
+	// Default settings: InitialDelaySeconds=10, TimeoutSeconds=5, PeriodSeconds=20, FailureThreshold=3.
+	// +kubebuilder:validation:Optional
+	ReadinessProbe *v1.Probe `json:"readinessProbe,omitempty"`
+	// Override the default Startup probe for CFSSL.
+	// If not set, no startup probe is configured by default.
+	// +kubebuilder:validation:Optional
+	StartupProbe *v1.Probe `json:"startupProbe,omitempty"`
 }
 
 // This interface is implemented by all Astarte components which have a podLabels field.
