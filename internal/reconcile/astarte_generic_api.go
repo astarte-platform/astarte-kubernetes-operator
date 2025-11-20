@@ -230,7 +230,7 @@ func getAstarteGenericAPIComponentVolumeMounts(cr *apiv2alpha1.Astarte, componen
 }
 
 func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv2alpha1.Astarte, api apiv2alpha1.AstarteGenericAPIComponentSpec, component apiv2alpha1.AstarteComponent) []v1.EnvVar {
-	ret := getAstarteCommonEnvVars(deploymentName, cr, api.AstarteGenericClusteredResource, component)
+	ret := getAstarteCommonEnvVars(deploymentName, cr, component)
 
 	// Should we disable authentication?
 	if pointy.BoolValue(api.DisableAuthentication, false) {
@@ -263,10 +263,61 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv2alpha1.Astarte,
 		ret = append(ret, getAstartePairingEnvVars(cr)...)
 	case apiv2alpha1.FlowComponent:
 		ret = append(ret, getAstarteFlowEnvVars(cr)...)
+	case apiv2alpha1.AppEngineAPI:
+		ret = append(ret, getAppEngineAPIEnvVars(cr)...)
 	case apiv2alpha1.RealmManagement:
 		// Nothing special for now
 	}
 
+	// Override with any additional env vars
+	// this comes last to allow users to override any env var we set
+	if len(api.AdditionalEnv) > 0 {
+		ret = append(ret, api.AdditionalEnv...)
+	}
+
+	return ret
+}
+
+func getAppEngineAPIEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
+	ret := []v1.EnvVar{}
+
+	ret = appendRabbitMQConnectionEnvVars(ret, "APPENGINE_API_ROOMS_AMQP_CLIENT", cr)
+
+	if cr.Spec.AstarteInstanceID != "" {
+		ret = append(ret, v1.EnvVar{
+			Name:  "ASTARTE_INSTANCE_ID",
+			Value: cr.Spec.AstarteInstanceID,
+		})
+	}
+
+	// Add Cassandra Nodes
+	ret = append(ret, v1.EnvVar{
+		Name:  "CASSANDRA_NODES",
+		Value: getCassandraNodes(cr),
+	})
+
+	ret = append(ret,
+		v1.EnvVar{
+			Name:  "APPENGINE_API_MAX_RESULTS_LIMIT",
+			Value: strconv.Itoa(getAppEngineAPIMaxResultslimit(cr)),
+		},
+	)
+
+	if cr.Spec.Components.AppengineAPI.RoomEventsQueueName != "" {
+		ret = append(ret,
+			v1.EnvVar{
+				Name:  "APPENGINE_API_ROOMS_EVENTS_QUEUE_NAME",
+				Value: cr.Spec.Components.AppengineAPI.RoomEventsQueueName,
+			})
+	}
+
+	if cr.Spec.Components.AppengineAPI.RoomEventsExchangeName != "" {
+		ret = append(ret,
+			v1.EnvVar{
+				Name:  "APPENGINE_API_ROOMS_EVENTS_EXCHANGE_NAME",
+				Value: cr.Spec.Components.AppengineAPI.RoomEventsExchangeName,
+			})
+	}
 	return ret
 }
 
@@ -277,6 +328,15 @@ func getAstarteHousekeepingEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	ret = appendRabbitMQConnectionEnvVars(ret, "HOUSEKEEPING_AMQP", cr)
 
 	ret = append(ret,
+		v1.EnvVar{
+			// Even though the MANAGEMENT_PORT is part of RabbitMQ spec,
+			// we use it only for Housekeeping. Adding this to other components
+			// might be a problem, for example VerneMQ would fail to start if
+			// it finds this variable.
+
+			Name:  "HOUSEKEEPING_AMQP_MANAGEMENT_PORT",
+			Value: strconv.Itoa(15672),
+		},
 		v1.EnvVar{
 			Name:  "CASSANDRA_NODES",
 			Value: getCassandraNodes(cr),
@@ -316,6 +376,9 @@ func getAstartePairingEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
 			Name:  "PAIRING_BROKER_URL",
 			Value: misc.GetVerneMQBrokerURL(cr),
 		})
+
+	// AMQP Producer configuration is now mandatory
+	ret = appendRabbitMQConnectionEnvVars(ret, "ASTARTE_EVENTS_PRODUCER_AMQP", cr)
 
 	return ret
 }

@@ -177,7 +177,7 @@ func getAstarteGenericBackendVolumeMounts(cr *apiv2alpha1.Astarte) []v1.VolumeMo
 }
 
 func getAstarteGenericBackendEnvVars(deploymentName string, replicaIndex, replicas int, cr *apiv2alpha1.Astarte, backend apiv2alpha1.AstarteGenericClusteredResource, component apiv2alpha1.AstarteComponent) []v1.EnvVar {
-	ret := getAstarteCommonEnvVars(deploymentName, cr, backend, component)
+	ret := getAstarteCommonEnvVars(deploymentName, cr, component)
 
 	ret = appendCassandraConnectionEnvVars(ret, cr)
 
@@ -200,55 +200,17 @@ func getAstarteGenericBackendEnvVars(deploymentName string, replicaIndex, replic
 		ret = append(ret, getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas, cr)...)
 	case apiv2alpha1.TriggerEngine:
 		ret = append(ret, getTriggerEngineBackendEnvVars(cr)...)
-	case apiv2alpha1.AppEngineAPI:
-		ret = append(ret, getAppEngineAPIEnvVars(cr)...)
 	case apiv2alpha1.Dashboard:
 		// Nothing special for now
 	}
 
-	return ret
-}
+	// Add any additional env vars
+	// This comes last to allow users to override any env var we set
 
-func getAppEngineAPIEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
-	ret := []v1.EnvVar{}
-
-	ret = appendRabbitMQConnectionEnvVars(ret, "APPENGINE_API_ROOMS_AMQP_CLIENT", cr)
-
-	if cr.Spec.AstarteInstanceID != "" {
-		ret = append(ret, v1.EnvVar{
-			Name:  "ASTARTE_INSTANCE_ID",
-			Value: cr.Spec.AstarteInstanceID,
-		})
+	if len(backend.AdditionalEnv) > 0 {
+		ret = append(ret, backend.AdditionalEnv...)
 	}
 
-	// Add Cassandra Nodes
-	ret = append(ret, v1.EnvVar{
-		Name:  "CASSANDRA_NODES",
-		Value: getCassandraNodes(cr),
-	})
-
-	ret = append(ret,
-		v1.EnvVar{
-			Name:  "APPENGINE_API_MAX_RESULTS_LIMIT",
-			Value: strconv.Itoa(getAppEngineAPIMaxResultslimit(cr)),
-		},
-	)
-
-	if cr.Spec.Components.AppengineAPI.RoomEventsQueueName != "" {
-		ret = append(ret,
-			v1.EnvVar{
-				Name:  "APPENGINE_API_ROOMS_EVENTS_QUEUE_NAME",
-				Value: cr.Spec.Components.AppengineAPI.RoomEventsQueueName,
-			})
-	}
-
-	if cr.Spec.Components.AppengineAPI.RoomEventsExchangeName != "" {
-		ret = append(ret,
-			v1.EnvVar{
-				Name:  "APPENGINE_API_ROOMS_EVENTS_EXCHANGE_NAME",
-				Value: cr.Spec.Components.AppengineAPI.RoomEventsExchangeName,
-			})
-	}
 	return ret
 }
 

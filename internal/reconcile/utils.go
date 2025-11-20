@@ -340,7 +340,7 @@ func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quan
 	}
 }
 
-func getAstarteCommonEnvVars(deploymentName string, cr *apiv2alpha1.Astarte, backend apiv2alpha1.AstarteGenericClusteredResource, component apiv2alpha1.AstarteComponent) []v1.EnvVar {
+func getAstarteCommonEnvVars(deploymentName string, cr *apiv2alpha1.Astarte, component apiv2alpha1.AstarteComponent) []v1.EnvVar {
 	ret := []v1.EnvVar{
 		{
 			Name:  "RELEASE_CONFIG_DIR",
@@ -418,11 +418,6 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv2alpha1.Astarte, bac
 		Name:  strings.ToUpper(component.String()) + suffix,
 		Value: strconv.Itoa(int(astarteServicesPort)),
 	})
-
-	// Add any explicit additional env
-	if len(backend.AdditionalEnv) > 0 {
-		ret = append(ret, backend.AdditionalEnv...)
-	}
 
 	// Return with the RabbitMQ variables appended
 	return appendRabbitMQConnectionEnvVars(ret, "RPC_AMQP_CONNECTION", cr)
@@ -520,10 +515,6 @@ func appendRabbitMQConnectionEnvVars(ret []v1.EnvVar, prefix string, cr *apiv2al
 	virtualHost := "/"
 	if spec.VirtualHost != "" {
 		virtualHost = spec.VirtualHost
-		ret = append(ret, v1.EnvVar{
-			Name:  prefix + "_VIRTUAL_HOST",
-			Value: spec.VirtualHost,
-		})
 	}
 
 	// SSL
