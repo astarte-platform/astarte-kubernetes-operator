@@ -23,9 +23,10 @@ for what concerns its components and 3rd party services.
 |--------------------------|-----------------|--------------------|
 | v1.0.0                   | v0.11 - v1.0    | v1.19+             |
 | v1.0.x                   | v0.11 - v1.0    | v1.19+             |
-| v22.11                   | v1.0+           | v1.22+             |
-| v23.5                    | v1.0+           | v1.22+             |
-| v24.5                    | v1.0+           | v1.24+             |
+| v22.11                   | v1.0  - v1.2    | v1.22+             |
+| v23.5                    | v1.0  - v1.2    | v1.22+             |
+| v24.5                    | v1.0  - v1.2    | v1.24+             |
+| v24.5.2                  | v1.0+           | v1.30+             |
 
 **Notes**:
 * starting from Kubernetes 1.22, the AstarteVoyagerIngress resource is not supported anymore;

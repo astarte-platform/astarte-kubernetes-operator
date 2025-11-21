@@ -15,4 +15,4 @@ Find below the upgrade guides for your Astarte cluster:
 + to upgrade from v1.0.0 to v1.0.x, click [here](030-upgrade_100_10x.html)
 + to upgrade from v1.0.x to v22.11, click [here](040-upgrade_10x_2211.html)
 + to upgrade from v22.11.x to v23.5, click [here](050-upgrade_2211_235.html)
-
++ to upgrade from v23.5.x to v24.5, click [here](060-upgrade_235_245.html)
