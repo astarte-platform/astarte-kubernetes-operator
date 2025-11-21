@@ -21,6 +21,7 @@ package defaultingress
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"go.openly.dev/pointy"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -28,6 +29,51 @@ import (
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	ingressv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v2alpha1"
 )
+
+// buildContentSecurityPolicy builds the Content-Security-Policy header value
+func buildContentSecurityPolicy(parent *apiv2alpha1.Astarte) (r string) {
+	backend := parent.Spec.API.Host
+	var parts []string
+
+	// The best practice for CSP would be to deny everything and allow only
+	// the content we need from the sources we trust.
+
+	// Example:
+	// By default allow only content from 'self' (the dashboard itself)
+	// parts = append(parts, "default-src self")
+	// Then we explicitly allow some other sources
+	// parts = append(parts, fmt.Sprintf("connect-src 'self' %s; ", backend)) // Allow connections to the backend API
+	// parts = append(parts, "img-src data: '*'") // Allow images from anywhere (e.g. w3.org is used for svgs)
+	// If we have to load CSS or JS from CDNs or other backends, we should add them here
+
+	// However, at the moment we are interesting in overcome XSS attacks
+	// This means allowing everything from anywhere, except scripts and external objects,
+	// which are the main vector for XSS attacks.
+
+	// ALLOW ALL resources (images, styles, fonts) from ANYWHERE
+	parts = append(parts, "default-src * ")
+
+	// Except:
+
+	// We keep '*' for images to allow loading from anywhere, plus 'data:'
+	// data: is needed for inline images (SVGs/Base64)
+	parts = append(parts, "img-src * data:")
+
+	// BLOCK plugins (Flash/Java/PDFs) to prevent XSS bypasses
+	parts = append(parts, "object-src 'none'")
+
+	// BLOCK <base> tag injection
+	parts = append(parts, "base-uri 'self'")
+
+	// STRICT scripts: Only allow from self.
+	// Note: This blocks also inline scripts and eval().
+	parts = append(parts, "script-src 'self'")
+
+	// ALLOW connections only to self and the specific backend
+	parts = append(parts, fmt.Sprintf("connect-src 'self' wss: %s", backend))
+
+	return strings.Join(parts, "; ")
+}
 
 // getCommonIngressAnnotations returns the common annotations for AstarteDefaultIngress Ingresses
 // Depending on the Ingress Controller in use, different annotations are applied.
@@ -57,7 +103,7 @@ func getCommonIngressAnnotations(cr *ingressv2alpha1.AstarteDefaultIngress, pare
 		"haproxy.org/ssl-redirect":           strconv.FormatBool(apiSslRedirect),
 		"haproxy.org/response-set-header": "\n" +
 			"X-Frame-Options SAMEORIGIN\n" +
-			"X-XSS-Protection 1; mode=block\n" +
+			"Content-Security-Policy " + buildContentSecurityPolicy(parent) + "\n" +
 			"X-Content-Type-Options nosniff\n" +
 			"Referrer-Policy no-referrer-when-downgrade",
 	}
