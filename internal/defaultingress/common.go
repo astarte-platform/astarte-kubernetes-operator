@@ -36,7 +36,7 @@ func getCommonIngressAnnotations(cr *ingressv2alpha1.AstarteDefaultIngress, pare
 	apiSslRedirect := pointy.BoolValue(parent.Spec.API.SSL, true) || pointy.BoolValue(cr.Spec.Dashboard.SSL, true)
 	enableCors := pointy.BoolValue(cr.Spec.API.Cors, false)
 
-	if !useHAProxyIngressController(cr) {
+	if !cr.HAProxyIngressControllerSelected() {
 		annotations = map[string]string{
 			"nginx.ingress.kubernetes.io/ssl-redirect":   strconv.FormatBool(apiSslRedirect),
 			"nginx.ingress.kubernetes.io/use-regex":      "true",
@@ -87,26 +87,6 @@ func appendHAProxyCorsAnnotations(enableCors bool, annotations map[string]string
 // Performs path rewriting only for Astarte API paths, leaving others (like dashboard) untouched.
 func getHAProxyBackendConfig(cr *apiv2alpha1.Astarte) string {
 	return fmt.Sprintf(`http-request replace-path /(appengine|pairing|housekeeping|realmmanagement)/(.*) /\2 if { hdr(host) -i %s }`, cr.Spec.API.Host)
-}
-
-// getIngressClassName returns the Ingress Class Name to use
-// ADI annotation is used to select the proper default ingressClass
-func getIngressClassName(cr *ingressv2alpha1.AstarteDefaultIngress) string {
-	if cr.Spec.IngressClass == "" {
-		if useHAProxyIngressController(cr) {
-			return "haproxy"
-		}
-		return "nginx"
-	}
-	return cr.Spec.IngressClass
-}
-
-// useHAProxyIngressController checks if the selector annotation in the ADI
-// is set to use the HAProxy Ingress Controller.
-// By default, NGINX is assumed.
-func useHAProxyIngressController(cr *ingressv2alpha1.AstarteDefaultIngress) bool {
-	ingressController, exists := cr.Annotations[ingressv2alpha1.AnnotationIngressControllerSelector]
-	return exists && ingressController == "haproxy.org"
 }
 
 func getIngressTLS(cr *ingressv2alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte, includeDashboard bool) []networkingv1.IngressTLS {

@@ -54,7 +54,7 @@ func EnsureAPIIngress(cr *ingressv2alpha1.AstarteDefaultIngress, parent *apiv2al
 	}
 
 	// Log a deprecation warning if NGINX is in use
-	if !useHAProxyIngressController(cr) {
+	if !cr.HAProxyIngressControllerSelected() {
 		log.Info("NGINX Ingress Controller support is deprecated and will be removed in future releases. Please migrate to HAProxy Ingress Controller.")
 	}
 
@@ -119,18 +119,15 @@ func getConfigMapName(cr *ingressv2alpha1.AstarteDefaultIngress) string {
 func getAPIIngressSpec(cr *ingressv2alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) networkingv1.IngressSpec {
 	var rules []networkingv1.IngressRule
 
-	if useHAProxyIngressController(cr) {
+	// Get Ingress Rules depending on the Ingress Controller selected
+	rules = getNgnixAPIIngressRules(cr, parent)
+	if cr.HAProxyIngressControllerSelected() {
 		rules = getHAProxyAPIIngressRules(cr, parent)
-	} else {
-		// NGNIX needs special handling for path rewriting
-		// and needs one host with one rule
-		// for each backed service.
-		rules = getNgnixAPIIngressRules(cr, parent)
 	}
 
 	ingressSpec := networkingv1.IngressSpec{
 		// define which ingress controller will implement the ingress
-		IngressClassName: pointy.String(getIngressClassName(cr)),
+		IngressClassName: pointy.String(cr.GetIngressClassName()),
 		TLS:              getIngressTLS(cr, parent, true),
 		Rules:            rules,
 	}
@@ -285,7 +282,7 @@ func getDashboardServiceRelativePath(cr *ingressv2alpha1.AstarteDefaultIngress) 
 	theDashboard := apiv2alpha1.Dashboard
 
 	// NGINX needs special handling for path rewriting
-	if !useHAProxyIngressController(cr) {
+	if !cr.HAProxyIngressControllerSelected() {
 		if cr.Spec.Dashboard.Host == "" {
 			return fmt.Sprintf("/%s(/|$)(.*)", theDashboard.ServiceRelativePath())
 		}

@@ -63,7 +63,15 @@ func (r *AstarteDefaultIngress) Default() {
 
 	// Set default Ingress Controller annotation if not set
 	if _, ok := r.GetAnnotations()[AnnotationIngressControllerSelector]; !ok {
-		r.GetAnnotations()[AnnotationIngressControllerSelector] = "haproxy.org"
+		r.GetAnnotations()[AnnotationIngressControllerSelector] = HAProxySelectorValue
+	}
+
+	// Set default IngressClass if not set based on Ingress Controller selection
+	if r.Spec.IngressClass == "" {
+		r.Spec.IngressClass = "haproxy"
+		if !r.HAProxyIngressControllerSelected() {
+			r.Spec.IngressClass = "nginx"
+		}
 	}
 }
 
@@ -209,7 +217,7 @@ func getSecret(c client.Client, secretName string, namespace string, fldPath *fi
 func (r *AstarteDefaultIngress) validateIngressControllerSelectorAnnotation() *field.Error {
 	if r.GetAnnotations() != nil {
 		if ingressSelector, ok := r.GetAnnotations()[AnnotationIngressControllerSelector]; ok {
-			if ingressSelector != "nginx.ingress.kubernetes.io" && ingressSelector != "haproxy.org" {
+			if ingressSelector != NGINXSelectorValue && ingressSelector != HAProxySelectorValue {
 				fldPath := field.NewPath("metadata").Child("annotations").Key(AnnotationIngressControllerSelector)
 				return field.Invalid(fldPath, ingressSelector, "Unsupported Ingress Controller selector. Supported values are 'nginx.ingress.kubernetes.io' and 'haproxy.org'.")
 			}

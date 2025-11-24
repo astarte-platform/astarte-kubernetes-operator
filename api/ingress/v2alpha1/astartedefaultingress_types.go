@@ -33,6 +33,8 @@ const (
 	// By default, the Astarte Operator assumes the HAProxy Ingress Controller is in use.
 	// Value: "haproxy.org" or "nginx.ingress.kubernetes.io" (depending on the Ingress Controller in use)
 	AnnotationIngressControllerSelector = "ingress.astarte-platform.org/ingress-controller-selector"
+	HAProxySelectorValue                = "haproxy.org"
+	NGINXSelectorValue                  = "nginx.ingress.kubernetes.io"
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
@@ -155,6 +157,18 @@ type AstarteDefaultIngressBrokerSpec struct {
 	// Additional annotations for the service exposing this broker.
 	// +optional
 	ServiceAnnotations map[string]string `json:"serviceAnnotations,omitempty"`
+}
+
+// useHAProxyIngressController checks if the selector annotation in the ADI
+// is set to use the HAProxy Ingress Controller.
+// By default, HAProxy is assumed.
+func (i *AstarteDefaultIngress) HAProxyIngressControllerSelected() bool {
+	ingressController, exists := i.Annotations[AnnotationIngressControllerSelector]
+	return exists && ingressController == HAProxySelectorValue
+}
+
+func (i *AstarteDefaultIngress) GetIngressClassName() string {
+	return i.Spec.IngressClass
 }
 
 func init() {
