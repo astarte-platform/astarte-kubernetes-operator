@@ -1,4 +1,4 @@
-apiVersion: ingress.astarte-platform.org/v1alpha1
+apiVersion: ingress.astarte-platform.org/v2alpha1
 kind: AstarteDefaultIngress
 metadata:
   name: adi

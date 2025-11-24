@@ -50,14 +50,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-ingress-astarte-platform-org-v1alpha1-astartedefaultingress
+      path: /mutate-ingress-astarte-platform-org-v2alpha1-astartedefaultingress
   failurePolicy: Fail
   name: mastartedefaultingress.kb.io
   rules:
   - apiGroups:
     - ingress.astarte-platform.org
     apiVersions:
-    - v1alpha1
+    - v2alpha1
     operations:
     - CREATE
     - UPDATE
@@ -116,14 +116,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-ingress-astarte-platform-org-v1alpha1-astartedefaultingress
+      path: /validate-ingress-astarte-platform-org-v2alpha1-astartedefaultingress
   failurePolicy: Fail
   name: vastartedefaultingress.kb.io
   rules:
   - apiGroups:
     - ingress.astarte-platform.org
     apiVersions:
-    - v1alpha1
+    - v2alpha1
     operations:
     - CREATE
     - UPDATE

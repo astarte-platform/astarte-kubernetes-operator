@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Unit and integration tests.
 - Add AstarteCassandraConnectionSpec.EnableKeepalive field to the Astarte CRD.
 - Support custom probes for all Astarte components. Default probes are still provided if none are specified.
+- Add v2alpha1 API version for the ingress.astarte-platform.org group.
+- Add annotation support for selecting the ingress controller in AstarteDefaultIngress.
+- Add HAProxy Ingress Controller support.
 
 ### Changed
 - Forward port changes from release-24.5
@@ -33,6 +36,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - [Breaking] Remove management of RabbitMQ and Cassandra by the operator. Users are now
   expected to deploy and manage RabbitMQ and Cassandra independently of the operator.
 - Removed unimplemented VerneMQ validation logic from the reconciliation cycle.
+- [Breaking] Remove v1alpha1 API version for the ingress.astarte-platform.org group.
+- [Breaking] Remove metrics ingress support from AstarteDefaultIngress. The `serveMetrics` and
+  `serveMetricsToSubnet` fields are no longer available in the API spec.
+- [Breaking] The support to ingress-nginx Ingress Controller is deprecated and will be removed
+  in a future release. Users are encouraged to migrate to HAProxy Ingress Controller. The last supported
+  version of ingress-nginx is 1.11.5 (Helm chart version 4.11.5).
 
 ### Fixed
 - Fix the propagation of replicaCount, installCrds, and pullPolicy values

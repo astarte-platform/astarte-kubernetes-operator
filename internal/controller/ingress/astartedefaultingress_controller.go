@@ -38,7 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
-	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v1alpha1"
+	ingressv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v2alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/internal/controllerutils"
 	"github.com/astarte-platform/astarte-kubernetes-operator/internal/defaultingress"
 )
@@ -63,7 +63,7 @@ func (r *AstarteDefaultIngressReconciler) Reconcile(ctx context.Context, req ctr
 	reqLogger.Info("Reconciling AstarteDefaultIngress")
 
 	// Fetch the AstarteDefaultIngress instance
-	instance := &ingressv1alpha1.AstarteDefaultIngress{}
+	instance := &ingressv2alpha1.AstarteDefaultIngress{}
 	err := r.Client.Get(context.TODO(), req.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -96,10 +96,6 @@ func (r *AstarteDefaultIngressReconciler) Reconcile(ctx context.Context, req ctr
 	if err := defaultingress.EnsureBrokerIngress(instance, astarte, r.Client, r.Scheme, reqLogger); err != nil {
 		return ctrl.Result{}, err
 	}
-	// And eventually reconcile the Metrics Ingress
-	if err := defaultingress.EnsureMetricsIngress(instance, astarte, r.Client, r.Scheme, reqLogger); err != nil {
-		return ctrl.Result{}, err
-	}
 
 	reconciler := controllerutils.ReconcileHelper{
 		Client: r.Client,
@@ -107,7 +103,7 @@ func (r *AstarteDefaultIngressReconciler) Reconcile(ctx context.Context, req ctr
 	}
 
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		instance := &ingressv1alpha1.AstarteDefaultIngress{}
+		instance := &ingressv2alpha1.AstarteDefaultIngress{}
 		if err := r.Client.Get(ctx, req.NamespacedName, instance); err != nil {
 			return err
 		}
@@ -134,14 +130,23 @@ func (r *AstarteDefaultIngressReconciler) SetupWithManager(mgr ctrl.Manager) err
 		DeleteFunc: func(e event.DeleteEvent) bool { return true },
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			// Ignore updates to CR status in which case metadata.Generation does not change
-			return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
+			// However, also trigger on annotation changes (specifically the ingress controller selector)
+			if e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration() {
+				return true
+			}
+			// Check if the ingress controller selector annotation changed
+			oldAnnotations := e.ObjectOld.GetAnnotations()
+			newAnnotations := e.ObjectNew.GetAnnotations()
+			oldSelector := oldAnnotations[ingressv2alpha1.AnnotationIngressControllerSelector]
+			newSelector := newAnnotations[ingressv2alpha1.AnnotationIngressControllerSelector]
+			return oldSelector != newSelector
 		},
 	}
 
 	astarteToADIReconcileRequestFunc := func(_ context.Context, obj client.Object) []reconcile.Request {
 		astarteName := obj.GetName()
 		ret := []reconcile.Request{}
-		adiList := &ingressv1alpha1.AstarteDefaultIngressList{}
+		adiList := &ingressv2alpha1.AstarteDefaultIngressList{}
 		_ = r.List(context.Background(), adiList, client.InNamespace(obj.GetNamespace()))
 
 		if len(adiList.Items) == 0 {
@@ -163,7 +168,7 @@ func (r *AstarteDefaultIngressReconciler) SetupWithManager(mgr ctrl.Manager) err
 
 	// Watch for changes to secondary resource Ingress and requeue the owner AstarteDefaultIngress
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&ingressv1alpha1.AstarteDefaultIngress{}, builder.WithPredicates(pred)).
+		For(&ingressv2alpha1.AstarteDefaultIngress{}, builder.WithPredicates(pred)).
 		Owns(&networkingv1.Ingress{}).
 		Watches(
 			&apiv2alpha1.Astarte{},

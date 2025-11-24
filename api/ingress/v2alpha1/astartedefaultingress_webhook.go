@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v2alpha1
 
 import (
 	"context"
@@ -53,7 +53,7 @@ func (r *AstarteDefaultIngress) SetupWebhookWithManager(mgr ctrl.Manager) error 
 		Complete()
 }
 
-// +kubebuilder:webhook:path=/mutate-ingress-astarte-platform-org-v1alpha1-astartedefaultingress,mutating=true,failurePolicy=fail,sideEffects=None,groups=ingress.astarte-platform.org,resources=astartedefaultingresses,verbs=create;update,versions=v1alpha1,name=mastartedefaultingress.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-ingress-astarte-platform-org-v2alpha1-astartedefaultingress,mutating=true,failurePolicy=fail,sideEffects=None,groups=ingress.astarte-platform.org,resources=astartedefaultingresses,verbs=create;update,versions=v2alpha1,name=mastartedefaultingress.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &AstarteDefaultIngress{}
 
@@ -61,10 +61,21 @@ var _ webhook.Defaulter = &AstarteDefaultIngress{}
 func (r *AstarteDefaultIngress) Default() {
 	astartedefaultingresslog.Info("default", "name", r.Name)
 
-	// TODO(user): fill in your defaulting logic.
+	// Set default Ingress Controller annotation if not set
+	if _, ok := r.GetAnnotations()[AnnotationIngressControllerSelector]; !ok {
+		r.GetAnnotations()[AnnotationIngressControllerSelector] = HAProxySelectorValue
+	}
+
+	// Set default IngressClass if not set based on Ingress Controller selection
+	if r.Spec.IngressClass == "" {
+		r.Spec.IngressClass = "haproxy"
+		if !r.HAProxyIngressControllerSelected() {
+			r.Spec.IngressClass = "nginx"
+		}
+	}
 }
 
-// +kubebuilder:webhook:path=/validate-ingress-astarte-platform-org-v1alpha1-astartedefaultingress,mutating=false,failurePolicy=fail,sideEffects=None,groups=ingress.astarte-platform.org,resources=astartedefaultingresses,verbs=create;update,versions=v1alpha1,name=vastartedefaultingress.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/validate-ingress-astarte-platform-org-v2alpha1-astartedefaultingress,mutating=false,failurePolicy=fail,sideEffects=None,groups=ingress.astarte-platform.org,resources=astartedefaultingresses,verbs=create;update,versions=v2alpha1,name=vastartedefaultingress.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &AstarteDefaultIngress{}
 
@@ -109,11 +120,13 @@ func (r *AstarteDefaultIngress) validateAstarteDefaultIngress() error {
 	if err := r.validateDashboardTLSConfig(); err != nil {
 		allErrors = append(allErrors, err)
 	}
-	if err := r.validateMetricsIngressSetup(); err != nil {
-		allErrors = append(allErrors, err)
-	}
 
 	allErrors = append(allErrors, r.validateTLSSecretExistence(c)...)
+
+	// Validate Ingress Controller selector annotation
+	if err := r.validateIngressControllerSelectorAnnotation(); err != nil {
+		allErrors = append(allErrors, err)
+	}
 
 	if len(allErrors) == 0 {
 		return nil
@@ -165,14 +178,6 @@ func (r *AstarteDefaultIngress) validateAPITLSConfig(astarte *apiv2alpha1.Astart
 	return nil
 }
 
-func (r *AstarteDefaultIngress) validateMetricsIngressSetup() *field.Error {
-	if !pointy.BoolValue(r.Spec.API.ServeMetrics, false) && r.Spec.API.ServeMetricsToSubnet != "" {
-		fldPath := field.NewPath("spec").Child("api").Child("serveMetricsToSubnet")
-		return field.Forbidden(fldPath, "serveMetricsToSubnet must not be set when serveMetrics is set to false.")
-	}
-	return nil
-}
-
 func (r *AstarteDefaultIngress) validateTLSSecretExistence(c client.Client) field.ErrorList {
 	allErrs := field.ErrorList{}
 
@@ -204,6 +209,19 @@ func getSecret(c client.Client, secretName string, namespace string, fldPath *fi
 	if err := c.Get(context.Background(), types.NamespacedName{Name: secretName, Namespace: namespace}, theSecret); err != nil {
 		astartedefaultingresslog.Error(err, fmt.Sprintf("The secret %s does not exist in namespace %s.", secretName, namespace))
 		return field.NotFound(fldPath, secretName)
+	}
+	return nil
+}
+
+// validateIngressControllerSelectorAnnotation checks if the Ingress Controller selector annotation is valid
+func (r *AstarteDefaultIngress) validateIngressControllerSelectorAnnotation() *field.Error {
+	if r.GetAnnotations() != nil {
+		if ingressSelector, ok := r.GetAnnotations()[AnnotationIngressControllerSelector]; ok {
+			if ingressSelector != NGINXSelectorValue && ingressSelector != HAProxySelectorValue {
+				fldPath := field.NewPath("metadata").Child("annotations").Key(AnnotationIngressControllerSelector)
+				return field.Invalid(fldPath, ingressSelector, "Unsupported Ingress Controller selector. Supported values are 'nginx.ingress.kubernetes.io' and 'haproxy.org'.")
+			}
+		}
 	}
 	return nil
 }

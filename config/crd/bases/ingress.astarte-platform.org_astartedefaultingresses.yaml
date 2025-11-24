@@ -16,7 +16,7 @@ spec:
     singular: astartedefaultingress
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - name: v2alpha1
     schema:
       openAPIV3Schema:
         properties:
@@ -39,10 +39,6 @@ spec:
                   exposeHousekeeping:
                     type: boolean
                   kind:
-                    type: string
-                  serveMetrics:
-                    type: boolean
-                  serveMetricsToSubnet:
                     type: string
                   tlsSecret:
                     type: string

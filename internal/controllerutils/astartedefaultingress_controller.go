@@ -27,10 +27,10 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v1alpha1"
+	ingressv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v2alpha1"
 )
 
-func (r *ReconcileHelper) ComputeADIStatusResource(reqLogger logr.Logger, instance *ingressv1alpha1.AstarteDefaultIngress) ingressv1alpha1.AstarteDefaultIngressStatus {
+func (r *ReconcileHelper) ComputeADIStatusResource(reqLogger logr.Logger, instance *ingressv2alpha1.AstarteDefaultIngress) ingressv2alpha1.AstarteDefaultIngressStatus {
 	newStatus := instance.Status
 	newStatus.APIStatus = r.computeAPIStatus(reqLogger, instance)
 	newStatus.BrokerStatus = r.computeBrokerStatus(reqLogger, instance)
@@ -39,7 +39,7 @@ func (r *ReconcileHelper) ComputeADIStatusResource(reqLogger logr.Logger, instan
 }
 
 // nolint:dupl
-func (r *ReconcileHelper) computeAPIStatus(reqLogger logr.Logger, instance *ingressv1alpha1.AstarteDefaultIngress) networkingv1.IngressStatus {
+func (r *ReconcileHelper) computeAPIStatus(reqLogger logr.Logger, instance *ingressv2alpha1.AstarteDefaultIngress) networkingv1.IngressStatus {
 	if !pointy.BoolValue(instance.Spec.API.Deploy, true) {
 		return networkingv1.IngressStatus{}
 	}
@@ -54,7 +54,7 @@ func (r *ReconcileHelper) computeAPIStatus(reqLogger logr.Logger, instance *ingr
 }
 
 // nolint:dupl
-func (r *ReconcileHelper) computeBrokerStatus(reqLogger logr.Logger, instance *ingressv1alpha1.AstarteDefaultIngress) corev1.ServiceStatus {
+func (r *ReconcileHelper) computeBrokerStatus(reqLogger logr.Logger, instance *ingressv2alpha1.AstarteDefaultIngress) corev1.ServiceStatus {
 	if !pointy.BoolValue(instance.Spec.Broker.Deploy, true) {
 		return corev1.ServiceStatus{}
 	}

@@ -34,11 +34,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
-	ingressv1alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v1alpha1"
+	ingressv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v2alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/internal/misc"
 )
 
-func EnsureAPIIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
+func EnsureAPIIngress(cr *ingressv2alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme, log logr.Logger) error {
 	ingressName := getAPIIngressName(cr)
 	if !pointy.BoolValue(cr.Spec.API.Deploy, true) {
 		// We're not deploying the Ingress, so we're stopping here.
@@ -51,6 +51,11 @@ func EnsureAPIIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2al
 			}
 		}
 		return nil
+	}
+
+	// Log a deprecation warning if NGINX is in use
+	if !cr.HAProxyIngressControllerSelected() {
+		log.Info("NGINX Ingress Controller support is deprecated and will be removed in future releases. Please migrate to HAProxy Ingress Controller.")
 	}
 
 	// Ensure the configMap is properly configured
@@ -103,27 +108,104 @@ func EnsureAPIIngress(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2al
 	return err
 }
 
-func getAPIIngressName(cr *ingressv1alpha1.AstarteDefaultIngress) string {
+func getAPIIngressName(cr *ingressv2alpha1.AstarteDefaultIngress) string {
 	return cr.Name + "-api-ingress"
 }
 
-func getConfigMapName(cr *ingressv1alpha1.AstarteDefaultIngress) string {
+func getConfigMapName(cr *ingressv2alpha1.AstarteDefaultIngress) string {
 	return cr.Name + "-api-ingress-config"
 }
 
-func getAPIIngressSpec(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) networkingv1.IngressSpec {
+func getAPIIngressSpec(cr *ingressv2alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) networkingv1.IngressSpec {
+	var rules []networkingv1.IngressRule
+
+	// Get Ingress Rules depending on the Ingress Controller selected
+	rules = getNgnixAPIIngressRules(cr, parent)
+	if cr.HAProxyIngressControllerSelected() {
+		rules = getHAProxyAPIIngressRules(cr, parent)
+	}
+
 	ingressSpec := networkingv1.IngressSpec{
 		// define which ingress controller will implement the ingress
-		IngressClassName: getIngressClassName(cr),
+		IngressClassName: pointy.String(cr.GetIngressClassName()),
 		TLS:              getIngressTLS(cr, parent, true),
-		Rules:            getAPIIngressRules(cr, parent),
+		Rules:            rules,
 	}
 
 	return ingressSpec
 }
 
-func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) []networkingv1.IngressRule {
-	ingressRules := []networkingv1.IngressRule{}
+func getHAProxyAPIIngressRules(cr *ingressv2alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) (ingressRules []networkingv1.IngressRule) {
+	pathTypePrefix := networkingv1.PathTypePrefix
+
+	// Create rules for all Astarte components
+	astarteComponents := []apiv2alpha1.AstarteComponent{apiv2alpha1.AppEngineAPI, apiv2alpha1.FlowComponent, apiv2alpha1.Pairing, apiv2alpha1.RealmManagement}
+
+	// are we supposed to expose housekeeping?
+	if pointy.BoolValue(cr.Spec.API.ExposeHousekeeping, true) {
+		astarteComponents = append(astarteComponents, apiv2alpha1.Housekeeping)
+	}
+
+	// Generate API Paths
+	var apiPaths []networkingv1.HTTPIngressPath
+	for _, component := range astarteComponents {
+		if misc.IsAstarteComponentDeployed(parent, component) {
+			apiPaths = append(apiPaths, networkingv1.HTTPIngressPath{
+				Path:     fmt.Sprintf("/%s", component.ServiceRelativePath()),
+				PathType: &pathTypePrefix,
+				Backend: networkingv1.IngressBackend{
+					Service: &networkingv1.IngressServiceBackend{
+						Name: cr.Spec.Astarte + "-" + component.ServiceName(),
+						Port: networkingv1.ServiceBackendPort{Name: "http"},
+					},
+				},
+			})
+		}
+	}
+
+	// Add API host with all API paths
+	ingressRules = append(ingressRules, networkingv1.IngressRule{
+		Host: parent.Spec.API.Host,
+		IngressRuleValue: networkingv1.IngressRuleValue{
+			HTTP: &networkingv1.HTTPIngressRuleValue{
+				Paths: apiPaths,
+			},
+		},
+	})
+
+	// if the dashboard is not deployed, we're done
+	if !pointy.BoolValue(cr.Spec.Dashboard.Deploy, true) {
+		return ingressRules
+	}
+
+	var dashboardPaths []networkingv1.HTTPIngressPath
+	dashboard := apiv2alpha1.Dashboard
+
+	dashboardPaths = append(dashboardPaths, networkingv1.HTTPIngressPath{
+		Path:     getDashboardServiceRelativePath(cr),
+		PathType: &pathTypePrefix,
+		Backend: networkingv1.IngressBackend{
+			Service: &networkingv1.IngressServiceBackend{
+				Name: cr.Spec.Astarte + "-" + dashboard.ServiceName(),
+				Port: networkingv1.ServiceBackendPort{Name: "http"},
+			},
+		},
+	})
+
+	ingressRules = append(ingressRules, networkingv1.IngressRule{
+		Host: getDashboardHost(cr, parent),
+		IngressRuleValue: networkingv1.IngressRuleValue{
+			HTTP: &networkingv1.HTTPIngressRuleValue{
+				Paths: dashboardPaths,
+			},
+		},
+	})
+
+	return ingressRules
+}
+
+// To be deprecated in future releases
+func getNgnixAPIIngressRules(cr *ingressv2alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) (ingressRules []networkingv1.IngressRule) {
 	pathTypePrefix := networkingv1.PathTypePrefix
 
 	// Create rules for all Astarte components
@@ -187,7 +269,7 @@ func getAPIIngressRules(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2
 	return ingressRules
 }
 
-func getDashboardHost(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) string {
+func getDashboardHost(cr *ingressv2alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte) string {
 	// Is the Dashboard deployed without a host?
 	if cr.Spec.Dashboard.Host == "" {
 		return parent.Spec.API.Host
@@ -195,11 +277,22 @@ func getDashboardHost(cr *ingressv1alpha1.AstarteDefaultIngress, parent *apiv2al
 	return cr.Spec.Dashboard.Host
 }
 
-func getDashboardServiceRelativePath(cr *ingressv1alpha1.AstarteDefaultIngress) string {
+func getDashboardServiceRelativePath(cr *ingressv2alpha1.AstarteDefaultIngress) string {
 	// Is the Dashboard deployed without a host?
 	theDashboard := apiv2alpha1.Dashboard
-	if cr.Spec.Dashboard.Host == "" {
-		return fmt.Sprintf("/%s(/|$)(.*)", theDashboard.ServiceRelativePath())
+
+	// NGINX needs special handling for path rewriting
+	if !cr.HAProxyIngressControllerSelected() {
+		if cr.Spec.Dashboard.Host == "" {
+			return fmt.Sprintf("/%s(/|$)(.*)", theDashboard.ServiceRelativePath())
+		}
+		return "/()(.*)"
 	}
-	return "/()(.*)"
+
+	// HAProxy does not need special path rewriting
+	if cr.Spec.Dashboard.Host == "" {
+		return fmt.Sprintf("/%s", theDashboard.ServiceRelativePath())
+	}
+	return "/"
+
 }

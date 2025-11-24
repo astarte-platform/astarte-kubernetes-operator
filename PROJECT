@@ -19,8 +19,8 @@ resources:
   domain: astarte-platform.org
   group: ingress
   kind: AstarteDefaultIngress
-  path: github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v1alpha1
-  version: v1alpha1
+  path: github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v2alpha1
+  version: v2alpha1
   webhooks:
     defaulting: true
     validation: true

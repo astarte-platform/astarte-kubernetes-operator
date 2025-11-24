@@ -153,37 +153,34 @@ var _ = Describe("Astarte types testing", Ordered, Serial, func() {
 		})
 
 		It("ServiceRelativePath() should return expected values per component", func() {
-			// API-like components or explicitly allowed ones
 			cApp := AppEngineAPI
 			cFlow := FlowComponent
 			cDash := Dashboard
-			Expect((&cApp).ServiceRelativePath()).To(Equal("appengine"))
-			Expect((&cFlow).ServiceRelativePath()).To(Equal("flow"))
-			Expect((&cDash).ServiceRelativePath()).To(Equal("dashboard"))
-
-			// Non-API components
 			cDup := DataUpdaterPlant
 			cHk := Housekeeping
 			cRm := RealmManagement
 			cPair := Pairing
 			cTrig := TriggerEngine
-			Expect((&cDup).ServiceRelativePath()).To(BeEmpty())
-			Expect((&cHk).ServiceRelativePath()).To(BeEmpty())
-			Expect((&cRm).ServiceRelativePath()).To(BeEmpty())
-			Expect((&cPair).ServiceRelativePath()).To(BeEmpty())
-			Expect((&cTrig).ServiceRelativePath()).To(BeEmpty())
-		})
-	})
-
-	Describe("Test AstarteResourceEvent.String()", func() {
-		It("should return the string representation of the event", func() {
-			e := AstarteResourceEventMigration
-			Expect(e.String()).To(Equal("Migration"))
+			Expect((&cApp).ServiceRelativePath()).To(Equal("appengine"))
+			Expect((&cFlow).ServiceRelativePath()).To(Equal("flow"))
+			Expect((&cDash).ServiceRelativePath()).To(Equal("dashboard"))
+			Expect((&cDup).ServiceRelativePath()).To(Equal("dataupdaterplant"))
+			Expect((&cHk).ServiceRelativePath()).To((Equal("housekeeping")))
+			Expect((&cRm).ServiceRelativePath()).To((Equal("realmmanagement")))
+			Expect((&cPair).ServiceRelativePath()).To((Equal("pairing")))
+			Expect((&cTrig).ServiceRelativePath()).To((Equal("triggerengine")))
 		})
 
-		It("should return other event names correctly", func() {
-			e := AstarteResourceEventUpgradeError
-			Expect(e.String()).To(Equal("ErrUpgrade"))
+		Describe("Test AstarteResourceEvent.String()", func() {
+			It("should return the string representation of the event", func() {
+				e := AstarteResourceEventMigration
+				Expect(e.String()).To(Equal("Migration"))
+			})
+
+			It("should return other event names correctly", func() {
+				e := AstarteResourceEventUpgradeError
+				Expect(e.String()).To(Equal("ErrUpgrade"))
+			})
 		})
 	})
 })

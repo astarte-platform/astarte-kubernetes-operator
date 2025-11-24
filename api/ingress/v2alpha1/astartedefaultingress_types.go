@@ -16,13 +16,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v2alpha1
 
 import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+// Support annotations for AstarteDefaultIngress objects.
+const (
+	// AnnotationIngressControllerSelector is used to specify the Ingress Controller to use with this AstarteDefaultIngress.
+	// This is not related to the ingressClass field, which is used to specify which Ingress class the Ingress object should belong to.
+	// Depending on the Ingress Controller in use, different annotations and configurations will be applied to the generated Ingress objects.
+	// By default, the Astarte Operator assumes the HAProxy Ingress Controller is in use.
+	// Value: "haproxy.org" or "nginx.ingress.kubernetes.io" (depending on the Ingress Controller in use)
+	AnnotationIngressControllerSelector = "ingress.astarte-platform.org/ingress-controller-selector"
+	HAProxySelectorValue                = "haproxy.org"
+	NGINXSelectorValue                  = "nginx.ingress.kubernetes.io"
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
@@ -102,17 +114,6 @@ type AstarteDefaultIngressAPISpec struct {
 	// When true, the housekeeping endpoint is publicly exposed. Default: true.
 	// +optional
 	ExposeHousekeeping *bool `json:"exposeHousekeeping,omitempty"`
-	// When true, all /metrics endpoints for Astarte services will be served by a dedicated metrics ingress.
-	// Metrics can be gathered by querying the /metrics/<service-name> path.
-	// Beware this might be a security hole. You can control which IPs can access /metrics
-	// with serveMetricsToSubnet. Default: false.
-	// +optional
-	ServeMetrics *bool `json:"serveMetrics,omitempty"`
-	// When specified and when serveMetrics is true, /metrics endpoints will be served only to IPs
-	// in the provided subnet range. The subnet has to be compatible with the HAProxy
-	// ACL src syntax (e.g.: "10.0.0.0/16"). Default: "".
-	// +optional
-	ServeMetricsToSubnet string `json:"serveMetricsToSubnet,omitempty"`
 }
 
 // AstarteDefaultIngressDashboardSpec defines how the Astarte Dashboard is served.
@@ -156,6 +157,18 @@ type AstarteDefaultIngressBrokerSpec struct {
 	// Additional annotations for the service exposing this broker.
 	// +optional
 	ServiceAnnotations map[string]string `json:"serviceAnnotations,omitempty"`
+}
+
+// useHAProxyIngressController checks if the selector annotation in the ADI
+// is set to use the HAProxy Ingress Controller.
+// By default, HAProxy is assumed.
+func (i *AstarteDefaultIngress) HAProxyIngressControllerSelected() bool {
+	ingressController, exists := i.Annotations[AnnotationIngressControllerSelector]
+	return exists && ingressController == HAProxySelectorValue
+}
+
+func (i *AstarteDefaultIngress) GetIngressClassName() string {
+	return i.Spec.IngressClass
 }
 
 func init() {
