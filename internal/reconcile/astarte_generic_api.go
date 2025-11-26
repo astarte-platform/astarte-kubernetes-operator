@@ -264,7 +264,7 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv2alpha1.Astarte,
 	case apiv2alpha1.FlowComponent:
 		ret = append(ret, getAstarteFlowEnvVars(cr)...)
 	case apiv2alpha1.AppEngineAPI:
-		ret = append(ret, getAppEngineAPIEnvVars(cr)...)
+		ret = append(ret, getAstarteAppEngineAPIEnvVars(cr)...)
 	case apiv2alpha1.RealmManagement:
 		ret = append(ret, getAstarteRealmManagementEnvVars(cr)...)
 	}
@@ -287,7 +287,7 @@ func getAstarteRealmManagementEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	return ret
 }
 
-func getAppEngineAPIEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
+func getAstarteAppEngineAPIEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	ret := []v1.EnvVar{}
 
 	ret = appendRabbitMQConnectionEnvVars(ret, "APPENGINE_API_ROOMS_AMQP_CLIENT", cr)
