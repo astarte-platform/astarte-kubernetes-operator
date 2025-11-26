@@ -249,20 +249,11 @@ func getTriggerEngineBackendEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
 
 func getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas int, cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	ret := []v1.EnvVar{}
-	eventsExchangeName := cr.Spec.RabbitMQ.EventsExchangeName
 
 	// Append RabbitMQ variables for both Consumer and Producer
 	ret = appendRabbitMQConnectionEnvVars(ret, "DATA_UPDATER_PLANT_AMQP_CONSUMER", cr)
 	ret = appendRabbitMQConnectionEnvVars(ret, "DATA_UPDATER_PLANT_AMQP_PRODUCER", cr)
-	ret = appendRabbitMQConnectionEnvVars(ret, "DATA_UPDATER_PLANT_AMQP_TRIGGERS_PRODUCER", cr)
-
-	if eventsExchangeName != "" {
-		ret = append(ret,
-			v1.EnvVar{
-				Name:  "DATA_UPDATER_PLANT_AMQP_EVENTS_EXCHANGE_NAME",
-				Value: eventsExchangeName,
-			})
-	}
+	ret = appendAstarteEventsProducerEnvVars(ret, cr)
 
 	if cr.Spec.Components.DataUpdaterPlant.PrefetchCount != nil {
 		ret = append(ret,

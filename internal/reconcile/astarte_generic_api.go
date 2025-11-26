@@ -266,7 +266,7 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv2alpha1.Astarte,
 	case apiv2alpha1.AppEngineAPI:
 		ret = append(ret, getAppEngineAPIEnvVars(cr)...)
 	case apiv2alpha1.RealmManagement:
-		// Nothing special for now
+		ret = append(ret, getAstarteRealmManagementEnvVars(cr)...)
 	}
 
 	// Override with any additional env vars
@@ -274,6 +274,15 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv2alpha1.Astarte,
 	if len(api.AdditionalEnv) > 0 {
 		ret = append(ret, api.AdditionalEnv...)
 	}
+
+	return ret
+}
+
+func getAstarteRealmManagementEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
+	ret := []v1.EnvVar{}
+
+	// AMQP Producer configuration is now mandatory
+	ret = appendAstarteEventsProducerEnvVars(ret, cr)
 
 	return ret
 }
