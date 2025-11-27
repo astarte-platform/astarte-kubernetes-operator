@@ -504,6 +504,29 @@ func appendCassandraConnectionEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astarte) 
 	return ret
 }
 
+func appendAstarteEventsProducerEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astarte) []v1.EnvVar {
+	// Append all the RabbitMQ connection env vars
+	ret = appendRabbitMQConnectionEnvVars(ret, "ASTARTE_EVENTS_PRODUCER_AMQP", cr)
+
+	// plus some Astarte Events specific ones
+	ret = append(ret,
+		v1.EnvVar{
+			Name:  "ASTARTE_EVENTS_PRODUCER_AMQP_CONNECTION_NUMBER",
+			Value: "10",
+		},
+		v1.EnvVar{
+			Name:  "ASTARTE_EVENTS_PRODUCER_AMQP_DATA_QUEUE_TOTAL_COUNT",
+			Value: "128",
+		},
+		v1.EnvVar{
+			Name:  "ASTARTE_EVENTS_PRODUCER_AMQP_EVENTS_EXCHANGE_NAME",
+			Value: cr.Spec.RabbitMQ.EventsExchangeName,
+		},
+	)
+
+	return ret
+}
+
 func appendRabbitMQConnectionEnvVars(ret []v1.EnvVar, prefix string, cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	spec := cr.Spec.RabbitMQ.Connection
 

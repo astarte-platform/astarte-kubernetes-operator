@@ -264,9 +264,9 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv2alpha1.Astarte,
 	case apiv2alpha1.FlowComponent:
 		ret = append(ret, getAstarteFlowEnvVars(cr)...)
 	case apiv2alpha1.AppEngineAPI:
-		ret = append(ret, getAppEngineAPIEnvVars(cr)...)
+		ret = append(ret, getAstarteAppEngineAPIEnvVars(cr)...)
 	case apiv2alpha1.RealmManagement:
-		// Nothing special for now
+		ret = append(ret, getAstarteRealmManagementEnvVars(cr)...)
 	}
 
 	// Override with any additional env vars
@@ -278,7 +278,16 @@ func getAstarteGenericAPIEnvVars(deploymentName string, cr *apiv2alpha1.Astarte,
 	return ret
 }
 
-func getAppEngineAPIEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
+func getAstarteRealmManagementEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
+	ret := []v1.EnvVar{}
+
+	// AMQP Producer configuration is now mandatory
+	ret = appendAstarteEventsProducerEnvVars(ret, cr)
+
+	return ret
+}
+
+func getAstarteAppEngineAPIEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	ret := []v1.EnvVar{}
 
 	ret = appendRabbitMQConnectionEnvVars(ret, "APPENGINE_API_ROOMS_AMQP_CLIENT", cr)
