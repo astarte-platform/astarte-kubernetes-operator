@@ -121,7 +121,7 @@ func EnsureErlangClusteringCookie(cr *apiv2alpha1.Astarte, c client.Client, sche
 }
 
 func GetAstarteClusteredServicePolicyRules() []rbacv1.PolicyRule {
-	// This is needed for Astarte > 1.2.0, as DUP/AppEngine/VerneMQ are clustered using Erlang.
+	// This is needed for Astarte > 1.2.0, as DUP/AppEngine/VerneMQ/RM/Pairing are clustered using Erlang.
 	return []rbacv1.PolicyRule{
 		{
 			APIGroups: []string{""},

@@ -301,6 +301,66 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			Expect(dep.Spec.Template.Spec.ServiceAccountName).To(Equal(deploymentName))
 		})
 
+		It("should create ServiceAccount for RealmManagement", func() {
+			component := apiv2alpha1.RealmManagement
+			cr.Spec.Components.RealmManagement.Deploy = pointy.Bool(true)
+			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Eventually(func() error {
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+			}, Timeout, Interval).Should(Succeed())
+
+			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.RealmManagement, component, k8sClient, scheme.Scheme)).To(Succeed())
+
+			deploymentName := cr.Name + "-" + component.DashedString()
+
+			// ServiceAccount should exist
+			sa := &v1.ServiceAccount{}
+			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, sa)).To(Succeed())
+
+			// Role should exist
+			role := &rbacv1.Role{}
+			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, role)).To(Succeed())
+
+			// RoleBinding should exist
+			roleBinding := &rbacv1.RoleBinding{}
+			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, roleBinding)).To(Succeed())
+
+			// Deployment should reference the ServiceAccount
+			dep := &appsv1.Deployment{}
+			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
+			Expect(dep.Spec.Template.Spec.ServiceAccountName).To(Equal(deploymentName))
+		})
+
+		It("should create ServiceAccount for Pairing", func() {
+			component := apiv2alpha1.Pairing
+			cr.Spec.Components.Pairing.Deploy = pointy.Bool(true)
+			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Eventually(func() error {
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+			}, Timeout, Interval).Should(Succeed())
+
+			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.Pairing, component, k8sClient, scheme.Scheme)).To(Succeed())
+
+			deploymentName := cr.Name + "-" + component.DashedString()
+
+			// ServiceAccount should exist
+			sa := &v1.ServiceAccount{}
+			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, sa)).To(Succeed())
+
+			// Role should exist
+			role := &rbacv1.Role{}
+			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, role)).To(Succeed())
+
+			// RoleBinding should exist
+			roleBinding := &rbacv1.RoleBinding{}
+			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, roleBinding)).To(Succeed())
+
+			// Deployment should reference the ServiceAccount
+			dep := &appsv1.Deployment{}
+			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
+			Expect(dep.Spec.Template.Spec.ServiceAccountName).To(Equal(deploymentName))
+		})
+
 		It("should configure priority classes when enabled", func() {
 			component := apiv2alpha1.AppEngineAPI
 			cr.Spec.Components.AppengineAPI.Deploy = pointy.Bool(true)
