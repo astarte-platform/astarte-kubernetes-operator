@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add v2alpha1 API version for the ingress.astarte-platform.org group.
 - Add annotation support for selecting the ingress controller in AstarteDefaultIngress.
 - Add HAProxy Ingress Controller support.
+- RealmManagement and Pairing have `get` and `list` permissions on
+  endpoints, pods and services.
 
 ### Changed
 - Forward port changes from release-24.5
