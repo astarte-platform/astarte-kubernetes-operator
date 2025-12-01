@@ -361,7 +361,7 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv2alpha1.Astarte, com
 	}
 
 	// We need extra care for Erlang cookie, as some services share the same one
-	if component == apiv2alpha1.AppEngineAPI || component == apiv2alpha1.DataUpdaterPlant {
+	if component == apiv2alpha1.AppEngineAPI || component == apiv2alpha1.DataUpdaterPlant || component == apiv2alpha1.RealmManagement || component == apiv2alpha1.Pairing {
 		ret = append(ret, v1.EnvVar{
 			Name:      "RELEASE_COOKIE",
 			ValueFrom: getErlangClusteringCookieSecretReference(cr),
