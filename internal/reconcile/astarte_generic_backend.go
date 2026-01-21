@@ -20,6 +20,7 @@ package reconcile
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	"go.openly.dev/pointy"
@@ -271,6 +272,12 @@ func getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas int, cr *ap
 			Name: "DATA_UPDATER_PLANT_AMQP_DATA_QUEUE_TOTAL_COUNT",
 			// This must always hold the total data queue count, not just the one this specific replica of DUP is using
 			Value: strconv.Itoa(getDataQueueCount(cr)),
+		})
+
+	ret = append(ret,
+		v1.EnvVar{
+			Name:  "DATA_UPDATER_PLANT_CLUSTERING_KUBERNETES_SELECTOR",
+			Value: fmt.Sprint("app=", cr.Name, "-data-updater-plant"),
 		})
 
 	if cr.Spec.RabbitMQ.DataQueuesPrefix != "" {

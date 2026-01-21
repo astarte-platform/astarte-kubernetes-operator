@@ -369,15 +369,10 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv2alpha1.Astarte, com
 
 		// If Astarte version is bigger than 1.2.0, we need to set clustering environment variables.
 		if cr.Spec.Version != "" && semver.MustParse(cr.Spec.Version).GreaterThan(semver.MustParse("1.2.0")) {
-			ret = append(ret, v1.EnvVar{
-				Name:  "CLUSTERING_STRATEGY",
-				Value: "kubernetes",
-			})
-
 			ret = append(ret,
 				v1.EnvVar{
-					Name:  "DATA_UPDATER_PLANT_CLUSTERING_KUBERNETES_SELECTOR",
-					Value: fmt.Sprint("app=", cr.Name, "-data-updater-plant"),
+					Name:  "CLUSTERING_STRATEGY",
+					Value: "kubernetes",
 				})
 
 			ret = append(ret,
