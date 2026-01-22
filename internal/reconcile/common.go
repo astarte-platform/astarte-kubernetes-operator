@@ -20,6 +20,8 @@ package reconcile
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 
 	v1 "k8s.io/api/core/v1"
@@ -77,6 +79,49 @@ func EnsureHousekeepingKey(cr *apiv2alpha1.Astarte, c client.Client, scheme *run
 
 	// All good.
 	return nil
+}
+
+// EnsureSecretKeyBase makes sure that a valid Secret Key Base is available
+// for FDO Device Onboarding and other services that may need it.
+// If there is none, it creates a new one and stores it in a Secret.
+func EnsureSecretKeyBase(cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Scheme) error {
+	secretName := fmt.Sprintf("%s-secret-key-base", cr.Name)
+
+	theSecret := &v1.Secret{}
+	err := c.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: cr.Namespace}, theSecret)
+
+	if err != nil && !errors.IsNotFound(err) {
+		return err
+	}
+
+	if errors.IsNotFound(err) {
+		// Let's create one.
+		reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name)
+		reqLogger.Info("Secret Key Base not found: creating one")
+
+		// Secret will be encoded in base64, with 48 bytes the output string will be 64 characters long
+		b := make([]byte, 48)
+		_, err := rand.Read(b)
+		if err != nil {
+			return err
+		}
+
+		// Encode bytes in base64
+		k := base64.StdEncoding.EncodeToString(b)
+
+		// Store it in a Secret
+		s := map[string]string{
+			"key": k,
+		}
+
+		_, err = misc.ReconcileSecretString(secretName, s, cr, c, scheme, reqLogger)
+		return err
+	}
+
+	// If the secret exists but is empty or malformed, Astarte will crash and log an error.
+	// For this reason, we do not check for that here, leaving Astarte to handle it.
+
+	return err
 }
 
 // EnsureGenericErlangConfiguration reconciles the generic Erlang Configuration for Astarte services
