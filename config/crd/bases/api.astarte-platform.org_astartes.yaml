@@ -8133,6 +8133,25 @@ spec:
                 type: string
               features:
                 properties:
+                  FDO:
+                    properties:
+                      enable:
+                        type: boolean
+                      rendezvousServer:
+                        properties:
+                          host:
+                            minLength: 1
+                            type: string
+                          port:
+                            format: int32
+                            maximum: 65535
+                            minimum: 1
+                            type: integer
+                        required:
+                        - host
+                        - port
+                        type: object
+                    type: object
                   astartePodPriorities:
                     properties:
                       astarteHighPriority:

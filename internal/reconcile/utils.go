@@ -340,6 +340,41 @@ func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quan
 	}
 }
 
+// appendAstarteFDOEnvVars returns the environment variables needed to enable FDO support in Pairing
+func appendAstarteFDOEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astarte) []v1.EnvVar {
+	if cr.Spec.Features.FDO == nil || !cr.Spec.Features.FDO.Enable {
+		return ret
+	}
+
+	scheme := "https"
+	port := 443
+	if !pointy.BoolValue(cr.Spec.API.SSL, true) {
+		scheme = "http"
+		port = 80
+	}
+
+	ret = append(ret,
+		v1.EnvVar{
+			Name:  "PAIRING_FDO_RENDEZVOUS_URL",
+			Value: fmt.Sprintf("%s:%d", cr.Spec.Features.FDO.RendezvousServer.Host, *cr.Spec.Features.FDO.RendezvousServer.Port),
+		},
+		v1.EnvVar{
+			Name:  "ASTARTE_BASE_URL_DOMAIN",
+			Value: cr.Spec.API.Host,
+		},
+		v1.EnvVar{
+			Name:  "ASTARTE_BASE_URL_PORT",
+			Value: strconv.Itoa(port),
+		},
+		v1.EnvVar{
+			Name:  "ASTARTE_BASE_URL_PROTOCOL",
+			Value: scheme,
+		},
+	)
+
+	return ret
+}
+
 func getAstarteCommonEnvVars(deploymentName string, cr *apiv2alpha1.Astarte, component apiv2alpha1.AstarteComponent) []v1.EnvVar {
 	ret := []v1.EnvVar{
 		{
