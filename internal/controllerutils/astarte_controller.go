@@ -258,6 +258,12 @@ func (r *ReconcileHelper) ReconcileAstarteResources(instance *apiv2alpha1.Astart
 	if err := recon.EnsureHousekeepingKey(instance, r.Client, r.Scheme); err != nil {
 		return err
 	}
+
+	// Ensure Secret Key Base
+	if err := recon.EnsureSecretKeyBase(instance, r.Client, r.Scheme); err != nil {
+		return err
+	}
+
 	// Then, make sure we have an up to date Erlang Configuration for our Pods
 	if err := recon.EnsureGenericErlangConfiguration(instance, r.Client, r.Scheme); err != nil {
 		return err

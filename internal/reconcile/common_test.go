@@ -83,6 +83,21 @@ var _ = Describe("Common reconcile testing", Ordered, func() {
 			Expect(secretPublic.Data).To(HaveKey("public-key"))
 		})
 
+		It("Should create a valid Secret Key Base", func() {
+			// Ensure the housekeeping key is created
+			Expect(EnsureSecretKeyBase(cr, k8sClient, scheme.Scheme)).To(Succeed())
+
+			// Check that the housekeeping keypair secrets are present
+			secret := &v1.Secret{}
+			Eventually(func() error {
+				return k8sClient.Get(context.Background(), types.NamespacedName{
+					Name:      CustomAstarteName + "-secret-key-base",
+					Namespace: CustomAstarteNamespace,
+				}, secret)
+			}, Timeout, Interval).Should(Succeed())
+			Expect(secret.Data).To(HaveKey("key"))
+		})
+
 		Describe("Test EnsureGenericErlangConfiguration", func() {
 			It("should create the Generic Erlang Configuration ConfigMap", func() {
 				Expect(EnsureGenericErlangConfiguration(cr, k8sClient, scheme.Scheme)).To(Succeed())

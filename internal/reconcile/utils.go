@@ -358,6 +358,13 @@ func getAstarteCommonEnvVars(deploymentName string, cr *apiv2alpha1.Astarte, com
 			Name:  "RELEASE_NAME",
 			Value: component.DockerImageName(),
 		},
+		{
+			Name: "SECRET_KEY_BASE",
+			ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
+				LocalObjectReference: v1.LocalObjectReference{Name: fmt.Sprintf("%s-secret-key-base", cr.Name)},
+				Key:                  "key",
+			}},
+		},
 	}
 
 	// We need extra care for Erlang cookie, as some services share the same one
