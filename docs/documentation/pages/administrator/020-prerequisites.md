@@ -13,39 +13,47 @@ The following tools are required within your local machine:
   Astarte Operator running in your cluster,
 - [helm](https://helm.sh/): v3 is required.
 
-## NGINX
-
-Astarte currently features only one supported Managed Ingress, based on
-[NGINX](https://nginx.org/en/). NGINX provides routing, SSL termination and more,
-and as of today is the preferred/advised way to run Astarte in production.
-
-Astarte Operator is capable of interacting with NGINX through its dedicated
-`AstarteDefaultIngress` resource, as long as an [NGINX ingress
-controller](https://kubernetes.github.io/ingress-nginx/) is installed. Installing the ingress
-controller is as simple as running a few `helm` commands:
-```bash
-$ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-$ helm repo update
-$ helm install ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx \
-    --set controller.service.externalTrafficPolicy=Local \
-    --create-namespace
-```
+## HAProxy
+Astarte Operator is capable of interacting with HAProxy Ingress Controller through its dedicated
+`AstarteDefaultIngress` resource, as long as an [HAProxy ingress
+controller](https://www.haproxy.com/documentation/kubernetes-ingress/) is installed. 
 
 Please, be aware that trying to deploy multiple ingress controllers in your cluster may result in all
 of them trying simultaneously to handle the Astarte ingress resource. Consider using ingress classes
 for avoiding confusing situations as outlined
 [here](https://kubernetes.github.io/ingress-nginx/user-guide/multiple-ingress/).
 
-In the end, you won't need to create NGINX ingresses yourself: the Astarte Operator itself will take
-care of this task.
+### Helm installation via CLI
+Installing the ingress controller is as simple as running a few `helm` commands:
+```bash
+helm repo add haproxytech https://haproxytech.github.io/helm-charts
+helm install haproxy-kubernetes-ingress haproxytech/kubernetes-ingress \
+  --create-namespace \
+  --namespace haproxy-controller \
+  --set controller.service.externalTrafficPolicy=Local \
+  --set controller.service.type=LoadBalancer \
+  --set controller.service.enablePorts.quic=false \
+  --set controller.service.loadBalancerIP=<your-desired-static-ip>
+```
 
-## RabbitMQ
+## NGINX
+Starting from Astarte Operator `v25.5.x`, HAProxy is the default and preferred Ingress Controller
+for Astarte deployments. This is the last version of the Astarte Operator that will support NGINX as Ingress
+Controller due to [Ingress NGINX retirement.](https://kubernetes.io/blog/2025/11/11/ingress-nginx-retirement/)
 
-For production environments, consider using RabbitMQ deployed by the [RabbitMQ Cluster Operator]
-(https://www.rabbitmq.com/kubernetes/operator/operator-overview) or any other managed solution that 
-you prefer. The Astarte Operator includes only basic management of RabbitMQ, which is deprecated since 
-v24.5 and as such it should not be relied upon when dealing with production environments. Futher details 
-can be found [here](https://github.com/astarte-platform/astarte-kubernetes-operator/issues/287).
+The annotation `ingress.astarte-platform.org/ingress-controller-selector` in the ADI CR can be used to specify which Ingress Controller
+the Astarte Operator should use. 
+
+By default, the Operator assumes the HAPROXY Ingress Controller is in use, in fact the annotation is set by default to:
+```yaml
+ingress.astarte-platform.org/ingress-controller-selector: "haproxy.org"
+```
+If you want to still use NGINX, you will have to set the annotation to:
+```yaml
+ingress.astarte-platform.org/ingress-controller-selector: "nginx.ingress.kubernetes.io"
+```
+
+Depending on the value of this annotation, the Operator will create Ingress resources compatible with the selected Ingress Controller.
 
 ## cert-manager
 
@@ -76,21 +84,22 @@ $ helm install \
 
 This will install `cert-manager` and its CRDs in the cluster.
 
+## External RabbitMQ
+
+Starting from Astarte Operator `v25.5.x`, RabbitMQ is no longer deployed by the Astarte Operator.
+If you previously relied on a RabbitMQ instance managed by the Astarte Operator, upgrading shall be preceded by
+provisioning an external RabbitMQ instance, otherwise, after the upgrade you will end up without any AMQP
+broker in place. Consider using RabbitMQ deployed by the [RabbitMQ Cluster Operator]
+(https://www.rabbitmq.com/kubernetes/operator/operator-overview) or any other managed solution that
+you prefer.
+
 ## External Cassandra / Scylla
 
-In production deployments, it is strongly advised to have a separate Cassandra cluster interacting
-with the Kubernetes installation. This is due to the fact that Cassandra Administration is a
-critical topic, especially with mission critical workloads.
-
-Astarte Operator includes only basic management of Cassandra, which is deprecated since v1.0 and as
-such it should not be relied upon when dealing with production environments. Furthermore, in the
-near future, Cassandra support is planned to be removed from Astarte Operator in favor of the
-adoption of a dedicated Kubernetes Operator (e.g. [Scylla
-Operator](https://operator.docs.scylladb.com/stable/generic.html)).
-
-In case an external Cassandra cluster is deployed, be aware that Astarte lives on the assumption it
-will be the only application managing the Cluster - as such, it is strongly advised to have a
-dedicated cluster for Astarte.
+Starting from Astarte Operator `v25.5.x`, Cassandra / Scylla is no longer deployed by the Astarte
+Operator. If you previously relied on a Cassandra instance managed by the Astarte Operator, you shall provision an external
+instance before upgrading, otherwise the upgrade will leave you without any database backing Astarte.
+It is strongly advised to deploy a separate Cassandra cluster, a VM-based installation
+or a managed solution.
 
 ## Kubernetes and external components
 
