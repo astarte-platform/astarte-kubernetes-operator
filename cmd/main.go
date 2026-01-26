@@ -34,6 +34,9 @@ import (
 	apicontroller "github.com/astarte-platform/astarte-kubernetes-operator/internal/controller/api"
 	flowcontroller "github.com/astarte-platform/astarte-kubernetes-operator/internal/controller/flow"
 	ingresscontroller "github.com/astarte-platform/astarte-kubernetes-operator/internal/controller/ingress"
+	apiv2alpha1webhook "github.com/astarte-platform/astarte-kubernetes-operator/internal/webhook/api/v2alpha1"
+	flowv2alpha1webhook "github.com/astarte-platform/astarte-kubernetes-operator/internal/webhook/flow/v2alpha1"
+	ingressv2alpha1webhook "github.com/astarte-platform/astarte-kubernetes-operator/internal/webhook/ingress/v2alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -232,15 +235,15 @@ func main() {
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&apiv2alpha1.Astarte{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = apiv2alpha1webhook.SetupAstarteWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Astarte")
 			os.Exit(1)
 		}
-		if err = (&flowv2alpha1.Flow{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = flowv2alpha1webhook.SetupAstarteFlowWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Flow")
 			os.Exit(1)
 		}
-		if err = (&ingressv2alpha1.AstarteDefaultIngress{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = ingressv2alpha1webhook.SetupAstarteDefaultIngressWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "AstarteDefaultIngress")
 			os.Exit(1)
 		}
