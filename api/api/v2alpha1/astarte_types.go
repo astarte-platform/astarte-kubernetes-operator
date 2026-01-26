@@ -699,6 +699,15 @@ type AstartePodPrioritiesSpec struct {
 	AstarteLowPriority *int `json:"astarteLowPriority,omitempty"`
 }
 
+// AstarteFDOSpec configures FDO support in Astarte.
+// This feature is EXPERIMENTAL, expect breaking changes in future releases.
+type AstarteFDOSpec struct {
+	// +kubebuilder:validation:Optional
+	Enable bool `json:"enable,omitempty"`
+	// +kubebuilder:validation:Optional
+	RendezvousServer HostAndPort `json:"rendezvousServer,omitempty"`
+}
+
 func (a *AstartePodPrioritiesSpec) IsEnabled() bool {
 	return a != nil && a.Enable
 }
@@ -711,6 +720,8 @@ type AstarteFeatures struct {
 	Autoscaling bool `json:"autoscaling,omitempty"`
 	// +kubebuilder:validation:Optional
 	AstartePodPriorities *AstartePodPrioritiesSpec `json:"astartePodPriorities,omitempty"`
+	// +kubebuilder:validation:Optional
+	FDO *AstarteFDOSpec `json:"fdo,omitempty"`
 }
 
 func init() {

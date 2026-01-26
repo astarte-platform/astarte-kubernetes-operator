@@ -410,6 +410,9 @@ func getAstartePairingEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	// AMQP Producer configuration is now mandatory
 	ret = appendRabbitMQConnectionEnvVars(ret, "ASTARTE_EVENTS_PRODUCER_AMQP", cr)
 
+	// FDO support
+	ret = appendAstarteFDOEnvVars(ret, cr)
+
 	return ret
 }
 
