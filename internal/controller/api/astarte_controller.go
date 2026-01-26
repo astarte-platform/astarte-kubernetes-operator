@@ -230,6 +230,7 @@ func (r *AstarteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&apiv2alpha1.Astarte{}, builder.WithPredicates(pred)).
+		Named("Astarte").
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.StatefulSet{}).
 		Watches(

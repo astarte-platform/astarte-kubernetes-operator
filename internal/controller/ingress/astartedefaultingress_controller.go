@@ -169,6 +169,7 @@ func (r *AstarteDefaultIngressReconciler) SetupWithManager(mgr ctrl.Manager) err
 	// Watch for changes to secondary resource Ingress and requeue the owner AstarteDefaultIngress
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&ingressv2alpha1.AstarteDefaultIngress{}, builder.WithPredicates(pred)).
+		Named("AstarteDefaultIngress").
 		Owns(&networkingv1.Ingress{}).
 		Watches(
 			&apiv2alpha1.Astarte{},
