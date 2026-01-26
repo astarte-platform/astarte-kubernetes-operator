@@ -96,9 +96,9 @@ jobs:
       run: |
         kubectl get pods
 
-  unit-tests:
+  dynamic-tests:
     concurrency:
-      group: unit-tests-${{ github.ref }}
+      group: dynamic-tests-${{ github.ref }}
       cancel-in-progress: true
     runs-on: ubuntu-24.04
     steps:
@@ -112,5 +112,5 @@ jobs:
         kubectl: v1.32.2
     - name: Ensure Envtest
       run: make envtest
-    - name: Run unit tests
+    - name: Run unit and integration tests
       run: make test
