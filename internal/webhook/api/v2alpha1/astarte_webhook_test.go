@@ -22,6 +22,7 @@ package v2alpha1
 import (
 	"context"
 
+	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -44,7 +45,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 		CustomVerneMQPort      = 8884
 	)
 
-	var cr *Astarte
+	var cr *apiv2alpha1.Astarte
 
 	BeforeAll(func() {
 		integrationutils.CreateNamespace(k8sClient, CustomAstarteNamespace)
@@ -72,19 +73,19 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	Describe("TestValidateSSLListener", func() {
 		BeforeEach(func() {
 			// Customize cr for SSL listener testing
-			cr.Spec.VerneMQ = AstarteVerneMQSpec{}
+			cr.Spec.VerneMQ = apiv2alpha1.AstarteVerneMQSpec{}
 		})
 
 		It("should return no errors when SSL Listener is disabled", func() {
 			cr.Spec.VerneMQ.SSLListener = pointy.Bool(false)
-			errs := cr.validateSSLListener()
+			errs := validateSSLListener(cr)
 			Expect(errs).ToNot(BeNil())
 			Expect(errs).To(BeEmpty())
 		})
 
 		It("should return no errors when SSL Listener is nil (default false)", func() {
 			cr.Spec.VerneMQ.SSLListener = nil
-			errs := cr.validateSSLListener()
+			errs := validateSSLListener(cr)
 			Expect(errs).ToNot(BeNil())
 			Expect(errs).To(BeEmpty())
 		})
@@ -92,7 +93,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 		It("should return an error when SSL Listener is enabled and SSLListenerCertSecretName is empty", func() {
 			cr.Spec.VerneMQ.SSLListener = pointy.Bool(true)
 			cr.Spec.VerneMQ.SSLListenerCertSecretName = ""
-			errs := cr.validateSSLListener()
+			errs := validateSSLListener(cr)
 			Expect(errs).ToNot(BeNil())
 			Expect(errs).To(HaveLen(1))
 			Expect(errs[0].Type).To(Equal(field.ErrorTypeInvalid))
@@ -102,7 +103,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 		It("should return an error when SSL Listener is valid but there is no a secret", func() {
 			cr.Spec.VerneMQ.SSLListener = pointy.Bool(true)
 			cr.Spec.VerneMQ.SSLListenerCertSecretName = CustomSecretName
-			errs := cr.validateSSLListener()
+			errs := validateSSLListener(cr)
 			Expect(errs).ToNot(BeNil())
 			Expect(errs).To(HaveLen(1))
 			Expect(errs[0].Type).To(Equal(field.ErrorTypeNotFound))
@@ -134,7 +135,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 			// Wait for the validation to pass - give more time for webhook client cache sync
 			Eventually(func() bool {
-				errs := cr.validateSSLListener()
+				errs := validateSSLListener(cr)
 				return errs != nil && len(errs) == 0
 			}, Timeout, Interval).Should(BeTrue())
 
@@ -149,7 +150,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	})
 
 	Describe("TestValidateUpdateAstarteInstanceID", func() {
-		var oldAstarte *Astarte
+		var oldAstarte *apiv2alpha1.Astarte
 
 		BeforeEach(func() {
 			// Set up old Astarte instance for update validation
@@ -160,8 +161,8 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			oldAstarte.Spec.AstarteInstanceID = "old-instance-id"
 			cr.Spec.AstarteInstanceID = "new-instance-id"
 
-			err := cr.validateUpdateAstarteInstanceID(oldAstarte)
-			Expect(err).ToNot(BeNil())
+			err := validateUpdateAstarteInstanceID(cr, oldAstarte)
+			Expect(err).To(HaveOccurred())
 			Expect(err.Type).To(Equal(field.ErrorTypeInvalid))
 			Expect(err.Field).To(Equal("spec.astarteInstanceID"))
 		})
@@ -170,7 +171,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			oldAstarte.Spec.AstarteInstanceID = "same-instance-id"
 			cr.Spec.AstarteInstanceID = "same-instance-id"
 
-			err := cr.validateUpdateAstarteInstanceID(oldAstarte)
+			err := validateUpdateAstarteInstanceID(cr, oldAstarte)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -178,7 +179,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			oldAstarte.Spec.AstarteInstanceID = ""
 			cr.Spec.AstarteInstanceID = ""
 
-			err := cr.validateUpdateAstarteInstanceID(oldAstarte)
+			err := validateUpdateAstarteInstanceID(cr, oldAstarte)
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
@@ -201,15 +202,15 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			}
 
 			// Initialize components for testing
-			cr.Spec.Components = AstarteComponentsSpec{
-				DataUpdaterPlant: AstarteDataUpdaterPlantSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}},
-				TriggerEngine:    AstarteTriggerEngineSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}},
-				Flow:             AstarteGenericAPIComponentSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}},
-				Housekeeping:     AstarteGenericAPIComponentSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}},
-				RealmManagement:  AstarteGenericAPIComponentSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}},
-				Pairing:          AstarteGenericAPIComponentSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}},
+			cr.Spec.Components = apiv2alpha1.AstarteComponentsSpec{
+				DataUpdaterPlant: apiv2alpha1.AstarteDataUpdaterPlantSpec{AstarteGenericClusteredResource: apiv2alpha1.AstarteGenericClusteredResource{}},
+				TriggerEngine:    apiv2alpha1.AstarteTriggerEngineSpec{AstarteGenericClusteredResource: apiv2alpha1.AstarteGenericClusteredResource{}},
+				Flow:             apiv2alpha1.AstarteGenericAPIComponentSpec{AstarteGenericClusteredResource: apiv2alpha1.AstarteGenericClusteredResource{}},
+				Housekeeping:     apiv2alpha1.AstarteGenericAPIComponentSpec{AstarteGenericClusteredResource: apiv2alpha1.AstarteGenericClusteredResource{}},
+				RealmManagement:  apiv2alpha1.AstarteGenericAPIComponentSpec{AstarteGenericClusteredResource: apiv2alpha1.AstarteGenericClusteredResource{}},
+				Pairing:          apiv2alpha1.AstarteGenericAPIComponentSpec{AstarteGenericClusteredResource: apiv2alpha1.AstarteGenericClusteredResource{}},
 			}
-			cr.Spec.VerneMQ = AstarteVerneMQSpec{AstarteGenericClusteredResource: AstarteGenericClusteredResource{}}
+			cr.Spec.VerneMQ = apiv2alpha1.AstarteVerneMQSpec{AstarteGenericClusteredResource: apiv2alpha1.AstarteGenericClusteredResource{}}
 		})
 
 		It("should not return errors when using allowed custom labels", func() {
@@ -221,7 +222,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.Components.Pairing.PodLabels = allowedLabels
 			cr.Spec.VerneMQ.PodLabels = allowedLabels
 
-			err := cr.validatePodLabelsForClusteredResources()
+			err := validatePodLabelsForClusteredResources(cr)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(BeEmpty())
 		})
@@ -229,7 +230,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 		It("should return errors when using unallowed reserved labels", func() {
 			cr.Spec.Components.DataUpdaterPlant.PodLabels = notAllowedLabels
 
-			err := cr.validatePodLabelsForClusteredResources()
+			err := validatePodLabelsForClusteredResources(cr)
 			Expect(err).ToNot(BeNil())
 			Expect(err).ToNot(BeEmpty())
 		})
@@ -243,18 +244,18 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.Components.Pairing.PodLabels = nil
 			cr.Spec.VerneMQ.PodLabels = nil
 
-			err := cr.validatePodLabelsForClusteredResources()
+			err := validatePodLabelsForClusteredResources(cr)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(BeEmpty())
 		})
 
 		It("should handle CFSSL component pod labels validation", func() {
-			cr.Spec.CFSSL = AstarteCFSSLSpec{
+			cr.Spec.CFSSL = apiv2alpha1.AstarteCFSSLSpec{
 				PodLabels: map[string]string{
 					"app": "invalid", // Should trigger error
 				},
 			}
-			err := cr.validatePodLabelsForClusteredResources()
+			err := validatePodLabelsForClusteredResources(cr)
 			Expect(err).ToNot(BeNil())
 			Expect(err).ToNot(BeEmpty())
 			Expect(err[0].Field).To(Equal("podLabels"))
@@ -263,19 +264,19 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 	Describe("TestValidatePodLabelsForClusteredResource", func() {
 		It("should return no errors when using allowed custom labels", func() {
-			r := &AstarteGenericClusteredResource{
+			r := &apiv2alpha1.AstarteGenericClusteredResource{
 				PodLabels: map[string]string{
 					"custom-label":           "lbl",
 					"my.custom.domain/label": "value",
 				},
 			}
-			err := validatePodLabelsForClusteredResource(PodLabelsGetter(r))
+			err := validatePodLabelsForClusteredResource(apiv2alpha1.PodLabelsGetter(r))
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(BeEmpty())
 		})
 
 		It("should return errors when using unallowed reserved labels", func() {
-			r := &AstarteGenericClusteredResource{
+			r := &apiv2alpha1.AstarteGenericClusteredResource{
 				PodLabels: map[string]string{
 					"app":          "my-app",
 					"component":    "my-component",
@@ -283,22 +284,22 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 					"flow-role":    "my-role",
 				},
 			}
-			err := validatePodLabelsForClusteredResource(PodLabelsGetter(r))
+			err := validatePodLabelsForClusteredResource(apiv2alpha1.PodLabelsGetter(r))
 			Expect(err).ToNot(BeNil())
 			Expect(err).ToNot(BeEmpty())
 		})
 
 		It("should not return errors when no labels are set", func() {
-			r := &AstarteGenericClusteredResource{
+			r := &apiv2alpha1.AstarteGenericClusteredResource{
 				PodLabels: nil,
 			}
-			err := validatePodLabelsForClusteredResource(PodLabelsGetter(r))
+			err := validatePodLabelsForClusteredResource(apiv2alpha1.PodLabelsGetter(r))
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(BeEmpty())
 		})
 
 		It("should handle multiple invalid labels", func() {
-			r := &AstarteGenericClusteredResource{
+			r := &apiv2alpha1.AstarteGenericClusteredResource{
 				PodLabels: map[string]string{
 					"app":          "my-app",
 					"component":    "my-component",
@@ -308,13 +309,13 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 					"flow-test":    "test",
 				},
 			}
-			err := validatePodLabelsForClusteredResource(PodLabelsGetter(r))
+			err := validatePodLabelsForClusteredResource(apiv2alpha1.PodLabelsGetter(r))
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(HaveLen(6)) // All 6 labels should be invalid
 		})
 
 		It("should allow labels with astarte- and flow- in the middle or end", func() {
-			r := &AstarteGenericClusteredResource{
+			r := &apiv2alpha1.AstarteGenericClusteredResource{
 				PodLabels: map[string]string{
 					"example-astarte-label": "valid", // astarte- in middle is OK
 					"label-flow-end":        "valid", // flow- in middle is OK
@@ -322,7 +323,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 					"myastarte":             "valid", // astarte without dash is OK
 				},
 			}
-			err := validatePodLabelsForClusteredResource(PodLabelsGetter(r))
+			err := validatePodLabelsForClusteredResource(apiv2alpha1.PodLabelsGetter(r))
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(BeEmpty())
 		})
@@ -331,31 +332,31 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	Describe("TestValidateAutoscalerForClusteredResources", func() {
 		BeforeEach(func() {
 			// Initialize components for autoscaler testing
-			cr.Spec.Components = AstarteComponentsSpec{
-				DataUpdaterPlant: AstarteDataUpdaterPlantSpec{
-					AstarteGenericClusteredResource: AstarteGenericClusteredResource{},
+			cr.Spec.Components = apiv2alpha1.AstarteComponentsSpec{
+				DataUpdaterPlant: apiv2alpha1.AstarteDataUpdaterPlantSpec{
+					AstarteGenericClusteredResource: apiv2alpha1.AstarteGenericClusteredResource{},
 				},
 			}
 		})
 
 		It("should return error when autoscaling horizontally on excluded components with autoscaling enabled", func() {
-			cr.Spec.Features = AstarteFeatures{Autoscaling: true}
-			cr.Spec.Components.DataUpdaterPlant.Autoscale = &AstarteGenericClusteredResourceAutoscalerSpec{Horizontal: "hpa"}
+			cr.Spec.Features = apiv2alpha1.AstarteFeatures{Autoscaling: true}
+			cr.Spec.Components.DataUpdaterPlant.Autoscale = &apiv2alpha1.AstarteGenericClusteredResourceAutoscalerSpec{Horizontal: "hpa"}
 
 			err := validateAutoscalerForClusteredResources(cr)
-			Expect(err).ToNot(BeNil())
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("should not return error when autoscaling disabled", func() {
-			cr.Spec.Features = AstarteFeatures{Autoscaling: false}
-			cr.Spec.Components.DataUpdaterPlant.Autoscale = &AstarteGenericClusteredResourceAutoscalerSpec{Horizontal: "hpa"}
+			cr.Spec.Features = apiv2alpha1.AstarteFeatures{Autoscaling: false}
+			cr.Spec.Components.DataUpdaterPlant.Autoscale = &apiv2alpha1.AstarteGenericClusteredResourceAutoscalerSpec{Horizontal: "hpa"}
 
 			err := validateAutoscalerForClusteredResources(cr)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should not return error when autoscaling enabled but Autoscale is nil", func() {
-			cr.Spec.Features = AstarteFeatures{Autoscaling: true}
+			cr.Spec.Features = apiv2alpha1.AstarteFeatures{Autoscaling: true}
 			cr.Spec.Components.DataUpdaterPlant.Autoscale = nil
 
 			err := validateAutoscalerForClusteredResources(cr)
@@ -366,27 +367,27 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	Describe("TestValidateAutoscalerForClusteredResourcesExcluding", func() {
 		BeforeEach(func() {
 			// Initialize components for autoscaler excluding testing
-			cr.Spec.Components = AstarteComponentsSpec{
-				DataUpdaterPlant: AstarteDataUpdaterPlantSpec{
-					AstarteGenericClusteredResource: AstarteGenericClusteredResource{},
+			cr.Spec.Components = apiv2alpha1.AstarteComponentsSpec{
+				DataUpdaterPlant: apiv2alpha1.AstarteDataUpdaterPlantSpec{
+					AstarteGenericClusteredResource: apiv2alpha1.AstarteGenericClusteredResource{},
 				},
 			}
 		})
 
 		It("should return error when excluded resources include a horizontally autoscaled component", func() {
-			cr.Spec.Features = AstarteFeatures{Autoscaling: true}
-			cr.Spec.Components.DataUpdaterPlant.Autoscale = &AstarteGenericClusteredResourceAutoscalerSpec{Horizontal: "hpa"}
+			cr.Spec.Features = apiv2alpha1.AstarteFeatures{Autoscaling: true}
+			cr.Spec.Components.DataUpdaterPlant.Autoscale = &apiv2alpha1.AstarteGenericClusteredResourceAutoscalerSpec{Horizontal: "hpa"}
 
-			excluded := []AstarteGenericClusteredResource{cr.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource}
+			excluded := []apiv2alpha1.AstarteGenericClusteredResource{cr.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource}
 			err := validateAutoscalerForClusteredResourcesExcluding(cr, excluded)
-			Expect(err).ToNot(BeNil())
+			Expect(err).To(HaveOccurred())
 		})
 
 		It("should not return error when excluded resources include a horizontally autoscaled component but Autoscale is nil", func() {
-			cr.Spec.Features = AstarteFeatures{Autoscaling: true}
+			cr.Spec.Features = apiv2alpha1.AstarteFeatures{Autoscaling: true}
 			cr.Spec.Components.DataUpdaterPlant.Autoscale = nil
 
-			excluded := []AstarteGenericClusteredResource{cr.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource}
+			excluded := []apiv2alpha1.AstarteGenericClusteredResource{cr.Spec.Components.DataUpdaterPlant.AstarteGenericClusteredResource}
 			err := validateAutoscalerForClusteredResourcesExcluding(cr, excluded)
 			Expect(err).ToNot(HaveOccurred())
 		})
@@ -395,62 +396,62 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	Describe("TestValidateAstartePriorityClasses", func() {
 		BeforeEach(func() {
 			// Initialize features for priority class testing
-			cr.Spec.Features = AstarteFeatures{}
+			cr.Spec.Features = apiv2alpha1.AstarteFeatures{}
 		})
 
 		It("should not return an error when pod priorities are disabled and values are in correct order", func() {
-			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
+			cr.Spec.Features.AstartePodPriorities = &apiv2alpha1.AstartePodPrioritiesSpec{
 				Enable:              false,
 				AstarteHighPriority: pointy.Int(1000),
 				AstarteMidPriority:  pointy.Int(500),
 				AstarteLowPriority:  pointy.Int(100),
 			}
 
-			err := cr.validateAstartePriorityClasses()
+			err := validateAstartePriorityClasses(cr)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should not return an error when pod priorities are nil", func() {
 			cr.Spec.Features.AstartePodPriorities = nil
 
-			err := cr.validateAstartePriorityClasses()
+			err := validateAstartePriorityClasses(cr)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should not return an error when pod priorities are disabled and values are not in correct order", func() {
-			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
+			cr.Spec.Features.AstartePodPriorities = &apiv2alpha1.AstartePodPrioritiesSpec{
 				Enable:              false,
 				AstarteHighPriority: pointy.Int(0),
 				AstarteMidPriority:  pointy.Int(500),
 				AstarteLowPriority:  pointy.Int(1000),
 			}
 
-			err := cr.validateAstartePriorityClasses()
+			err := validateAstartePriorityClasses(cr)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should return an error when pod priorities are enabled and values are not in correct order", func() {
-			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
+			cr.Spec.Features.AstartePodPriorities = &apiv2alpha1.AstartePodPrioritiesSpec{
 				Enable:              true,
 				AstarteHighPriority: pointy.Int(500),
 				AstarteMidPriority:  pointy.Int(500),
 				AstarteLowPriority:  pointy.Int(1000),
 			}
 
-			err := cr.validateAstartePriorityClasses()
-			Expect(err).ToNot(BeNil())
+			err := validateAstartePriorityClasses(cr)
+			Expect(err).To(HaveOccurred())
 			Expect(err.Field).To(Equal("spec.features.astarte{Low|Medium|High}Priority"))
 		})
 
 		It("should not return an error when pod priorities are enabled and values are in correct order", func() {
-			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
+			cr.Spec.Features.AstartePodPriorities = &apiv2alpha1.AstartePodPrioritiesSpec{
 				Enable:              true,
 				AstarteHighPriority: pointy.Int(1000),
 				AstarteMidPriority:  pointy.Int(500),
 				AstarteLowPriority:  pointy.Int(100),
 			}
 
-			err := cr.validateAstartePriorityClasses()
+			err := validateAstartePriorityClasses(cr)
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
@@ -458,136 +459,136 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	Describe("TestValidatePriorityClassesValues", func() {
 		BeforeEach(func() {
 			// Initialize features for priority class values testing
-			cr.Spec.Features = AstarteFeatures{}
+			cr.Spec.Features = apiv2alpha1.AstarteFeatures{}
 		})
 
 		It("should not return an error when priorities are in correct order", func() {
-			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
+			cr.Spec.Features.AstartePodPriorities = &apiv2alpha1.AstartePodPrioritiesSpec{
 				Enable:              true,
 				AstarteHighPriority: pointy.Int(1000),
 				AstarteMidPriority:  pointy.Int(500),
 				AstarteLowPriority:  pointy.Int(100),
 			}
 
-			err := cr.validatePriorityClassesValues()
+			err := validatePriorityClassesValues(cr)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should return an error when high priority is less than mid priority", func() {
-			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
+			cr.Spec.Features.AstartePodPriorities = &apiv2alpha1.AstartePodPrioritiesSpec{
 				Enable:              true,
 				AstarteHighPriority: pointy.Int(400),
 				AstarteMidPriority:  pointy.Int(500),
 				AstarteLowPriority:  pointy.Int(100),
 			}
 
-			err := cr.validatePriorityClassesValues()
-			Expect(err).ToNot(BeNil())
+			err := validatePriorityClassesValues(cr)
+			Expect(err).To(HaveOccurred())
 			Expect(err.Field).To(Equal("spec.features.astarte{Low|Medium|High}Priority"))
 		})
 
 		It("should return an error when mid priority is less than low priority", func() {
-			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
+			cr.Spec.Features.AstartePodPriorities = &apiv2alpha1.AstartePodPrioritiesSpec{
 				Enable:              true,
 				AstarteHighPriority: pointy.Int(1000),
 				AstarteMidPriority:  pointy.Int(50),
 				AstarteLowPriority:  pointy.Int(100),
 			}
 
-			err := cr.validatePriorityClassesValues()
-			Expect(err).ToNot(BeNil())
+			err := validatePriorityClassesValues(cr)
+			Expect(err).To(HaveOccurred())
 			Expect(err.Field).To(Equal("spec.features.astarte{Low|Medium|High}Priority"))
 		})
 
 		It("should return an error when priorities are equal", func() {
-			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
+			cr.Spec.Features.AstartePodPriorities = &apiv2alpha1.AstartePodPrioritiesSpec{
 				Enable:              true,
 				AstarteHighPriority: pointy.Int(500),
 				AstarteMidPriority:  pointy.Int(500),
 				AstarteLowPriority:  pointy.Int(100),
 			}
 
-			err := cr.validatePriorityClassesValues()
-			Expect(err).ToNot(BeNil())
+			err := validatePriorityClassesValues(cr)
+			Expect(err).To(HaveOccurred())
 			Expect(err.Field).To(Equal("spec.features.astarte{Low|Medium|High}Priority"))
 
-			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
+			cr.Spec.Features.AstartePodPriorities = &apiv2alpha1.AstartePodPrioritiesSpec{
 				Enable:              true,
 				AstarteHighPriority: pointy.Int(100),
 				AstarteMidPriority:  pointy.Int(500),
 				AstarteLowPriority:  pointy.Int(500),
 			}
 
-			err = cr.validatePriorityClassesValues()
-			Expect(err).ToNot(BeNil())
+			err = validatePriorityClassesValues(cr)
+			Expect(err).To(HaveOccurred())
 			Expect(err.Field).To(Equal("spec.features.astarte{Low|Medium|High}Priority"))
 
-			cr.Spec.Features.AstartePodPriorities = &AstartePodPrioritiesSpec{
+			cr.Spec.Features.AstartePodPriorities = &apiv2alpha1.AstartePodPrioritiesSpec{
 				Enable:              true,
 				AstarteHighPriority: pointy.Int(500),
 				AstarteMidPriority:  pointy.Int(100),
 				AstarteLowPriority:  pointy.Int(500),
 			}
 
-			err = cr.validatePriorityClassesValues()
-			Expect(err).ToNot(BeNil())
+			err = validatePriorityClassesValues(cr)
+			Expect(err).To(HaveOccurred())
 			Expect(err.Field).To(Equal("spec.features.astarte{Low|Medium|High}Priority"))
 		})
 	})
 
 	Describe("TestValidateUpdateAstarteSystemKeyspace", func() {
-		var oldAstarte *Astarte
+		var oldAstarte *apiv2alpha1.Astarte
 
 		BeforeEach(func() {
 			// Initialize Cassandra configuration for keyspace update testing
-			cr.Spec.Cassandra = AstarteCassandraSpec{
-				AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{},
+			cr.Spec.Cassandra = apiv2alpha1.AstarteCassandraSpec{
+				AstarteSystemKeyspace: apiv2alpha1.AstarteSystemKeyspaceSpec{},
 			}
 
 			oldAstarte = cr.DeepCopy()
-			oldAstarte.Spec.Cassandra = AstarteCassandraSpec{
-				AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{},
+			oldAstarte.Spec.Cassandra = apiv2alpha1.AstarteCassandraSpec{
+				AstarteSystemKeyspace: apiv2alpha1.AstarteSystemKeyspaceSpec{},
 			}
 		})
 
 		It("should return an error when trying to change the keyspace", func() {
-			oldAstarte.Spec.Cassandra.AstarteSystemKeyspace = AstarteSystemKeyspaceSpec{
+			oldAstarte.Spec.Cassandra.AstarteSystemKeyspace = apiv2alpha1.AstarteSystemKeyspaceSpec{
 				ReplicationStrategy:   "SimpleStrategy",
 				ReplicationFactor:     1,
 				DataCenterReplication: "dc1:3,dc2:2",
 			}
-			cr.Spec.Cassandra.AstarteSystemKeyspace = AstarteSystemKeyspaceSpec{
+			cr.Spec.Cassandra.AstarteSystemKeyspace = apiv2alpha1.AstarteSystemKeyspaceSpec{
 				ReplicationStrategy:   "NetworkTopologyStrategy",
 				DataCenterReplication: "dc1:2,dc2:3",
 			}
 
-			err := cr.validateUpdateAstarteSystemKeyspace(oldAstarte)
-			Expect(err).ToNot(BeNil())
+			err := validateUpdateAstarteSystemKeyspace(cr, oldAstarte)
+			Expect(err).To(HaveOccurred())
 			Expect(err.Field).To(Equal("spec.cassandra.astarteSystemKeyspace"))
 		})
 
 		It("should NOT return an error when the keyspace is unchanged", func() {
-			oldAstarte.Spec.Cassandra.AstarteSystemKeyspace = AstarteSystemKeyspaceSpec{
+			oldAstarte.Spec.Cassandra.AstarteSystemKeyspace = apiv2alpha1.AstarteSystemKeyspaceSpec{
 				ReplicationStrategy:   "SimpleStrategy",
 				ReplicationFactor:     1,
 				DataCenterReplication: "dc1:3,dc2:2",
 			}
 
-			cr.Spec.Cassandra.AstarteSystemKeyspace = AstarteSystemKeyspaceSpec{
+			cr.Spec.Cassandra.AstarteSystemKeyspace = apiv2alpha1.AstarteSystemKeyspaceSpec{
 				ReplicationStrategy:   "SimpleStrategy",
 				ReplicationFactor:     1,
 				DataCenterReplication: "dc1:3,dc2:2",
 			}
 
-			err := cr.validateUpdateAstarteSystemKeyspace(oldAstarte)
+			err := validateUpdateAstarteSystemKeyspace(cr, oldAstarte)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should NOT return an error when the keyspace is empty in both old and new spec", func() {
-			oldAstarte.Spec.Cassandra.AstarteSystemKeyspace = AstarteSystemKeyspaceSpec{}
-			cr.Spec.Cassandra.AstarteSystemKeyspace = AstarteSystemKeyspaceSpec{}
+			oldAstarte.Spec.Cassandra.AstarteSystemKeyspace = apiv2alpha1.AstarteSystemKeyspaceSpec{}
+			cr.Spec.Cassandra.AstarteSystemKeyspace = apiv2alpha1.AstarteSystemKeyspaceSpec{}
 
-			err := cr.validateUpdateAstarteSystemKeyspace(oldAstarte)
+			err := validateUpdateAstarteSystemKeyspace(cr, oldAstarte)
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
@@ -595,22 +596,22 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	Describe("TestValidateCFSSLDefinition", func() {
 		BeforeEach(func() {
 			// Initialize CFSSL configuration for testing
-			cr.Spec.CFSSL = AstarteCFSSLSpec{}
+			cr.Spec.CFSSL = apiv2alpha1.AstarteCFSSLSpec{}
 		})
 
 		It("should return an error when Deploy is false and URL is empty", func() {
 			cr.Spec.CFSSL.Deploy = pointy.Bool(false)
 			cr.Spec.CFSSL.URL = ""
 
-			err := cr.validateCFSSLDefinition()
-			Expect(err).ToNot(BeNil())
+			err := validateCFSSLDefinition(cr)
+			Expect(err).To(HaveOccurred())
 			Expect(err.Field).To(Equal("spec.cfssl.url"))
 		})
 
 		It("should NOT return an error when Deploy is false and URL is provided", func() {
 			cr.Spec.CFSSL.Deploy = pointy.Bool(false)
 			cr.Spec.CFSSL.URL = "http://my-cfssl.com"
-			err := cr.validateCFSSLDefinition()
+			err := validateCFSSLDefinition(cr)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -618,7 +619,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.CFSSL.Deploy = pointy.Bool(true)
 			cr.Spec.CFSSL.URL = ""
 
-			err := cr.validateCFSSLDefinition()
+			err := validateCFSSLDefinition(cr)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -626,7 +627,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.CFSSL.Deploy = pointy.Bool(true)
 			cr.Spec.CFSSL.URL = "http://my-cfssl.com"
 
-			err := cr.validateCFSSLDefinition()
+			err := validateCFSSLDefinition(cr)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -634,14 +635,14 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.CFSSL.Deploy = nil
 			cr.Spec.CFSSL.URL = ""
 
-			err := cr.validateCFSSLDefinition()
+			err := validateCFSSLDefinition(cr)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should NOT return an error when Deploy is nil (defaults to true) and URL is provided", func() {
 			cr.Spec.CFSSL.Deploy = nil
 			cr.Spec.CFSSL.URL = "http://my-cfssl.com"
-			err := cr.validateCFSSLDefinition()
+			err := validateCFSSLDefinition(cr)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -649,22 +650,22 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			// Whitespaces are not allowed
 			cr.Spec.CFSSL.Deploy = pointy.Bool(false)
 			cr.Spec.CFSSL.URL = "http://my-c fssl.com"
-			err := cr.validateCFSSLDefinition()
-			Expect(err).ToNot(BeNil())
+			err := validateCFSSLDefinition(cr)
+			Expect(err).To(HaveOccurred())
 			Expect(err.Field).To(Equal("spec.cfssl.url"))
 
 			// Trailing spaces are not allowed
 			cr.Spec.CFSSL.Deploy = pointy.Bool(false)
 			cr.Spec.CFSSL.URL = "http://my-cfssl.com "
-			err = cr.validateCFSSLDefinition()
-			Expect(err).ToNot(BeNil())
+			err = validateCFSSLDefinition(cr)
+			Expect(err).To(HaveOccurred())
 			Expect(err.Field).To(Equal("spec.cfssl.url"))
 
 			// Other invalid URL
 			cr.Spec.CFSSL.Deploy = pointy.Bool(false)
 			cr.Spec.CFSSL.URL = "http://192.168.0.%31/"
-			err = cr.validateCFSSLDefinition()
-			Expect(err).ToNot(BeNil())
+			err = validateCFSSLDefinition(cr)
+			Expect(err).To(HaveOccurred())
 			Expect(err.Field).To(Equal("spec.cfssl.url"))
 		})
 	})
@@ -672,8 +673,8 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	Describe("TestValidateCreateAstarteSystemKeyspace", func() {
 		BeforeEach(func() {
 			// Initialize Cassandra keyspace configuration for create testing
-			cr.Spec.Cassandra = AstarteCassandraSpec{
-				AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{},
+			cr.Spec.Cassandra = apiv2alpha1.AstarteCassandraSpec{
+				AstarteSystemKeyspace: apiv2alpha1.AstarteSystemKeyspaceSpec{},
 			}
 		})
 
@@ -681,7 +682,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "SimpleStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationFactor = 3
 
-			err := cr.validateCreateAstarteSystemKeyspace()
+			err := validateCreateAstarteSystemKeyspace(cr)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(BeEmpty())
 		})
@@ -690,7 +691,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "SimpleStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationFactor = 0
 
-			err := cr.validateCreateAstarteSystemKeyspace()
+			err := validateCreateAstarteSystemKeyspace(cr)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(HaveLen(1))
 			Expect(err[0].Field).To(Equal("spec.cassandra.astarteSystemKeyspace.replicationFactor"))
@@ -700,7 +701,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:3"
 
-			err := cr.validateCreateAstarteSystemKeyspace()
+			err := validateCreateAstarteSystemKeyspace(cr)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(BeEmpty())
 		})
@@ -709,7 +710,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:3,dc2:5,dc3:1"
 
-			err := cr.validateCreateAstarteSystemKeyspace()
+			err := validateCreateAstarteSystemKeyspace(cr)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(BeEmpty())
 		})
@@ -718,7 +719,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "SimpleStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationFactor = 2
 
-			err := cr.validateCreateAstarteSystemKeyspace()
+			err := validateCreateAstarteSystemKeyspace(cr)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(HaveLen(1))
 		})
@@ -727,7 +728,8 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1"
 
-			err := cr.validateCreateAstarteSystemKeyspace()
+			err := validateCreateAstarteSystemKeyspace(cr)
+			Expect(err).ToNot(BeNil())
 			Expect(err).To(HaveLen(1))
 		})
 
@@ -735,14 +737,15 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:3:bad"
 
-			err := cr.validateCreateAstarteSystemKeyspace()
+			err := validateCreateAstarteSystemKeyspace(cr)
+			Expect(err).ToNot(BeNil())
 			Expect(err).To(HaveLen(1))
 		})
 
 		It("should return errors with NetworkTopologyStrategy and non-integer replication factor", func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:three"
-			err := cr.validateCreateAstarteSystemKeyspace()
+			err := validateCreateAstarteSystemKeyspace(cr)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(HaveLen(2))
 		})
@@ -750,7 +753,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 		It("should return an error with NetworkTopologyStrategy and even replication factor", func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:4"
-			err := cr.validateCreateAstarteSystemKeyspace()
+			err := validateCreateAstarteSystemKeyspace(cr)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(HaveLen(1))
 		})
@@ -758,7 +761,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 		It("should return an error with NetworkTopologyStrategy and mixed valid and invalid DCs", func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:3,dc2:4" // dc2 is invalid
-			err := cr.validateCreateAstarteSystemKeyspace()
+			err := validateCreateAstarteSystemKeyspace(cr)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(HaveLen(1))
 		})
@@ -766,7 +769,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 		It("should return multiple errors with NetworkTopologyStrategy and multiple invalid entries", func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = "dc1:2,dc2:not-a-number,dc3:5"
-			err := cr.validateCreateAstarteSystemKeyspace()
+			err := validateCreateAstarteSystemKeyspace(cr)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(HaveLen(3))
 		})
@@ -774,7 +777,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 		It("should return an error with empty replication strategy", func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = ""
-			err := cr.validateCreateAstarteSystemKeyspace()
+			err := validateCreateAstarteSystemKeyspace(cr)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(HaveLen(1))
 			Expect(err[0].Field).To(Equal("spec.cassandra.astarteSystemKeyspace.dataCenterReplication"))
@@ -783,7 +786,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 		It("should handle empty DataCenterReplication with NetworkTopologyStrategy", func() {
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationStrategy = "NetworkTopologyStrategy"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.DataCenterReplication = ""
-			err := cr.validateCreateAstarteSystemKeyspace()
+			err := validateCreateAstarteSystemKeyspace(cr)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(HaveLen(1))
 		})
@@ -792,10 +795,10 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	Describe("TestValidateCreate", func() {
 		BeforeEach(func() {
 			// Set up basic configuration for create validation testing
-			cr.Spec.API = AstarteAPISpec{Host: "test.example.com"}
-			cr.Spec.VerneMQ = AstarteVerneMQSpec{SSLListener: pointy.Bool(false)}
-			cr.Spec.Cassandra = AstarteCassandraSpec{
-				AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+			cr.Spec.API = apiv2alpha1.AstarteAPISpec{Host: "test.example.com"}
+			cr.Spec.VerneMQ = apiv2alpha1.AstarteVerneMQSpec{SSLListener: pointy.Bool(false)}
+			cr.Spec.Cassandra = apiv2alpha1.AstarteCassandraSpec{
+				AstarteSystemKeyspace: apiv2alpha1.AstarteSystemKeyspaceSpec{
 					ReplicationStrategy: "SimpleStrategy",
 					ReplicationFactor:   3,
 				},
@@ -804,15 +807,17 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 		It("should succeed when spec passes all validations", func() {
 			cr.Spec.AstarteInstanceID = "coverageid1"
-			w, err := cr.ValidateCreate()
+			validator := &AstarteCustomValidator{}
+			w, err := validator.ValidateCreate(context.Background(), cr)
 			Expect(w).To(BeNil())
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should return invalid when SSL listener enabled without secret", func() {
 			cr.Spec.AstarteInstanceID = "coverageid2"
-			cr.Spec.VerneMQ = AstarteVerneMQSpec{SSLListener: pointy.Bool(true), SSLListenerCertSecretName: ""}
-			w, err := cr.ValidateCreate()
+			cr.Spec.VerneMQ = apiv2alpha1.AstarteVerneMQSpec{SSLListener: pointy.Bool(true), SSLListenerCertSecretName: ""}
+			validator := &AstarteCustomValidator{}
+			w, err := validator.ValidateCreate(context.Background(), cr)
 			Expect(w).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(apierrors.IsInvalid(err)).To(BeTrue())
@@ -821,7 +826,8 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 		It("should return invalid when keyspace has invalid replication factor", func() {
 			cr.Spec.AstarteInstanceID = "coverageid3"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationFactor = 2 // Even number - invalid
-			w, err := cr.ValidateCreate()
+			validator := &AstarteCustomValidator{}
+			w, err := validator.ValidateCreate(context.Background(), cr)
 			Expect(w).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(apierrors.IsInvalid(err)).To(BeTrue())
@@ -829,7 +835,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	})
 
 	Describe("TestValidateUpdate", func() {
-		var oldObj *Astarte
+		var oldObj *apiv2alpha1.Astarte
 
 		BeforeEach(func() {
 			// Set up old object for update validation testing
@@ -839,25 +845,27 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 		It("should return invalid when astarteInstanceID changes", func() {
 			oldObj.Spec.AstarteInstanceID = "old"
 			cr.Spec.AstarteInstanceID = "new"
-			w, err := cr.ValidateUpdate(oldObj)
+			validator := &AstarteCustomValidator{}
+			w, err := validator.ValidateUpdate(context.Background(), cr, oldObj)
 			Expect(w).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(apierrors.IsInvalid(err)).To(BeTrue())
 		})
 
 		It("should return invalid when keyspace changes", func() {
-			oldObj.Spec.Cassandra = AstarteCassandraSpec{
-				AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+			oldObj.Spec.Cassandra = apiv2alpha1.AstarteCassandraSpec{
+				AstarteSystemKeyspace: apiv2alpha1.AstarteSystemKeyspaceSpec{
 					ReplicationStrategy: "SimpleStrategy",
 					ReplicationFactor:   3,
 				},
 			}
-			cr.Spec.Cassandra = AstarteCassandraSpec{
-				AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{
+			cr.Spec.Cassandra = apiv2alpha1.AstarteCassandraSpec{
+				AstarteSystemKeyspace: apiv2alpha1.AstarteSystemKeyspaceSpec{
 					ReplicationStrategy: "NetworkTopologyStrategy",
 				},
 			}
-			w, err := cr.ValidateUpdate(oldObj)
+			validator := &AstarteCustomValidator{}
+			w, err := validator.ValidateUpdate(context.Background(), cr, oldObj)
 			Expect(w).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(apierrors.IsInvalid(err)).To(BeTrue())
@@ -865,10 +873,11 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 		It("should succeed when no changes violate validations", func() {
 			oldObj.Spec.AstarteInstanceID = "same"
-			oldObj.Spec.Cassandra = AstarteCassandraSpec{AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{}}
+			oldObj.Spec.Cassandra = apiv2alpha1.AstarteCassandraSpec{AstarteSystemKeyspace: apiv2alpha1.AstarteSystemKeyspaceSpec{}}
 			cr.Spec.AstarteInstanceID = "same"
-			cr.Spec.Cassandra = AstarteCassandraSpec{AstarteSystemKeyspace: AstarteSystemKeyspaceSpec{}}
-			w, err := cr.ValidateUpdate(oldObj)
+			cr.Spec.Cassandra = apiv2alpha1.AstarteCassandraSpec{AstarteSystemKeyspace: apiv2alpha1.AstarteSystemKeyspaceSpec{}}
+			validator := &AstarteCustomValidator{}
+			w, err := validator.ValidateUpdate(context.Background(), cr, oldObj)
 			Expect(w).To(BeNil())
 			Expect(err).ToNot(HaveOccurred())
 		})
@@ -877,34 +886,34 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	Describe("TestValidateAstarte", func() {
 		BeforeEach(func() {
 			// Set up configuration that will trigger multiple validation errors
-			cr.Spec.VerneMQ = AstarteVerneMQSpec{
+			cr.Spec.VerneMQ = apiv2alpha1.AstarteVerneMQSpec{
 				SSLListener:               pointy.Bool(true),
 				SSLListenerCertSecretName: "missing-secret",
-				AstarteGenericClusteredResource: AstarteGenericClusteredResource{
+				AstarteGenericClusteredResource: apiv2alpha1.AstarteGenericClusteredResource{
 					PodLabels: map[string]string{"app": "bad"},
 				},
 			}
-			cr.Spec.Features = AstarteFeatures{
+			cr.Spec.Features = apiv2alpha1.AstarteFeatures{
 				Autoscaling: true,
-				AstartePodPriorities: &AstartePodPrioritiesSpec{
+				AstartePodPriorities: &apiv2alpha1.AstartePodPrioritiesSpec{
 					Enable:              true,
 					AstarteHighPriority: pointy.Int(500),
 					AstarteMidPriority:  pointy.Int(600),
 					AstarteLowPriority:  pointy.Int(700),
 				},
 			}
-			cr.Spec.Components = AstarteComponentsSpec{
-				DataUpdaterPlant: AstarteDataUpdaterPlantSpec{
-					AstarteGenericClusteredResource: AstarteGenericClusteredResource{
-						Autoscale: &AstarteGenericClusteredResourceAutoscalerSpec{Horizontal: "hpa"},
+			cr.Spec.Components = apiv2alpha1.AstarteComponentsSpec{
+				DataUpdaterPlant: apiv2alpha1.AstarteDataUpdaterPlantSpec{
+					AstarteGenericClusteredResource: apiv2alpha1.AstarteGenericClusteredResource{
+						Autoscale: &apiv2alpha1.AstarteGenericClusteredResourceAutoscalerSpec{Horizontal: "hpa"},
 					},
 				},
 			}
-			cr.Spec.CFSSL = AstarteCFSSLSpec{Deploy: pointy.Bool(false), URL: ""}
+			cr.Spec.CFSSL = apiv2alpha1.AstarteCFSSLSpec{Deploy: pointy.Bool(false), URL: ""}
 		})
 
 		It("should aggregate multiple errors across validators", func() {
-			errs := cr.validateAstarte()
+			errs := validateAstarte(cr)
 			Expect(errs).ToNot(BeNil())
 			Expect(len(errs)).To(BeNumerically(">=", 4))
 		})
@@ -913,7 +922,8 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	Describe("TestValidateDelete", func() {
 		// The function is not implemented, expect nil, nil
 		It("should return nil, nil", func() {
-			w, err := cr.ValidateDelete()
+			validator := &AstarteCustomValidator{}
+			w, err := validator.ValidateDelete(context.Background(), cr)
 			Expect(w).To(BeNil())
 			Expect(err).ToNot(HaveOccurred())
 		})
@@ -934,7 +944,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 			// Fetch to ensure it's created
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: newCr.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: newCr.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
 			}, Timeout, Interval).Should(Succeed())
 
 			// Cleanup
@@ -943,7 +953,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			}, Timeout, Interval).Should(Succeed())
 
 			Eventually(func() bool {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: newCr.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
+				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: newCr.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
 				return apierrors.IsNotFound(err)
 			}, Timeout, Interval).Should(BeTrue())
 		})
@@ -963,7 +973,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 			// Test the validator directly
 			Eventually(func() bool {
-				err := newCr.validateCreateAstarteInstanceID()
+				err := validateCreateAstarteInstanceID(newCr)
 				return err != nil && err.Field == "spec.astarteInstanceID" && err.Type == field.ErrorTypeInvalid
 			}, Timeout, Interval).Should(BeTrue())
 		})
@@ -983,7 +993,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 			// Fetch to ensure it's created
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
 			}, Timeout, Interval).Should(Succeed())
 
 			// Try to validate a new CR with the same instanceID
@@ -1000,14 +1010,14 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 			// Test the validator directly
 			Eventually(func() bool {
-				err := cr2.validateCreateAstarteInstanceID()
+				err := validateCreateAstarteInstanceID(cr2)
 				return err != nil && err.Field == "spec.astarteInstanceID" && err.Type == field.ErrorTypeInvalid
 			}, Timeout, Interval).Should(BeTrue())
 
 			// Cleanup
 			Expect(k8sClient.Delete(context.Background(), cr1)).To(Succeed())
 			Eventually(func() bool {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
+				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
 				return apierrors.IsNotFound(err)
 			}, Timeout, Interval).Should(BeTrue())
 		})
@@ -1026,7 +1036,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 			// Fetch to ensure it's created
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
 			}, Timeout, Interval).Should(Succeed())
 
 			// Create another with a different instanceID
@@ -1042,19 +1052,19 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 			// Fetch to ensure it's created
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr2.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
+				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr2.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
 			}, Timeout, Interval).Should(Succeed())
 
 			// Cleanup
 			Expect(k8sClient.Delete(context.Background(), cr1)).To(Succeed())
 			Eventually(func() bool {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
+				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
 				return apierrors.IsNotFound(err)
 			}, Timeout, Interval).Should(BeTrue())
 
 			Expect(k8sClient.Delete(context.Background(), cr2)).To(Succeed())
 			Eventually(func() bool {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: cr2.Name, Namespace: CustomAstarteNamespace}, &Astarte{})
+				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: cr2.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
 				return apierrors.IsNotFound(err)
 			}, Timeout, Interval).Should(BeTrue())
 		})

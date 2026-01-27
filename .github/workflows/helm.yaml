@@ -133,6 +133,7 @@ jobs:
         kubectl wait --for=condition=available --timeout=5m deployment/astarte-operator-controller-manager
 
     - name: Dump debug info
+      if: ${{ always() }}
       run: |
         echo "::group:: PODS"
         echo "kubectl get pods -A"
