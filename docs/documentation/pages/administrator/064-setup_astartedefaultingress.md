@@ -1,13 +1,12 @@
 # Setting up the Astarte Default Ingress
 
 Once your Cluster [is up and running](060-setup_cluster.html), to expose it to the outer world you
-need to set up an Ingress. Currently, the **only managed and supported Ingress** is based upon
-[NGINX](https://nginx.org/en/), and this guide will cover only this specific case.
+need to set up an Ingress. Currently, both [HAProxy Kubernetes Ingress Controller](https://www.haproxy.com/documentation/kubernetes-ingress) 
+and [NGINX](https://nginx.org/en/) are supported as Ingress Controllers for Astarte.
 
-Please, note that the support for the Voyager based ingress (i.e.: AstarteVoyagerIngress) has been
-removed as of v24.5.0. If you want to migrate away from AstarteVoyagerIngress to the new
-AstarteDefaultIngress, please refer to the procedure outlined
-[here](066-migrate_to_astartedefaultingress.html).
+Starting from Astarte Operator `v25.5.x`, HAProxy is the default and preferred Ingress Controller
+for Astarte deployments. This is the last version of the Astarte Operator that will support NGINX as Ingress
+Controller due to [Ingress NGINX retirement.](https://kubernetes.io/blog/2025/11/11/ingress-nginx-retirement/)
 
 ## Prerequisites
 
@@ -35,9 +34,10 @@ must be fulfilled:
       sslListenerCertSecretName: <your-tls-secret-name>
       ...
   ```
-- [`ingress-nginx`](https://kubernetes.github.io/ingress-nginx/) ingress controller **must be
-deployed** within your cluster. You can install it following the instructions reported
-[here](020-prerequisites.html#nginx).
+- At least one among [HAProxy Kubernetes Ingress Controller](https://www.haproxy.com/documentation/kubernetes-ingress) 
+and [NGINX](https://nginx.org/en/) Ingress Controller **must be
+deployed** within your cluster. You can install one following the instructions reported
+[here](020-prerequisites.html).
 
 ## Creating an `AstarteDefaultIngress`
 
@@ -51,6 +51,8 @@ kind: AstarteDefaultIngress
 metadata:
   name: adi
   namespace: astarte
+  annotations:
+    ingress.astarte-platform.org/ingress-controller-selector: "haproxy.org"
 spec:
   ### Astarte Default Ingress CRD
   astarte: astarte
@@ -74,11 +76,22 @@ There's one very important thing to be noted: the `astarte` field must reference
 existing Astarte installation in the same namespace, and the Ingress will be configured and attached
 to that instance.
 
+The annotation `ingress.astarte-platform.org/ingress-controller-selector: "haproxy.org"` can be used
+to specify which Ingress Controller the Astarte Operator should use.
+By default, the Operator assumes the HAPROXY Ingress Controller is in use, in fact the annotation is set by default to:
+```yaml
+ingress.astarte-platform.org/ingress-controller-selector: "haproxy.org"
+```
+If you want to use NGINX instead, you will have to set the annotation to:
+```yaml
+ingress.astarte-platform.org/ingress-controller-selector: "nginx.ingress.kubernetes.io"
+```
+
 ## What happens after installing the AstarteDefaultIngress resource?
 
 When the AstarteDefaultIngress resource is created, the Astarte Operator ensures that the following
 resources are created according to your configuration:
-- an NGINX ingress which is devoted to routing requests to the Astarte APIs and to the Astarte
+- an HAProxy or NGINX ingress which is devoted to routing requests to the Astarte APIs and to the Astarte
   Dashboard,
 - a service of kind LoadBalancer which exposes the Astarte broker to the outer world.
 
@@ -91,7 +104,7 @@ simply run:
 $ # retrieve information about the ingress
 $ kubectl get ingress -n astarte
 NAME              CLASS   HOSTS          ADDRESS   PORTS     AGE
-adi-api-ingress   nginx   <your-hosts>   X.Y.W.Z   80, 443   6s
+adi-api-ingress   haproxy  <your-hosts>   X.Y.W.Z   80, 443   6s
 ```
 
 and
