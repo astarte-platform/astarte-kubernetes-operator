@@ -18,6 +18,23 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: astarte-kubernetes-operator
+  name: '{{ .Release.Name }}-metrics-certs'
+  namespace: '{{ .Release.Namespace }}'
+spec:
+  dnsNames:
+  - SERVICE_NAME.SERVICE_NAMESPACE.svc
+  - SERVICE_NAME.SERVICE_NAMESPACE.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: '{{ .Release.Name }}-selfsigned-issuer'
+  secretName: metrics-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
     app.kubernetes.io/component: certificate
     app.kubernetes.io/created-by: astarte-kubernetes-operator
     app.kubernetes.io/instance: serving-cert
