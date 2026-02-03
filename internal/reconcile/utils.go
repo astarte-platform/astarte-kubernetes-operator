@@ -343,7 +343,7 @@ func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quan
 // appendAstarteFDOEnvVars returns the environment variables needed to enable FDO support in Pairing
 func appendAstarteFDOEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	if cr.Spec.Features.FDO == nil || !cr.Spec.Features.FDO.Enable {
-		return ret
+		return append(ret, v1.EnvVar{Name: "PAIRING_ENABLE_FDO", Value: "false"})
 	}
 
 	scheme := "https"
@@ -354,6 +354,10 @@ func appendAstarteFDOEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astarte) []v1.EnvV
 	}
 
 	ret = append(ret,
+		v1.EnvVar{
+			Name:  "PAIRING_ENABLE_FDO",
+			Value: "true",
+		},
 		v1.EnvVar{
 			Name:  "PAIRING_FDO_RENDEZVOUS_URL",
 			Value: fmt.Sprintf("%s:%d", cr.Spec.Features.FDO.RendezvousServer.Host, *cr.Spec.Features.FDO.RendezvousServer.Port),
