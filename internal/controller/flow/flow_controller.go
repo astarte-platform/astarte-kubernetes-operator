@@ -260,6 +260,7 @@ func computePodsFailureForBlock(podList *v1.PodList) (bool, []v1.ContainerState)
 func (r *FlowReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&flowv2alpha1.Flow{}).
+		Named("Flow").
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&v1.Secret{}).
