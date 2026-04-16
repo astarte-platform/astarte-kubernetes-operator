@@ -5,6 +5,7 @@ resources:
 - bases/api.astarte-platform.org_astartes.yaml
 - bases/ingress.astarte-platform.org_astartedefaultingresses.yaml
 - bases/flow.astarte-platform.org_flows.yaml
+- bases/ingress.astarte-platform.org_astartefdoingresses.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:

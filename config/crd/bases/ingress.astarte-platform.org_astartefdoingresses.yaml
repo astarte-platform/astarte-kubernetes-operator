@@ -1,0 +1,83 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.18.0
+  name: astartefdoingresses.ingress.astarte-platform.org
+spec:
+  group: ingress.astarte-platform.org
+  names:
+    kind: AstarteFDOIngress
+    listKind: AstarteFDOIngressList
+    plural: astartefdoingresses
+    singular: astartefdoingress
+  scope: Namespaced
+  versions:
+  - name: v2alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              astarte:
+                type: string
+              ingressClass:
+                default: haproxy
+                type: string
+              tlsSecret:
+                type: string
+            required:
+            - astarte
+            - ingressClass
+            type: object
+          status:
+            properties:
+              apiVersion:
+                type: string
+              kind:
+                type: string
+              loadBalancer:
+                properties:
+                  ingress:
+                    items:
+                      properties:
+                        hostname:
+                          type: string
+                        ip:
+                          type: string
+                        ports:
+                          items:
+                            properties:
+                              error:
+                                maxLength: 316
+                                pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                                type: string
+                              port:
+                                format: int32
+                                type: integer
+                              protocol:
+                                type: string
+                            required:
+                            - error
+                            - port
+                            - protocol
+                            type: object
+                          type: array
+                          x-kubernetes-list-type: atomic
+                      type: object
+                    type: array
+                    x-kubernetes-list-type: atomic
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

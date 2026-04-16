@@ -64,6 +64,26 @@ webhooks:
     resources:
     - astartedefaultingresses
   sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-ingress-astarte-platform-org-v2alpha1-astartefdoingress
+  failurePolicy: Fail
+  name: mastartefdoingress.kb.io
+  rules:
+  - apiGroups:
+    - ingress.astarte-platform.org
+    apiVersions:
+    - v2alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - astartefdoingresses
+  sideEffects: None
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
@@ -129,4 +149,24 @@ webhooks:
     - UPDATE
     resources:
     - astartedefaultingresses
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-ingress-astarte-platform-org-v2alpha1-astartefdoingress
+  failurePolicy: Fail
+  name: vastartefdoingress.kb.io
+  rules:
+  - apiGroups:
+    - ingress.astarte-platform.org
+    apiVersions:
+    - v2alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - astartefdoingresses
   sideEffects: None

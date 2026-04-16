@@ -28,15 +28,6 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
-	flowv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/flow/v2alpha1"
-	ingressv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v2alpha1"
-	apicontroller "github.com/astarte-platform/astarte-kubernetes-operator/internal/controller/api"
-	flowcontroller "github.com/astarte-platform/astarte-kubernetes-operator/internal/controller/flow"
-	ingresscontroller "github.com/astarte-platform/astarte-kubernetes-operator/internal/controller/ingress"
-	apiv2alpha1webhook "github.com/astarte-platform/astarte-kubernetes-operator/internal/webhook/api/v2alpha1"
-	flowv2alpha1webhook "github.com/astarte-platform/astarte-kubernetes-operator/internal/webhook/flow/v2alpha1"
-	ingressv2alpha1webhook "github.com/astarte-platform/astarte-kubernetes-operator/internal/webhook/ingress/v2alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -47,6 +38,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
+	flowv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/flow/v2alpha1"
+	ingressv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v2alpha1"
+	apicontroller "github.com/astarte-platform/astarte-kubernetes-operator/internal/controller/api"
+	flowcontroller "github.com/astarte-platform/astarte-kubernetes-operator/internal/controller/flow"
+	ingresscontroller "github.com/astarte-platform/astarte-kubernetes-operator/internal/controller/ingress"
+	apiv2alpha1webhook "github.com/astarte-platform/astarte-kubernetes-operator/internal/webhook/api/v2alpha1"
+	flowv2alpha1webhook "github.com/astarte-platform/astarte-kubernetes-operator/internal/webhook/flow/v2alpha1"
+	ingressv2alpha1webhook "github.com/astarte-platform/astarte-kubernetes-operator/internal/webhook/ingress/v2alpha1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -247,6 +248,18 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "AstarteDefaultIngress")
 			os.Exit(1)
 		}
+		if err = ingressv2alpha1webhook.SetupAstarteFDOIngressWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "AstarteFDOIngress")
+			os.Exit(1)
+		}
+	}
+	if err := (&ingresscontroller.AstarteFDOIngressReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("ingress").WithName("AstarteFDOIngress"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "AstarteFDOIngress")
+		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
 
