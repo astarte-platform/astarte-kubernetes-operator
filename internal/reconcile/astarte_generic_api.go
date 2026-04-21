@@ -36,6 +36,7 @@ import (
 
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/internal/misc"
+	"github.com/astarte-platform/astarte-kubernetes-operator/internal/version"
 )
 
 // EnsureAstarteGenericAPI reconciles any component compatible with AstarteGenericAPISpec with a custom Probe
@@ -408,6 +409,13 @@ func getAstartePairingEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
 
 	// FDO support
 	ret = appendAstarteFDOEnvVars(ret, cr)
+
+	// Vault support (available since Astarte 1.4)
+	if astarteVersionCheck, err := version.NewChecker(cr.Spec.Version); err != nil {
+		log.Info("skipping Vault env var injection: invalid Astarte version", "version", cr.Spec.Version, "error", err)
+	} else if astarteVersionCheck.Supports(version.Vault) {
+		ret = appendAstarteVaultEnvVars(ret, cr)
+	}
 
 	return ret
 }

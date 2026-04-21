@@ -706,6 +706,59 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 		})
 	})
 
+	Describe("TestValidateVaultConfiguration", func() {
+		BeforeEach(func() {
+			cr.Spec.Vault = nil
+			cr.Spec.Version = "1.4.0"
+		})
+
+		It("should return an error when Vault is not configured and version is 1.4.0 or above", func() {
+			cr.Spec.Vault = nil
+			err := validateVaultConfiguration(cr)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Field).To(Equal("spec.vault"))
+			Expect(err.Type).To(Equal(field.ErrorTypeRequired))
+		})
+
+		It("should not return an error when Vault is not configured and version is older than 1.4.0", func() {
+			cr.Spec.Version = "1.3.0"
+			cr.Spec.Vault = nil
+			err := validateVaultConfiguration(cr)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should not return an error when Vault is configured with version 1.4.0", func() {
+			cr.Spec.Vault = &apiv2alpha1.AstarteVaultSpec{}
+			err := validateVaultConfiguration(cr)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should not return an error when Vault is configured with version newer than 1.4.0", func() {
+			cr.Spec.Version = "1.4.0"
+			cr.Spec.Vault = &apiv2alpha1.AstarteVaultSpec{}
+			err := validateVaultConfiguration(cr)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should return an error when Vault is configured with version older than 1.4.0", func() {
+			cr.Spec.Version = "1.3.0"
+			cr.Spec.Vault = &apiv2alpha1.AstarteVaultSpec{}
+			err := validateVaultConfiguration(cr)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Field).To(Equal("spec.vault"))
+			Expect(err.Type).To(Equal(field.ErrorTypeInvalid))
+		})
+
+		It("should return an error when Vault is configured with invalid version string", func() {
+			cr.Spec.Version = "invalid"
+			cr.Spec.Vault = &apiv2alpha1.AstarteVaultSpec{}
+			err := validateVaultConfiguration(cr)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Field).To(Equal("spec.version"))
+			Expect(err.Type).To(Equal(field.ErrorTypeInvalid))
+		})
+	})
+
 	Describe("TestValidateCreateAstarteSystemKeyspace", func() {
 		BeforeEach(func() {
 			// Initialize Cassandra keyspace configuration for create testing

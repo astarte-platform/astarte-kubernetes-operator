@@ -64,6 +64,12 @@ type AstarteSpec struct {
 	Cassandra AstarteCassandraSpec `json:"cassandra"`
 	VerneMQ   AstarteVerneMQSpec   `json:"vernemq"`
 	// +kubebuilder:validation:Optional
+	// Vault is used to connect to a OpenBao or HashiCorp Vault instance.
+	// Setting this field is supported and mandatory for Astarte version 1.4 and later.
+	// The field is ignored for Astarte 1.3
+	// +kubebuilder:validation:Optional
+	Vault *AstarteVaultSpec `json:"vault,omitempty"`
+	// +kubebuilder:validation:Optional
 	FDO *AstarteFDOSpec `json:"fdo,omitempty"`
 	// +kubebuilder:validation:Optional
 	CFSSL AstarteCFSSLSpec `json:"cfssl"`
@@ -746,6 +752,21 @@ type AstarteRendezvousServerConnectionSpec struct {
 type AstarteRendezvousServerSpec struct {
 	// +kubebuilder:validation:Optional
 	Connection AstarteRendezvousServerConnectionSpec `json:"connection,omitempty"`
+}
+
+type AstarteVaultSpec struct {
+	// +kubebuilder:validation:Optional
+	Connection AstarteVaultConnectionSpec `json:"connection,omitempty"`
+}
+
+type AstarteVaultConnectionSpec struct {
+	// +kubebuilder:validation:Optional
+	HostAndPort `json:",inline"`
+	// +kubebuilder:validation:Optional
+	SSLConfiguration GenericSSLConfigurationSpec `json:"sslConfiguration,omitempty"`
+	// The secret containing a token to login.
+	// +kubebuilder:validation:Optional
+	ConnectionStringSecret *ConnectionStringSecret `json:"connectionStringSecret,omitempty"`
 }
 
 // AstarteFDOSpec configures FDO support in Astarte.

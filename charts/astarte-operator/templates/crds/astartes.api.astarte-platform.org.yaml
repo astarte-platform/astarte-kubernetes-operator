@@ -8359,6 +8359,51 @@ spec:
                   type: object
                 storageClassName:
                   type: string
+                vault:
+                  properties:
+                    connection:
+                      properties:
+                        connectionStringSecret:
+                          properties:
+                            key:
+                              minLength: 1
+                              type: string
+                            name:
+                              minLength: 1
+                              type: string
+                          required:
+                            - key
+                            - name
+                          type: object
+                        host:
+                          minLength: 1
+                          type: string
+                        port:
+                          format: int32
+                          maximum: 65535
+                          minimum: 1
+                          type: integer
+                        sslConfiguration:
+                          properties:
+                            customCASecret:
+                              properties:
+                                name:
+                                  default: ""
+                                  type: string
+                              type: object
+                              x-kubernetes-map-type: atomic
+                            customSNI:
+                              type: string
+                            enable:
+                              type: boolean
+                            sni:
+                              type: boolean
+                          type: object
+                      required:
+                        - host
+                        - port
+                      type: object
+                  type: object
                 vernemq:
                   properties:
                     additionalEnv:
