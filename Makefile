@@ -3,7 +3,7 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 26.5.0-alpha.0
+VERSION ?= 26.5.0
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -157,7 +157,7 @@ setup-test-e2e: ## Set up a Kind cluster for e2e tests if it does not exist
 .PHONY: test-e2e  # Run the e2e tests against a Kind k8s instance that is spun up.
 test-e2e:
 	go test ./test/e2e/ -v -ginkgo.v -timeout 1h
- 
+
 
 ##@ Build
 
@@ -276,7 +276,7 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 .PHONY: setup-envtest
 setup-envtest:
 	@$(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path || { echo "Error setting up envtest"; exit 1; }
-	
+
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download setup-envtest locally if necessary.
 $(ENVTEST): $(LOCALBIN)
