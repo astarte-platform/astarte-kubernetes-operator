@@ -103,8 +103,9 @@ manifests: controller-gen yq kustomize ## Generate WebhookConfiguration, Cluster
 	@sed -i '$$a{{- end }}' charts/astarte-operator/templates/crds/* # append to the end of each and every crd
 	$(KUSTOMIZE) build config/helm-rbac > charts/astarte-operator/templates/rbac.yaml
 	$(KUSTOMIZE) build config/helm-manager > charts/astarte-operator/templates/manager.yaml
-	# and inject helm templates for setting the number of replicas for the deployment
-	@sed -i 's/replicas:.*/replicas: {{ .Values.replicaCount }}/g' charts/astarte-operator/templates/manager.yaml
+	# and inject helm templates for setting values
+	@sed -i "s/replicas:.*/replicas: {{ .Values.replicaCount }}/g" charts/astarte-operator/templates/manager.yaml
+	@sed -i "s/image:.*/image: '{{ .Values.image.repository }}:{{ .Values.image.tag }}'/g" charts/astarte-operator/templates/manager.yaml
 	$(KUSTOMIZE) build config/helm-webhook > charts/astarte-operator/templates/webhook.yaml
 
 .PHONY: generate
