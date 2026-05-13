@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [26.7.0] - unreleased
 
+### Added
+- Added `Operator Version`, `Astarte Version`, `Health`, `Base API URL` and `Broker URL` columns as print columns to the Astarte CRD.
+
 ## [26.5.1] - 2026-05-03
 
 ### Fixed
