@@ -16,7 +16,14 @@ spec:
     singular: astartedefaultingress
   scope: Namespaced
   versions:
-  - name: v2alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.api.loadBalancer.ingress[0].ip
+      name: API IP
+      type: string
+    - jsonPath: .status.broker.loadBalancer.ingress[0].ip
+      name: Broker IP
+      type: string
+    name: v2alpha1
     schema:
       openAPIV3Schema:
         properties:
