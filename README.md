@@ -23,7 +23,7 @@ Astarte Operator requires [`cert-manager`](https://cert-manager.io/) (`v1.7+`) t
 the cluster in its default configuration. If you are using `cert-manager` in your cluster already
 you don't need to take any action - otherwise, you will need to install it. A complete overview on
 prerequisites can be found
-[here](https://docs.astarte-platform.org/astarte-kubernetes-operator/snapshot/020-prerequisites.html).
+[here](https://docs.astarte-platform.org/astarte-kubernetes-operator/26.5/020-prerequisites.html).
 
 To install `cert-manager` simply run:
 ```bash
@@ -54,13 +54,13 @@ helm upgrade astarte-operator astarte/astarte-operator
 
 If you are interested in having a deeper understanding on how the Astarte Operator works you should
 follow the [Astarte Operator Administration
-guide](https://docs.astarte-platform.org/astarte-kubernetes-operator/snapshot/001-intro_administrator.html).
+guide](https://docs.astarte-platform.org/astarte-kubernetes-operator/26.5/001-intro_administrator.html).
 
 ### What's next?
 
 Once your Astarte Operator is up and running in your cluster, it will be time to deploy your Astarte
 instance! All you have to do is [Setting up the
-Cluster](https://docs.astarte-platform.org/astarte-kubernetes-operator/snapshot/060-setup_cluster.html).
+Cluster](https://docs.astarte-platform.org/astarte-kubernetes-operator/26.5/060-setup_cluster.html).
 
 ## Kubernetes support
 
