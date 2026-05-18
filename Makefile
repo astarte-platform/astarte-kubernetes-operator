@@ -106,6 +106,19 @@ manifests: controller-gen yq kustomize ## Generate WebhookConfiguration, Cluster
 	# and inject helm templates for setting values
 	@sed -i "s/replicas:.*/replicas: {{ .Values.replicaCount }}/g" charts/astarte-operator/templates/manager.yaml
 	@sed -i "s/image:.*/image: '{{ .Values.image.repository }}:{{ .Values.image.tag }}'/g" charts/astarte-operator/templates/manager.yaml
+	# inject metrics helm templates
+	@sed -i 's/--metrics-bind-address=:8443/--metrics-bind-address={{ .Values.metrics.enable | ternary (printf ":%v" .Values.metrics.port) "0" }}/g' charts/astarte-operator/templates/manager.yaml
+	@sed -i 's/--metrics-secure=true/--metrics-secure={{ .Values.metrics.secure }}/g' charts/astarte-operator/templates/manager.yaml
+	@sed -i '/- containerPort: 8443/,/protocol: TCP/{/- containerPort: 8443/ s/.*/        {{- if .Values.metrics.enable }}\n&/;/protocol: TCP/ s/.*/&\n        {{- end }}/}' charts/astarte-operator/templates/manager.yaml
+	@sed -i 's/containerPort: 8443/containerPort: {{ .Values.metrics.port }}/g' charts/astarte-operator/templates/manager.yaml
+	# Wrap metrics service in conditional
+	@sed -i '1 i\{{- if .Values.metrics.enable }}' charts/astarte-operator/templates/manager.yaml
+	@sed -i '0,/^---$$/{s/^---$$/{{- end }}\n---/}' charts/astarte-operator/templates/manager.yaml
+	# Inject helm templates for service port values
+	@sed -i 's/    port: 8443/    port: {{ .Values.metrics.port }}/' charts/astarte-operator/templates/manager.yaml
+	@sed -i 's/    targetPort: 8443/    targetPort: {{ .Values.metrics.port }}/' charts/astarte-operator/templates/manager.yaml
+	# Inject helm template for dynamic port name based on metrics.secure
+	@sed -i 's/  - name: https/  - name: {{ .Values.metrics.secure | ternary "https" "http" }}/' charts/astarte-operator/templates/manager.yaml
 	$(KUSTOMIZE) build config/helm-webhook > charts/astarte-operator/templates/webhook.yaml
 
 .PHONY: generate

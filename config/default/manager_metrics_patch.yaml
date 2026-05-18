@@ -1,4 +1,21 @@
-# This patch adds the args to allow exposing the metrics endpoint using HTTPS
+# This patch disables the metrics endpoint by default (metrics-bind-address=0).
+# When enabling metrics, HTTPS is used by default. Set --metrics-secure=false for HTTP.
+
 - op: add
-  path: /spec/template/spec/containers/0/args/0
-  value: --metrics-bind-address=:8443
+  path: /spec/template/spec/containers/0/args/-
+  value: --metrics-bind-address=0
+
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: --metrics-secure=true
+
+# To expose the metrics, replace the disabled bind address and uncomment the port:
+# - op: replace
+#   path: /spec/template/spec/containers/0/args/2
+#   value: --metrics-bind-address=:8443
+# - op: add
+#   path: /spec/template/spec/containers/0/ports/-
+#   value:
+#     containerPort: 8443
+#     name: metrics
+#     protocol: TCP
