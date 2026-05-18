@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [unreleased]
 ### Fixed
 - Changed the default image tag from "snapshot" to "26.5.0" in the Helm chart. This fix is released in 26.5.1 version of the Helm chart.
+- Service `astarte-vernemq` now expose `mqtt-ssl` (8883) port
 
 ## [26.5.0] - 2026-05-07
 ### Added

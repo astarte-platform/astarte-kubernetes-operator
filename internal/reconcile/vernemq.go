@@ -89,6 +89,12 @@ func EnsureVerneMQ(cr *apiv2alpha1.Astarte, c client.Client, scheme *runtime.Sch
 				Protocol:   v1.ProtocolTCP,
 			},
 			{
+				Name:       "mqtt-ssl",
+				Port:       8883,
+				TargetPort: intstr.FromString("mqtt-ssl"),
+				Protocol:   v1.ProtocolTCP,
+			},
+			{
 				Name:       "mqtt-reverse",
 				Port:       1885,
 				TargetPort: intstr.FromString("mqtt-reverse"),
