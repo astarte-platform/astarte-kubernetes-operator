@@ -29,7 +29,7 @@ Kubernetes: `>= 1.24.0-0`
 |-----|------|---------|-------------|
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"astarte/astarte-kubernetes-operator"` |  |
-| image.tag | string | `"snapshot"` | Overrides the image tag whose default is the chart appVersion. |
+| image.tag | string | `"26.5.0"` | Overrides the image tag whose default is the chart appVersion. |
 | installCRDs | bool | `true` | Whether or not to install Astarte CRDs. |
 | replicaCount | int | `1` | The number of Astarte Operator replicas in your cluster. |
 | resources | object | `{"limits":{"cpu":"100m","memory":"256Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | Resources to assign to each Astarte Operator instance. |
