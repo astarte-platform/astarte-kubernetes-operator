@@ -12,7 +12,7 @@ ensure Astarte runs as smooth as possible. It also handles upgrades, monitoring,
 Astarte Operator is the foundation of any Astarte installation, and you can find more information
 about it and how to use it once installed in the
 [Astarte Operator
-guide](https://docs.astarte-platform.org/astarte-kubernetes-operator/snapshot/001-intro_administrator.html).
+guide](https://docs.astarte-platform.org/astarte-kubernetes-operator/26.5/001-intro_administrator.html).
 
 ## Getting started
 
