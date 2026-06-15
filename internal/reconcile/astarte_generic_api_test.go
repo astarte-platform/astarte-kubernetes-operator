@@ -479,6 +479,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			// Check for Pairing-specific environment variables
 			hasCFSSLURL := false
 			hasBrokerURL := false
+			hasRealmManagementSelector := false
 			for _, env := range container.Env {
 				if env.Name == "PAIRING_CFSSL_URL" {
 					hasCFSSLURL = true
@@ -486,9 +487,13 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 				if env.Name == "PAIRING_BROKER_URL" {
 					hasBrokerURL = true
 				}
+				if env.Name == "REALM_MANAGEMENT_CLUSTERING_KUBERNETES_SELECTOR" {
+					hasRealmManagementSelector = true
+				}
 			}
 			Expect(hasCFSSLURL).To(BeTrue())
 			Expect(hasBrokerURL).To(BeTrue())
+			Expect(hasRealmManagementSelector).To(BeTrue())
 		})
 
 		It("should add proper environment variables for Flow", func() {
