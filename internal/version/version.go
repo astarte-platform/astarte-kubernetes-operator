@@ -25,11 +25,11 @@ import (
 
 const (
 	// Version is the Operator's version
-	Version = "26.5.1"
+	Version = "26.7.0"
 
 	// AstarteVersionConstraintString represents the range of supported Astarte versions for this Operator.
 	// If the Astarte version falls out of this range, reconciliation will be immediately aborted.
-	AstarteVersionConstraintString = ">= 1.3.0, < 1.4.0"
+	AstarteVersionConstraintString = ">= 1.3.0, < 1.5.0"
 
 	// SnapshotVersion represents the name of the master/snapshot version, which can or cannot be installed
 	// by this cluster
