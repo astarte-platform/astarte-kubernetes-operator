@@ -90,6 +90,8 @@ type AstarteDefaultIngressStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:shortName=adi
+// +kubebuilder:printcolumn:name="API IP",type=string,JSONPath=`.status.api.loadBalancer.ingress[0].ip`,priority=0
+// +kubebuilder:printcolumn:name="Broker IP",type=string,JSONPath=`.status.broker.loadBalancer.ingress[0].ip`,priority=0
 // AstarteDefaultIngress is the Schema for the astartedefaultingresses API
 //
 // **Custom ADI annotations**

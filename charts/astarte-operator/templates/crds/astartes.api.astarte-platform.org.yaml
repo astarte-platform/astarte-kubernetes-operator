@@ -16,7 +16,25 @@ spec:
     singular: astarte
   scope: Namespaced
   versions:
-    - name: v2alpha1
+    - additionalPrinterColumns:
+        - jsonPath: .status.operatorVersion
+          name: Operator Version
+          type: string
+        - jsonPath: .status.astarteVersion
+          name: Astarte Version
+          type: string
+        - jsonPath: .status.health
+          name: Status
+          type: string
+        - jsonPath: .status.baseAPIURL
+          name: Base API URL
+          priority: 1
+          type: string
+        - jsonPath: .status.brokerURL
+          name: Broker URL
+          priority: 1
+          type: string
+      name: v2alpha1
       schema:
         openAPIV3Schema:
           properties:

@@ -97,6 +97,11 @@ type AstarteStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Operator Version",type=string,JSONPath=`.status.operatorVersion`
+// +kubebuilder:printcolumn:name="Astarte Version",type=string,JSONPath=`.status.astarteVersion`
+// +kubebuilder:printcolumn:name="Status",type=string,JSONPath=`.status.health`
+// +kubebuilder:printcolumn:name="Base API URL",type=string,JSONPath=`.status.baseAPIURL`,priority=1
+// +kubebuilder:printcolumn:name="Broker URL",type=string,JSONPath=`.status.brokerURL`,priority=1
 // Astarte is the Schema for the astartes API
 //
 // **Custom Astarte annotations**
