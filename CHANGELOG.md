@@ -4,10 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [unreleased]
+## [26.5.1] - 2026-07-03
 ### Fixed
-- Changed the default image tag from "snapshot" to "26.5.0" in the Helm chart. This fix is released in 26.5.1 version of the Helm chart.
 - Service `astarte-vernemq` now expose `mqtt-ssl` (8883) port
+
+### Changed
+- Astarte Operator Helm Chart version bumped to 26.5.2. Default image tag changed to "26.5.1".
 
 ## [26.5.0] - 2026-05-07
 ### Added
