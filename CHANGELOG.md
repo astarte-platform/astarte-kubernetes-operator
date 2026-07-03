@@ -4,7 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [26.5.1] - 2026-07-03
+## [26.7.0] - unreleased
+
+## [26.5.1] - 2026-05-03
+
 ### Fixed
 - Service `astarte-vernemq` now expose `mqtt-ssl` (8883) port
 

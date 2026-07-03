@@ -17,6 +17,7 @@
 | 23.5.x  | :white_check_mark: |
 | 24.5.x  | :white_check_mark: |
 | 26.5.x  | :white_check_mark: |
+| 26.7.x  | :white_check_mark: |
 
 
 ## Reporting a Vulnerability
