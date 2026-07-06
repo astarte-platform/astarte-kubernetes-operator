@@ -1,0 +1,10 @@
+apiVersion: ingress.astarte-platform.org/v2alpha1
+kind: AstarteFDOIngress
+metadata:
+  labels:
+    app.kubernetes.io/name: astarte-kubernetes-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: astartefdoingress-sample
+spec:
+  astarte: astarte
+  tlsSecret: "tls-secret-name"
