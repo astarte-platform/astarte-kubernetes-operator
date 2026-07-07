@@ -1,5 +1,7 @@
 /*
-Copyright 2026 The Kubernetes authors.
+This file is part of Astarte.
+
+Copyright 2020-26 SECO Mind Srl.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,30 +23,28 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
-	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
 	"time"
 
+	ingressv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v2alpha1"
+	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	ingressv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/ingress/v2alpha1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	// +kubebuilder:scaffold:imports
 )
 
-// These tests use Ginkgo (BDD-style Go testing framework). Refer to
-// http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
+const Timeout = "30s"
+const Interval = "1s"
 
 var (
 	ctx       context.Context
@@ -56,17 +56,21 @@ var (
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
+	RunSpecs(t, "Ingress Webhook Suite")
+}
 
-	RunSpecs(t, "Webhook Suite")
+func getRepoRoot() string {
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		return "."
+	}
+	return filepath.Clean(filepath.Join(filepath.Dir(filename), "..", "..", "..", ".."))
 }
 
 var _ = BeforeSuite(func() {
-	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+	ctx, cancel = integrationutils.SetupTestSuite()
 
-	ctx, cancel = context.WithCancel(context.TODO())
-
-	var err error
-	err = ingressv2alpha1.AddToScheme(scheme.Scheme)
+	err := ingressv2alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme
@@ -75,19 +79,16 @@ var _ = BeforeSuite(func() {
 	repoRoot := getRepoRoot()
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths:     []string{filepath.Join(repoRoot, "config", "crd", "bases")},
-		ErrorIfCRDPathMissing: false,
-
+		ErrorIfCRDPathMissing: true,
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join(repoRoot, "config", "webhook")},
 		},
 	}
 
-	// Retrieve the first found binary directory to allow running tests from IDEs
-	if getFirstFoundEnvTestBinaryDir() != "" {
-		testEnv.BinaryAssetsDirectory = getFirstFoundEnvTestBinaryDir()
+	if binDir := integrationutils.GetFirstFoundEnvTestBinaryDir(filepath.Join(repoRoot, "bin", "k8s")); binDir != "" {
+		testEnv.BinaryAssetsDirectory = binDir
 	}
 
-	// cfg is defined in this file globally.
 	cfg, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
@@ -96,7 +97,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	// start webhook server using Manager.
+	By("starting webhook server")
 	webhookInstallOptions := &testEnv.WebhookInstallOptions
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme.Scheme,
@@ -121,7 +122,6 @@ var _ = BeforeSuite(func() {
 		Expect(err).NotTo(HaveOccurred())
 	}()
 
-	// wait for the webhook server to get ready.
 	dialer := &net.Dialer{Timeout: time.Second}
 	addrPort := fmt.Sprintf("%s:%d", webhookInstallOptions.LocalServingHost, webhookInstallOptions.LocalServingPort)
 	Eventually(func() error {
@@ -129,48 +129,10 @@ var _ = BeforeSuite(func() {
 		if err != nil {
 			return err
 		}
-
 		return conn.Close()
 	}).Should(Succeed())
 })
 
 var _ = AfterSuite(func() {
-	By("tearing down the test environment")
-	cancel()
-	Eventually(func() error {
-		return testEnv.Stop()
-	}, time.Minute, time.Second).Should(Succeed())
+	integrationutils.StopEnvTest(testEnv, cancel)
 })
-
-// getFirstFoundEnvTestBinaryDir locates the first binary in the specified path.
-// ENVTEST-based tests depend on specific binaries, usually located in paths set by
-// controller-runtime. When running tests directly (e.g., via an IDE) without using
-// Makefile targets, the 'BinaryAssetsDirectory' must be explicitly configured.
-//
-// This function streamlines the process by finding the required binaries, similar to
-// setting the 'KUBEBUILDER_ASSETS' environment variable. To ensure the binaries are
-// properly set up, run 'make setup-envtest' beforehand.
-func getFirstFoundEnvTestBinaryDir() string {
-	basePath := filepath.Join(getRepoRoot(), "bin", "k8s")
-	entries, err := os.ReadDir(basePath)
-	if err != nil {
-		logf.Log.Error(err, "Failed to read directory", "path", basePath)
-		return ""
-	}
-	for _, entry := range entries {
-		if entry.IsDir() {
-			return filepath.Join(basePath, entry.Name())
-		}
-	}
-	return ""
-}
-
-func getRepoRoot() string {
-	_, filename, _, ok := runtime.Caller(0)
-	if !ok {
-		logf.Log.Error(fmt.Errorf("cannot determine caller"), "Failed to compute repository root")
-		return "."
-	}
-
-	return filepath.Clean(filepath.Join(filepath.Dir(filename), "..", "..", "..", ".."))
-}

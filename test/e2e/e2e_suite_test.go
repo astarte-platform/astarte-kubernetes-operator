@@ -21,14 +21,16 @@ package e2e
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2" //nolint:staticcheck
 	. "github.com/onsi/gomega"    //nolint:staticcheck
 )
 
-// Run e2e tests using the Ginkgo runner.
 func TestE2E(t *testing.T) {
 	RegisterFailHandler(Fail)
+	SetDefaultEventuallyTimeout(5 * time.Minute)
+	SetDefaultEventuallyPollingInterval(time.Second)
 	_, _ = fmt.Fprintf(GinkgoWriter, "Starting astarte-kubernetes-operator suite\n")
 	RunSpecs(t, "Astarte Operator e2e suite")
 }

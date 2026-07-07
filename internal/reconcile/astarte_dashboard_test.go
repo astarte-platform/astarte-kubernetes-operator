@@ -19,7 +19,6 @@ limitations under the License.
 package reconcile
 
 import (
-	"context"
 	"encoding/json"
 
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
@@ -58,36 +57,36 @@ var _ = Describe("Astarte Dashboard reconcile tests", Ordered, Serial, func() {
 	})
 
 	AfterEach(func() {
-		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomAstarteNamespace)
+		integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
 	})
 
 	Describe("Test EnsureAstarteDashboard", func() {
 		It("should not create a deployment when disabled", func() {
 			cr.Spec.Components.Dashboard.Deploy = pointy.Bool(false)
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteDashboard(cr, cr.Spec.Components.Dashboard, k8sClient, scheme.Scheme)).To(Succeed())
 
 			// Deployment should not exist
 			dep := &appsv1.Deployment{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name + "-dashboard", Namespace: cr.Namespace}, dep)).ToNot(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name + "-dashboard", Namespace: cr.Namespace}, dep)).ToNot(Succeed())
 		})
 
 		It("should create deployment, service and configmap with defaults", func() {
 			cr.Spec.Components.Dashboard.Deploy = pointy.Bool(true)
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteDashboard(cr, cr.Spec.Components.Dashboard, k8sClient, scheme.Scheme)).To(Succeed())
 
 			// Deployment
 			dep := &appsv1.Deployment{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name + "-dashboard", Namespace: cr.Namespace}, dep)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name + "-dashboard", Namespace: cr.Namespace}, dep)).To(Succeed())
 			Expect(dep.Labels).To(Not(BeNil()))
 			Expect(dep.Labels["app"]).To(Equal(cr.Name + "-dashboard"))
 			Expect(dep.Labels["component"]).To(Equal("astarte"))
@@ -95,13 +94,13 @@ var _ = Describe("Astarte Dashboard reconcile tests", Ordered, Serial, func() {
 
 			// Service
 			svc := &v1.Service{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name + "-dashboard", Namespace: cr.Namespace}, svc)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name + "-dashboard", Namespace: cr.Namespace}, svc)).To(Succeed())
 			Expect(svc.Spec.Ports).To(HaveLen(1))
 			Expect(svc.Spec.Ports[0].Port).To(Equal(int32(80)))
 
 			// ConfigMap
 			cm := &v1.ConfigMap{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name + "-dashboard-config", Namespace: cr.Namespace}, cm)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name + "-dashboard-config", Namespace: cr.Namespace}, cm)).To(Succeed())
 			cfgStr, ok := cm.Data["config.json"]
 			Expect(ok).To(BeTrue())
 
@@ -130,24 +129,24 @@ var _ = Describe("Astarte Dashboard reconcile tests", Ordered, Serial, func() {
 		It("should delete existing deployment when disabling", func() {
 			// Enable first
 			cr.Spec.Components.Dashboard.Deploy = pointy.Bool(true)
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 			Expect(EnsureAstarteDashboard(cr, cr.Spec.Components.Dashboard, k8sClient, scheme.Scheme)).To(Succeed())
 			dep := &appsv1.Deployment{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name + "-dashboard", Namespace: cr.Namespace}, dep)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name + "-dashboard", Namespace: cr.Namespace}, dep)).To(Succeed())
 
 			// Now disable
 			cr.Spec.Components.Dashboard.Deploy = pointy.Bool(false)
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 			Expect(EnsureAstarteDashboard(cr, cr.Spec.Components.Dashboard, k8sClient, scheme.Scheme)).To(Succeed())
 
 			Eventually(func() bool {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name + "-dashboard", Namespace: cr.Namespace}, &appsv1.Deployment{})
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name + "-dashboard", Namespace: cr.Namespace}, &appsv1.Deployment{})
 				return err != nil
 			}, Timeout, Interval).Should(BeTrue())
 		})
@@ -156,15 +155,15 @@ var _ = Describe("Astarte Dashboard reconcile tests", Ordered, Serial, func() {
 			// Mark Flow component as deployed in CR
 			cr.Spec.Components.Flow = apiv2alpha1.AstarteGenericAPIComponentSpec{AstarteGenericClusteredResource: apiv2alpha1.AstarteGenericClusteredResource{Deploy: pointy.Bool(true)}}
 			cr.Spec.Components.Dashboard.Deploy = pointy.Bool(true)
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteDashboard(cr, cr.Spec.Components.Dashboard, k8sClient, scheme.Scheme)).To(Succeed())
 
 			cm := &v1.ConfigMap{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name + "-dashboard-config", Namespace: cr.Namespace}, cm)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name + "-dashboard-config", Namespace: cr.Namespace}, cm)).To(Succeed())
 			cfgStr := cm.Data["config.json"]
 			var cfg map[string]interface{}
 			Expect(json.Unmarshal([]byte(cfgStr), &cfg)).To(Succeed())
@@ -190,22 +189,22 @@ var _ = Describe("Astarte Dashboard reconcile tests", Ordered, Serial, func() {
 
 			// Update CR's spec for consistency with helper functions
 			cr.Spec.Components.Dashboard = dashboardSpec
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteDashboard(cr, dashboardSpec, k8sClient, scheme.Scheme)).To(Succeed())
 
 			// Deployment should reflect replica count
 			dep := &appsv1.Deployment{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name + "-dashboard", Namespace: cr.Namespace}, dep)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name + "-dashboard", Namespace: cr.Namespace}, dep)).To(Succeed())
 			Expect(dep.Spec.Replicas).ToNot(BeNil())
 			Expect(*dep.Spec.Replicas).To(Equal(int32(2)))
 
 			// ConfigMap should contain optional fields
 			cm := &v1.ConfigMap{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name + "-dashboard-config", Namespace: cr.Namespace}, cm)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name + "-dashboard-config", Namespace: cr.Namespace}, cm)).To(Succeed())
 			cfgStr := cm.Data["config.json"]
 			var cfg map[string]interface{}
 			Expect(json.Unmarshal([]byte(cfgStr), &cfg)).To(Succeed())
@@ -225,15 +224,15 @@ var _ = Describe("Astarte Dashboard reconcile tests", Ordered, Serial, func() {
 					Value: "custom_value",
 				},
 			}
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteDashboard(cr, cr.Spec.Components.Dashboard, k8sClient, scheme.Scheme)).To(Succeed())
 
 			dep := &appsv1.Deployment{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name + "-dashboard", Namespace: cr.Namespace}, dep)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name + "-dashboard", Namespace: cr.Namespace}, dep)).To(Succeed())
 
 			envs := dep.Spec.Template.Spec.Containers[0].Env
 			found := false

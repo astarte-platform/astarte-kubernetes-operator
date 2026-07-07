@@ -19,8 +19,6 @@ limitations under the License.
 package ingress
 
 import (
-	context "context"
-
 	. "github.com/onsi/ginkgo/v2"
 
 	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
@@ -33,27 +31,10 @@ const (
 var _ = Describe("AstarteDefaultIngress Controller", Ordered, Serial, func() {
 	BeforeAll(func() {
 		integrationutils.CreateNamespace(k8sClient, CustomIngressNamespace)
+		DeferCleanup(func() {
+			integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomIngressNamespace)
+		})
 	})
 
-	AfterAll(func() {
-		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomIngressNamespace)
-	})
-
-	Context("Test Reconcile function", func() {
-		// To be implemented
-	})
-
-	Context("Test EnsureAPIIngress function", func() {
-		// To be implemented
-	})
-
-	Context("Test EnsureBrokerIngress function", func() {
-		// To be implemented
-	})
-
-	Context("Test EnsureMetricsIngress function", func() {
-		// To be implemented
-	})
-
-	// Add more tests here
+	PIt("reconciles Ingress resources", func() {})
 })

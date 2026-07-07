@@ -19,8 +19,6 @@ limitations under the License.
 package reconcile
 
 import (
-	"context"
-
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 
@@ -59,16 +57,16 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 	})
 
 	AfterEach(func() {
-		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomAstarteNamespace)
+		integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
 	})
 
 	Describe("EnsureAstartePriorityClasses", func() {
 		It("should not create PriorityClasses when feature disabled or nil", func() {
 			// Feature nil
 			cr.Spec.Features.AstartePodPriorities = nil
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 			Expect(EnsureAstartePriorityClasses(cr, k8sClient, scheme.Scheme)).To(Succeed())
 
@@ -76,22 +74,22 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 			for _, name := range []string{AstarteHighPriorityName, AstarteMidPriorityName, AstarteLowPriorityName} {
 				pc := &schedulingv1.PriorityClass{}
 				Eventually(func() bool {
-					err := k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)
+					err := k8sClient.Get(ctx, types.NamespacedName{Name: name}, pc)
 					return apierrors.IsNotFound(err)
 				}, Timeout, Interval).Should(BeTrue())
 			}
 
 			// Explicitly disable
 			cr.Spec.Features.AstartePodPriorities = &apiv2alpha1.AstartePodPrioritiesSpec{Enable: false}
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 			Expect(EnsureAstartePriorityClasses(cr, k8sClient, scheme.Scheme)).To(Succeed())
 			for _, name := range []string{AstarteHighPriorityName, AstarteMidPriorityName, AstarteLowPriorityName} {
 				pc := &schedulingv1.PriorityClass{}
 				Eventually(func() bool {
-					err := k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)
+					err := k8sClient.Get(ctx, types.NamespacedName{Name: name}, pc)
 					return apierrors.IsNotFound(err)
 				}, Timeout, Interval).Should(BeTrue())
 			}
@@ -104,9 +102,9 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 				AstarteMidPriority:  pointy.Int(200),
 				AstarteLowPriority:  pointy.Int(20),
 			}
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstartePriorityClasses(cr, k8sClient, scheme.Scheme)).To(Succeed())
@@ -114,7 +112,7 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 			// Check all PriorityClasses exist with expected values
 			testPriorityClass := func(name string, expected int32) {
 				pc := &schedulingv1.PriorityClass{}
-				Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)).To(Succeed())
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: name}, pc)).To(Succeed())
 				Expect(pc.Value).To(Equal(expected))
 				Expect(pc.GlobalDefault).To(BeFalse())
 				Expect(pc.PreemptionPolicy).ToNot(BeNil())
@@ -134,9 +132,9 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 				AstarteMidPriority:  pointy.Int(150),
 				AstarteLowPriority:  pointy.Int(15),
 			}
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstartePriorityClasses(cr, k8sClient, scheme.Scheme)).To(Succeed())
@@ -144,7 +142,7 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 			// Helper function to test priority class properties
 			testPriorityClassProperties := func(name string, expectedValue int32, expectedDescriptionSubstring string) {
 				pc := &schedulingv1.PriorityClass{}
-				Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: name}, pc)).To(Succeed())
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: name}, pc)).To(Succeed())
 				Expect(pc.Value).To(Equal(expectedValue))
 				Expect(pc.Description).To(ContainSubstring(expectedDescriptionSubstring))
 				Expect(pc.GlobalDefault).To(BeFalse())
@@ -168,18 +166,18 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 				{AstarteLowPriorityName, int32(15), "Astarte low-priority pods"},
 			} {
 				pc := &schedulingv1.PriorityClass{}
-				Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: testCase.name}, pc)).To(Succeed())
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: testCase.name}, pc)).To(Succeed())
 
 				originalValue := pc.Value
 				originalDescription := pc.Description
 
 				// Modify mutable fields (e.g. Description
 				pc.Description = "modified description"
-				Expect(k8sClient.Update(context.Background(), pc)).To(Succeed())
+				Expect(k8sClient.Update(ctx, pc)).To(Succeed())
 
 				// Verify the changes were applied
 				modifiedPc := &schedulingv1.PriorityClass{}
-				Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: testCase.name}, modifiedPc)).To(Succeed())
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: testCase.name}, modifiedPc)).To(Succeed())
 				Expect(modifiedPc.Description).To(Equal("modified description"))
 
 				// Re-run reconciliation - should restore all fields to expected values
@@ -187,19 +185,19 @@ var _ = Describe("Astarte PriorityClass reconcile tests", Ordered, Serial, func(
 
 				// Verify reconciliation restored the correct values
 				restoredPc := &schedulingv1.PriorityClass{}
-				Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: testCase.name}, restoredPc)).To(Succeed())
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: testCase.name}, restoredPc)).To(Succeed())
 				Expect(restoredPc.Value).To(Equal(originalValue))
 				Expect(restoredPc.Description).To(Equal(originalDescription))
 				Expect(restoredPc.GlobalDefault).To(BeFalse())
 				Expect(*restoredPc.PreemptionPolicy).To(Equal(v1.PreemptNever))
 
 				// Try to change non-mutable field (Value) - should trigger an error on update
-				Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: AstarteHighPriorityName}, pc)).To(Succeed())
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: AstarteHighPriorityName}, pc)).To(Succeed())
 				pc.Value = originalValue + 100
-				Expect(k8sClient.Update(context.Background(), pc)).ToNot(Succeed())
+				Expect(k8sClient.Update(ctx, pc)).ToNot(Succeed())
 				// Re-run ensure - should not change anything as Value cannot be changed
 				Expect(EnsureAstartePriorityClasses(cr, k8sClient, scheme.Scheme)).To(Succeed())
-				Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: testCase.name}, pc)).To(Succeed())
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: testCase.name}, pc)).To(Succeed())
 				Expect(pc.Value).To(Equal(originalValue)) // Value should remain unchanged
 			}
 		})

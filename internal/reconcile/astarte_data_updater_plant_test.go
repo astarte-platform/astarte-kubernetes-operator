@@ -19,7 +19,6 @@ limitations under the License.
 package reconcile
 
 import (
-	"context"
 	"strconv"
 
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
@@ -62,7 +61,7 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 	})
 
 	AfterEach(func() {
-		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomAstarteNamespace)
+		integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
 	})
 	Describe("Test EnsureAstarteDataUpdaterPlant", func() {
 		It("should return error if it is not possible to list current DUP Deployments", func() {
@@ -101,34 +100,34 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 			dups := &appsv1.DeploymentList{}
 
 			// We should have 2 deployments now
-			Expect(k8sClient.Create(context.Background(), cr1)).To(Succeed())
+			Expect(k8sClient.Create(ctx, cr1)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: cr1.Namespace}, cr1)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: cr1.Name, Namespace: cr1.Namespace}, cr1)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteDataUpdaterPlant(cr1, cr1.Spec.Components.DataUpdaterPlant, k8sClient, scheme.Scheme)).To(Succeed())
-			Expect(k8sClient.List(context.Background(), dups, client.InNamespace(cr1.Namespace),
+			Expect(k8sClient.List(ctx, dups, client.InNamespace(cr1.Namespace),
 				client.MatchingLabels{"astarte-component": "data-updater-plant"})).To(Succeed())
 			Expect(dups.Items).To(HaveLen(2))
 
 			// Update the CR to have only 1 DUP replica
 			cr1.Spec.Components.DataUpdaterPlant.Replicas = pointy.Int32(1)
-			Expect(k8sClient.Update(context.Background(), cr1)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr1)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: cr1.Namespace}, cr1)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: cr1.Name, Namespace: cr1.Namespace}, cr1)
 			}, Timeout, Interval).Should(Succeed())
 
 			// We should have only 1 deployment now
 			Expect(EnsureAstarteDataUpdaterPlant(cr1, cr1.Spec.Components.DataUpdaterPlant, k8sClient, scheme.Scheme)).To(Succeed())
 
-			Expect(k8sClient.List(context.Background(), dups, client.InNamespace(cr1.Namespace),
+			Expect(k8sClient.List(ctx, dups, client.InNamespace(cr1.Namespace),
 				client.MatchingLabels{"astarte-component": "data-updater-plant"})).To(Succeed())
 			Expect(dups.Items).To(HaveLen(1))
 
 			// Cleanup
-			Expect(k8sClient.Delete(context.Background(), cr1)).To(Succeed())
+			Expect(k8sClient.Delete(ctx, cr1)).To(Succeed())
 			Eventually(func() bool {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: cr1.Namespace}, &apiv2alpha1.Astarte{})
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: cr1.Name, Namespace: cr1.Namespace}, &apiv2alpha1.Astarte{})
 				return apierrors.IsNotFound(err)
 			}, Timeout, Interval).Should(BeTrue())
 		})
@@ -139,9 +138,9 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 			cr.Spec.Components.DataUpdaterPlant.Deploy = pointy.Bool(true)
 			cr.Spec.Components.DataUpdaterPlant.Replicas = pointy.Int32(3)
 
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(createIndexedDataUpdaterPlantDeployment(0, 3, cr, cr.Spec.Components.DataUpdaterPlant, k8sClient, scheme.Scheme)).To(Succeed())
@@ -149,7 +148,7 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 			Expect(createIndexedDataUpdaterPlantDeployment(2, 3, cr, cr.Spec.Components.DataUpdaterPlant, k8sClient, scheme.Scheme)).To(Succeed())
 
 			dups := &appsv1.DeploymentList{}
-			Expect(k8sClient.List(context.Background(), dups, client.InNamespace(cr.Namespace),
+			Expect(k8sClient.List(ctx, dups, client.InNamespace(cr.Namespace),
 				client.MatchingLabels{"astarte-component": "data-updater-plant"})).To(Succeed())
 
 			Expect(dups.Items).To((HaveLen(3)))

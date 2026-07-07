@@ -19,8 +19,6 @@ limitations under the License.
 package deps
 
 import (
-	"context"
-
 	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -36,7 +34,7 @@ var _ = Describe("Deps", Ordered, Serial, func() {
 	})
 
 	AfterAll(func() {
-		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomAstarteNamespace)
+		integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
 	})
 
 	Context("Testing the GetDefaultVersionForCFSSL function", func() {

@@ -20,8 +20,6 @@ limitations under the License.
 package v2alpha1
 
 import (
-	"context"
-
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 	. "github.com/onsi/ginkgo/v2"
@@ -70,7 +68,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	})
 
 	AfterEach(func() {
-		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomAstarteNamespace)
+		integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
 	})
 
 	Describe("TestValidateSSLListener", func() {
@@ -129,11 +127,11 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 					"key":  []byte("my-key"),
 				},
 			}
-			Expect(k8sClient.Create(context.Background(), secret)).To(Succeed())
+			Expect(k8sClient.Create(ctx, secret)).To(Succeed())
 
 			// Ensure the secret is created and available in the client cache
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: secretName, Namespace: CustomAstarteNamespace}, &v1.Secret{})
+				return k8sClient.Get(ctx, types.NamespacedName{Name: secretName, Namespace: CustomAstarteNamespace}, &v1.Secret{})
 			}, Timeout, Interval).Should(Succeed())
 
 			// Wait for the validation to pass - give more time for webhook client cache sync
@@ -143,10 +141,10 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			}, Timeout, Interval).Should(BeTrue())
 
 			// Cleanup the secret
-			Expect(k8sClient.Delete(context.Background(), secret)).To(Succeed())
+			Expect(k8sClient.Delete(ctx, secret)).To(Succeed())
 
 			Eventually(func() bool {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: secretName, Namespace: CustomAstarteNamespace}, &v1.Secret{})
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: secretName, Namespace: CustomAstarteNamespace}, &v1.Secret{})
 				return apierrors.IsNotFound(err)
 			}, Timeout, Interval).Should(BeTrue())
 		})
@@ -855,7 +853,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 		It("should succeed when spec passes all validations", func() {
 			cr.Spec.AstarteInstanceID = "coverageid1"
 			validator := &AstarteCustomValidator{}
-			w, err := validator.ValidateCreate(context.Background(), cr)
+			w, err := validator.ValidateCreate(ctx, cr)
 			Expect(w).To(BeNil())
 			Expect(err).ToNot(HaveOccurred())
 		})
@@ -864,7 +862,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.AstarteInstanceID = "coverageid2"
 			cr.Spec.VerneMQ = apiv2alpha1.AstarteVerneMQSpec{SSLListener: pointy.Bool(true), SSLListenerCertSecretName: ""}
 			validator := &AstarteCustomValidator{}
-			w, err := validator.ValidateCreate(context.Background(), cr)
+			w, err := validator.ValidateCreate(ctx, cr)
 			Expect(w).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(apierrors.IsInvalid(err)).To(BeTrue())
@@ -874,7 +872,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.AstarteInstanceID = "coverageid3"
 			cr.Spec.Cassandra.AstarteSystemKeyspace.ReplicationFactor = pointy.Int(2) // Even number - invalid
 			validator := &AstarteCustomValidator{}
-			w, err := validator.ValidateCreate(context.Background(), cr)
+			w, err := validator.ValidateCreate(ctx, cr)
 			Expect(w).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(apierrors.IsInvalid(err)).To(BeTrue())
@@ -893,7 +891,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			oldObj.Spec.AstarteInstanceID = "old"
 			cr.Spec.AstarteInstanceID = "new"
 			validator := &AstarteCustomValidator{}
-			w, err := validator.ValidateUpdate(context.Background(), cr, oldObj)
+			w, err := validator.ValidateUpdate(ctx, cr, oldObj)
 			Expect(w).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(apierrors.IsInvalid(err)).To(BeTrue())
@@ -912,7 +910,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 				},
 			}
 			validator := &AstarteCustomValidator{}
-			w, err := validator.ValidateUpdate(context.Background(), cr, oldObj)
+			w, err := validator.ValidateUpdate(ctx, cr, oldObj)
 			Expect(w).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(apierrors.IsInvalid(err)).To(BeTrue())
@@ -924,7 +922,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			cr.Spec.AstarteInstanceID = "same"
 			cr.Spec.Cassandra = apiv2alpha1.AstarteCassandraSpec{AstarteSystemKeyspace: apiv2alpha1.AstarteSystemKeyspaceSpec{}}
 			validator := &AstarteCustomValidator{}
-			w, err := validator.ValidateUpdate(context.Background(), cr, oldObj)
+			w, err := validator.ValidateUpdate(ctx, cr, oldObj)
 			Expect(w).To(BeNil())
 			Expect(err).ToNot(HaveOccurred())
 		})
@@ -970,7 +968,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 		// The function is not implemented, expect nil, nil
 		It("should return nil, nil", func() {
 			validator := &AstarteCustomValidator{}
-			w, err := validator.ValidateDelete(context.Background(), cr)
+			w, err := validator.ValidateDelete(ctx, cr)
 			Expect(w).To(BeNil())
 			Expect(err).ToNot(HaveOccurred())
 		})
@@ -986,21 +984,21 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 			// Create should succeed
 			Eventually(func() error {
-				return k8sClient.Create(context.Background(), newCr)
+				return k8sClient.Create(ctx, newCr)
 			}, Timeout, Interval).Should(Succeed())
 
 			// Fetch to ensure it's created
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: newCr.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
+				return k8sClient.Get(ctx, types.NamespacedName{Name: newCr.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
 			}, Timeout, Interval).Should(Succeed())
 
 			// Cleanup
 			Eventually(func() error {
-				return k8sClient.Delete(context.Background(), newCr)
+				return k8sClient.Delete(ctx, newCr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Eventually(func() bool {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: newCr.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: newCr.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
 				return apierrors.IsNotFound(err)
 			}, Timeout, Interval).Should(BeTrue())
 		})
@@ -1015,7 +1013,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 			// Create should fail due to webhook rejection
 			Eventually(func() error {
-				return k8sClient.Create(context.Background(), newCr)
+				return k8sClient.Create(ctx, newCr)
 			}, Timeout, Interval).ShouldNot(Succeed())
 
 			// Test the validator directly
@@ -1035,12 +1033,12 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 			// Create should succeed
 			Eventually(func() error {
-				return k8sClient.Create(context.Background(), cr1)
+				return k8sClient.Create(ctx, cr1)
 			}, Timeout, Interval).Should(Succeed())
 
 			// Fetch to ensure it's created
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
+				return k8sClient.Get(ctx, types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
 			}, Timeout, Interval).Should(Succeed())
 
 			// Try to validate a new CR with the same instanceID
@@ -1052,7 +1050,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 			// Create should not succeed
 			Eventually(func() error {
-				return k8sClient.Create(context.Background(), cr2)
+				return k8sClient.Create(ctx, cr2)
 			}, Timeout, Interval).Should(Not(Succeed()))
 
 			// Test the validator directly
@@ -1062,9 +1060,9 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			}, Timeout, Interval).Should(BeTrue())
 
 			// Cleanup
-			Expect(k8sClient.Delete(context.Background(), cr1)).To(Succeed())
+			Expect(k8sClient.Delete(ctx, cr1)).To(Succeed())
 			Eventually(func() bool {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
 				return apierrors.IsNotFound(err)
 			}, Timeout, Interval).Should(BeTrue())
 		})
@@ -1078,12 +1076,12 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 			// Create should succeed
 			Eventually(func() error {
-				return k8sClient.Create(context.Background(), cr1)
+				return k8sClient.Create(ctx, cr1)
 			}, Timeout, Interval).Should(Succeed())
 
 			// Fetch to ensure it's created
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
+				return k8sClient.Get(ctx, types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
 			}, Timeout, Interval).Should(Succeed())
 
 			// Create another with a different instanceID
@@ -1094,24 +1092,24 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 			// Create should succeed
 			Eventually(func() error {
-				return k8sClient.Create(context.Background(), cr2)
+				return k8sClient.Create(ctx, cr2)
 			}, Timeout, Interval).Should(Succeed())
 
 			// Fetch to ensure it's created
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr2.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
+				return k8sClient.Get(ctx, types.NamespacedName{Name: cr2.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
 			}, Timeout, Interval).Should(Succeed())
 
 			// Cleanup
-			Expect(k8sClient.Delete(context.Background(), cr1)).To(Succeed())
+			Expect(k8sClient.Delete(ctx, cr1)).To(Succeed())
 			Eventually(func() bool {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: cr1.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
 				return apierrors.IsNotFound(err)
 			}, Timeout, Interval).Should(BeTrue())
 
-			Expect(k8sClient.Delete(context.Background(), cr2)).To(Succeed())
+			Expect(k8sClient.Delete(ctx, cr2)).To(Succeed())
 			Eventually(func() bool {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: cr2.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: cr2.Name, Namespace: CustomAstarteNamespace}, &apiv2alpha1.Astarte{})
 				return apierrors.IsNotFound(err)
 			}, Timeout, Interval).Should(BeTrue())
 		})

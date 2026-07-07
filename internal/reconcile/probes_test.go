@@ -19,8 +19,6 @@ limitations under the License.
 package reconcile
 
 import (
-	"context"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -71,7 +69,7 @@ var _ = Describe("Astarte Probes testing", Ordered, Serial, func() {
 	})
 
 	AfterEach(func() {
-		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomAstarteNamespace)
+		integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
 	})
 
 	// Default probes (no custom overrides)
@@ -150,9 +148,9 @@ var _ = Describe("Astarte Probes testing", Ordered, Serial, func() {
 	Describe("Test probes injection on reconcile (Astarte Components)", func() {
 		DescribeTable("should inject default probes when no custom probes are set",
 			func(component apiv2alpha1.AstarteComponent) {
-				Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+				Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+					return k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
 				}, Timeout, Interval).Should(Succeed())
 
 				switch component {
@@ -174,7 +172,7 @@ var _ = Describe("Astarte Probes testing", Ordered, Serial, func() {
 				deploymentName := cr.Name + "-" + component.DashedString()
 				dep := &appsv1.Deployment{}
 				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{
+					return k8sClient.Get(ctx, types.NamespacedName{
 						Name:      deploymentName,
 						Namespace: CustomAstarteNamespace,
 					}, dep)
@@ -242,9 +240,9 @@ var _ = Describe("Astarte Probes testing", Ordered, Serial, func() {
 					cr.Spec.Components.TriggerEngine.StartupProbe = customProbe
 				}
 
-				Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+				Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+					return k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
 				}, Timeout, Interval).Should(Succeed())
 
 				switch component {
@@ -265,7 +263,7 @@ var _ = Describe("Astarte Probes testing", Ordered, Serial, func() {
 				deploymentName := cr.Name + "-" + component.DashedString()
 				dep := &appsv1.Deployment{}
 				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{
+					return k8sClient.Get(ctx, types.NamespacedName{
 						Name:      deploymentName,
 						Namespace: CustomAstarteNamespace,
 					}, dep)
@@ -496,9 +494,9 @@ var _ = Describe("Astarte Probes testing", Ordered, Serial, func() {
 	// Test probes injection on reconcile for CFSSL and VerneMQ
 	Describe("Test probes injection on reconcile (CFSSL)", func() {
 		It("should inject default probes when no custom probes are set", func() {
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureCFSSL(cr, k8sClient, scheme.Scheme)).To(Succeed())
@@ -507,7 +505,7 @@ var _ = Describe("Astarte Probes testing", Ordered, Serial, func() {
 			deploymentName := cr.Name + "-cfssl"
 			dep := &appsv1.Deployment{}
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{
+				return k8sClient.Get(ctx, types.NamespacedName{
 					Name:      deploymentName,
 					Namespace: CustomAstarteNamespace,
 				}, dep)
@@ -539,9 +537,9 @@ var _ = Describe("Astarte Probes testing", Ordered, Serial, func() {
 			cr.Spec.CFSSL.ReadinessProbe = customProbe
 			cr.Spec.CFSSL.StartupProbe = customProbe
 
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureCFSSL(cr, k8sClient, scheme.Scheme)).To(Succeed())
@@ -550,7 +548,7 @@ var _ = Describe("Astarte Probes testing", Ordered, Serial, func() {
 			deploymentName := cr.Name + "-cfssl"
 			dep := &appsv1.Deployment{}
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{
+				return k8sClient.Get(ctx, types.NamespacedName{
 					Name:      deploymentName,
 					Namespace: CustomAstarteNamespace,
 				}, dep)
@@ -595,9 +593,9 @@ var _ = Describe("Astarte Probes testing", Ordered, Serial, func() {
 
 	Describe("Test probes injection on reconcile (VerneMQ)", func() {
 		It("should inject default probes when no custom probes are set", func() {
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureVerneMQ(cr, k8sClient, scheme.Scheme)).To(Succeed())
@@ -606,7 +604,7 @@ var _ = Describe("Astarte Probes testing", Ordered, Serial, func() {
 			statefulSetName := cr.Name + "-vernemq"
 			sts := &appsv1.StatefulSet{}
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{
+				return k8sClient.Get(ctx, types.NamespacedName{
 					Name:      statefulSetName,
 					Namespace: CustomAstarteNamespace,
 				}, sts)
@@ -638,9 +636,9 @@ var _ = Describe("Astarte Probes testing", Ordered, Serial, func() {
 			cr.Spec.VerneMQ.ReadinessProbe = customProbe
 			cr.Spec.VerneMQ.StartupProbe = customProbe
 
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureVerneMQ(cr, k8sClient, scheme.Scheme)).To(Succeed())
@@ -649,7 +647,7 @@ var _ = Describe("Astarte Probes testing", Ordered, Serial, func() {
 			statefulSetName := cr.Name + "-vernemq"
 			sts := &appsv1.StatefulSet{}
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{
+				return k8sClient.Get(ctx, types.NamespacedName{
 					Name:      statefulSetName,
 					Namespace: CustomAstarteNamespace,
 				}, sts)

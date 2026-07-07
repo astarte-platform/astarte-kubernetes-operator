@@ -19,8 +19,7 @@ limitations under the License.
 package controller
 
 import (
-	"context"
-
+	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -28,7 +27,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
-	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 )
 
 var _ = Describe("Astarte Finalizer testing", Ordered, Serial, func() {
@@ -42,10 +40,9 @@ var _ = Describe("Astarte Finalizer testing", Ordered, Serial, func() {
 
 	BeforeAll(func() {
 		integrationutils.CreateNamespace(k8sClient, CustomAstarteNamespace)
-	})
-
-	AfterAll(func() {
-		integrationutils.DeleteNamespace(k8sClient, CustomAstarteNamespace)
+		DeferCleanup(func() {
+			integrationutils.DeleteNamespace(k8sClient, CustomAstarteNamespace)
+		})
 	})
 
 	BeforeEach(func() {
@@ -58,96 +55,83 @@ var _ = Describe("Astarte Finalizer testing", Ordered, Serial, func() {
 		cr.SetNamespace(CustomAstarteNamespace)
 		cr.SetResourceVersion("")
 		integrationutils.DeployAstarte(k8sClient, cr)
-	})
-
-	AfterEach(func() {
-		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomAstarteNamespace)
+		DeferCleanup(func() {
+			integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
+		})
 	})
 
 	Describe("Test HandleFinalization", func() {
 		It("should successfully finalize Astarte instance with finalizer", func() {
-			// First get the existing CR to update it with finalizer
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
-			}, Timeout, Interval).Should(Succeed())
+				return k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
+			}).Should(Succeed())
 
-			// Add finalizer to the CR
 			cr.SetFinalizers([]string{astarteFinalizer})
 
 			Eventually(func() error {
-				return k8sClient.Update(context.Background(), cr)
-			}, Timeout, Interval).Should(Succeed())
+				return k8sClient.Update(ctx, cr)
+			}).Should(Succeed())
 
-			// Verify CR was created with finalizer
 			Eventually(func() []string {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
 				if err != nil {
 					return nil
 				}
 				return cr.GetFinalizers()
-			}, Timeout, Interval).Should(ContainElement(astarteFinalizer))
+			}).Should(ContainElement(astarteFinalizer))
 
-			// Mark the CR for deletion
 			Eventually(func() error {
-				return k8sClient.Delete(context.Background(), cr)
-			}, Timeout, Interval).Should(Succeed())
+				return k8sClient.Delete(ctx, cr)
+			}).Should(Succeed())
 
-			// Get a copy with deletion timestamp
 			Eventually(func() bool {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
 				if err != nil {
 					return false
 				}
 				return cr.GetDeletionTimestamp() != nil
-			}, Timeout, Interval).Should(BeTrue())
+			}).Should(BeTrue())
 
-			// Call handleFinalization
 			result, err := reconciler.handleFinalization(cr)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(result).To(Equal(ctrl.Result{}))
 
-			// Verify finalizer was removed from the object
 			Expect(cr.GetFinalizers()).ToNot(ContainElement(astarteFinalizer))
 
-			// Verify CR is eventually deleted (handleFinalization should have updated it)
 			Eventually(func() bool {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, &apiv2alpha1.Astarte{})
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, &apiv2alpha1.Astarte{})
 				return apierrors.IsNotFound(err)
-			}, Timeout, Interval).Should(BeTrue())
+			}).Should(BeTrue())
 		})
 	})
 
 	Describe("Test AddFinalizer", func() {
 		It("should successfully add finalizer to CR", func() {
-			// Createa new CR without finalizers
 			crNew := cr.DeepCopy()
 			crNew.Name = "test-astarte-finalizer-add"
 			crNew.SetFinalizers([]string{})
 			crNew.ResourceVersion = ""
 
-			Expect(k8sClient.Create(context.Background(), crNew)).To(Succeed())
+			Expect(k8sClient.Create(ctx, crNew)).To(Succeed())
 
-			// Verify CR was created without finalizer
 			Eventually(func() []string {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: crNew.Name, Namespace: crNew.Namespace}, crNew)
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: crNew.Name, Namespace: crNew.Namespace}, crNew)
 				if err != nil {
 					return nil
 				}
 				return crNew.GetFinalizers()
-			}, Timeout, Interval).ShouldNot(ContainElement(astarteFinalizer))
+			}).ShouldNot(ContainElement(astarteFinalizer))
 
-			// Add finalizer
 			err := reconciler.addFinalizer(crNew)
 			Expect(err).ToNot(HaveOccurred())
 
-			// Verify finalizer was added
 			Eventually(func() []string {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: crNew.Name, Namespace: crNew.Namespace}, crNew)
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: crNew.Name, Namespace: crNew.Namespace}, crNew)
 				if err != nil {
 					return nil
 				}
 				return crNew.GetFinalizers()
-			}, Timeout, Interval).Should(ContainElement(astarteFinalizer))
+			}).Should(ContainElement(astarteFinalizer))
 		})
 	})
 })

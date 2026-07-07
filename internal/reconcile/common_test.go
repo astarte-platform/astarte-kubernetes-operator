@@ -19,8 +19,6 @@ limitations under the License.
 package reconcile
 
 import (
-	"context"
-
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 	. "github.com/onsi/ginkgo/v2"
@@ -55,7 +53,7 @@ var _ = Describe("Common reconcile testing", Ordered, func() {
 	})
 
 	AfterEach(func() {
-		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomAstarteNamespace)
+		integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
 	})
 
 	Describe("Test EnsureHousekeepingKey", func() {
@@ -66,7 +64,7 @@ var _ = Describe("Common reconcile testing", Ordered, func() {
 			// Check that the housekeeping keypair secrets are present
 			secretPrivate := &v1.Secret{}
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{
+				return k8sClient.Get(ctx, types.NamespacedName{
 					Name:      CustomAstarteName + "-housekeeping-private-key",
 					Namespace: CustomAstarteNamespace,
 				}, secretPrivate)
@@ -75,7 +73,7 @@ var _ = Describe("Common reconcile testing", Ordered, func() {
 
 			secretPublic := &v1.Secret{}
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{
+				return k8sClient.Get(ctx, types.NamespacedName{
 					Name:      CustomAstarteName + "-housekeeping-public-key",
 					Namespace: CustomAstarteNamespace,
 				}, secretPublic)
@@ -90,7 +88,7 @@ var _ = Describe("Common reconcile testing", Ordered, func() {
 			// Check that the housekeeping keypair secrets are present
 			secret := &v1.Secret{}
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{
+				return k8sClient.Get(ctx, types.NamespacedName{
 					Name:      CustomAstarteName + "-secret-key-base",
 					Namespace: CustomAstarteNamespace,
 				}, secret)
@@ -104,7 +102,7 @@ var _ = Describe("Common reconcile testing", Ordered, func() {
 
 				cm := &v1.ConfigMap{}
 				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{
+					return k8sClient.Get(ctx, types.NamespacedName{
 						Name:      CustomAstarteName + "-generic-erlang-configuration",
 						Namespace: CustomAstarteNamespace,
 					}, cm)
@@ -119,7 +117,7 @@ var _ = Describe("Common reconcile testing", Ordered, func() {
 
 				secret := &v1.Secret{}
 				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{
+					return k8sClient.Get(ctx, types.NamespacedName{
 						Name:      CustomAstarteName + "-erlang-clustering-cookie",
 						Namespace: CustomAstarteNamespace,
 					}, secret)

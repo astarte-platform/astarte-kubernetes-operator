@@ -19,8 +19,6 @@ limitations under the License.
 package controllerutils
 
 import (
-	"context"
-
 	"github.com/astarte-platform/astarte-kubernetes-operator/internal/reconcile"
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
@@ -47,11 +45,11 @@ var _ = Describe("finalizePriorityClasses", Ordered, Serial, func() {
 
 	AfterEach(func() {
 		// Ensure we don't leak the unrelated class between tests
-		_ = k8sClient.Delete(context.Background(), &scheduling.PriorityClass{ObjectMeta: metav1.ObjectMeta{Name: "unrelated-priority"}})
+		_ = k8sClient.Delete(ctx, &scheduling.PriorityClass{ObjectMeta: metav1.ObjectMeta{Name: "unrelated-priority"}})
 		// Also try to remove Astarte* classes in case a test failed midway
-		_ = k8sClient.Delete(context.Background(), &scheduling.PriorityClass{ObjectMeta: metav1.ObjectMeta{Name: reconcile.AstarteHighPriorityName}})
-		_ = k8sClient.Delete(context.Background(), &scheduling.PriorityClass{ObjectMeta: metav1.ObjectMeta{Name: reconcile.AstarteMidPriorityName}})
-		_ = k8sClient.Delete(context.Background(), &scheduling.PriorityClass{ObjectMeta: metav1.ObjectMeta{Name: reconcile.AstarteLowPriorityName}})
+		_ = k8sClient.Delete(ctx, &scheduling.PriorityClass{ObjectMeta: metav1.ObjectMeta{Name: reconcile.AstarteHighPriorityName}})
+		_ = k8sClient.Delete(ctx, &scheduling.PriorityClass{ObjectMeta: metav1.ObjectMeta{Name: reconcile.AstarteMidPriorityName}})
+		_ = k8sClient.Delete(ctx, &scheduling.PriorityClass{ObjectMeta: metav1.ObjectMeta{Name: reconcile.AstarteLowPriorityName}})
 	})
 
 	It("deletes Astarte PriorityClasses and leaves others", func() {
@@ -62,14 +60,14 @@ var _ = Describe("finalizePriorityClasses", Ordered, Serial, func() {
 		low := &scheduling.PriorityClass{ObjectMeta: metav1.ObjectMeta{Name: reconcile.AstarteLowPriorityName}, Value: 100000, GlobalDefault: false, PreemptionPolicy: &preempt}
 		other := &scheduling.PriorityClass{ObjectMeta: metav1.ObjectMeta{Name: "unrelated-priority"}, Value: 1, GlobalDefault: false, PreemptionPolicy: &preempt}
 
-		Expect(k8sClient.Create(context.Background(), high)).To(Succeed())
-		Expect(k8sClient.Create(context.Background(), mid)).To(Succeed())
-		Expect(k8sClient.Create(context.Background(), low)).To(Succeed())
-		Expect(k8sClient.Create(context.Background(), other)).To(Succeed())
+		Expect(k8sClient.Create(ctx, high)).To(Succeed())
+		Expect(k8sClient.Create(ctx, mid)).To(Succeed())
+		Expect(k8sClient.Create(ctx, low)).To(Succeed())
+		Expect(k8sClient.Create(ctx, other)).To(Succeed())
 
 		// Sanity check they exist
 		pcList := &scheduling.PriorityClassList{}
-		Expect(k8sClient.List(context.Background(), pcList)).To(Succeed())
+		Expect(k8sClient.List(ctx, pcList)).To(Succeed())
 		found := map[string]bool{}
 		for _, pc := range pcList.Items {
 			found[pc.Name] = true
@@ -84,19 +82,19 @@ var _ = Describe("finalizePriorityClasses", Ordered, Serial, func() {
 
 		// Astarte classes should be gone
 		exists := &scheduling.PriorityClass{}
-		Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: reconcile.AstarteHighPriorityName}, exists)).NotTo(Succeed())
-		Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: reconcile.AstarteMidPriorityName}, exists)).NotTo(Succeed())
-		Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: reconcile.AstarteLowPriorityName}, exists)).NotTo(Succeed())
+		Expect(k8sClient.Get(ctx, types.NamespacedName{Name: reconcile.AstarteHighPriorityName}, exists)).NotTo(Succeed())
+		Expect(k8sClient.Get(ctx, types.NamespacedName{Name: reconcile.AstarteMidPriorityName}, exists)).NotTo(Succeed())
+		Expect(k8sClient.Get(ctx, types.NamespacedName{Name: reconcile.AstarteLowPriorityName}, exists)).NotTo(Succeed())
 
 		// Other should still exist
-		Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: "unrelated-priority"}, &scheduling.PriorityClass{})).To(Succeed())
+		Expect(k8sClient.Get(ctx, types.NamespacedName{Name: "unrelated-priority"}, &scheduling.PriorityClass{})).To(Succeed())
 	})
 
 	It("is a no-op when no Astarte PriorityClasses exist", func() {
 		// Ensure none exist
-		_ = k8sClient.Delete(context.Background(), &scheduling.PriorityClass{ObjectMeta: metav1.ObjectMeta{Name: reconcile.AstarteHighPriorityName}})
-		_ = k8sClient.Delete(context.Background(), &scheduling.PriorityClass{ObjectMeta: metav1.ObjectMeta{Name: reconcile.AstarteMidPriorityName}})
-		_ = k8sClient.Delete(context.Background(), &scheduling.PriorityClass{ObjectMeta: metav1.ObjectMeta{Name: reconcile.AstarteLowPriorityName}})
+		_ = k8sClient.Delete(ctx, &scheduling.PriorityClass{ObjectMeta: metav1.ObjectMeta{Name: reconcile.AstarteHighPriorityName}})
+		_ = k8sClient.Delete(ctx, &scheduling.PriorityClass{ObjectMeta: metav1.ObjectMeta{Name: reconcile.AstarteMidPriorityName}})
+		_ = k8sClient.Delete(ctx, &scheduling.PriorityClass{ObjectMeta: metav1.ObjectMeta{Name: reconcile.AstarteLowPriorityName}})
 
 		Expect(finalizePriorityClasses(k8sClient, logger)).To(Succeed())
 	})

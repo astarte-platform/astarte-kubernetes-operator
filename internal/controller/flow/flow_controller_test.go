@@ -19,8 +19,6 @@ limitations under the License.
 package flow
 
 import (
-	context "context"
-
 	. "github.com/onsi/ginkgo/v2"
 
 	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
@@ -33,23 +31,10 @@ const (
 var _ = Describe("Flow Controller", Ordered, Serial, func() {
 	BeforeAll(func() {
 		integrationutils.CreateNamespace(k8sClient, CustomFlowNamespace)
+		DeferCleanup(func() {
+			integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomFlowNamespace)
+		})
 	})
 
-	AfterAll(func() {
-		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomFlowNamespace)
-	})
-
-	Context("Test Reconcile function", func() {
-		// To be implemented
-	})
-
-	Context("Test computeFlowStatusResource function", func() {
-		// To be implemented
-	})
-
-	Context("Test getResourcesForReconciliationFor function", func() {
-		// To be implemented
-	})
-
-	// Add more tests here
+	PIt("reconciles Flow resources", func() {})
 })
