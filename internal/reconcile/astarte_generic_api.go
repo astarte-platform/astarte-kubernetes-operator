@@ -388,6 +388,11 @@ func getAstarteHousekeepingEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
 func getAstartePairingEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	ret := []v1.EnvVar{}
 
+	ret = append(ret, v1.EnvVar{
+		Name:  "REALM_MANAGEMENT_CLUSTERING_KUBERNETES_SELECTOR",
+		Value: fmt.Sprint("app=", cr.Name, "-realm-management"),
+	})
+
 	ret = append(ret,
 		v1.EnvVar{
 			Name:  "PAIRING_CFSSL_URL",
