@@ -19,7 +19,6 @@ limitations under the License.
 package reconcile
 
 import (
-	"context"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base32"
@@ -71,7 +70,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 	})
 
 	AfterEach(func() {
-		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomAstarteNamespace)
+		integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
 	})
 
 	Describe("Test getAstarteCommonEnvVars", func() {
@@ -148,7 +147,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 			// Verify secret was created
 			secret := &v1.Secret{}
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{
+				return k8sClient.Get(ctx, types.NamespacedName{
 					Name:      secretName,
 					Namespace: CustomAstarteNamespace,
 				}, secret)
@@ -183,7 +182,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 			// Verify secret was created
 			secret := &v1.Secret{}
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{
+				return k8sClient.Get(ctx, types.NamespacedName{
 					Name:      secretName,
 					Namespace: CustomAstarteNamespace,
 				}, secret)
@@ -223,7 +222,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 			// Verify ServiceAccount
 			sa := &v1.ServiceAccount{}
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{
+				return k8sClient.Get(ctx, types.NamespacedName{
 					Name:      name,
 					Namespace: CustomAstarteNamespace,
 				}, sa)
@@ -232,7 +231,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 			// Verify Role
 			role := &rbacv1.Role{}
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{
+				return k8sClient.Get(ctx, types.NamespacedName{
 					Name:      name,
 					Namespace: CustomAstarteNamespace,
 				}, role)
@@ -243,7 +242,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 			// Verify RoleBinding
 			rb := &rbacv1.RoleBinding{}
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{
+				return k8sClient.Get(ctx, types.NamespacedName{
 					Name:      name,
 					Namespace: CustomAstarteNamespace,
 				}, rb)
@@ -272,7 +271,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 			// Verify secret was created
 			secret := &v1.Secret{}
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{
+				return k8sClient.Get(ctx, types.NamespacedName{
 					Name:      secretName,
 					Namespace: CustomAstarteNamespace,
 				}, secret)
@@ -280,7 +279,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 
 			// Verify cookie content
 			Eventually(func() bool {
-				if err := k8sClient.Get(context.Background(), types.NamespacedName{
+				if err := k8sClient.Get(ctx, types.NamespacedName{
 					Name:      secretName,
 					Namespace: CustomAstarteNamespace,
 				}, secret); err != nil {
@@ -308,7 +307,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 			// Get the original cookie
 			secret := &v1.Secret{}
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{
+				return k8sClient.Get(ctx, types.NamespacedName{
 					Name:      secretName,
 					Namespace: CustomAstarteNamespace,
 				}, secret)
@@ -321,7 +320,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 
 			// Verify cookie wasn't changed
 			Eventually(func() string {
-				if err := k8sClient.Get(context.Background(), types.NamespacedName{
+				if err := k8sClient.Get(ctx, types.NamespacedName{
 					Name:      secretName,
 					Namespace: CustomAstarteNamespace,
 				}, secret); err != nil {
@@ -604,7 +603,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 			// Verify service was created
 			service := &v1.Service{}
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{
+				return k8sClient.Get(ctx, types.NamespacedName{
 					Name:      serviceName,
 					Namespace: CustomAstarteNamespace,
 				}, service)
@@ -634,7 +633,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 			// Wait for service creation to complete
 			service := &v1.Service{}
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{
+				return k8sClient.Get(ctx, types.NamespacedName{
 					Name:      serviceName,
 					Namespace: CustomAstarteNamespace,
 				}, service)
@@ -647,7 +646,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 
 			// Verify service was updated
 			Eventually(func() map[string]string {
-				if err := k8sClient.Get(context.Background(), types.NamespacedName{
+				if err := k8sClient.Get(ctx, types.NamespacedName{
 					Name:      serviceName,
 					Namespace: CustomAstarteNamespace,
 				}, service); err != nil {

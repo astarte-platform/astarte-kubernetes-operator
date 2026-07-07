@@ -19,7 +19,6 @@ limitations under the License.
 package misc
 
 import (
-	"context"
 	"strconv"
 
 	"github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
@@ -71,7 +70,7 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 	})
 
 	AfterEach(func() {
-		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomAstarteNamespace)
+		integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
 	})
 
 	Describe("ReconcileConfigMap", func() {
@@ -89,9 +88,9 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 
 		AfterEach(func() {
 			cm := &v1.ConfigMap{}
-			err := k8sClient.Get(context.Background(), types.NamespacedName{Name: objName, Namespace: CustomAstarteNamespace}, cm)
+			err := k8sClient.Get(ctx, types.NamespacedName{Name: objName, Namespace: CustomAstarteNamespace}, cm)
 			if err == nil {
-				Expect(k8sClient.Delete(context.Background(), cm)).To(Succeed())
+				Expect(k8sClient.Delete(ctx, cm)).To(Succeed())
 			}
 		})
 
@@ -100,7 +99,7 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			createdCm := &v1.ConfigMap{}
-			err = k8sClient.Get(context.Background(), types.NamespacedName{Name: objName, Namespace: CustomAstarteNamespace}, createdCm)
+			err = k8sClient.Get(ctx, types.NamespacedName{Name: objName, Namespace: CustomAstarteNamespace}, createdCm)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(createdCm.Data).To(Equal(cmData))
 		})
@@ -116,7 +115,7 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			cm := &v1.ConfigMap{}
-			err = k8sClient.Get(context.Background(), types.NamespacedName{Name: objName, Namespace: CustomAstarteNamespace}, cm)
+			err = k8sClient.Get(ctx, types.NamespacedName{Name: objName, Namespace: CustomAstarteNamespace}, cm)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(cm.Data).To(Equal(updated))
 		})
@@ -135,9 +134,9 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 
 		AfterEach(func() {
 			createdSecret := &v1.Secret{}
-			err := k8sClient.Get(context.Background(), types.NamespacedName{Name: objName, Namespace: CustomAstarteNamespace}, createdSecret)
+			err := k8sClient.Get(ctx, types.NamespacedName{Name: objName, Namespace: CustomAstarteNamespace}, createdSecret)
 			if err == nil {
-				Expect(k8sClient.Delete(context.Background(), createdSecret)).To(Succeed())
+				Expect(k8sClient.Delete(ctx, createdSecret)).To(Succeed())
 			}
 		})
 
@@ -147,7 +146,7 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 
 			createdSecret := &v1.Secret{}
 
-			err = k8sClient.Get(context.Background(), types.NamespacedName{Name: objName, Namespace: CustomAstarteNamespace}, createdSecret)
+			err = k8sClient.Get(ctx, types.NamespacedName{Name: objName, Namespace: CustomAstarteNamespace}, createdSecret)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(createdSecret.Type).To(Equal(v1.SecretTypeTLS))
 			Expect(string(createdSecret.Data[v1.TLSCertKey])).To(Equal(cert))
@@ -164,7 +163,7 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			s := &v1.Secret{}
-			err = k8sClient.Get(context.Background(), types.NamespacedName{Name: objName, Namespace: CustomAstarteNamespace}, s)
+			err = k8sClient.Get(ctx, types.NamespacedName{Name: objName, Namespace: CustomAstarteNamespace}, s)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(string(s.Data[v1.TLSCertKey])).To(Equal(newCert))
 			Expect(string(s.Data[v1.TLSPrivateKeyKey])).To(Equal(newKey))
@@ -186,9 +185,9 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 
 		AfterEach(func() {
 			createdSecret := &v1.Secret{}
-			err := k8sClient.Get(context.Background(), types.NamespacedName{Name: objName, Namespace: CustomAstarteNamespace}, createdSecret)
+			err := k8sClient.Get(ctx, types.NamespacedName{Name: objName, Namespace: CustomAstarteNamespace}, createdSecret)
 			if err == nil {
-				Expect(k8sClient.Delete(context.Background(), createdSecret)).To(Succeed())
+				Expect(k8sClient.Delete(ctx, createdSecret)).To(Succeed())
 			}
 		})
 
@@ -198,7 +197,7 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 
 			createdSecret := &v1.Secret{}
 
-			err = k8sClient.Get(context.Background(), types.NamespacedName{Name: objName, Namespace: CustomAstarteNamespace}, createdSecret)
+			err = k8sClient.Get(ctx, types.NamespacedName{Name: objName, Namespace: CustomAstarteNamespace}, createdSecret)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(createdSecret.Data).To(Equal(secretData))
 		})
@@ -212,7 +211,7 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			s := &v1.Secret{}
-			err = k8sClient.Get(context.Background(), types.NamespacedName{Name: objName, Namespace: CustomAstarteNamespace}, s)
+			err = k8sClient.Get(ctx, types.NamespacedName{Name: objName, Namespace: CustomAstarteNamespace}, s)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(s.Data).To(Equal(updated))
 		})
@@ -227,14 +226,14 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			s := &v1.Secret{}
-			err = k8sClient.Get(context.Background(), types.NamespacedName{Name: name, Namespace: CustomAstarteNamespace}, s)
+			err = k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: CustomAstarteNamespace}, s)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(s.Type).To(Equal(v1.SecretTypeOpaque))
 			Expect(string(s.Data["a"])).To(Equal("1"))
 			Expect(string(s.Data["b"])).To(Equal("2"))
 
 			// cleanup
-			Expect(k8sClient.Delete(context.Background(), s)).To(Succeed())
+			Expect(k8sClient.Delete(ctx, s)).To(Succeed())
 		})
 	})
 
@@ -248,13 +247,13 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			s := &v1.Secret{}
-			err = k8sClient.Get(context.Background(), types.NamespacedName{Name: name, Namespace: CustomAstarteNamespace}, s)
+			err = k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: CustomAstarteNamespace}, s)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(s.Labels).To(HaveKeyWithValue("foo", "bar"))
 			Expect(string(s.Data["x"])).To(Equal("y"))
 
 			// cleanup
-			Expect(k8sClient.Delete(context.Background(), s)).To(Succeed())
+			Expect(k8sClient.Delete(ctx, s)).To(Succeed())
 		})
 	})
 
@@ -1063,8 +1062,8 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 							RabbitMQDefaultUserCredentialsPasswordKey: []byte("pass"),
 						},
 					}
-					Expect(k8sClient.Create(context.Background(), sec)).To(Succeed())
-					defer func() { _ = k8sClient.Delete(context.Background(), sec) }()
+					Expect(k8sClient.Create(ctx, sec)).To(Succeed())
+					defer func() { _ = k8sClient.Delete(ctx, sec) }()
 
 					host, port, user, pass, err := GetRabbitMQCredentialsFor(cr, k8sClient)
 					Expect(err).ToNot(HaveOccurred())

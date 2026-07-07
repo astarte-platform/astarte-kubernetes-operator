@@ -19,8 +19,6 @@ limitations under the License.
 package reconcile
 
 import (
-	"context"
-
 	"go.openly.dev/pointy"
 
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
@@ -58,14 +56,14 @@ var _ = Describe("CFSSL testing", Ordered, Serial, func() {
 	})
 
 	AfterEach(func() {
-		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomAstarteNamespace)
+		integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
 	})
 
 	Describe("Test EnsureCFSSL", func() {
 		It("should create/update the CFSSL pod", func() {
 			deploymentName := CustomAstarteName + "-cfssl"
 			cr.Spec.CFSSL.Deploy = pointy.Bool(true)
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 
 			// First reconciliation
 			Expect(EnsureCFSSL(cr, k8sClient, scheme.Scheme)).To(Succeed())
@@ -73,7 +71,7 @@ var _ = Describe("CFSSL testing", Ordered, Serial, func() {
 			// Check that the deployment is created
 			cfsslDeployment := &appsv1.Deployment{}
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: CustomAstarteNamespace}, cfsslDeployment)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: CustomAstarteNamespace}, cfsslDeployment)
 			}, Timeout, Interval).Should(Succeed())
 
 			// Store the checksum
@@ -82,14 +80,14 @@ var _ = Describe("CFSSL testing", Ordered, Serial, func() {
 
 			// Update the Astarte CR
 			cr.Spec.CFSSL.CaExpiry = "1h"
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 
 			// Second reconciliation
 			Expect(EnsureCFSSL(cr, k8sClient, scheme.Scheme)).To(Succeed())
 
 			// Check that the deployment is updated
 			Eventually(func() string {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: CustomAstarteNamespace}, cfsslDeployment)
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: CustomAstarteNamespace}, cfsslDeployment)
 				if err != nil {
 					return ""
 				}

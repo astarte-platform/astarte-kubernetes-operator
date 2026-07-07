@@ -19,8 +19,6 @@ limitations under the License.
 package reconcile
 
 import (
-	"context"
-
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 	"go.openly.dev/pointy"
@@ -73,7 +71,7 @@ var _ = Describe("VerneMQ testing", Ordered, Serial, func() {
 	})
 
 	AfterEach(func() {
-		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomAstarteNamespace)
+		integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
 	})
 
 	Describe("Test EnsureVerneMQ", func() {
@@ -84,16 +82,16 @@ var _ = Describe("VerneMQ testing", Ordered, Serial, func() {
 			statefulSetName := GetVerneMQStatefulSetName(cr)
 			Expect(statefulSetName).To(Equal(CustomAstarteName + "-vernemq"))
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: statefulSetName, Namespace: cr.Namespace}, &appsv1.StatefulSet{})
+				return k8sClient.Get(ctx, types.NamespacedName{Name: statefulSetName, Namespace: cr.Namespace}, &appsv1.StatefulSet{})
 			}, Timeout, Interval).Should(Succeed())
 
 			// Update the VerneMQ spec to use a different image
 			cr.Spec.VerneMQ.Image = "vernemq/vernemq:0.12.3"
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 
 			// update astarte cr.vernemq.deploy to true to force reconciliation
 			cr.Spec.VerneMQ.Deploy = pointy.Bool(true)
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 
 			// Reconcile again
 			Expect(EnsureVerneMQ(cr, k8sClient, scheme.Scheme)).To(Succeed())
@@ -101,7 +99,7 @@ var _ = Describe("VerneMQ testing", Ordered, Serial, func() {
 			// Check that the VerneMQ statefulSet is updated
 			updatedStatefulSet := &appsv1.StatefulSet{}
 			Eventually(func() string {
-				if err := k8sClient.Get(context.Background(), types.NamespacedName{Name: statefulSetName, Namespace: cr.Namespace}, updatedStatefulSet); err != nil {
+				if err := k8sClient.Get(ctx, types.NamespacedName{Name: statefulSetName, Namespace: cr.Namespace}, updatedStatefulSet); err != nil {
 					return ""
 				}
 				if len(updatedStatefulSet.Spec.Template.Spec.Containers) == 0 {
@@ -112,10 +110,10 @@ var _ = Describe("VerneMQ testing", Ordered, Serial, func() {
 
 			// Now, set cr.spec.vernemq.deploy to false and ensure the statefulSet is deleted
 			cr.Spec.VerneMQ.Deploy = pointy.Bool(false)
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Expect(EnsureVerneMQ(cr, k8sClient, scheme.Scheme)).To(Succeed())
 			Eventually(func() bool {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: statefulSetName, Namespace: cr.Namespace}, &appsv1.StatefulSet{})
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: statefulSetName, Namespace: cr.Namespace}, &appsv1.StatefulSet{})
 				return apierrors.IsNotFound(err)
 			}, Timeout, Interval).Should(BeTrue())
 		})

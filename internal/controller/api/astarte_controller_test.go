@@ -19,7 +19,6 @@ limitations under the License.
 package controller
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -43,18 +42,15 @@ const (
 var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 	BeforeAll(func() {
 		integrationutils.CreateNamespace(k8sClient, CustomAstarteNamespace)
-	})
-
-	AfterAll(func() {
-		// Do not delete the namespace here to avoid 'NamespaceTerminating' flakiness in subsequent specs
-		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomAstarteNamespace)
+		DeferCleanup(func() {
+			integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
+		})
 	})
 
 	Context("When reconciling a resource", func() {
 		const resourceName = "test-resource"
 		var controllerReconciler *AstarteReconciler
 		var cr *apiv2alpha1.Astarte
-		ctx := context.Background()
 
 		typeNamespacedName := types.NamespacedName{
 			Name:      resourceName,
@@ -76,10 +72,9 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 			cr.SetNamespace(CustomAstarteNamespace)
 			cr.SetResourceVersion("")
 			integrationutils.DeployAstarte(k8sClient, cr)
-		})
-
-		AfterEach(func() {
-			integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
+			DeferCleanup(func() {
+				integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
+			})
 		})
 
 		It("should successfully reconcile the resource", func() {
@@ -105,7 +100,6 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 			})
 
 			Expect(err).To(HaveOccurred())
-			// Check that we're requeuing after a minute due to version error
 			Expect(result.RequeueAfter).To(Equal(time.Minute))
 		})
 
@@ -142,7 +136,6 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 		const finalizerTestName = "test-finalizer"
 		var controllerReconciler *AstarteReconciler
 		var cr *apiv2alpha1.Astarte
-		ctx := context.Background()
 
 		BeforeEach(func() {
 			controllerReconciler = &AstarteReconciler{
@@ -152,7 +145,6 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 				Recorder: record.NewFakeRecorder(1024),
 			}
 
-			// Create the resource with finalizer and deletion timestamp
 			cr = baseCr.DeepCopy()
 			cr.SetName(finalizerTestName)
 			cr.SetNamespace(CustomAstarteNamespace)
@@ -161,10 +153,9 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 			cr.DeletionTimestamp = &metav1.Time{Time: time.Now()}
 
 			Expect(k8sClient.Create(ctx, cr)).To(Succeed())
-		})
-
-		AfterEach(func() {
-			integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
+			DeferCleanup(func() {
+				integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
+			})
 		})
 
 		It("should handle finalization", func() {
@@ -185,7 +176,6 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 		const addFinalizerTestName = "test-add-finalizer"
 		var controllerReconciler *AstarteReconciler
 		var cr *apiv2alpha1.Astarte
-		ctx := context.Background()
 
 		BeforeEach(func() {
 			controllerReconciler = &AstarteReconciler{
@@ -200,10 +190,9 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 			cr.SetNamespace(CustomAstarteNamespace)
 			cr.SetResourceVersion("")
 			integrationutils.DeployAstarte(k8sClient, cr)
-		})
-
-		AfterEach(func() {
-			integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
+			DeferCleanup(func() {
+				integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
+			})
 		})
 
 		It("should add a finalizer to an Astarte resource", func() {
@@ -230,11 +219,9 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 			updatedList := remove(list, "a")
 			Expect(updatedList).To(Equal([]string{"b", "c", "d"}))
 
-			// Test removing an element not in the list
 			updatedList = remove(list, "x")
 			Expect(updatedList).To(Equal(list))
 
-			// Test removing from an empty list
 			emptyList := []string{}
 			updatedList = remove(emptyList, "a")
 			Expect(updatedList).To(BeEmpty())
@@ -245,34 +232,30 @@ var _ = Describe("Astarte Controller", Ordered, Serial, func() {
 var _ = Describe("Standalone Tests", func() {
 	Context("Testing with k8sClient directly", func() {
 		It("should handle non-existent resources", func() {
-			ctx := context.Background()
-
-			// Ensure the test namespace exists and isn't terminating
 			Eventually(func() error {
 				ns := &v1.Namespace{}
 				if err := k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteNamespace}, ns); err != nil {
-					// Try to create if it's missing
 					cErr := k8sClient.Create(ctx, &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: CustomAstarteNamespace}})
 					if apierrors.IsAlreadyExists(cErr) {
 						return nil
 					}
 					return cErr
 				}
-				// If it's terminating, return an error to retry
 				if ns.Status.Phase == v1.NamespaceTerminating {
 					return fmt.Errorf("namespace terminating")
 				}
 				return nil
-			}, "20s", Interval).Should(Succeed())
+			}).Should(Succeed())
 
-			// Create a test resource
 			cr := baseCr.DeepCopy()
 			cr.SetName("test-direct-reconcile")
 			cr.SetNamespace(CustomAstarteNamespace)
 			cr.SetResourceVersion("")
 			integrationutils.DeployAstarte(k8sClient, cr)
+			DeferCleanup(func() {
+				integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
+			})
 
-			// Create the reconciler with the test client
 			reconciler := &AstarteReconciler{
 				Client:   k8sClient,
 				Scheme:   k8sClient.Scheme(),
@@ -280,7 +263,6 @@ var _ = Describe("Standalone Tests", func() {
 				Recorder: record.NewFakeRecorder(1024),
 			}
 
-			// Test reconciling a non-existent resource
 			result, err := reconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      "non-existent",
@@ -290,8 +272,6 @@ var _ = Describe("Standalone Tests", func() {
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(result.Requeue).To(BeFalse())
-
-			// Cleanup is handled by the test framework
 		})
 	})
 })

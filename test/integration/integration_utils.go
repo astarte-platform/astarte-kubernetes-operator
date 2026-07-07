@@ -16,7 +16,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//nolint:lll,goconst
 package integration
 
 import (
@@ -37,6 +36,8 @@ import (
 
 const Timeout string = "30s"
 const Interval string = "1s"
+
+const defaultNamespace = "default"
 
 const AstarteHighPriorityName string = "astarte-high-priority-non-preemptive"
 const AstarteMidPriorityName string = "astarte-mid-priority-non-preemptive"
@@ -103,7 +104,8 @@ func deleteDeploymentsInNamespace(ctx context.Context, k8sClient client.Client, 
 		}, Timeout, Interval).Should(Succeed())
 
 		Eventually(func() error {
-			return k8sClient.Get(context.Background(), client.ObjectKey{Name: d.Name, Namespace: d.Namespace}, &appsv1.Deployment{})
+			return k8sClient.Get(context.Background(),
+				client.ObjectKey{Name: d.Name, Namespace: d.Namespace}, &appsv1.Deployment{})
 		}, Timeout, Interval).ShouldNot(Succeed())
 	}
 }
@@ -119,7 +121,8 @@ func deleteStatefulSetsInNamespace(ctx context.Context, k8sClient client.Client,
 		}, Timeout, Interval).Should(Succeed())
 
 		Eventually(func() error {
-			return k8sClient.Get(context.Background(), client.ObjectKey{Name: s.Name, Namespace: s.Namespace}, &appsv1.StatefulSet{})
+			return k8sClient.Get(context.Background(),
+				client.ObjectKey{Name: s.Name, Namespace: s.Namespace}, &appsv1.StatefulSet{})
 		}, Timeout, Interval).ShouldNot(Succeed())
 	}
 }
@@ -168,7 +171,8 @@ func deletePVCsInNamespace(ctx context.Context, k8sClient client.Client, namespa
 		}, Timeout, Interval).Should(Succeed())
 
 		Eventually(func() error {
-			return k8sClient.Get(context.Background(), client.ObjectKey{Name: p.Name, Namespace: p.Namespace}, &v1.PersistentVolumeClaim{})
+			return k8sClient.Get(context.Background(),
+				client.ObjectKey{Name: p.Name, Namespace: p.Namespace}, &v1.PersistentVolumeClaim{})
 		}, Timeout, Interval).ShouldNot(Succeed())
 	}
 }
@@ -263,7 +267,7 @@ func deletePriorityClasses(k8sClient client.Client) {
 }
 
 func DeleteNamespace(k8sClient client.Client, namespace string) {
-	if namespace != "default" {
+	if namespace != defaultNamespace {
 		// Just give the namespace deletion a try, do not repeat on timeout
 		// as it would return "namespace terminating" errors
 		ns := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}}
@@ -272,7 +276,7 @@ func DeleteNamespace(k8sClient client.Client, namespace string) {
 }
 
 func CreateNamespace(k8sClient client.Client, namespace string) {
-	if namespace != "default" {
+	if namespace != defaultNamespace {
 		ns := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}}
 		Eventually(func() error {
 			err := k8sClient.Create(context.Background(), ns)
@@ -322,10 +326,10 @@ func DeleteCustomResource(ctx context.Context, k8sClient client.Client, cr clien
 // Wrapper around DeployCustomResource for Astarte resources
 func DeployAstarte(k8sClient client.Client, cr client.Object) {
 	if cr.GetNamespace() == "" {
-		cr.SetNamespace("default")
+		cr.SetNamespace(defaultNamespace)
 	}
 
-	if cr.GetNamespace() != "default" {
+	if cr.GetNamespace() != defaultNamespace {
 		CreateNamespace(k8sClient, cr.GetNamespace())
 	}
 

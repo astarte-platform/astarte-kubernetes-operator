@@ -19,8 +19,6 @@ limitations under the License.
 package reconcile
 
 import (
-	"context"
-
 	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 	"go.openly.dev/pointy"
 
@@ -63,7 +61,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 	})
 
 	AfterEach(func() {
-		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomAstarteNamespace)
+		integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
 	})
 
 	Describe("Test EnsureAstarteGenericBackend", func() {
@@ -81,7 +79,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 				deployment := &appsv1.Deployment{}
 				deploymentName := cr.Name + "-" + component.DashedString()
 				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{
+					return k8sClient.Get(ctx, types.NamespacedName{
 						Name:      deploymentName,
 						Namespace: CustomAstarteNamespace,
 					}, deployment)
@@ -103,7 +101,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 				service := &v1.Service{}
 				serviceName := cr.Name + "-" + component.ServiceName()
 				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{
+					return k8sClient.Get(ctx, types.NamespacedName{
 						Name:      serviceName,
 						Namespace: CustomAstarteNamespace,
 					}, service)
@@ -130,7 +128,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 				deployment := &appsv1.Deployment{}
 				deploymentName := cr.Name + "-" + component.DashedString()
 				Eventually(func() bool {
-					err := k8sClient.Get(context.Background(), types.NamespacedName{
+					err := k8sClient.Get(ctx, types.NamespacedName{
 						Name:      deploymentName,
 						Namespace: CustomAstarteNamespace,
 					}, deployment)
@@ -151,7 +149,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 				deployment := &appsv1.Deployment{}
 				deploymentName := cr.Name + "-" + component.DashedString()
 				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{
+					return k8sClient.Get(ctx, types.NamespacedName{
 						Name:      deploymentName,
 						Namespace: CustomAstarteNamespace,
 					}, deployment)
@@ -163,7 +161,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 
 				// Verify deployment was deleted
 				Eventually(func() bool {
-					err := k8sClient.Get(context.Background(), types.NamespacedName{
+					err := k8sClient.Get(ctx, types.NamespacedName{
 						Name:      deploymentName,
 						Namespace: CustomAstarteNamespace,
 					}, deployment)
@@ -195,7 +193,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 				deployment := &appsv1.Deployment{}
 				deploymentName := cr.Name + "-" + component.DashedString()
 				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{
+					return k8sClient.Get(ctx, types.NamespacedName{
 						Name:      deploymentName,
 						Namespace: CustomAstarteNamespace,
 					}, deployment)
@@ -232,7 +230,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 				deployment := &appsv1.Deployment{}
 				deploymentName := cr.Name + "-" + component.DashedString()
 				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{
+					return k8sClient.Get(ctx, types.NamespacedName{
 						Name:      deploymentName,
 						Namespace: CustomAstarteNamespace,
 					}, deployment)
@@ -273,7 +271,7 @@ var _ = Describe("Astarte Generic Backend testing", Ordered, Serial, func() {
 				deployment := &appsv1.Deployment{}
 				deploymentName := cr.Name + "-" + component.DashedString()
 				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{
+					return k8sClient.Get(ctx, types.NamespacedName{
 						Name:      deploymentName,
 						Namespace: CustomAstarteNamespace,
 					}, deployment)

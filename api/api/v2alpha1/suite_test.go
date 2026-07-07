@@ -19,6 +19,7 @@ limitations under the License.
 package v2alpha1
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -31,76 +32,44 @@ import (
 	// +kubebuilder:scaffold:imports
 
 	"k8s.io/client-go/kubernetes/scheme"
-
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 )
 
-// These tests use Ginkgo (BDD-style Go testing framework). Refer to
-// http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
+const Timeout = "30s"
+const Interval = "1s"
 
 var cfg *rest.Config
 var k8sClient client.Client
+var ctx context.Context
+var cancel context.CancelFunc
 var testEnv *envtest.Environment
 var baseCr *Astarte
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
-
-	RunSpecs(t, "Webhook Suite")
-}
-
-// getFirstFoundEnvTestBinaryDir locates the first binary in the specified path.
-// ENVTEST-based tests depend on specific binaries, usually located in paths set by
-// controller-runtime. When running tests directly (e.g., via an IDE) without using
-// Makefile targets, the 'BinaryAssetsDirectory' must be explicitly configured.
-//
-// This function streamlines the process by finding the required binaries, similar to
-// setting the 'KUBEBUILDER_ASSETS' environment variable. To ensure the binaries are
-// properly set up, run 'make setup-envtest' beforehand.
-func getFirstFoundEnvTestBinaryDir() string {
-	basePath := filepath.Join("..", "..", "..", "bin", "k8s")
-	entries, err := os.ReadDir(basePath)
-	if err != nil {
-		logf.Log.Error(err, "Failed to read directory", "path", basePath)
-		return ""
-	}
-	for _, entry := range entries {
-		if entry.IsDir() {
-			return filepath.Join(basePath, entry.Name())
-		}
-	}
-	return ""
+	RunSpecs(t, "APIs Suite")
 }
 
 var _ = BeforeSuite(func() {
-	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+	ctx, cancel = integrationutils.SetupTestSuite()
 
 	By("bootstrapping test environment")
-	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
-		ErrorIfCRDPathMissing: false,
-
-		// The BinaryAssetsDirectory is only required if you want to run the tests directly
-		// without call the makefile target test. If not informed it will look for the
-		// default path defined in controller-runtime which is /usr/local/kubebuilder/.
-		// Note that you must have the required binaries setup under the bin directory to perform
-		// the tests directly. When we run make test it will be setup and used automatically.
-		BinaryAssetsDirectory: getFirstFoundEnvTestBinaryDir(),
-	}
+	testEnv = integrationutils.DefaultEnvTestConfig(
+		filepath.Join("..", "..", "..", "config", "crd", "bases"),
+		filepath.Join("..", "..", "..", "bin", "k8s"),
+	)
 
 	var err error
-	// cfg is defined in this file globally.
 	cfg, err = testEnv.Start()
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
 	err = AddToScheme(scheme.Scheme)
 	Expect(err).ToNot(HaveOccurred())
-
 	err = admissionv1.AddToScheme(scheme.Scheme)
 	Expect(err).ToNot(HaveOccurred())
 
@@ -117,11 +86,8 @@ var _ = BeforeSuite(func() {
 	baseCr = &Astarte{}
 	err = yaml.Unmarshal(manifestBytes, baseCr)
 	Expect(err).ToNot(HaveOccurred())
-
 })
 
 var _ = AfterSuite(func() {
-	By("tearing down the test environment")
-	err := testEnv.Stop()
-	Expect(err).ToNot(HaveOccurred())
+	integrationutils.StopEnvTest(testEnv, cancel)
 })

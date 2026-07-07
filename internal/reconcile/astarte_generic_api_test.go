@@ -19,8 +19,6 @@ limitations under the License.
 package reconcile
 
 import (
-	"context"
-
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	integrationutils "github.com/astarte-platform/astarte-kubernetes-operator/test/integration"
 
@@ -62,7 +60,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 	})
 
 	AfterEach(func() {
-		integrationutils.TeardownResourcesInNamespace(context.Background(), k8sClient, CustomAstarteNamespace)
+		integrationutils.TeardownResourcesInNamespace(ctx, k8sClient, CustomAstarteNamespace)
 	})
 
 	Describe("Test EnsureAstarteGenericAPIComponent", func() {
@@ -88,9 +86,9 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 					apiSpec = cr.Spec.Components.Flow
 				}
 
-				Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+				Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 				Eventually(func() error {
-					return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+					return k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
 				}, Timeout, Interval).Should(Succeed())
 
 				Expect(EnsureAstarteGenericAPIComponent(cr, apiSpec, component, k8sClient, scheme.Scheme)).To(Succeed())
@@ -98,7 +96,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 				// Deployment should exist
 				deploymentName := cr.Name + "-" + component.DashedString()
 				dep := &appsv1.Deployment{}
-				Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
 				Expect(dep.Labels).ToNot(BeNil())
 				Expect(dep.Labels["app"]).To(Equal(deploymentName))
 				Expect(dep.Labels["component"]).To(Equal("astarte"))
@@ -107,14 +105,14 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 				// Service should exist
 				serviceName := cr.Name + "-" + component.ServiceName()
 				svc := &v1.Service{}
-				Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: serviceName, Namespace: cr.Namespace}, svc)).To(Succeed())
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: serviceName, Namespace: cr.Namespace}, svc)).To(Succeed())
 				Expect(svc.Spec.Ports).To(HaveLen(1))
 				Expect(svc.Spec.Ports[0].Port).To(Equal(astarteServicesPort))
 
 				// Cookie secret should exist
 				cookieSecret := &v1.Secret{}
 				cookieSecretName := deploymentName + "-cookie"
-				Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: cookieSecretName, Namespace: cr.Namespace}, cookieSecret)).To(Succeed())
+				Expect(k8sClient.Get(ctx, types.NamespacedName{Name: cookieSecretName, Namespace: cr.Namespace}, cookieSecret)).To(Succeed())
 
 				// Verify container configuration
 				Expect(dep.Spec.Template.Spec.Containers).To(HaveLen(1))
@@ -147,9 +145,9 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 		It("should not create deployment when component is disabled", func() {
 			component := apiv2alpha1.AppEngineAPI
 			cr.Spec.Components.AppengineAPI.Deploy = pointy.Bool(false)
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.AppengineAPI.AstarteGenericAPIComponentSpec, component, k8sClient, scheme.Scheme)).To(Succeed())
@@ -157,7 +155,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			// Deployment should not exist
 			deploymentName := cr.Name + "-" + component.DashedString()
 			dep := &appsv1.Deployment{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).ToNot(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).ToNot(Succeed())
 		})
 
 		It("should delete existing deployment when disabling component", func() {
@@ -166,29 +164,29 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 
 			// Enable first
 			cr.Spec.Components.AppengineAPI.Deploy = pointy.Bool(true)
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.AppengineAPI.AstarteGenericAPIComponentSpec, component, k8sClient, scheme.Scheme)).To(Succeed())
 
 			// Verify deployment exists
 			dep := &appsv1.Deployment{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
 
 			// Now disable
 			cr.Spec.Components.AppengineAPI.Deploy = pointy.Bool(false)
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.AppengineAPI.AstarteGenericAPIComponentSpec, component, k8sClient, scheme.Scheme)).To(Succeed())
 
 			// Deployment should be deleted
 			Eventually(func() bool {
-				err := k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)
 				return apierrors.IsNotFound(err)
 			}, Timeout, Interval).Should(BeTrue())
 		})
@@ -206,16 +204,16 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 					v1.ResourceMemory: resource.MustParse("512Mi"),
 				},
 			}
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.AppengineAPI.AstarteGenericAPIComponentSpec, component, k8sClient, scheme.Scheme)).To(Succeed())
 
 			deploymentName := cr.Name + "-" + component.DashedString()
 			dep := &appsv1.Deployment{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
 
 			container := dep.Spec.Template.Spec.Containers[0]
 			Expect(container.Resources.Requests.Cpu().String()).To(Equal("100m"))
@@ -228,16 +226,16 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			component := apiv2alpha1.AppEngineAPI
 			cr.Spec.Components.AppengineAPI.Deploy = pointy.Bool(true)
 			cr.Spec.Components.AppengineAPI.Replicas = pointy.Int32(3)
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.AppengineAPI.AstarteGenericAPIComponentSpec, component, k8sClient, scheme.Scheme)).To(Succeed())
 
 			deploymentName := cr.Name + "-" + component.DashedString()
 			dep := &appsv1.Deployment{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
 
 			Expect(*dep.Spec.Replicas).To(Equal(int32(3)))
 		})
@@ -246,16 +244,16 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			component := apiv2alpha1.AppEngineAPI
 			cr.Spec.Components.AppengineAPI.Deploy = pointy.Bool(true)
 			cr.Spec.Components.AppengineAPI.DisableAuthentication = pointy.Bool(true)
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.AppengineAPI.AstarteGenericAPIComponentSpec, component, k8sClient, scheme.Scheme)).To(Succeed())
 
 			deploymentName := cr.Name + "-" + component.DashedString()
 			dep := &appsv1.Deployment{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
 
 			container := dep.Spec.Template.Spec.Containers[0]
 			hasDisableAuthEnv := false
@@ -274,9 +272,9 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 		It("should create ServiceAccount for AppEngineAPI", func() {
 			component := apiv2alpha1.AppEngineAPI
 			cr.Spec.Components.AppengineAPI.Deploy = pointy.Bool(true)
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.AppengineAPI.AstarteGenericAPIComponentSpec, component, k8sClient, scheme.Scheme)).To(Succeed())
@@ -285,28 +283,28 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 
 			// ServiceAccount should exist
 			sa := &v1.ServiceAccount{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, sa)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, sa)).To(Succeed())
 
 			// Role should exist
 			role := &rbacv1.Role{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, role)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, role)).To(Succeed())
 
 			// RoleBinding should exist
 			roleBinding := &rbacv1.RoleBinding{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, roleBinding)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, roleBinding)).To(Succeed())
 
 			// Deployment should reference the ServiceAccount
 			dep := &appsv1.Deployment{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
 			Expect(dep.Spec.Template.Spec.ServiceAccountName).To(Equal(deploymentName))
 		})
 
 		It("should create ServiceAccount for RealmManagement", func() {
 			component := apiv2alpha1.RealmManagement
 			cr.Spec.Components.RealmManagement.Deploy = pointy.Bool(true)
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.RealmManagement, component, k8sClient, scheme.Scheme)).To(Succeed())
@@ -315,28 +313,28 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 
 			// ServiceAccount should exist
 			sa := &v1.ServiceAccount{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, sa)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, sa)).To(Succeed())
 
 			// Role should exist
 			role := &rbacv1.Role{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, role)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, role)).To(Succeed())
 
 			// RoleBinding should exist
 			roleBinding := &rbacv1.RoleBinding{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, roleBinding)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, roleBinding)).To(Succeed())
 
 			// Deployment should reference the ServiceAccount
 			dep := &appsv1.Deployment{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
 			Expect(dep.Spec.Template.Spec.ServiceAccountName).To(Equal(deploymentName))
 		})
 
 		It("should create ServiceAccount for Pairing", func() {
 			component := apiv2alpha1.Pairing
 			cr.Spec.Components.Pairing.Deploy = pointy.Bool(true)
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.Pairing, component, k8sClient, scheme.Scheme)).To(Succeed())
@@ -345,19 +343,19 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 
 			// ServiceAccount should exist
 			sa := &v1.ServiceAccount{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, sa)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, sa)).To(Succeed())
 
 			// Role should exist
 			role := &rbacv1.Role{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, role)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, role)).To(Succeed())
 
 			// RoleBinding should exist
 			roleBinding := &rbacv1.RoleBinding{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, roleBinding)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, roleBinding)).To(Succeed())
 
 			// Deployment should reference the ServiceAccount
 			dep := &appsv1.Deployment{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
 			Expect(dep.Spec.Template.Spec.ServiceAccountName).To(Equal(deploymentName))
 		})
 
@@ -371,9 +369,9 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 				AstarteMidPriority:  pointy.Int(500),
 				AstarteLowPriority:  pointy.Int(100),
 			}
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			// Create PriorityClasses first
@@ -383,7 +381,7 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 
 			deploymentName := cr.Name + "-" + component.DashedString()
 			dep := &appsv1.Deployment{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
 
 			Expect(dep.Spec.Template.Spec.PriorityClassName).To(Equal(AstarteHighPriorityName))
 		})
@@ -432,16 +430,16 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			component := apiv2alpha1.Housekeeping
 			cr.Spec.Components.Housekeeping.Deploy = pointy.Bool(true)
 			cr.Spec.Features.RealmDeletion = true
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.Housekeeping, component, k8sClient, scheme.Scheme)).To(Succeed())
 
 			deploymentName := cr.Name + "-" + component.DashedString()
 			dep := &appsv1.Deployment{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
 
 			container := dep.Spec.Template.Spec.Containers[0]
 
@@ -463,16 +461,16 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 		It("should add proper environment variables for Pairing", func() {
 			component := apiv2alpha1.Pairing
 			cr.Spec.Components.Pairing.Deploy = pointy.Bool(true)
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.Pairing, component, k8sClient, scheme.Scheme)).To(Succeed())
 
 			deploymentName := cr.Name + "-" + component.DashedString()
 			dep := &appsv1.Deployment{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
 
 			container := dep.Spec.Template.Spec.Containers[0]
 
@@ -501,16 +499,16 @@ var _ = Describe("Astarte Generic API reconcile tests", Ordered, Serial, func() 
 			component := apiv2alpha1.AppEngineAPI
 			cr.Spec.Components.AppengineAPI.Deploy = pointy.Bool(true)
 			cr.Spec.AstarteInstanceID = CustomAstarteInstanceID
-			Expect(k8sClient.Update(context.Background(), cr)).To(Succeed())
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
 			Eventually(func() error {
-				return k8sClient.Get(context.Background(), types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
+				return k8sClient.Get(ctx, types.NamespacedName{Name: CustomAstarteName, Namespace: CustomAstarteNamespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
 			Expect(EnsureAstarteGenericAPIComponent(cr, cr.Spec.Components.AppengineAPI.AstarteGenericAPIComponentSpec, component, k8sClient, scheme.Scheme)).To(Succeed())
 
 			deploymentName := cr.Name + "-" + component.DashedString()
 			dep := &appsv1.Deployment{}
-			Expect(k8sClient.Get(context.Background(), types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: cr.Namespace}, dep)).To(Succeed())
 
 			container := dep.Spec.Template.Spec.Containers[0]
 			hasInstanceID := false
