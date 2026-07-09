@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add configurable metrics endpoint in the Helm chart. Metrics are disabled by default (`metrics.enable: false`). When enabled (`metrics.enable: true`), metrics are served on the configured port (`metrics.port`, default `8443`) over HTTPS by default (`metrics.secure: true`). Set `metrics.secure: false` to use HTTP instead.
 - Add support for Astarte v1.4.0.
 - Add support for Vault configuration in the Astarte CR. Vault configuration is now required for Astarte 1.4 and above and ignored for Astarte 1.3.
+- Add upgrade documentation for the v26.5 to v26.7 upgrade path.
 
 ## [26.5.1] - 2026-05-03
 

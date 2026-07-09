@@ -1,26 +1,19 @@
 # Prerequisites
 
-As much as Astarte's Operator is capable of creating a completely self-contained installation,
-there's a number of prerequisites to be fulfilled depending on the use case.
+As much as Astarte's Operator is capable of creating a completely self-contained installation, there's a number of prerequisites to be fulfilled depending on the use case.
 
 ## On your machine
 
 The following tools are required within your local machine:
 
-- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/): must be compatible with your
-  target Kubernetes version,
-- [astartectl](https://github.com/astarte-platform/astartectl): your version must be the same of the
-  Astarte Operator running in your cluster,
+- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/): must be compatible with your target Kubernetes version,
+- [astartectl](https://github.com/astarte-platform/astartectl): your version must be the same of the Astarte Operator running in your cluster,
 - [helm](https://helm.sh/): v3 is required.
 
 ## HAProxy
-Astarte Operator is capable of interacting with HAProxy Ingress Controller through its dedicated `AstarteDefaultIngress` resource,
-as long as an [HAProxy ingress controller](https://www.haproxy.com/documentation/kubernetes-ingress/) is installed. 
+Astarte Operator is capable of interacting with HAProxy Ingress Controller through its dedicated `AstarteDefaultIngress` resource, as long as an [HAProxy ingress controller](https://www.haproxy.com/documentation/kubernetes-ingress/) is installed. 
 
-Please, be aware that trying to deploy multiple ingress controllers in your cluster may result in all
-of them trying simultaneously to handle the Astarte ingress resource. Consider using ingress classes
-for avoiding confusing situations as outlined
-[here](https://kubernetes.github.io/ingress-nginx/user-guide/multiple-ingress/).
+Please, be aware that trying to deploy multiple ingress controllers in your cluster may result in all of them trying simultaneously to handle the Astarte ingress resource. Consider using ingress classes for avoiding confusing situations as outlined [here](https://kubernetes.github.io/ingress-nginx/user-guide/multiple-ingress/).
 
 ** Helm installation via CLI **
 Installing the ingress controller is as simple as running a few `helm` commands:
@@ -53,19 +46,11 @@ Depending on the value of this annotation, the Operator will create Ingress reso
 
 ## cert-manager
 
-Astarte requires [`cert-manager`](https://cert-manager.io/) to be installed in the cluster in its
-default configuration (installed in namespace `cert-manager` as `cert-manager`). If you are using
-`cert-manager` in your cluster already you don't need to take any action - otherwise, you will need
-to install it.
+Astarte requires [`cert-manager`](https://cert-manager.io/) to be installed in the cluster in its default configuration (installed in namespace `cert-manager` as `cert-manager`). If you are using `cert-manager` in your cluster already you don't need to take any action - otherwise, you will need to install it.
 
-Astarte is actively tested with `cert-manager` 1.16.3, but should work with any 1.0+ releases of
-`cert-manager`. If your `cert-manager` release is outdated, please consider upgrading to a newer
-version according to [this guide](https://cert-manager.io/docs/installation/upgrading/).
+Astarte is actively tested with `cert-manager` 1.16.3, but should work with any 1.0+ releases of `cert-manager`. If your `cert-manager` release is outdated, please consider upgrading to a newer version according to [this guide](https://cert-manager.io/docs/installation/upgrading/).
 
-[`cert-manager` documentation](https://cert-manager.io/docs/installation/) details all needed steps
-to have a working instance on your cluster. However, in case you won't be using `cert-manager` for
-other components beyond Astarte or, in general, if you don't have very specific requirements, it is
-advised to install it through its Helm chart. To do so, run the following commands:
+[`cert-manager` documentation](https://cert-manager.io/docs/installation/) details all needed steps to have a working instance on your cluster. However, in case you won't be using `cert-manager` for other components beyond Astarte or, in general, if you don't have very specific requirements, it is advised to install it through its Helm chart. To do so, run the following commands:
 
 ```bash
 $ helm repo add jetstack https://charts.jetstack.io
@@ -82,24 +67,31 @@ This will install `cert-manager` and its CRDs in the cluster.
 
 ## External RabbitMQ
 
-Starting from Astarte Operator `v26.5.x`, RabbitMQ is no longer deployed by the Astarte Operator.
-If you previously relied on a RabbitMQ instance managed by the Astarte Operator, upgrading shall be preceded by provisioning an external RabbitMQ instance, otherwise, after the upgrade you will end up without any AMQP broker in place.
-Consider using RabbitMQ deployed by the [RabbitMQ Cluster Operator](https://www.rabbitmq.com/kubernetes/operator/operator-overview) or any other managed solution that you prefer.
+Astarte needs a RabbitMQ instance to work. The Astarte Operator does **not** deploy a RabbitMQ instance: you must provision one before installing Astarte, then configure the connection details in the Astarte CR under the `spec.rabbitmq` section.
+
+Tested RabbitMQ instances include:
+- [CloudAMQP](https://www.cloudamqp.com/) managed RabbitMQ instance 
+- [RabbitMQ Cluster Operator](https://www.rabbitmq.com/kubernetes/operator/operator-overview)
 
 ## External Cassandra / Scylla
 
-Starting from Astarte Operator `v26.5.x`, Cassandra / Scylla is no longer deployed by the Astarte Operator.
-If you previously relied on a Cassandra instance managed by the Astarte Operator, you shall provision an external instance before upgrading, otherwise the upgrade will leave you without any database backing Astarte.
-It is strongly advised to deploy a separate Cassandra cluster, a VM-based installation or a managed solution.
+Astarte relies on a Cassandra / Scylla database to work. The Astarte Operator does **not** deploy a Scylla DB instance: you must provision one before installing Astarte, then configure the connection details in the Astarte CR under the `spec.cassandra` section.
+
+Refer to the [Astarte Database documentation](https://docs.astarte-platform.org/astarte/1.4/090-database.html) for further details.
+
+## External Hashicorp Vault / OpenBao
+
+Astarte `1.4+` requires an external [Hashicorp Vault](https://www.hashicorp.com/en/products/vault) or [OpenBao](https://openbao.org/) instance to safely handle secrets. The Astarte Operator does **not** deploy a Hashicorp Vault or OpenBao instance: you must provision one before installing Astarte, then configure the connection details in the Astarte CR under the `spec.vault` section.
+
+The configuration of a Vault is not supported when the selected Astarte version is `1.3.x`
+
+## External FDO Rendezvous Server
+
+Astarte `1.4+` requires an external Rendezvous Server (RV) to provide the [FDO (FIDO Device Onboard)](https://fidoalliance.org/device-onboarding-overview/) feature. The Astarte Operator does **not** deploy a Rendezvous Server instance.
+If you plan to use FDO (optional on Astarte `1.3.x`, mandatory on Astarte `1.4+`), ensure to configure the Rendezvous Server instance connection details under `spec.rendezvousServer` on the Astarte CR.
 
 ## Kubernetes and external components
 
-When deploying external components, it is important to take in consideration how Kubernetes behaves
-with the underlying infrastructure. Most modern Cloud Providers have a concept of Virtual Private
-Cloud, by which the internal Kubernetes Network stack directly integrates with their Network stack.
-This, in short, enables deploying Pods in a shared private network, in which other components (such
-as Virtual Machines) can be deployed.
+When deploying external components, it is important to take in consideration how Kubernetes behaves with the underlying infrastructure. Most modern Cloud Providers have a concept of Virtual Private Cloud, by which the internal Kubernetes Network stack directly integrates with their Network stack. This, in short, enables deploying Pods in a shared private network, in which other components (such as Virtual Machines) can be deployed.
 
-This is the preferred, advised and supported configuration. In this scenario, there's literally no
-difference between interacting with a VM or a Pod, enabling a hybrid infrastructure without having
-to pay the performance cost.
+This is the preferred, advised and supported configuration. In this scenario, there's literally no difference between interacting with a VM or a Pod, enabling a hybrid infrastructure without having to pay the performance cost.
