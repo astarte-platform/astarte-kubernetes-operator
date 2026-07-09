@@ -416,9 +416,75 @@ func appendAstarteFDOEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astarte) []v1.EnvV
 	ret = append(ret, v1.EnvVar{Name: "PAIRING_ENABLE_FDO", Value: strconv.FormatBool(fdoEnabled)})
 
 	if fdoEnabled {
-		// At the moment, we only have the Rendezvous Server config.
-		// In the future we will have other envs to set
 		ret = appendAstarteRendezvousServerEnvVars(ret, cr)
+	}
+
+	return ret
+}
+
+// appendAstarteVaultEnvVars returns the environment variables needed to enable Vault support
+func appendAstarteVaultEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astarte) []v1.EnvVar {
+	if cr.Spec.Vault == nil {
+		return ret
+	}
+
+	vPort := pointy.Int32Value(cr.Spec.Vault.Connection.Port, 8200)
+
+	ret = append(ret,
+		v1.EnvVar{
+			Name:  "ASTARTE_VAULT_URL",
+			Value: fmt.Sprintf("%s:%d", cr.Spec.Vault.Connection.Host, vPort),
+		},
+	)
+
+	// Vault authentication configuration
+	if cr.Spec.Vault.Connection.ConnectionStringSecret != nil {
+		ret = append(ret,
+			v1.EnvVar{
+				Name:  "ASTARTE_VAULT_AUTHENTICATION_MECHANISM",
+				Value: "token",
+			},
+		)
+
+		ret = append(ret,
+			v1.EnvVar{
+				Name: "ASTARTE_VAULT_TOKEN",
+				ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{
+					LocalObjectReference: v1.LocalObjectReference{Name: cr.Spec.Vault.Connection.ConnectionStringSecret.Name},
+					Key:                  cr.Spec.Vault.Connection.ConnectionStringSecret.Key,
+				}},
+			},
+		)
+	}
+
+	// Vault SSL configuration
+	if cr.Spec.Vault.Connection.SSLConfiguration.Enable {
+		ret = append(ret, v1.EnvVar{
+			Name:  "ASTARTE_VAULT_SSL_ENABLED",
+			Value: "true",
+		})
+
+		// CA configuration
+		if cr.Spec.Vault.Connection.SSLConfiguration.CustomCASecret.Name != "" {
+			ret = append(ret, v1.EnvVar{
+				Name:  "ASTARTE_VAULT_SSL_CA_FILE",
+				Value: "/vault-ssl/ca.crt",
+			})
+		}
+
+		// SNI configuration
+		switch {
+		case cr.Spec.Vault.Connection.SSLConfiguration.CustomSNI != "":
+			ret = append(ret, v1.EnvVar{
+				Name:  "ASTARTE_VAULT_SSL_CUSTOM_SNI",
+				Value: cr.Spec.Vault.Connection.SSLConfiguration.CustomSNI,
+			})
+		case !pointy.BoolValue(cr.Spec.Vault.Connection.SSLConfiguration.SNI, true):
+			ret = append(ret, v1.EnvVar{
+				Name:  "ASTARTE_VAULT_SSL_DISABLE_SNI",
+				Value: "true",
+			})
+		}
 	}
 
 	return ret
@@ -820,6 +886,18 @@ func getAstarteCommonVolumes(cr *apiv2alpha1.Astarte) []v1.Volume {
 		})
 	}
 
+	if cr.Spec.Vault != nil &&
+		cr.Spec.Vault.Connection.SSLConfiguration.CustomCASecret.Name != "" {
+		// Mount the secret!
+		ret = append(ret, v1.Volume{
+			Name: "vault-ssl-ca",
+			VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{
+				SecretName: cr.Spec.Vault.Connection.SSLConfiguration.CustomCASecret.Name,
+				Items:      []v1.KeyToPath{{Key: "ca.crt", Path: "ca.crt"}},
+			}},
+		})
+	}
+
 	return ret
 }
 
@@ -857,6 +935,16 @@ func getAstarteCommonVolumeMounts(cr *apiv2alpha1.Astarte) []v1.VolumeMount {
 		ret = append(ret, v1.VolumeMount{
 			Name:      "rendezvous-ssl-ca",
 			MountPath: "/rendezvous-ssl",
+			ReadOnly:  true,
+		})
+	}
+
+	if cr.Spec.Vault != nil &&
+		cr.Spec.Vault.Connection.SSLConfiguration.CustomCASecret.Name != "" {
+		// Mount the secret!
+		ret = append(ret, v1.VolumeMount{
+			Name:      "vault-ssl-ca",
+			MountPath: "/vault-ssl",
 			ReadOnly:  true,
 		})
 	}

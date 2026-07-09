@@ -49,6 +49,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 		CassandraCASecret      = "cassandra-ca-secret"
 		CustomPVCName          = "test-pvc"
 		RabbitMQCASecret       = "rabbitmq-ca-secret"
+		VaultCASecret          = "vault-ca-secret"
 	)
 
 	var cr *apiv2alpha1.Astarte
@@ -790,6 +791,56 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 			Expect(volumeNames).To(ContainElement("rabbitmq-ssl-ca"))
 			Expect(volumeNames).To(ContainElement("cassandra-ssl-ca"))
 		})
+
+		It("should include Vault SSL volume when configured", func() {
+			cr.Spec.Vault = &apiv2alpha1.AstarteVaultSpec{
+				Connection: apiv2alpha1.AstarteVaultConnectionSpec{
+					HostAndPort: apiv2alpha1.HostAndPort{
+						Host: "vault.example.com",
+						Port: pointy.Int32(8200),
+					},
+					SSLConfiguration: apiv2alpha1.GenericSSLConfigurationSpec{
+						CustomCASecret: v1.LocalObjectReference{
+							Name: VaultCASecret,
+						},
+					},
+				},
+			}
+
+			volumes := getAstarteCommonVolumes(cr)
+
+			// Expect beam-config + vault-ssl-ca
+			Expect(volumes).To(HaveLen(2))
+
+			var foundVaultVolume bool
+			for _, vol := range volumes {
+				if vol.Name == "vault-ssl-ca" {
+					foundVaultVolume = true
+					Expect(vol.VolumeSource.Secret).ToNot(BeNil())
+					Expect(vol.VolumeSource.Secret.SecretName).To(Equal(VaultCASecret))
+					Expect(vol.VolumeSource.Secret.Items).To(HaveLen(1))
+					Expect(vol.VolumeSource.Secret.Items[0].Key).To(Equal("ca.crt"))
+					Expect(vol.VolumeSource.Secret.Items[0].Path).To(Equal("ca.crt"))
+				}
+			}
+			Expect(foundVaultVolume).To(BeTrue())
+		})
+
+		It("should not include Vault SSL volume when Vault CA secret name is empty", func() {
+			cr.Spec.Vault = &apiv2alpha1.AstarteVaultSpec{
+				Connection: apiv2alpha1.AstarteVaultConnectionSpec{
+					HostAndPort: apiv2alpha1.HostAndPort{
+						Host: "vault.example.com",
+						Port: pointy.Int32(8200),
+					},
+				},
+			}
+
+			volumes := getAstarteCommonVolumes(cr)
+
+			Expect(volumes).To(HaveLen(1))
+			Expect(volumes[0].Name).To(Equal("beam-config"))
+		})
 	})
 
 	Describe("Test getAstarteCommonVolumeMounts", func() {
@@ -857,6 +908,191 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 			Expect(mountNames).To(ContainElement("beam-config"))
 			Expect(mountNames).To(ContainElement("rabbitmq-ssl-ca"))
 			Expect(mountNames).To(ContainElement("cassandra-ssl-ca"))
+		})
+
+		It("should include Vault SSL mount when configured", func() {
+			cr.Spec.Vault = &apiv2alpha1.AstarteVaultSpec{
+				Connection: apiv2alpha1.AstarteVaultConnectionSpec{
+					HostAndPort: apiv2alpha1.HostAndPort{
+						Host: "vault.example.com",
+						Port: pointy.Int32(8200),
+					},
+					SSLConfiguration: apiv2alpha1.GenericSSLConfigurationSpec{
+						CustomCASecret: v1.LocalObjectReference{
+							Name: VaultCASecret,
+						},
+					},
+				},
+			}
+
+			mounts := getAstarteCommonVolumeMounts(cr)
+
+			// Expect beam-config + vault-ssl-ca
+			Expect(mounts).To(HaveLen(2))
+
+			var foundVaultMount bool
+			for _, mount := range mounts {
+				if mount.Name == "vault-ssl-ca" {
+					foundVaultMount = true
+					Expect(mount.MountPath).To(Equal("/vault-ssl"))
+					Expect(mount.ReadOnly).To(BeTrue())
+				}
+			}
+			Expect(foundVaultMount).To(BeTrue())
+		})
+	})
+
+	Describe("Test appendAstarteVaultEnvVars", func() {
+		It("should return no env vars when Vault is nil", func() {
+			cr.Spec.Vault = nil
+			result := appendAstarteVaultEnvVars([]v1.EnvVar{}, cr)
+			Expect(result).To(BeEmpty())
+		})
+
+		It("should set ASTARTE_VAULT_URL with default port when port is nil", func() {
+			cr.Spec.Vault = &apiv2alpha1.AstarteVaultSpec{
+				Connection: apiv2alpha1.AstarteVaultConnectionSpec{
+					HostAndPort: apiv2alpha1.HostAndPort{
+						Host: "vault.example.com",
+						Port: nil,
+					},
+				},
+			}
+
+			result := appendAstarteVaultEnvVars([]v1.EnvVar{}, cr)
+
+			Expect(result).To(HaveLen(1))
+			Expect(result[0].Name).To(Equal("ASTARTE_VAULT_URL"))
+			Expect(result[0].Value).To(Equal("vault.example.com:8200"))
+		})
+
+		It("should set ASTARTE_VAULT_URL with custom port", func() {
+			cr.Spec.Vault = &apiv2alpha1.AstarteVaultSpec{
+				Connection: apiv2alpha1.AstarteVaultConnectionSpec{
+					HostAndPort: apiv2alpha1.HostAndPort{
+						Host: "vault.example.com",
+						Port: pointy.Int32(9200),
+					},
+				},
+			}
+
+			result := appendAstarteVaultEnvVars([]v1.EnvVar{}, cr)
+
+			Expect(result).To(HaveLen(1))
+			Expect(result[0].Name).To(Equal("ASTARTE_VAULT_URL"))
+			Expect(result[0].Value).To(Equal("vault.example.com:9200"))
+		})
+
+		It("should set token auth env vars when connectionStringSecret is provided", func() {
+			cr.Spec.Vault = &apiv2alpha1.AstarteVaultSpec{
+				Connection: apiv2alpha1.AstarteVaultConnectionSpec{
+					HostAndPort: apiv2alpha1.HostAndPort{
+						Host: "vault.example.com",
+						Port: pointy.Int32(8200),
+					},
+					ConnectionStringSecret: &apiv2alpha1.ConnectionStringSecret{
+						Name: "vault-token-secret",
+						Key:  "token",
+					},
+				},
+			}
+
+			result := appendAstarteVaultEnvVars([]v1.EnvVar{}, cr)
+
+			Expect(result).To(HaveLen(3))
+			Expect(result[0].Name).To(Equal("ASTARTE_VAULT_URL"))
+			Expect(result[1].Name).To(Equal("ASTARTE_VAULT_AUTHENTICATION_MECHANISM"))
+			Expect(result[1].Value).To(Equal("token"))
+			Expect(result[2].Name).To(Equal("ASTARTE_VAULT_TOKEN"))
+			Expect(result[2].ValueFrom).ToNot(BeNil())
+			Expect(result[2].ValueFrom.SecretKeyRef.Name).To(Equal("vault-token-secret"))
+			Expect(result[2].ValueFrom.SecretKeyRef.Key).To(Equal("token"))
+		})
+
+		It("should set SSL env vars when SSL is enabled", func() {
+			cr.Spec.Vault = &apiv2alpha1.AstarteVaultSpec{
+				Connection: apiv2alpha1.AstarteVaultConnectionSpec{
+					HostAndPort: apiv2alpha1.HostAndPort{
+						Host: "vault.example.com",
+						Port: pointy.Int32(8200),
+					},
+					SSLConfiguration: apiv2alpha1.GenericSSLConfigurationSpec{
+						Enable: true,
+					},
+				},
+			}
+
+			result := appendAstarteVaultEnvVars([]v1.EnvVar{}, cr)
+
+			Expect(result).To(HaveLen(2))
+			Expect(result[0].Name).To(Equal("ASTARTE_VAULT_URL"))
+			Expect(result[1].Name).To(Equal("ASTARTE_VAULT_SSL_ENABLED"))
+			Expect(result[1].Value).To(Equal("true"))
+		})
+
+		It("should set CA file env var when SSL is enabled with custom CA", func() {
+			cr.Spec.Vault = &apiv2alpha1.AstarteVaultSpec{
+				Connection: apiv2alpha1.AstarteVaultConnectionSpec{
+					HostAndPort: apiv2alpha1.HostAndPort{
+						Host: "vault.example.com",
+						Port: pointy.Int32(8200),
+					},
+					SSLConfiguration: apiv2alpha1.GenericSSLConfigurationSpec{
+						Enable: true,
+						CustomCASecret: v1.LocalObjectReference{
+							Name: "vault-ca",
+						},
+					},
+				},
+			}
+
+			result := appendAstarteVaultEnvVars([]v1.EnvVar{}, cr)
+
+			Expect(result).To(HaveLen(3))
+			Expect(result[2].Name).To(Equal("ASTARTE_VAULT_SSL_CA_FILE"))
+			Expect(result[2].Value).To(Equal("/vault-ssl/ca.crt"))
+		})
+
+		It("should set custom SNI env var when provided", func() {
+			cr.Spec.Vault = &apiv2alpha1.AstarteVaultSpec{
+				Connection: apiv2alpha1.AstarteVaultConnectionSpec{
+					HostAndPort: apiv2alpha1.HostAndPort{
+						Host: "vault.example.com",
+						Port: pointy.Int32(8200),
+					},
+					SSLConfiguration: apiv2alpha1.GenericSSLConfigurationSpec{
+						Enable:    true,
+						CustomSNI: "custom.sni.example.com",
+					},
+				},
+			}
+
+			result := appendAstarteVaultEnvVars([]v1.EnvVar{}, cr)
+
+			Expect(result).To(HaveLen(3))
+			Expect(result[2].Name).To(Equal("ASTARTE_VAULT_SSL_CUSTOM_SNI"))
+			Expect(result[2].Value).To(Equal("custom.sni.example.com"))
+		})
+
+		It("should set disable SNI env var when SNI is explicitly disabled", func() {
+			cr.Spec.Vault = &apiv2alpha1.AstarteVaultSpec{
+				Connection: apiv2alpha1.AstarteVaultConnectionSpec{
+					HostAndPort: apiv2alpha1.HostAndPort{
+						Host: "vault.example.com",
+						Port: pointy.Int32(8200),
+					},
+					SSLConfiguration: apiv2alpha1.GenericSSLConfigurationSpec{
+						Enable: true,
+						SNI:    pointy.Bool(false),
+					},
+				},
+			}
+
+			result := appendAstarteVaultEnvVars([]v1.EnvVar{}, cr)
+
+			Expect(result).To(HaveLen(3))
+			Expect(result[2].Name).To(Equal("ASTARTE_VAULT_SSL_DISABLE_SNI"))
+			Expect(result[2].Value).To(Equal("true"))
 		})
 	})
 

@@ -27,6 +27,7 @@ import (
 	"strings"
 
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/internal/version"
 	"go.openly.dev/pointy"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -253,6 +254,10 @@ func validateAstarte(r *apiv2alpha1.Astarte) field.ErrorList {
 		allErrs = append(allErrs, err)
 	}
 
+	if err := validateVaultConfiguration(r); err != nil {
+		allErrs = append(allErrs, err)
+	}
+
 	return allErrs
 }
 
@@ -262,6 +267,30 @@ func validateFDOConfiguration(r *apiv2alpha1.Astarte) *field.Error {
 		err := errors.New("must be set when fdo.enable is true")
 		astartelog.Info(err.Error())
 		return field.Required(fldPath, err.Error())
+	}
+
+	return nil
+}
+
+func validateVaultConfiguration(r *apiv2alpha1.Astarte) *field.Error {
+	astarteVersionCheck, err := version.NewChecker(r.Spec.Version)
+	if err != nil {
+		fldPath := field.NewPath("spec").Child("version")
+		return field.Invalid(fldPath, r.Spec.Version, "must be a valid semantic version")
+	}
+
+	supportsVault := astarteVersionCheck.Supports(version.Vault)
+
+	if r.Spec.Vault == nil && supportsVault {
+		fldPath := field.NewPath("spec").Child("vault")
+		err := errors.New("vault configuration is required for Astarte version 1.4.0 and above")
+		return field.Required(fldPath, err.Error())
+	}
+
+	if r.Spec.Vault != nil && !supportsVault {
+		fldPath := field.NewPath("spec").Child("vault")
+		err := errors.New("the Astarte version must be at least 1.4.0 to use Vault")
+		return field.Invalid(fldPath, r.Spec.Version, err.Error())
 	}
 
 	return nil
