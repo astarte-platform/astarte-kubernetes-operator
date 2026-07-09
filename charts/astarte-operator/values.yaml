@@ -22,3 +22,13 @@ resources:
   requests:
     cpu: 100m
     memory: 128Mi
+
+# -- Metrics configuration.
+# Metrics are exposed on the configured port. When enabled, they use HTTPS by default.
+metrics:
+  # -- Whether to enable the metrics endpoint.
+  enable: false
+  # -- The port to expose metrics on.
+  port: 8443
+  # -- Whether to serve metrics over HTTPS. Set to false to use HTTP.
+  secure: true

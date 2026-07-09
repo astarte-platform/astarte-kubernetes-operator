@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add `Operator Version`, `Astarte Version`, `Health`, `Base API URL` and `Broker URL` columns as print columns to the Astarte CRD.
 - Add `API IP` and `Broker IP` columns as print columns to the ADI CRD.
 - Add `AstarteFDOIngress` (v1alpha1) resource in the `ingress.astarte-platform.org` group to handle the ingress dedicated to Astarte FDO pairing requests.
+- Add configurable metrics endpoint in the Helm chart. Metrics are disabled by default (`metrics.enable: false`). When enabled (`metrics.enable: true`), metrics are served on the configured port (`metrics.port`, default `8443`) over HTTPS by default (`metrics.secure: true`). Set `metrics.secure: false` to use HTTP instead.
 
 ## [26.5.1] - 2026-05-03
 
