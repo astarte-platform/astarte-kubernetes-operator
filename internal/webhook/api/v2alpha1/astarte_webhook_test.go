@@ -666,6 +666,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 	Describe("TestValidateFDOConfiguration", func() {
 		BeforeEach(func() {
 			cr.Spec.FDO = nil
+			cr.Spec.Version = "1.3.0"
 		})
 
 		It("should not return an error when FDO is not configured", func() {
@@ -703,6 +704,96 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 			err := validateFDOConfiguration(cr)
 			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should return an error when FDO is disabled on Astarte >= 1.4", func() {
+			cr.Spec.Version = "1.4.0"
+			cr.Spec.FDO = &apiv2alpha1.AstarteFDOSpec{
+				Enable:           false,
+				RendezvousServer: &apiv2alpha1.AstarteRendezvousServerSpec{},
+			}
+			err := validateFDOConfiguration(cr)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Field).To(Equal("spec.fdo.enable"))
+			Expect(err.Type).To(Equal(field.ErrorTypeInvalid))
+		})
+
+		It("should return an error when FDO is disabled on Astarte > 1.4", func() {
+			cr.Spec.Version = "1.4.5"
+			cr.Spec.FDO = &apiv2alpha1.AstarteFDOSpec{
+				Enable:           false,
+				RendezvousServer: &apiv2alpha1.AstarteRendezvousServerSpec{},
+			}
+			err := validateFDOConfiguration(cr)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Field).To(Equal("spec.fdo.enable"))
+		})
+
+		It("should not return an error when FDO is disabled on Astarte 1.3", func() {
+			cr.Spec.Version = "1.3.0"
+			cr.Spec.FDO = &apiv2alpha1.AstarteFDOSpec{
+				Enable: false,
+			}
+			err := validateFDOConfiguration(cr)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should return an error when FDO is enabled and rendezvousServer is unset on Astarte >= 1.4", func() {
+			cr.Spec.Version = "1.4.0"
+			cr.Spec.FDO = &apiv2alpha1.AstarteFDOSpec{
+				Enable:           true,
+				RendezvousServer: nil,
+			}
+			err := validateFDOConfiguration(cr)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Field).To(Equal("spec.fdo.rendezvousServer"))
+			Expect(err.Type).To(Equal(field.ErrorTypeRequired))
+		})
+
+		It("should handle invalid version strings gracefully", func() {
+			cr.Spec.Version = "invalid"
+			cr.Spec.FDO = &apiv2alpha1.AstarteFDOSpec{
+				Enable:           false,
+				RendezvousServer: nil,
+			}
+			err := validateFDOConfiguration(cr)
+			Expect(err).ToNot(HaveOccurred())
+		})
+	})
+
+	Describe("TestDefaultFDO", func() {
+		BeforeEach(func() {
+			cr.Spec.FDO = nil
+			cr.Spec.Version = "1.3.0"
+		})
+
+		It("should set FDO to enabled when unset on Astarte >= 1.4", func() {
+			cr.Spec.Version = "1.4.0"
+			cr.Spec.FDO = nil
+			defaultFDO(cr)
+			Expect(cr.Spec.FDO).ToNot(BeNil())
+			Expect(cr.Spec.FDO.Enable).To(BeTrue())
+		})
+
+		It("should not modify FDO when already set on Astarte >= 1.4", func() {
+			cr.Spec.Version = "1.4.0"
+			cr.Spec.FDO = &apiv2alpha1.AstarteFDOSpec{Enable: false}
+			defaultFDO(cr)
+			Expect(cr.Spec.FDO.Enable).To(BeFalse())
+		})
+
+		It("should not set FDO when unset on Astarte 1.3", func() {
+			cr.Spec.Version = "1.3.0"
+			cr.Spec.FDO = nil
+			defaultFDO(cr)
+			Expect(cr.Spec.FDO).To(BeNil())
+		})
+
+		It("should handle invalid version strings gracefully", func() {
+			cr.Spec.Version = "invalid"
+			cr.Spec.FDO = nil
+			defaultFDO(cr)
+			Expect(cr.Spec.FDO).To(BeNil())
 		})
 	})
 
@@ -929,6 +1020,32 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 			Expect(w).To(BeNil())
 			Expect(err).To(HaveOccurred())
 			Expect(apierrors.IsInvalid(err)).To(BeTrue())
+		})
+
+		It("should return invalid when FDO is explicitly disabled on Astarte >= 1.4", func() {
+			cr.Spec.Version = "1.4.0"
+			cr.Spec.AstarteInstanceID = "coverageid4"
+			cr.Spec.FDO = &apiv2alpha1.AstarteFDOSpec{
+				Enable:           false,
+				RendezvousServer: &apiv2alpha1.AstarteRendezvousServerSpec{},
+			}
+			validator := &AstarteCustomValidator{}
+			w, err := validator.ValidateCreate(ctx, cr)
+			Expect(w).To(BeNil())
+			Expect(err).To(HaveOccurred())
+			Expect(apierrors.IsInvalid(err)).To(BeTrue())
+		})
+
+		It("should succeed when FDO is disabled on Astarte 1.3", func() {
+			cr.Spec.Version = "1.3.0"
+			cr.Spec.AstarteInstanceID = "coverageid5"
+			cr.Spec.FDO = &apiv2alpha1.AstarteFDOSpec{
+				Enable: false,
+			}
+			validator := &AstarteCustomValidator{}
+			w, err := validator.ValidateCreate(ctx, cr)
+			Expect(w).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 

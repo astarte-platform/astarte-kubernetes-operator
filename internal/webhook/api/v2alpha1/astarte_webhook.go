@@ -103,7 +103,32 @@ func (d *AstarteCustomDefaulter) Default(_ context.Context, obj runtime.Object) 
 	}
 
 	astartelog.Info("Defaulting for Astarte", "name", astarte.GetName())
+
+	defaultFDO(astarte)
+
 	return nil
+}
+
+// defaultFDO enables FDO by default on Astarte versions >= 1.4, where FDO is mandatory and
+// cannot be disabled. It only applies when spec.fdo is entirely unset (nil); an explicit
+// spec.fdo.enable=false is left untouched and will be caught by the validating webhook.
+func defaultFDO(r *apiv2alpha1.Astarte) {
+	if r.Spec.FDO != nil {
+		return
+	}
+
+	checker, err := version.NewChecker(r.Spec.Version)
+	if err != nil {
+		return
+	}
+
+	if !checker.Supports(version.OptionalFDO) {
+		astartelog.Info("FDO is not optional for this Astarte version. Defaulting FDO to enabled.",
+			"name", r.GetName(), "version", r.Spec.Version)
+		r.Spec.FDO = &apiv2alpha1.AstarteFDOSpec{
+			Enable: true,
+		}
+	}
 }
 
 /*
@@ -262,9 +287,29 @@ func validateAstarte(r *apiv2alpha1.Astarte) field.ErrorList {
 }
 
 func validateFDOConfiguration(r *apiv2alpha1.Astarte) *field.Error {
+	checker, err := version.NewChecker(r.Spec.Version)
+	if err != nil {
+		return nil
+	}
+
+	fdoOptional := checker.Supports(version.OptionalFDO)
+
+	if !fdoOptional && r.Spec.FDO != nil && !r.Spec.FDO.Enable {
+		fldPath := field.NewPath("spec").Child("fdo").Child("enable")
+		err := errors.New("FDO must be enabled for Astarte version 1.4.0 and above")
+		astartelog.Info("FDO validation rejected: explicitly disabled on Astarte >= 1.4",
+			"name", r.GetName(), "version", r.Spec.Version)
+		return field.Invalid(fldPath, r.Spec.FDO.Enable, err.Error())
+	}
+
 	if r.Spec.FDO != nil && r.Spec.FDO.Enable && r.Spec.FDO.RendezvousServer == nil {
 		fldPath := field.NewPath("spec").Child("fdo").Child("rendezvousServer")
-		err := errors.New("must be set when fdo.enable is true")
+		var err error
+		if fdoOptional {
+			err = errors.New("must be set when fdo.enable is true")
+		} else {
+			err = errors.New("must be set for Astarte version 1.4.0 and above (FDO is always enabled)")
+		}
 		astartelog.Info(err.Error())
 		return field.Required(fldPath, err.Error())
 	}
