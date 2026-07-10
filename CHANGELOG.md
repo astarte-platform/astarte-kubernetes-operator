@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add support for Vault configuration in the Astarte CR. Vault configuration is now required for Astarte 1.4 and above and ignored for Astarte 1.3.
 - Add upgrade documentation for the v26.5 to v26.7 upgrade path.
 
+### Changed
+- Bump Operator SDK version to v1.42.3.
+
 ## [26.5.1] - 2026-05-03
 
 ### Fixed
