@@ -230,7 +230,9 @@ func EnsureAstarteHealthGreen() error {
 
 func EnsureAstarteWithInfoDump() error {
 	err := EnsureAstarteHealthGreen()
-	DumpAstarteDebuggingInfo()
+	if err != nil {
+		DumpAstarteDebuggingInfo()
+	}
 	return err
 }
 
