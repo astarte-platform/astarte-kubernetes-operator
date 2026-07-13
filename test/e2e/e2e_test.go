@@ -136,11 +136,7 @@ var _ = Describe("controller", Ordered, func() {
 				time.Sleep(4 * time.Second)
 
 				By(fmt.Sprintf("creating an instance of Astarte (CR), version: %s", k))
-				EventuallyWithOffset(1,
-					InstallAstarte,
-					DefaultTimeout,
-					DefaultRetryInterval,
-				).WithArguments(v).Should(Succeed())
+				Expect(InstallAstarte(v)).To(Succeed())
 
 				By(fmt.Sprintf("ensuring that the Astarte v%s health becomes green", k))
 				EventuallyWithOffset(1,
@@ -150,11 +146,7 @@ var _ = Describe("controller", Ordered, func() {
 				).Should(Succeed())
 
 				By(fmt.Sprintf("deleting an instance of Astarte (CR), version: %s", k))
-				EventuallyWithOffset(1,
-					UninstallAstarte,
-					DefaultTimeout,
-					DefaultRetryInterval,
-				).WithArguments(v).Should(Succeed())
+				Expect(UninstallAstarte(v)).To(Succeed())
 
 				// deployments
 				By(fmt.Sprintf("ensuring that every deployment of Astarte v%s is removed", k))
