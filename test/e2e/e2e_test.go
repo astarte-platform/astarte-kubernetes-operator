@@ -19,7 +19,6 @@ limitations under the License.
 package e2e
 
 import (
-	"fmt"
 	"path/filepath"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -28,42 +27,46 @@ import (
 
 var _ = Describe("Astarte Operator", func() {
 	Context("CR lifecycle", func() {
-		It("should create, verify health, and clean up an Astarte instance", func() {
-			projectDir, _ := GetProjectDir()
+		targetTestVersions := map[string]string{
+			"1.4": "test/manifests/api_v2alpha1_astarte_1.4.yaml",
+		}
 
-			targetTestVersions := map[string]string{
-				"1.4": filepath.Join(projectDir, "/test/manifests/api_v2alpha1_astarte_1.4.yaml"),
-			}
+		for k, v := range targetTestVersions {
+			version := k
+			manifestPath := v
 
-			for k, v := range targetTestVersions {
-				By(fmt.Sprintf("creating an instance of Astarte (CR), version: %s", k))
-				Expect(InstallAstarte(v)).To(Succeed())
+			It("should create, verify health, and clean up an Astarte v"+version+" instance", func() {
+				projectDir, _ := GetProjectDir()
+				manifest := filepath.Join(projectDir, manifestPath)
 
-				By(fmt.Sprintf("ensuring that the Astarte v%s health becomes green", k))
+				By("creating an instance of Astarte (CR)")
+				Expect(InstallAstarte(manifest)).To(Succeed())
+
+				By("ensuring that the Astarte health becomes green")
 				EventuallyWithOffset(1,
 					EnsureAstarteWithInfoDump,
 					DefaultTimeout,
 					DefaultRetryInterval,
 				).Should(Succeed())
 
-				By(fmt.Sprintf("deleting an instance of Astarte (CR), version: %s", k))
-				Expect(UninstallAstarte(v)).To(Succeed())
+				By("deleting an instance of Astarte (CR)")
+				Expect(UninstallAstarte(manifest)).To(Succeed())
 
-				By(fmt.Sprintf("ensuring that every deployment of Astarte v%s is removed", k))
+				By("ensuring that every deployment of Astarte is removed")
 				EventuallyWithOffset(1,
 					EnsureAstarteDeployementsAreRemoved,
 					DefaultTimeout,
 					DefaultRetryInterval,
 				).Should(Succeed())
 
-				By(fmt.Sprintf("ensuring that every statefulset of Astarte v%s is removed", k))
+				By("ensuring that every statefulset of Astarte is removed")
 				EventuallyWithOffset(1,
 					EnsureAstarteStatefulsetsAreRemoved,
 					DefaultTimeout,
 					DefaultRetryInterval,
 				).Should(Succeed())
 
-				By(fmt.Sprintf("ensuring that every configmap of Astarte v%s is removed", k))
+				By("ensuring that every configmap of Astarte is removed")
 				EventuallyWithOffset(1,
 					EnsureAstarteConfigmapsAreRemoved,
 					DefaultTimeout,
@@ -91,20 +94,20 @@ var _ = Describe("Astarte Operator", func() {
 					DefaultRetryInterval,
 				).Should(Succeed())
 
-				By(fmt.Sprintf("ensuring that every secret of Astarte v%s is removed", k))
+				By("ensuring that every secret of Astarte is removed")
 				EventuallyWithOffset(1,
 					EnsureAstarteSecretsAreRemoved,
 					DefaultTimeout,
 					DefaultRetryInterval,
 				).Should(Succeed())
 
-				By(fmt.Sprintf("ensuring that every pvc of Astarte v%s is removed", k))
+				By("ensuring that every pvc of Astarte is removed")
 				EventuallyWithOffset(1,
 					EnsureAstartePvcAreRemoved,
 					DefaultTimeout,
 					DefaultRetryInterval,
 				).Should(Succeed())
-			}
-		})
+			})
+		}
 	})
 })
