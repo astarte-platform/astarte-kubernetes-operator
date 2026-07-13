@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -60,10 +61,29 @@ const (
 	scyllaOperatorVersion = "v1.17.1"
 	scyllaOperatorURL     = "https://raw.githubusercontent.com/scylladb/scylla-operator/%s/deploy/operator.yaml"
 	scyllaNamespace       = "scylla"
+
+	rendezvousServerNamespace = "rendezvous-server"
+
+	openbaoVersion = "0.4.0"
 )
 
 func warnError(err error) {
 	_, _ = fmt.Fprintf(GinkgoWriter, "warning: %v\n", err)
+}
+
+func DeployRendezvousServer() error {
+	if err := EnsureNamespaceExists(rendezvousServerNamespace); err != nil {
+		return fmt.Errorf("failed to ensure namespace %s exists: %w", rendezvousServerNamespace, err)
+	}
+
+	projectDir, err := GetProjectDir()
+	if err != nil {
+		return fmt.Errorf("failed to get project directory: %w", err)
+	}
+	cmd := exec.Command("kubectl", "apply", "-n", rendezvousServerNamespace,
+		"-f", filepath.Join(projectDir, "test/manifests/dependencies/rendezvous-server"))
+	_, err = Run(cmd)
+	return err
 }
 
 // InstallPrometheusOperator installs the prometheus Operator to be used to export the enabled metrics.
@@ -211,6 +231,15 @@ func DeleteRabbitMQConnectionSecret() error {
 func DeleteScyllaConnectionSecret() error {
 	cmd := exec.Command("kubectl", "delete", "secret",
 		"scylladb-connection-secret",
+		"-n", astarteNamespace,
+	)
+	_, err := Run(cmd)
+	return err
+}
+
+func DeleteVaultConnectionSecret() error {
+	cmd := exec.Command("kubectl", "delete", "secret",
+		"vault-connection-string",
 		"-n", astarteNamespace,
 	)
 	_, err := Run(cmd)
@@ -386,6 +415,40 @@ func DeployRabbitMQCluster() error {
 
 	if _, err := Run(cmd); err != nil {
 		return fmt.Errorf("failed to wait for RabbitMQ cluster pods to be ready: %w", err)
+	}
+
+	return nil
+}
+
+func DeployOpenBao() error {
+	cmd := exec.Command("helm", "repo", "add", "openbao", "https://openbao.github.io/openbao-helm")
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to add OpenBao Helm repository: %w", err)
+	}
+
+	openbaoNamespace := "openbao"
+
+	cmd = exec.Command("helm", "install", "openbao", "openbao/openbao",
+		"--namespace", openbaoNamespace, "--create-namespace",
+		"--version", openbaoVersion,
+		"--set", "server.dev.enabled=true",
+	)
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to install OpenBao: %w", err)
+	}
+
+	secretData := map[string]string{
+		"connection-string": "root",
+	}
+
+	if err := CreateSecret("vault-connection-string", astarteNamespace, secretData); err != nil {
+		return fmt.Errorf("failed to create Vault connection secret: %w", err)
+	}
+
+	cmd = exec.Command("kubectl", "wait", "--for=condition=Ready", "pod",
+		"-l", "app.kubernetes.io/instance=openbao", "-n", openbaoNamespace, "--timeout", "5m")
+	if _, err := Run(cmd); err != nil {
+		return fmt.Errorf("failed to wait for OpenBao pod to be ready: %w", err)
 	}
 
 	return nil

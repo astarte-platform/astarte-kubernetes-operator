@@ -80,7 +80,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
-	manifestPath := filepath.Join("..", "..", "test", "manifests", "api_v2alpha1_astarte_1.3.yaml")
+	manifestPath := filepath.Join("..", "..", "test", "manifests", "api_v2alpha1_astarte_1.4.yaml")
 	manifestBytes, err := os.ReadFile(manifestPath)
 	Expect(err).ToNot(HaveOccurred())
 

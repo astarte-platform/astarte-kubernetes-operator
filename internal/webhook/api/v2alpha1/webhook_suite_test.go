@@ -120,7 +120,7 @@ var _ = BeforeSuite(func() {
 	// +kubebuilder:scaffold:webhook
 
 	By("loading the base Astarte manifest")
-	manifestPath := filepath.Join(repoRoot, "test", "manifests", "api_v2alpha1_astarte_1.3.yaml")
+	manifestPath := filepath.Join(repoRoot, "test", "manifests", "api_v2alpha1_astarte_1.4.yaml")
 	manifestBytes, err := os.ReadFile(manifestPath)
 	Expect(err).ToNot(HaveOccurred())
 

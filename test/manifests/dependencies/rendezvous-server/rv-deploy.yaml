@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: rendezvous-server
+  name: rendezvous-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rendezvous-server
+  template:
+    metadata:
+      labels:
+        app: rendezvous-server
+    spec:
+      containers:
+        - command:
+            - /usr/bin/go-fdo-server
+            - --log-level=$(LOG_LEVEL)
+            - rendezvous
+            - 0.0.0.0:8041
+            - --db-type=$(DB_TYPE)
+            - --db-dsn=$(DB_DSN)
+          env:
+            - name: LOG_LEVEL
+              value: info
+            - name: DB_TYPE
+              value: sqlite
+            - name: DB_DSN
+              value: file:/var/lib/rendezvous-server/rendezvous-server.db
+          image: astarte/go-fdo-server:ade68cda47-20251128
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8041
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          name: rendezvous
+          ports:
+            - containerPort: 8041
+              name: http
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8041
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/rendezvous-server
+      volumes:
+        - name: data
+          emptyDir: {}
