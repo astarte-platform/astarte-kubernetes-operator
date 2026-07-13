@@ -413,6 +413,17 @@ func appendAstarteRendezvousServerEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astar
 func appendAstarteFDOEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	fdoEnabled := cr.Spec.FDO != nil && cr.Spec.FDO.Enable
 
+	// In Astarte >= 1.4, FDO is mandatory and cannot be disabled.
+	// The webhook prevents reaching this state, but CRs created before the webhook was
+	// active may still have FDO disabled on a version that requires it. Here we force it.
+	if !fdoEnabled {
+		if checker, err := version.NewChecker(cr.Spec.Version); err == nil && !checker.Supports(version.OptionalFDO) {
+			log.Info("FDO is disabled but Astarte version >= 1.4 requires it. Forcing FDO enable.",
+				"version", cr.Spec.Version)
+			fdoEnabled = true
+		}
+	}
+
 	ret = append(ret, v1.EnvVar{Name: "PAIRING_ENABLE_FDO", Value: strconv.FormatBool(fdoEnabled)})
 
 	if fdoEnabled {

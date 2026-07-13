@@ -27,6 +27,10 @@ type Feature string
 const (
 	// Vault represents the HashiCorp Vault support
 	Vault Feature = "Vault"
+	// OptionalFDO represents that FDO can be optionally disabled. FDO is a feature
+	// available since Astarte 1.3 as an opt-in, and becomes mandatory from 1.4 onwards.
+	// Versions that support OptionalFDO (i.e. < 1.4.0) allow disabling FDO.
+	OptionalFDO Feature = "OptionalFDO"
 )
 
 // matrix stores the pre-compiled semver constraints for each feature
@@ -52,6 +56,8 @@ func init() {
 	matrix = map[Feature]*semver.Constraints{
 		// Vault is supported strictly in 1.4.0 and above
 		Vault: mustParseConstraint(">= 1.4.0"),
+		// FDO is optional (can be disabled) only for versions < 1.4.0
+		OptionalFDO: mustParseConstraint("< 1.4.0"),
 	}
 }
 
