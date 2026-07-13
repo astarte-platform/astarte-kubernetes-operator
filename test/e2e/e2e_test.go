@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -127,13 +126,21 @@ var _ = Describe("controller", Ordered, func() {
 			By("validating that the controller-manager pod is running as expected")
 			EventuallyWithOffset(1, verifyControllerPodRunning, DefaultTimeout, DefaultRetryInterval).Should(Succeed())
 
+			By("waiting for the controller deployment to become available")
+			cmd = exec.Command("kubectl", "wait", "deployment",
+				"--for", "condition=Available",
+				"astarte-kubernetes-operator-controller-manager",
+				"-n", operatorNamespace,
+				"--timeout", "5m",
+			)
+			_, err = Run(cmd)
+			ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
 			targetTestVersions := map[string]string{
 				"1.4": filepath.Join(projectDir, "/test/manifests/api_v2alpha1_astarte_1.4.yaml"),
 			}
 
 			for k, v := range targetTestVersions {
-				// let's wait a few seconds to ensure the webhook becomes available
-				time.Sleep(4 * time.Second)
 
 				By(fmt.Sprintf("creating an instance of Astarte (CR), version: %s", k))
 				Expect(InstallAstarte(v)).To(Succeed())
