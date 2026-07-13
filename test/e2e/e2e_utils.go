@@ -45,6 +45,8 @@ const (
 	astarteName      = "example-astarte"
 	astarteNamespace = "example-astarte-ns"
 
+	operatorNamespace = "astarte-kubernetes-operator-system"
+
 	// DefaultRetryInterval applied to all tests
 	DefaultRetryInterval time.Duration = time.Second * 10
 	// DefaultTimeout applied to all tests
@@ -69,6 +71,46 @@ const (
 
 func warnError(err error) {
 	_, _ = fmt.Fprintf(GinkgoWriter, "warning: %v\n", err)
+}
+
+func verifyControllerPodRunning() error {
+	cmd := exec.Command("kubectl", "get",
+		"pods", "-l", "control-plane=controller-manager",
+		"-o", "jsonpath={.items[?(@.status.phase=='Running')].metadata.name}",
+		"-n", operatorNamespace,
+	)
+	output, err := Run(cmd)
+	if err != nil {
+		return err
+	}
+	podNames := GetNonEmptyLines(string(output))
+	if len(podNames) != 1 {
+		return fmt.Errorf("expect 1 running controller pod, got %d", len(podNames))
+	}
+	if !strings.Contains(podNames[0], "controller-manager") {
+		return fmt.Errorf("unexpected pod name: %s", podNames[0])
+	}
+	return nil
+}
+
+func verifyControllerPodNotRunning() error {
+	cmd := exec.Command("kubectl", "get",
+		"pods", "-l", "control-plane=controller-manager",
+		"-o", "go-template={{ range .items }}"+
+			"{{ if not .metadata.deletionTimestamp }}"+
+			"{{ .metadata.name }}"+
+			"{{\"\\n\"}}{{ end }}{{ end }}",
+		"-n", operatorNamespace,
+	)
+	output, err := Run(cmd)
+	if err != nil {
+		return err
+	}
+	podNames := GetNonEmptyLines(string(output))
+	if len(podNames) != 0 {
+		return fmt.Errorf("expect 0 controller pods running, but got %d", len(podNames))
+	}
+	return nil
 }
 
 func DeployRendezvousServer() error {
@@ -98,11 +140,6 @@ func InstallPrometheusOperator() error {
 func Run(cmd *exec.Cmd) ([]byte, error) {
 	dir, _ := GetProjectDir()
 	cmd.Dir = dir
-
-	if err := os.Chdir(cmd.Dir); err != nil {
-		_, _ = fmt.Fprintf(GinkgoWriter, "chdir dir: %s\n", err)
-	}
-
 	cmd.Env = append(os.Environ(), "GO111MODULE=on")
 	command := strings.Join(cmd.Args, " ")
 	_, _ = fmt.Fprintf(GinkgoWriter, "running: %s\n", command)
@@ -215,7 +252,9 @@ func EnsureAstarteHealthGreen() error {
 
 func EnsureAstarteWithInfoDump() error {
 	err := EnsureAstarteHealthGreen()
-	DumpAstarteDebuggingInfo()
+	if err != nil {
+		DumpAstarteDebuggingInfo()
+	}
 	return err
 }
 

@@ -19,201 +19,60 @@ limitations under the License.
 package e2e
 
 import (
-	"fmt"
-	"os/exec"
 	"path/filepath"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"github.com/astarte-platform/astarte-kubernetes-operator/internal/version"
 )
 
-const (
-	operatorNamespace = "astarte-kubernetes-operator-system"
-)
+var _ = Describe("Astarte Operator", func() {
+	Context("CR lifecycle", func() {
+		targetTestVersions := map[string]string{
+			"1.4": "test/manifests/api_v2alpha1_astarte_1.4.yaml",
+		}
 
-var _ = Describe("controller", Ordered, func() {
-	BeforeAll(func() {
-		By("installing prometheus operator")
-		Expect(InstallPrometheusOperator()).To(Succeed())
+		for k, v := range targetTestVersions {
+			version := k
+			manifestPath := v
 
-		By("installing the cert-manager")
-		Expect(InstallCertManager()).To(Succeed())
+			It("should create, verify health, and clean up an Astarte v"+version+" instance", func() {
+				projectDir, _ := GetProjectDir()
+				manifest := filepath.Join(projectDir, manifestPath)
 
-		By("installing rabbitmq cluster operator")
-		Expect(InstallRabbitMQClusterOperator()).To(Succeed())
+				By("creating an instance of Astarte (CR)")
+				Expect(InstallAstarte(manifest)).To(Succeed())
 
-		By("installing openbao cluster helm chart")
-		Expect(DeployOpenBao()).To(Succeed())
-
-		By("deploying the rendezvous server")
-		Expect(DeployRendezvousServer()).To(Succeed())
-
-		By("deploying the RabbitMQ cluster")
-		Expect(DeployRabbitMQCluster()).To(Succeed())
-
-		By("creating the RabbitMq connection secret")
-		Expect(CreateRabbitMQConnectionSecret()).To(Succeed())
-
-		By("installing scylla operator")
-		Expect(InstallScyllaOperator()).To(Succeed())
-
-		By("deploying the Scylla cluster")
-		Expect(DeployScyllaCluster()).To(Succeed())
-
-		By("creating the Scylla connection secret")
-		Expect(CreateScyllaConnectionSecret()).To(Succeed())
-
-		By("creating astarte operator namespace")
-		cmd := exec.Command("kubectl", "create", "ns", operatorNamespace)
-		_, _ = Run(cmd)
-	})
-
-	AfterAll(func() {
-		By("uninstalling the Prometheus manager bundle")
-		UninstallPrometheusOperator()
-
-		By("uninstalling rabbitmq cluster")
-		UninstallRabbitMQCluster()
-
-		By("uninstalling rabbitmq cluster operator")
-		UninstallRabbitMQClusterOperator()
-
-		By("uninstalling scylla operator")
-		UninstallScyllaOperator()
-
-		By("uninstalling the cert-manager bundle")
-		UninstallCertManager()
-
-		By("uninstalling OpenBao")
-		cmd := exec.Command("helm", "uninstall", "openbao", "--namespace", "openbao")
-		_, _ = Run(cmd)
-		cmd = exec.Command("kubectl", "delete", "namespace", "openbao")
-		_, _ = Run(cmd)
-
-		By("uninstalling the rendezvous server")
-		cmd = exec.Command("kubectl", "delete", "namespace", rendezvousServerNamespace)
-		_, _ = Run(cmd)
-
-		By("removing astarte operator namespace")
-		cmd = exec.Command("kubectl", "delete", "ns", operatorNamespace)
-		_, _ = Run(cmd)
-	})
-
-	Context("Astarte Operator", func() {
-		It("should run successfully", func() {
-			var controllerPodName string
-			var err error
-			projectDir, _ := GetProjectDir()
-
-			// projectimage stores the name of the image used in the example
-			var projectimage = fmt.Sprintf("local-registry/astarte-kubernetes-operator:%s", version.Version)
-
-			By("building the manager(Operator) image")
-			cmd := exec.Command("make", "docker-build", fmt.Sprintf("IMG=%s", projectimage))
-			_, err = Run(cmd)
-			ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-			By("loading the the manager(Operator) image on Kind")
-			err = LoadImageToKindClusterWithName(projectimage)
-			ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-			By("deploying the controller-manager")
-			cmd = exec.Command("make", "deploy", fmt.Sprintf("IMG=%s", projectimage))
-			_, err = Run(cmd)
-			ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-			By("validating that the controller-manager pod is running as expected")
-			verifyControllerUp := func() error {
-				// Get pod name
-				cmd = exec.Command("kubectl", "get",
-					"pods", "-l", "control-plane=controller-manager",
-					"-o", "go-template={{ range .items }}"+
-						"{{ if not .metadata.deletionTimestamp }}"+
-						"{{ .metadata.name }}"+
-						"{{ \"\\n\" }}{{ end }}{{ end }}",
-					"-n", operatorNamespace,
-				)
-
-				podOutput, err := Run(cmd)
-				ExpectWithOffset(2, err).NotTo(HaveOccurred())
-				podNames := GetNonEmptyLines(string(podOutput))
-				if len(podNames) != 1 {
-					return fmt.Errorf("expect 1 controller pods running, but got %d", len(podNames))
-				}
-				controllerPodName = podNames[0]
-				ExpectWithOffset(2, controllerPodName).Should(ContainSubstring("controller-manager"))
-
-				// Validate pod status
-				cmd = exec.Command("kubectl", "get",
-					"pods", controllerPodName, "-o", "jsonpath={.status.phase}",
-					"-n", operatorNamespace,
-				)
-				status, err := Run(cmd)
-				ExpectWithOffset(2, err).NotTo(HaveOccurred())
-				if string(status) != "Running" {
-					return fmt.Errorf("controller pod in %s status", status)
-				}
-				return nil
-			}
-			EventuallyWithOffset(1, verifyControllerUp, DefaultTimeout, DefaultRetryInterval).Should(Succeed())
-
-			targetTestVersions := map[string]string{
-				"1.4": filepath.Join(projectDir, "/test/manifests/api_v2alpha1_astarte_1.4.yaml"),
-			}
-
-			for k, v := range targetTestVersions {
-				// let's wait a few seconds to ensure the webhook becomes available
-				time.Sleep(4 * time.Second)
-
-				By(fmt.Sprintf("creating an instance of Astarte (CR), version: %s", k))
-				EventuallyWithOffset(1,
-					InstallAstarte,
-					DefaultTimeout,
-					DefaultRetryInterval,
-				).WithArguments(v).Should(Succeed())
-
-				By(fmt.Sprintf("ensuring that the Astarte v%s health becomes green", k))
+				By("ensuring that the Astarte health becomes green")
 				EventuallyWithOffset(1,
 					EnsureAstarteWithInfoDump,
 					DefaultTimeout,
 					DefaultRetryInterval,
 				).Should(Succeed())
 
-				By(fmt.Sprintf("deleting an instance of Astarte (CR), version: %s", k))
-				EventuallyWithOffset(1,
-					UninstallAstarte,
-					DefaultTimeout,
-					DefaultRetryInterval,
-				).WithArguments(v).Should(Succeed())
+				By("deleting an instance of Astarte (CR)")
+				Expect(UninstallAstarte(manifest)).To(Succeed())
 
-				// deployments
-				By(fmt.Sprintf("ensuring that every deployment of Astarte v%s is removed", k))
+				By("ensuring that every deployment of Astarte is removed")
 				EventuallyWithOffset(1,
 					EnsureAstarteDeployementsAreRemoved,
 					DefaultTimeout,
 					DefaultRetryInterval,
 				).Should(Succeed())
 
-				// statefulsets
-				By(fmt.Sprintf("ensuring that every statefulset of Astarte v%s is removed", k))
+				By("ensuring that every statefulset of Astarte is removed")
 				EventuallyWithOffset(1,
 					EnsureAstarteStatefulsetsAreRemoved,
 					DefaultTimeout,
 					DefaultRetryInterval,
 				).Should(Succeed())
 
-				// configmaps
-				By(fmt.Sprintf("ensuring that every configmap of Astarte v%s is removed", k))
+				By("ensuring that every configmap of Astarte is removed")
 				EventuallyWithOffset(1,
 					EnsureAstarteConfigmapsAreRemoved,
 					DefaultTimeout,
 					DefaultRetryInterval,
 				).Should(Succeed())
 
-				// RabbitMq connections secrets
 				By("deleting the RabbitMq connection secret")
 				EventuallyWithOffset(1,
 					DeleteRabbitMQConnectionSecret,
@@ -221,7 +80,6 @@ var _ = Describe("controller", Ordered, func() {
 					DefaultRetryInterval,
 				).Should(Succeed())
 
-				// Scylla connection secret
 				By("deleting the Scylla connection secret")
 				EventuallyWithOffset(1,
 					DeleteScyllaConnectionSecret,
@@ -229,7 +87,6 @@ var _ = Describe("controller", Ordered, func() {
 					DefaultRetryInterval,
 				).Should(Succeed())
 
-				// Vault connection secret
 				By("deleting the Vault connection secret")
 				EventuallyWithOffset(1,
 					DeleteVaultConnectionSecret,
@@ -237,58 +94,20 @@ var _ = Describe("controller", Ordered, func() {
 					DefaultRetryInterval,
 				).Should(Succeed())
 
-				// secrets
-				By(fmt.Sprintf("ensuring that every secret of Astarte v%s is removed", k))
+				By("ensuring that every secret of Astarte is removed")
 				EventuallyWithOffset(1,
 					EnsureAstarteSecretsAreRemoved,
 					DefaultTimeout,
 					DefaultRetryInterval,
 				).Should(Succeed())
 
-				// pvc
-				By(fmt.Sprintf("ensuring that every pvc of Astarte v%s is removed", k))
+				By("ensuring that every pvc of Astarte is removed")
 				EventuallyWithOffset(1,
 					EnsureAstartePvcAreRemoved,
 					DefaultTimeout,
 					DefaultRetryInterval,
 				).Should(Succeed())
-			}
-
-			By("dump Astarte Operator info and logs for debugging")
-			DumpAstarteOperatorDebuggingInfo(operatorNamespace)
-
-			By("undeploying the controller-manager")
-			cmd = exec.Command("make", "undeploy")
-			_, err = Run(cmd)
-			ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-			By("validating that the controller-manager pod is not running")
-			verifyControllerDown := func() error {
-				// Get pod name
-				cmd = exec.Command("kubectl", "get",
-					"pods", "-l", "control-plane=controller-manager",
-					"-o", "go-template={{ range .items }}"+
-						"{{ if not .metadata.deletionTimestamp }}"+
-						"{{ .metadata.name }}"+
-						"{{ \"\\n\" }}{{ end }}{{ end }}",
-					"-n", operatorNamespace,
-				)
-
-				podOutput, err := Run(cmd)
-				ExpectWithOffset(2, err).NotTo(HaveOccurred())
-				podNames := GetNonEmptyLines(string(podOutput))
-				if len(podNames) != 0 {
-					return fmt.Errorf("expect 0 controller pods running, but got %d", len(podNames))
-				}
-
-				return nil
-			}
-			EventuallyWithOffset(1, verifyControllerDown, DefaultTimeout, DefaultRetryInterval).Should(Succeed())
-
-			By("uninstalling CRDs")
-			cmd = exec.Command("make", "uninstall")
-			_, err = Run(cmd)
-			ExpectWithOffset(1, err).NotTo(HaveOccurred())
-		})
+			})
+		}
 	})
 })
