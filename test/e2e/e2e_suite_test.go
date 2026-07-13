@@ -38,6 +38,13 @@ func TestE2E(t *testing.T) {
 	RunSpecs(t, "Astarte Operator e2e suite")
 }
 
+var _ = ReportAfterEach(func(specReport SpecReport) {
+	if specReport.Failed() {
+		DumpAstarteOperatorDebuggingInfo(operatorNamespace)
+		DumpAstarteDebuggingInfo()
+	}
+})
+
 var _ = BeforeSuite(func() {
 	By("installing prometheus operator")
 	Expect(InstallPrometheusOperator()).To(Succeed())
@@ -104,9 +111,6 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	By("dump Astarte Operator info and logs for debugging")
-	DumpAstarteOperatorDebuggingInfo(operatorNamespace)
-
 	By("undeploying the controller-manager")
 	cmd := exec.Command("make", "undeploy")
 	_, _ = Run(cmd)
