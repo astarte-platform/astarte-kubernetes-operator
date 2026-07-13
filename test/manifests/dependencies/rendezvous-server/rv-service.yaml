@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: rendezvous-server
+  name: rendezvous-server
+spec:
+  ports:
+    - name: http
+      port: 8041
+      protocol: TCP
+      targetPort: 8041
+  selector:
+    app: rendezvous-server
+  type: ClusterIP

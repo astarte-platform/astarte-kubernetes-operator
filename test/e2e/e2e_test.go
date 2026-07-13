@@ -45,6 +45,12 @@ var _ = Describe("controller", Ordered, func() {
 		By("installing rabbitmq cluster operator")
 		Expect(InstallRabbitMQClusterOperator()).To(Succeed())
 
+		By("installing openbao cluster helm chart")
+		Expect(DeployOpenBao()).To(Succeed())
+
+		By("deploying the rendezvous server")
+		Expect(DeployRendezvousServer()).To(Succeed())
+
 		By("deploying the RabbitMQ cluster")
 		Expect(DeployRabbitMQCluster()).To(Succeed())
 
@@ -81,8 +87,18 @@ var _ = Describe("controller", Ordered, func() {
 		By("uninstalling the cert-manager bundle")
 		UninstallCertManager()
 
+		By("uninstalling OpenBao")
+		cmd := exec.Command("helm", "uninstall", "openbao", "--namespace", "openbao")
+		_, _ = Run(cmd)
+		cmd = exec.Command("kubectl", "delete", "namespace", "openbao")
+		_, _ = Run(cmd)
+
+		By("uninstalling the rendezvous server")
+		cmd = exec.Command("kubectl", "delete", "namespace", rendezvousServerNamespace)
+		_, _ = Run(cmd)
+
 		By("removing astarte operator namespace")
-		cmd := exec.Command("kubectl", "delete", "ns", operatorNamespace)
+		cmd = exec.Command("kubectl", "delete", "ns", operatorNamespace)
 		_, _ = Run(cmd)
 	})
 
@@ -145,7 +161,7 @@ var _ = Describe("controller", Ordered, func() {
 			EventuallyWithOffset(1, verifyControllerUp, DefaultTimeout, DefaultRetryInterval).Should(Succeed())
 
 			targetTestVersions := map[string]string{
-				"1.3": filepath.Join(projectDir, "/test/manifests/api_v2alpha1_astarte_1.3.yaml"),
+				"1.4": filepath.Join(projectDir, "/test/manifests/api_v2alpha1_astarte_1.4.yaml"),
 			}
 
 			for k, v := range targetTestVersions {
@@ -209,6 +225,14 @@ var _ = Describe("controller", Ordered, func() {
 				By("deleting the Scylla connection secret")
 				EventuallyWithOffset(1,
 					DeleteScyllaConnectionSecret,
+					DefaultTimeout,
+					DefaultRetryInterval,
+				).Should(Succeed())
+
+				// Vault connection secret
+				By("deleting the Vault connection secret")
+				EventuallyWithOffset(1,
+					DeleteVaultConnectionSecret,
 					DefaultTimeout,
 					DefaultRetryInterval,
 				).Should(Succeed())

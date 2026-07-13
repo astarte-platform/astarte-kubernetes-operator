@@ -80,7 +80,7 @@ var _ = BeforeSuite(func() {
 	// don't register the controller with a manager here.
 
 	By("loading the base Astarte manifest")
-	manifestPath := filepath.Join("..", "..", "..", "test", "manifests", "api_v2alpha1_astarte_1.3.yaml")
+	manifestPath := filepath.Join("..", "..", "..", "test", "manifests", "api_v2alpha1_astarte_1.4.yaml")
 	manifestBytes, err := os.ReadFile(manifestPath)
 	Expect(err).ToNot(HaveOccurred())
 

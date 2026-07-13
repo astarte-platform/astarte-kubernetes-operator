@@ -8,11 +8,9 @@ metadata:
 spec:
   # This is the most minimal set of reasonable configuration to spin up an Astarte
   # instance with reasonable defaults and enough control over the deployment.
-  version: "1.3"
+  version: "1.4"
   api:
     host: "api.astarte-example.com" # MANDATORY
-  # RabbitMQ can be deployed either in cluster or out of cluster.
-  # What follows is just an in-cluster example.
   rabbitmq:
     connection:
       host: "rabbitmq.rabbitmq.svc.cluster.local"
@@ -28,8 +26,20 @@ spec:
         name: "rabbitmq-connection-secret"
         usernameKey: "username"
         passwordKey: "password"
-  # Cassandra/ScyllaDB can be deployed either in cluster or out of cluster.
-  # What follows is just an in-cluster example.
+  fdo:
+    enable: true
+    rendezvousServer:
+      connection:
+        host: "rendezvous-server.rendezvous-server.svc.cluster.local"
+        port: 8041
+  vault:
+    connection:
+      host: "openbao.openbao.svc.cluster.local"
+      port: 8200
+      connectionStringSecret:
+        name: "vault-connection-string"
+        key: "connection-string"
+
   cassandra:
     astarteSystemKeyspace:
       replicationFactor: 1
@@ -44,21 +54,21 @@ spec:
         passwordKey: "password"
   vernemq:
     host: "broker.astarte-example.com"
-    image: "docker.io/astarte/vernemq:1.3-snapshot"
+    image: "docker.io/astarte/vernemq:1.4-snapshot"
     port: 8883
   components:
     realmManagement:
-      image: "docker.io/astarte/astarte_realm_management:1.3-snapshot"
+      image: "docker.io/astarte/astarte_realm_management:1.4-snapshot"
     dataUpdaterPlant:
-      image: "docker.io/astarte/astarte_data_updater_plant:1.3-snapshot"
+      image: "docker.io/astarte/astarte_data_updater_plant:1.4-snapshot"
     appengineApi:
-      image: "docker.io/astarte/astarte_appengine_api:1.3-snapshot"
+      image: "docker.io/astarte/astarte_appengine_api:1.4-snapshot"
     pairing:
-      image: "docker.io/astarte/astarte_pairing:1.3-snapshot"
+      image: "docker.io/astarte/astarte_pairing:1.4-snapshot"
     triggerEngine:
-      image: "docker.io/astarte/astarte_trigger_engine:1.3-snapshot"
+      image: "docker.io/astarte/astarte_trigger_engine:1.4-snapshot"
     housekeeping:
-      image: "docker.io/astarte/astarte_housekeeping:1.3-snapshot"
+      image: "docker.io/astarte/astarte_housekeeping:1.4-snapshot"
     dashboard:
-      image: "docker.io/astarte/astarte-dashboard:1.2.1-rc.0"
+      image: "docker.io/astarte/astarte-dashboard:1.4-snapshot"
       deploy: true
