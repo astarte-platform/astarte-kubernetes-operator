@@ -71,6 +71,26 @@ func warnError(err error) {
 	_, _ = fmt.Fprintf(GinkgoWriter, "warning: %v\n", err)
 }
 
+func verifyControllerPodRunning() error {
+	cmd := exec.Command("kubectl", "get",
+		"pods", "-l", "control-plane=controller-manager",
+		"-o", "jsonpath={.items[?(@.status.phase=='Running')].metadata.name}",
+		"-n", operatorNamespace,
+	)
+	output, err := Run(cmd)
+	if err != nil {
+		return err
+	}
+	podNames := GetNonEmptyLines(string(output))
+	if len(podNames) != 1 {
+		return fmt.Errorf("expect 1 running controller pod, got %d", len(podNames))
+	}
+	if !strings.Contains(podNames[0], "controller-manager") {
+		return fmt.Errorf("unexpected pod name: %s", podNames[0])
+	}
+	return nil
+}
+
 func DeployRendezvousServer() error {
 	if err := EnsureNamespaceExists(rendezvousServerNamespace); err != nil {
 		return fmt.Errorf("failed to ensure namespace %s exists: %w", rendezvousServerNamespace, err)
