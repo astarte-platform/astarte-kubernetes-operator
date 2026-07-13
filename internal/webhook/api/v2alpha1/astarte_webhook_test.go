@@ -1038,6 +1038,7 @@ var _ = Describe("Astarte Webhook testing", Ordered, Serial, func() {
 
 		It("should succeed when FDO is disabled on Astarte 1.3", func() {
 			cr.Spec.Version = "1.3.0"
+			cr.Spec.Vault = nil
 			cr.Spec.AstarteInstanceID = "coverageid5"
 			cr.Spec.FDO = &apiv2alpha1.AstarteFDOSpec{
 				Enable: false,
