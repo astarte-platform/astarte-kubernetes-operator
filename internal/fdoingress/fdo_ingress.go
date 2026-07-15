@@ -58,6 +58,7 @@ func getFDOIngressSpec(cr *fdoingress.AstarteFDOIngress, parent *apiv2alpha1.Ast
 func getHAProxyIngressAnnotations() map[string]string {
 	annotations := map[string]string{
 		"haproxy.org/backend-config-snippet": getHAProxyBackendConfig(),
+		"haproxy.org/ssl-redirect-port":      "443",
 	}
 	return annotations
 }
