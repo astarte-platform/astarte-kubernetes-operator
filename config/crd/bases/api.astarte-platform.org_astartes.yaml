@@ -8359,6 +8359,9 @@ spec:
                 type: string
               vault:
                 properties:
+                  baseNamespace:
+                    default: ""
+                    type: string
                   connection:
                     properties:
                       connectionStringSecret:
