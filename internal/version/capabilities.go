@@ -71,11 +71,14 @@ func mustParseConstraint(c string) *semver.Constraints {
 }
 
 // Supports evaluates if the configured version satisfies the feature's constraint.
+// The prerelease suffix is stripped before checking, so that e.g. 1.4.0-rc.0
+// has the same capabilities as 1.4.0.
 func (c *Checker) Supports(f Feature) bool {
 	constraint, exists := matrix[f]
 	if !exists {
-		// Default to false if a feature isn't in the matrix
 		return false
 	}
-	return constraint.Check(c.version)
+	stripped := *c.version
+	stripped, _ = stripped.SetPrerelease("")
+	return constraint.Check(&stripped)
 }
