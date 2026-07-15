@@ -42,8 +42,6 @@ type Checker struct {
 }
 
 // NewChecker safely parses the Astarte version and returns a Checker.
-// It uses the same version handling as the rest of the operator, including
-// support for the "snapshot" version string and prerelease stripping.
 func NewChecker(versionStr string) (*Checker, error) {
 	v, err := GetAstarteSemanticVersionFrom(versionStr)
 	if err != nil {
@@ -54,10 +52,10 @@ func NewChecker(versionStr string) (*Checker, error) {
 
 func init() {
 	matrix = map[Feature]*semver.Constraints{
-		// Vault is supported strictly in 1.4.0 and above
-		Vault: mustParseConstraint(">= 1.4.0"),
-		// FDO is optional (can be disabled) only for versions < 1.4.0
-		OptionalFDO: mustParseConstraint("< 1.4.0"),
+		// Vault is supported strictly in 1.4.0 and above (including prereleases)
+		Vault: mustParseConstraint(">= 1.4.0-0"),
+		// FDO is optional (can be disabled) only for versions < 1.4.0 (excluding prereleases)
+		OptionalFDO: mustParseConstraint("< 1.4.0-0"),
 	}
 }
 
@@ -71,14 +69,10 @@ func mustParseConstraint(c string) *semver.Constraints {
 }
 
 // Supports evaluates if the configured version satisfies the feature's constraint.
-// The prerelease suffix is stripped before checking, so that e.g. 1.4.0-rc.0
-// has the same capabilities as 1.4.0.
 func (c *Checker) Supports(f Feature) bool {
 	constraint, exists := matrix[f]
 	if !exists {
 		return false
 	}
-	stripped := *c.version
-	stripped, _ = stripped.SetPrerelease("")
-	return constraint.Check(&stripped)
+	return constraint.Check(c.version)
 }

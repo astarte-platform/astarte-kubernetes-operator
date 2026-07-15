@@ -29,18 +29,15 @@ var (
 	ErrConstraintNotSatisfied = errors.New("constraint not satisfied")
 )
 
-// CheckConstraintAgainstAstarteVersion validates a given Astarte version against a given constraint. Returns nil if
-// the constraint is satisfied, an error otherwise
+// CheckConstraintAgainstAstarteVersion validates a given Astarte version against a given constraint.
+// The constraint should use the -0 suffix pattern (e.g. ">= 1.4.0-0") to include prerelease versions.
+// Returns nil if the constraint is satisfied, an error otherwise.
 func CheckConstraintAgainstAstarteVersion(constraint, v string) error {
 	c, err := semver.NewConstraint(constraint)
 	if err != nil {
 		return err
 	}
 	semVer, err := GetAstarteSemanticVersionFrom(v)
-	if err != nil {
-		return err
-	}
-	*semVer, err = semVer.SetPrerelease("")
 	if err != nil {
 		return err
 	}
