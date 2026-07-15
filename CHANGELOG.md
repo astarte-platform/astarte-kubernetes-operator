@@ -6,9 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [26.7.0-rc.1] - Unreleased
 
-## Fixed
+### Fixed
 - Fix HTTP to HTTPS redirect on port 443 instead of 8443
 
+### Changed
+- Improve Vault configuration and related Env Vars
 
 ## [26.7.0-rc.0] - 2026-07-13
 

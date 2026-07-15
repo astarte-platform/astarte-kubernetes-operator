@@ -757,6 +757,10 @@ type AstarteRendezvousServerSpec struct {
 type AstarteVaultSpec struct {
 	// +kubebuilder:validation:Optional
 	Connection AstarteVaultConnectionSpec `json:"connection,omitempty"`
+	// Base vault namespace prefix under which Astarte will create further sub-namespaces
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:=""
+	BaseNamespace string `json:"baseNamespace,omitempty"`
 }
 
 type AstarteVaultConnectionSpec struct {

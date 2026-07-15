@@ -468,6 +468,14 @@ func appendAstarteVaultEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astarte) []v1.En
 		)
 	}
 
+	// Base vault namespace prefix
+	if cr.Spec.Vault.BaseNamespace != "" {
+		ret = append(ret, v1.EnvVar{
+			Name:  "ASTARTE_VAULT_BASE_NAMESPACE",
+			Value: cr.Spec.Vault.BaseNamespace,
+		})
+	}
+
 	// Vault SSL configuration
 	if cr.Spec.Vault.Connection.SSLConfiguration.Enable {
 		ret = append(ret, v1.EnvVar{

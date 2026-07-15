@@ -1094,6 +1094,26 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 			Expect(result[2].Name).To(Equal("ASTARTE_VAULT_SSL_DISABLE_SNI"))
 			Expect(result[2].Value).To(Equal("true"))
 		})
+
+		It("should set ASTARTE_VAULT_BASE_NAMESPACE when BaseNamespace is provided", func() {
+			cr.Spec.Vault = &apiv2alpha1.AstarteVaultSpec{
+				BaseNamespace: "astarte",
+				Connection: apiv2alpha1.AstarteVaultConnectionSpec{
+					HostAndPort: apiv2alpha1.HostAndPort{
+						Host: "vault.example.com",
+						Port: pointy.Int32(8200),
+					},
+				},
+			}
+
+			result := appendAstarteVaultEnvVars([]v1.EnvVar{}, cr)
+
+			Expect(result).To(HaveLen(2))
+			Expect(result[0].Name).To(Equal("ASTARTE_VAULT_URL"))
+			Expect(result[0].Value).To(Equal("vault.example.com:8200"))
+			Expect(result[1].Name).To(Equal("ASTARTE_VAULT_BASE_NAMESPACE"))
+			Expect(result[1].Value).To(Equal("astarte"))
+		})
 	})
 
 	Describe("Test getHPAStatusForResource", func() {
