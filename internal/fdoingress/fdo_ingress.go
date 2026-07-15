@@ -3,6 +3,7 @@ package fdoingress
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
 	"github.com/astarte-platform/astarte-kubernetes-operator/internal/misc"
@@ -31,7 +32,7 @@ func EnsureFDOIngress(cr *fdoingress.AstarteFDOIngress, parent *apiv2alpha1.Asta
 			return e
 		}
 
-		ingress.SetAnnotations(getHAProxyIngressAnnotations())
+		ingress.SetAnnotations(getHAProxyIngressAnnotations(parent))
 		ingress.Spec = getFDOIngressSpec(cr, parent)
 
 		return nil
@@ -55,9 +56,10 @@ func getFDOIngressSpec(cr *fdoingress.AstarteFDOIngress, parent *apiv2alpha1.Ast
 	return ingressSpec
 }
 
-func getHAProxyIngressAnnotations() map[string]string {
+func getHAProxyIngressAnnotations(parent *apiv2alpha1.Astarte) map[string]string {
 	annotations := map[string]string{
 		"haproxy.org/backend-config-snippet": getHAProxyBackendConfig(),
+		"haproxy.org/ssl-redirect":           strconv.FormatBool(pointy.BoolValue(parent.Spec.API.SSL, true)),
 		"haproxy.org/ssl-redirect-port":      "443",
 	}
 	return annotations
