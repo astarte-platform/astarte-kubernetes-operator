@@ -813,7 +813,8 @@ type AstarteCFSSLSpec struct {
 	// provided via the url field. Default: true.
 	// +kubebuilder:validation:Optional
 	Deploy *bool `json:"deploy,omitempty"`
-	// The URL of an external CFSSL instance. Used only when deploy is false.
+	// The URL of the CFSSL instance. Can be manually set when deploy is false to use an external CFSSL.
+	// Default: http://<name>-cfssl.<ns>.svc.cluster.local
 	// +kubebuilder:validation:Optional
 	URL string `json:"url,omitempty"`
 	// The expiry duration for the CA certificate (e.g. "87600h"). Only applies
