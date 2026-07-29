@@ -260,7 +260,7 @@ func getVerneMQEnvVars(statefulSetName string, cr *apiv2alpha1.Astarte) []v1.Env
 
 		envVars = append(envVars, v1.EnvVar{
 			Name:  "CFSSL_URL",
-			Value: fmt.Sprintf("http://%s-cfssl.%s.svc.cluster.local", cr.Name, cr.Namespace),
+			Value: getCFSSLURL(cr),
 		})
 	}
 
