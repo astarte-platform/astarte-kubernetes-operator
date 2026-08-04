@@ -24,4 +24,4 @@ maintainers:
     name: lucamarchiori
   - email: guilherme.crocetti@secomind.com
     name: guicrocetti
-icon: https://github.com/astarte-platform/astarte-kubernetes-operator/blob/master/mascotte.svg
+icon: https://raw.githubusercontent.com/astarte-platform/astarte-kubernetes-operator/release-26.7/docs/documentation/images/clea_bw.png
