@@ -1,0 +1,7 @@
+# artifacthub-repo.yml
+
+owners:
+  - name: "Luca Marchiori"
+    email: "luca.marchiori@secomind.com"
+  - name: "Guilherme Crocetti"
+    email: "guilherme.crocetti@secomind.com"
