@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [26.7.0-rc.3] - 2026-08-04
+
+### Added
+- Add Artifact Hub repository metadata to the Helm chart.
+
 ## [26.7.0-rc.2] - 2026-07-31
 
 ### Fixed
