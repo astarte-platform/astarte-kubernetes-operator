@@ -1,6 +1,6 @@
 # Astarte Kubernetes Operator
 
-[![Version: 26.7.0-rc.3](https://img.shields.io/badge/Version-26.7.0--rc.3-informational?style=flat-square)](https://github.com/astarte-platform/astarte-kubernetes-operator/releases) [![License](http://img.shields.io/:license-apache-blue.svg?style=flat-square)](http://www.apache.org/licenses/LICENSE-2.0.html) [![Docker Pulls](https://img.shields.io/docker/pulls/astarte/astarte-kubernetes-operator?style=flat-square)](https://hub.docker.com/r/astarte/astarte-kubernetes-operator)
+[![Version: 26.7.0-rc.4](https://img.shields.io/badge/Version-26.7.0--rc.4-informational?style=flat-square)](https://github.com/astarte-platform/astarte-kubernetes-operator/releases) [![License](http://img.shields.io/:license-apache-blue.svg?style=flat-square)](http://www.apache.org/licenses/LICENSE-2.0.html) [![Docker Pulls](https://img.shields.io/docker/pulls/astarte/astarte-kubernetes-operator?style=flat-square)](https://hub.docker.com/r/astarte/astarte-kubernetes-operator)
 
 <img src="mascotte.svg" align="right" width="160px" />
 Astarte Kubernetes Operator runs and manages an Astarte Cluster in a Kubernetes Cluster. It is meant
