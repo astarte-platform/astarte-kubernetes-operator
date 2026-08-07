@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [26.7.0-rc.4] - Unreleased
+
+### Changed
+- Improve Vault and RV server env var injection
+
 ## [26.7.0-rc.3] - 2026-08-04
 
 ### Added
@@ -20,7 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fix HTTP to HTTPS redirect on port 443 instead of 8443
 
 ### Changed
-- Improve Vault configuration and related Env Vars
+- Improve Vault configuration and related env vars
 
 ## [26.7.0-rc.0] - 2026-07-13
 
