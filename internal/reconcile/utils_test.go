@@ -949,7 +949,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 			Expect(result).To(BeEmpty())
 		})
 
-		It("should set ASTARTE_VAULT_URL with default port when port is nil", func() {
+		It("should set ASTARTE_VAULT_HOST and ASTARTE_VAULT_PORT with default port when port is nil", func() {
 			cr.Spec.Vault = &apiv2alpha1.AstarteVaultSpec{
 				Connection: apiv2alpha1.AstarteVaultConnectionSpec{
 					HostAndPort: apiv2alpha1.HostAndPort{
@@ -961,12 +961,16 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 
 			result := appendAstarteVaultEnvVars([]v1.EnvVar{}, cr)
 
-			Expect(result).To(HaveLen(1))
-			Expect(result[0].Name).To(Equal("ASTARTE_VAULT_URL"))
-			Expect(result[0].Value).To(Equal("vault.example.com:8200"))
+			Expect(result).To(HaveLen(3))
+			Expect(result[0].Name).To(Equal("ASTARTE_VAULT_HOST"))
+			Expect(result[0].Value).To(Equal("vault.example.com"))
+			Expect(result[1].Name).To(Equal("ASTARTE_VAULT_PORT"))
+			Expect(result[1].Value).To(Equal("8200"))
+			Expect(result[2].Name).To(Equal("ASTARTE_VAULT_SSL_ENABLED"))
+			Expect(result[2].Value).To(Equal("false"))
 		})
 
-		It("should set ASTARTE_VAULT_URL with custom port", func() {
+		It("should set ASTARTE_VAULT_HOST and ASTARTE_VAULT_PORT with custom port", func() {
 			cr.Spec.Vault = &apiv2alpha1.AstarteVaultSpec{
 				Connection: apiv2alpha1.AstarteVaultConnectionSpec{
 					HostAndPort: apiv2alpha1.HostAndPort{
@@ -978,9 +982,13 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 
 			result := appendAstarteVaultEnvVars([]v1.EnvVar{}, cr)
 
-			Expect(result).To(HaveLen(1))
-			Expect(result[0].Name).To(Equal("ASTARTE_VAULT_URL"))
-			Expect(result[0].Value).To(Equal("vault.example.com:9200"))
+			Expect(result).To(HaveLen(3))
+			Expect(result[0].Name).To(Equal("ASTARTE_VAULT_HOST"))
+			Expect(result[0].Value).To(Equal("vault.example.com"))
+			Expect(result[1].Name).To(Equal("ASTARTE_VAULT_PORT"))
+			Expect(result[1].Value).To(Equal("9200"))
+			Expect(result[2].Name).To(Equal("ASTARTE_VAULT_SSL_ENABLED"))
+			Expect(result[2].Value).To(Equal("false"))
 		})
 
 		It("should set token auth env vars when connectionStringSecret is provided", func() {
@@ -999,14 +1007,19 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 
 			result := appendAstarteVaultEnvVars([]v1.EnvVar{}, cr)
 
-			Expect(result).To(HaveLen(3))
-			Expect(result[0].Name).To(Equal("ASTARTE_VAULT_URL"))
-			Expect(result[1].Name).To(Equal("ASTARTE_VAULT_AUTHENTICATION_MECHANISM"))
-			Expect(result[1].Value).To(Equal("token"))
-			Expect(result[2].Name).To(Equal("ASTARTE_VAULT_TOKEN"))
-			Expect(result[2].ValueFrom).ToNot(BeNil())
-			Expect(result[2].ValueFrom.SecretKeyRef.Name).To(Equal("vault-token-secret"))
-			Expect(result[2].ValueFrom.SecretKeyRef.Key).To(Equal("token"))
+			Expect(result).To(HaveLen(5))
+			Expect(result[0].Name).To(Equal("ASTARTE_VAULT_HOST"))
+			Expect(result[0].Value).To(Equal("vault.example.com"))
+			Expect(result[1].Name).To(Equal("ASTARTE_VAULT_PORT"))
+			Expect(result[1].Value).To(Equal("8200"))
+			Expect(result[2].Name).To(Equal("ASTARTE_VAULT_AUTHENTICATION_MECHANISM"))
+			Expect(result[2].Value).To(Equal("token"))
+			Expect(result[3].Name).To(Equal("ASTARTE_VAULT_TOKEN"))
+			Expect(result[3].ValueFrom).ToNot(BeNil())
+			Expect(result[3].ValueFrom.SecretKeyRef.Name).To(Equal("vault-token-secret"))
+			Expect(result[3].ValueFrom.SecretKeyRef.Key).To(Equal("token"))
+			Expect(result[4].Name).To(Equal("ASTARTE_VAULT_SSL_ENABLED"))
+			Expect(result[4].Value).To(Equal("false"))
 		})
 
 		It("should set SSL env vars when SSL is enabled", func() {
@@ -1024,10 +1037,13 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 
 			result := appendAstarteVaultEnvVars([]v1.EnvVar{}, cr)
 
-			Expect(result).To(HaveLen(2))
-			Expect(result[0].Name).To(Equal("ASTARTE_VAULT_URL"))
-			Expect(result[1].Name).To(Equal("ASTARTE_VAULT_SSL_ENABLED"))
-			Expect(result[1].Value).To(Equal("true"))
+			Expect(result).To(HaveLen(3))
+			Expect(result[0].Name).To(Equal("ASTARTE_VAULT_HOST"))
+			Expect(result[0].Value).To(Equal("vault.example.com"))
+			Expect(result[1].Name).To(Equal("ASTARTE_VAULT_PORT"))
+			Expect(result[1].Value).To(Equal("8200"))
+			Expect(result[2].Name).To(Equal("ASTARTE_VAULT_SSL_ENABLED"))
+			Expect(result[2].Value).To(Equal("true"))
 		})
 
 		It("should set CA file env var when SSL is enabled with custom CA", func() {
@@ -1048,9 +1064,9 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 
 			result := appendAstarteVaultEnvVars([]v1.EnvVar{}, cr)
 
-			Expect(result).To(HaveLen(3))
-			Expect(result[2].Name).To(Equal("ASTARTE_VAULT_SSL_CA_FILE"))
-			Expect(result[2].Value).To(Equal("/vault-ssl/ca.crt"))
+			Expect(result).To(HaveLen(4))
+			Expect(result[3].Name).To(Equal("ASTARTE_VAULT_SSL_CA_FILE"))
+			Expect(result[3].Value).To(Equal("/vault-ssl/ca.crt"))
 		})
 
 		It("should set custom SNI env var when provided", func() {
@@ -1069,9 +1085,9 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 
 			result := appendAstarteVaultEnvVars([]v1.EnvVar{}, cr)
 
-			Expect(result).To(HaveLen(3))
-			Expect(result[2].Name).To(Equal("ASTARTE_VAULT_SSL_CUSTOM_SNI"))
-			Expect(result[2].Value).To(Equal("custom.sni.example.com"))
+			Expect(result).To(HaveLen(4))
+			Expect(result[3].Name).To(Equal("ASTARTE_VAULT_SSL_CUSTOM_SNI"))
+			Expect(result[3].Value).To(Equal("custom.sni.example.com"))
 		})
 
 		It("should set disable SNI env var when SNI is explicitly disabled", func() {
@@ -1090,9 +1106,9 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 
 			result := appendAstarteVaultEnvVars([]v1.EnvVar{}, cr)
 
-			Expect(result).To(HaveLen(3))
-			Expect(result[2].Name).To(Equal("ASTARTE_VAULT_SSL_DISABLE_SNI"))
-			Expect(result[2].Value).To(Equal("true"))
+			Expect(result).To(HaveLen(4))
+			Expect(result[3].Name).To(Equal("ASTARTE_VAULT_SSL_DISABLE_SNI"))
+			Expect(result[3].Value).To(Equal("true"))
 		})
 
 		It("should set ASTARTE_VAULT_BASE_NAMESPACE when BaseNamespace is provided", func() {
@@ -1108,11 +1124,123 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 
 			result := appendAstarteVaultEnvVars([]v1.EnvVar{}, cr)
 
-			Expect(result).To(HaveLen(2))
-			Expect(result[0].Name).To(Equal("ASTARTE_VAULT_URL"))
-			Expect(result[0].Value).To(Equal("vault.example.com:8200"))
-			Expect(result[1].Name).To(Equal("ASTARTE_VAULT_BASE_NAMESPACE"))
-			Expect(result[1].Value).To(Equal("astarte"))
+			Expect(result).To(HaveLen(4))
+			Expect(result[0].Name).To(Equal("ASTARTE_VAULT_HOST"))
+			Expect(result[0].Value).To(Equal("vault.example.com"))
+			Expect(result[1].Name).To(Equal("ASTARTE_VAULT_PORT"))
+			Expect(result[1].Value).To(Equal("8200"))
+			Expect(result[2].Name).To(Equal("ASTARTE_VAULT_BASE_NAMESPACE"))
+			Expect(result[2].Value).To(Equal("astarte"))
+			Expect(result[3].Name).To(Equal("ASTARTE_VAULT_SSL_ENABLED"))
+			Expect(result[3].Value).To(Equal("false"))
+		})
+	})
+
+	Describe("appendAstarteRendezvousServerEnvVars", func() {
+		It("should return empty when FDO is nil", func() {
+			cr.Spec.FDO = nil
+			result := appendAstarteRendezvousServerEnvVars([]v1.EnvVar{}, cr)
+			Expect(result).To(BeEmpty())
+		})
+
+		It("should return empty when RendezvousServer is nil", func() {
+			cr.Spec.FDO = &apiv2alpha1.AstarteFDOSpec{
+				RendezvousServer: nil,
+			}
+			result := appendAstarteRendezvousServerEnvVars([]v1.EnvVar{}, cr)
+			Expect(result).To(BeEmpty())
+		})
+
+		It("should set PAIRING_FDO_RENDEZVOUS_HOST and PAIRING_FDO_RENDEZVOUS_PORT with default port when port is nil", func() {
+			cr.Spec.FDO = &apiv2alpha1.AstarteFDOSpec{
+				RendezvousServer: &apiv2alpha1.AstarteRendezvousServerSpec{
+					Connection: apiv2alpha1.AstarteRendezvousServerConnectionSpec{
+						HostAndPort: apiv2alpha1.HostAndPort{
+							Host: "rendezvous.example.com",
+							Port: nil,
+						},
+					},
+				},
+			}
+
+			result := appendAstarteRendezvousServerEnvVars([]v1.EnvVar{}, cr)
+
+			Expect(result).To(HaveLen(5))
+			Expect(result[0].Name).To(Equal("PAIRING_FDO_RENDEZVOUS_HOST"))
+			Expect(result[0].Value).To(Equal("rendezvous.example.com"))
+			Expect(result[1].Name).To(Equal("PAIRING_FDO_RENDEZVOUS_PORT"))
+			Expect(result[1].Value).To(Equal("8041"))
+			Expect(result[2].Name).To(Equal("ASTARTE_BASE_URL_DOMAIN"))
+			Expect(result[3].Name).To(Equal("ASTARTE_BASE_URL_PORT"))
+			Expect(result[4].Name).To(Equal("ASTARTE_BASE_URL_PROTOCOL"))
+		})
+
+		It("should set PAIRING_FDO_RENDEZVOUS_HOST and PAIRING_FDO_RENDEZVOUS_PORT with custom port", func() {
+			cr.Spec.FDO = &apiv2alpha1.AstarteFDOSpec{
+				RendezvousServer: &apiv2alpha1.AstarteRendezvousServerSpec{
+					Connection: apiv2alpha1.AstarteRendezvousServerConnectionSpec{
+						HostAndPort: apiv2alpha1.HostAndPort{
+							Host: "rendezvous.example.com",
+							Port: pointy.Int32(9090),
+						},
+					},
+				},
+			}
+
+			result := appendAstarteRendezvousServerEnvVars([]v1.EnvVar{}, cr)
+
+			Expect(result).To(HaveLen(5))
+			Expect(result[0].Name).To(Equal("PAIRING_FDO_RENDEZVOUS_HOST"))
+			Expect(result[0].Value).To(Equal("rendezvous.example.com"))
+			Expect(result[1].Name).To(Equal("PAIRING_FDO_RENDEZVOUS_PORT"))
+			Expect(result[1].Value).To(Equal("9090"))
+		})
+
+		It("should set SSL env vars when SSL is enabled", func() {
+			cr.Spec.FDO = &apiv2alpha1.AstarteFDOSpec{
+				RendezvousServer: &apiv2alpha1.AstarteRendezvousServerSpec{
+					Connection: apiv2alpha1.AstarteRendezvousServerConnectionSpec{
+						HostAndPort: apiv2alpha1.HostAndPort{
+							Host: "rendezvous.example.com",
+							Port: pointy.Int32(8041),
+						},
+						SSLConfiguration: apiv2alpha1.GenericSSLConfigurationSpec{
+							Enable: true,
+						},
+					},
+				},
+			}
+
+			result := appendAstarteRendezvousServerEnvVars([]v1.EnvVar{}, cr)
+
+			Expect(result).To(HaveLen(6))
+			Expect(result[5].Name).To(Equal("PAIRING_FDO_RENDEZVOUS_SSL_ENABLED"))
+			Expect(result[5].Value).To(Equal("true"))
+		})
+
+		It("should set CA file env var when SSL is enabled with custom CA", func() {
+			cr.Spec.FDO = &apiv2alpha1.AstarteFDOSpec{
+				RendezvousServer: &apiv2alpha1.AstarteRendezvousServerSpec{
+					Connection: apiv2alpha1.AstarteRendezvousServerConnectionSpec{
+						HostAndPort: apiv2alpha1.HostAndPort{
+							Host: "rendezvous.example.com",
+							Port: pointy.Int32(8041),
+						},
+						SSLConfiguration: apiv2alpha1.GenericSSLConfigurationSpec{
+							Enable: true,
+							CustomCASecret: v1.LocalObjectReference{
+								Name: "rendezvous-ca",
+							},
+						},
+					},
+				},
+			}
+
+			result := appendAstarteRendezvousServerEnvVars([]v1.EnvVar{}, cr)
+
+			Expect(result).To(HaveLen(7))
+			Expect(result[6].Name).To(Equal("PAIRING_FDO_RENDEZVOUS_SSL_CA_FILE"))
+			Expect(result[6].Value).To(Equal("/rendezvous-ssl/ca.crt"))
 		})
 	})
 
