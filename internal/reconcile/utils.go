@@ -439,12 +439,17 @@ func appendAstarteVaultEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astarte) []v1.En
 		return ret
 	}
 
+	host := cr.Spec.Vault.Connection.Host
 	vPort := pointy.Int32Value(cr.Spec.Vault.Connection.Port, 8200)
 
 	ret = append(ret,
 		v1.EnvVar{
-			Name:  "ASTARTE_VAULT_URL",
-			Value: fmt.Sprintf("%s:%d", cr.Spec.Vault.Connection.Host, vPort),
+			Name:  "ASTARTE_VAULT_HOST",
+			Value: host,
+		},
+		v1.EnvVar{
+			Name:  "ASTARTE_VAULT_PORT",
+			Value: strconv.Itoa(int(vPort)),
 		},
 	)
 
@@ -476,13 +481,13 @@ func appendAstarteVaultEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astarte) []v1.En
 		})
 	}
 
+	ret = append(ret, v1.EnvVar{
+		Name:  "ASTARTE_VAULT_SSL_ENABLED",
+		Value: strconv.FormatBool(cr.Spec.Vault.Connection.SSLConfiguration.Enable),
+	})
+
 	// Vault SSL configuration
 	if cr.Spec.Vault.Connection.SSLConfiguration.Enable {
-		ret = append(ret, v1.EnvVar{
-			Name:  "ASTARTE_VAULT_SSL_ENABLED",
-			Value: "true",
-		})
-
 		// CA configuration
 		if cr.Spec.Vault.Connection.SSLConfiguration.CustomCASecret.Name != "" {
 			ret = append(ret, v1.EnvVar{
