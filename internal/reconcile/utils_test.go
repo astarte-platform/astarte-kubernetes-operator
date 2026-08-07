@@ -1136,6 +1136,114 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 		})
 	})
 
+	Describe("appendAstarteRendezvousServerEnvVars", func() {
+		It("should return empty when FDO is nil", func() {
+			cr.Spec.FDO = nil
+			result := appendAstarteRendezvousServerEnvVars([]v1.EnvVar{}, cr)
+			Expect(result).To(BeEmpty())
+		})
+
+		It("should return empty when RendezvousServer is nil", func() {
+			cr.Spec.FDO = &apiv2alpha1.AstarteFDOSpec{
+				RendezvousServer: nil,
+			}
+			result := appendAstarteRendezvousServerEnvVars([]v1.EnvVar{}, cr)
+			Expect(result).To(BeEmpty())
+		})
+
+		It("should set PAIRING_FDO_RENDEZVOUS_HOST and PAIRING_FDO_RENDEZVOUS_PORT with default port when port is nil", func() {
+			cr.Spec.FDO = &apiv2alpha1.AstarteFDOSpec{
+				RendezvousServer: &apiv2alpha1.AstarteRendezvousServerSpec{
+					Connection: apiv2alpha1.AstarteRendezvousServerConnectionSpec{
+						HostAndPort: apiv2alpha1.HostAndPort{
+							Host: "rendezvous.example.com",
+							Port: nil,
+						},
+					},
+				},
+			}
+
+			result := appendAstarteRendezvousServerEnvVars([]v1.EnvVar{}, cr)
+
+			Expect(result).To(HaveLen(5))
+			Expect(result[0].Name).To(Equal("PAIRING_FDO_RENDEZVOUS_HOST"))
+			Expect(result[0].Value).To(Equal("rendezvous.example.com"))
+			Expect(result[1].Name).To(Equal("PAIRING_FDO_RENDEZVOUS_PORT"))
+			Expect(result[1].Value).To(Equal("8041"))
+			Expect(result[2].Name).To(Equal("ASTARTE_BASE_URL_DOMAIN"))
+			Expect(result[3].Name).To(Equal("ASTARTE_BASE_URL_PORT"))
+			Expect(result[4].Name).To(Equal("ASTARTE_BASE_URL_PROTOCOL"))
+		})
+
+		It("should set PAIRING_FDO_RENDEZVOUS_HOST and PAIRING_FDO_RENDEZVOUS_PORT with custom port", func() {
+			cr.Spec.FDO = &apiv2alpha1.AstarteFDOSpec{
+				RendezvousServer: &apiv2alpha1.AstarteRendezvousServerSpec{
+					Connection: apiv2alpha1.AstarteRendezvousServerConnectionSpec{
+						HostAndPort: apiv2alpha1.HostAndPort{
+							Host: "rendezvous.example.com",
+							Port: pointy.Int32(9090),
+						},
+					},
+				},
+			}
+
+			result := appendAstarteRendezvousServerEnvVars([]v1.EnvVar{}, cr)
+
+			Expect(result).To(HaveLen(5))
+			Expect(result[0].Name).To(Equal("PAIRING_FDO_RENDEZVOUS_HOST"))
+			Expect(result[0].Value).To(Equal("rendezvous.example.com"))
+			Expect(result[1].Name).To(Equal("PAIRING_FDO_RENDEZVOUS_PORT"))
+			Expect(result[1].Value).To(Equal("9090"))
+		})
+
+		It("should set SSL env vars when SSL is enabled", func() {
+			cr.Spec.FDO = &apiv2alpha1.AstarteFDOSpec{
+				RendezvousServer: &apiv2alpha1.AstarteRendezvousServerSpec{
+					Connection: apiv2alpha1.AstarteRendezvousServerConnectionSpec{
+						HostAndPort: apiv2alpha1.HostAndPort{
+							Host: "rendezvous.example.com",
+							Port: pointy.Int32(8041),
+						},
+						SSLConfiguration: apiv2alpha1.GenericSSLConfigurationSpec{
+							Enable: true,
+						},
+					},
+				},
+			}
+
+			result := appendAstarteRendezvousServerEnvVars([]v1.EnvVar{}, cr)
+
+			Expect(result).To(HaveLen(6))
+			Expect(result[5].Name).To(Equal("PAIRING_FDO_RENDEZVOUS_SSL_ENABLED"))
+			Expect(result[5].Value).To(Equal("true"))
+		})
+
+		It("should set CA file env var when SSL is enabled with custom CA", func() {
+			cr.Spec.FDO = &apiv2alpha1.AstarteFDOSpec{
+				RendezvousServer: &apiv2alpha1.AstarteRendezvousServerSpec{
+					Connection: apiv2alpha1.AstarteRendezvousServerConnectionSpec{
+						HostAndPort: apiv2alpha1.HostAndPort{
+							Host: "rendezvous.example.com",
+							Port: pointy.Int32(8041),
+						},
+						SSLConfiguration: apiv2alpha1.GenericSSLConfigurationSpec{
+							Enable: true,
+							CustomCASecret: v1.LocalObjectReference{
+								Name: "rendezvous-ca",
+							},
+						},
+					},
+				},
+			}
+
+			result := appendAstarteRendezvousServerEnvVars([]v1.EnvVar{}, cr)
+
+			Expect(result).To(HaveLen(7))
+			Expect(result[6].Name).To(Equal("PAIRING_FDO_RENDEZVOUS_SSL_CA_FILE"))
+			Expect(result[6].Value).To(Equal("/rendezvous-ssl/ca.crt"))
+		})
+	})
+
 	Describe("Test getHPAStatusForResource", func() {
 		// This function uses HPA which is hard to test with envtest. Leaving it untested for now.
 	})

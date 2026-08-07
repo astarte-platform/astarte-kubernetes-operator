@@ -353,12 +353,17 @@ func appendAstarteRendezvousServerEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astar
 		port = 80
 	}
 
+	host := cr.Spec.FDO.RendezvousServer.Connection.Host
 	rsPort := pointy.Int32Value(cr.Spec.FDO.RendezvousServer.Connection.Port, 8041)
 
 	ret = append(ret,
 		v1.EnvVar{
-			Name:  "PAIRING_FDO_RENDEZVOUS_URL",
-			Value: fmt.Sprintf("%s:%d", cr.Spec.FDO.RendezvousServer.Connection.Host, rsPort),
+			Name:  "PAIRING_FDO_RENDEZVOUS_HOST",
+			Value: host,
+		},
+		v1.EnvVar{
+			Name:  "PAIRING_FDO_RENDEZVOUS_PORT",
+			Value: strconv.Itoa(int(rsPort)),
 		},
 		v1.EnvVar{
 			Name:  "ASTARTE_BASE_URL_DOMAIN",
