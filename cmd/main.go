@@ -248,18 +248,6 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "AstarteDefaultIngress")
 			os.Exit(1)
 		}
-		if err = ingressv2alpha1webhook.SetupAstarteFDOIngressWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "AstarteFDOIngress")
-			os.Exit(1)
-		}
-	}
-	if err := (&ingresscontroller.AstarteFDOIngressReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("ingress").WithName("AstarteFDOIngress"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "AstarteFDOIngress")
-		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
 
