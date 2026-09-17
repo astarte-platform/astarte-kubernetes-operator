@@ -143,9 +143,10 @@ var _ = Describe("Misc utils testing", Ordered, Serial, func() {
 				return k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
 			}, Timeout, Interval).Should(Succeed())
 
-			Expect(createIndexedDataUpdaterPlantDeployment(0, 3, cr, cr.Spec.Components.DataUpdaterPlant, k8sClient, scheme.Scheme)).To(Succeed())
-			Expect(createIndexedDataUpdaterPlantDeployment(1, 3, cr, cr.Spec.Components.DataUpdaterPlant, k8sClient, scheme.Scheme)).To(Succeed())
-			Expect(createIndexedDataUpdaterPlantDeployment(2, 3, cr, cr.Spec.Components.DataUpdaterPlant, k8sClient, scheme.Scheme)).To(Succeed())
+			sharedRBACName := cr.Name + "-data-updater-plant"
+			Expect(createIndexedDataUpdaterPlantDeployment(0, 3, cr, cr.Spec.Components.DataUpdaterPlant, sharedRBACName, k8sClient, scheme.Scheme)).To(Succeed())
+			Expect(createIndexedDataUpdaterPlantDeployment(1, 3, cr, cr.Spec.Components.DataUpdaterPlant, sharedRBACName, k8sClient, scheme.Scheme)).To(Succeed())
+			Expect(createIndexedDataUpdaterPlantDeployment(2, 3, cr, cr.Spec.Components.DataUpdaterPlant, sharedRBACName, k8sClient, scheme.Scheme)).To(Succeed())
 
 			dups := &appsv1.DeploymentList{}
 			Expect(k8sClient.List(ctx, dups, client.InNamespace(cr.Namespace),
