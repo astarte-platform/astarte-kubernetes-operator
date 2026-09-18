@@ -77,9 +77,15 @@ func EnsureAstarteDataUpdaterPlant(cr *apiv2alpha1.Astarte, dup apiv2alpha1.Asta
 		return err
 	}
 
+	// Reconcile shared RBAC resources for all DUP replicas
+	sharedRBACName := cr.Name + "-" + component.DashedString()
+	if err := reconcileStandardRBACForClusteringForApp(sharedRBACName, GetAstarteClusteredServicePolicyRules(), cr, c, scheme); err != nil {
+		return err
+	}
+
 	// Now proceed in creating a deployment for each DUP replica with its own set of queues
 	for i := 0; i < int(replicas); i++ {
-		if err := createIndexedDataUpdaterPlantDeployment(i, int(replicas), cr, dup, c, scheme); err != nil {
+		if err := createIndexedDataUpdaterPlantDeployment(i, int(replicas), cr, dup, sharedRBACName, c, scheme); err != nil {
 			return err
 		}
 	}
@@ -87,7 +93,7 @@ func EnsureAstarteDataUpdaterPlant(cr *apiv2alpha1.Astarte, dup apiv2alpha1.Asta
 	return nil
 }
 
-func createIndexedDataUpdaterPlantDeployment(replicaIndex, replicas int, cr *apiv2alpha1.Astarte, dup apiv2alpha1.AstarteDataUpdaterPlantSpec, c client.Client, scheme *runtime.Scheme) error {
+func createIndexedDataUpdaterPlantDeployment(replicaIndex, replicas int, cr *apiv2alpha1.Astarte, dup apiv2alpha1.AstarteDataUpdaterPlantSpec, sharedRBACName string, c client.Client, scheme *runtime.Scheme) error {
 	component := apiv2alpha1.DataUpdaterPlant
 
 	deploymentName := cr.Name + "-" + component.DashedString()
@@ -109,6 +115,9 @@ func createIndexedDataUpdaterPlantDeployment(replicaIndex, replicas int, cr *api
 		return err
 	}
 
+	podSpec := getAstarteGenericBackendPodSpec(deploymentName, replicaIndex, replicas, cr, dup.AstarteGenericClusteredResource, component)
+	podSpec.ServiceAccountName = sharedRBACName
+
 	deploymentSpec := appsv1.DeploymentSpec{
 		Selector: &metav1.LabelSelector{
 			MatchLabels: matchLabels,
@@ -118,7 +127,7 @@ func createIndexedDataUpdaterPlantDeployment(replicaIndex, replicas int, cr *api
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: computePodLabels(dup.AstarteGenericClusteredResource, labels),
 			},
-			Spec: getAstarteGenericBackendPodSpec(deploymentName, replicaIndex, replicas, cr, dup.AstarteGenericClusteredResource, component),
+			Spec: podSpec,
 		},
 	}
 
