@@ -366,7 +366,7 @@ func appendAstarteRendezvousServerEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astar
 			Value: strconv.Itoa(int(rsPort)),
 		},
 		v1.EnvVar{
-			Name:  "ASTARTE_BASE_URL_DOMAIN",
+			Name:  "ASTARTE_BASE_URL_HOST",
 			Value: cr.Spec.API.Host,
 		},
 		v1.EnvVar{

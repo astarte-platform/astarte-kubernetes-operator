@@ -1170,7 +1170,7 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 			Expect(result[0].Value).To(Equal("rendezvous.example.com"))
 			Expect(result[1].Name).To(Equal("PAIRING_FDO_RENDEZVOUS_PORT"))
 			Expect(result[1].Value).To(Equal("8041"))
-			Expect(result[2].Name).To(Equal("ASTARTE_BASE_URL_DOMAIN"))
+			Expect(result[2].Name).To(Equal("ASTARTE_BASE_URL_HOST"))
 			Expect(result[3].Name).To(Equal("ASTARTE_BASE_URL_PORT"))
 			Expect(result[4].Name).To(Equal("ASTARTE_BASE_URL_PROTOCOL"))
 		})
