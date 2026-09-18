@@ -127,7 +127,6 @@ rules:
   - ingress.astarte-platform.org
   resources:
   - astartedefaultingresses
-  - astartefdoingresses
   verbs:
   - create
   - delete
@@ -140,14 +139,12 @@ rules:
   - ingress.astarte-platform.org
   resources:
   - astartedefaultingresses/finalizers
-  - astartefdoingresses/finalizers
   verbs:
   - update
 - apiGroups:
   - ingress.astarte-platform.org
   resources:
   - astartedefaultingresses/status
-  - astartefdoingresses/status
   verbs:
   - get
   - patch
