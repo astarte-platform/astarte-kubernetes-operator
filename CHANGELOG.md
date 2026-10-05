@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Add `/fdo` routing rule to ADI to redirect requests to the pairing service, mirroring the existing `/pairing` path behavior.
+
 ## [26.7.0-rc.5] - 2026-09-29
 
 ### Fixed
