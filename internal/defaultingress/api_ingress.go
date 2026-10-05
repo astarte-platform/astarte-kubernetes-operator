@@ -163,6 +163,21 @@ func getHAProxyAPIIngressRules(cr *ingressv2alpha1.AstarteDefaultIngress, parent
 		}
 	}
 
+	// Add /fdo path pointing to the pairing service
+	if misc.IsAstarteComponentDeployed(parent, apiv2alpha1.Pairing) {
+		pairing := apiv2alpha1.Pairing
+		apiPaths = append(apiPaths, networkingv1.HTTPIngressPath{
+			Path:     "/fdo",
+			PathType: &pathTypePrefix,
+			Backend: networkingv1.IngressBackend{
+				Service: &networkingv1.IngressServiceBackend{
+					Name: cr.Spec.Astarte + "-" + pairing.ServiceName(),
+					Port: networkingv1.ServiceBackendPort{Name: "http"},
+				},
+			},
+		})
+	}
+
 	// Add API host with all API paths
 	ingressRules = append(ingressRules, networkingv1.IngressRule{
 		Host: parent.Spec.API.Host,
@@ -238,6 +253,29 @@ func getNgnixAPIIngressRules(cr *ingressv2alpha1.AstarteDefaultIngress, parent *
 				},
 			})
 		}
+	}
+
+	if misc.IsAstarteComponentDeployed(parent, apiv2alpha1.Pairing) {
+		pairing := apiv2alpha1.Pairing
+		ingressRules = append(ingressRules, networkingv1.IngressRule{
+			Host: parent.Spec.API.Host,
+			IngressRuleValue: networkingv1.IngressRuleValue{
+				HTTP: &networkingv1.HTTPIngressRuleValue{
+					Paths: []networkingv1.HTTPIngressPath{
+						{
+							Path:     "/fdo(/|$)(.*)",
+							PathType: &pathTypePrefix,
+							Backend: networkingv1.IngressBackend{
+								Service: &networkingv1.IngressServiceBackend{
+									Name: cr.Spec.Astarte + "-" + pairing.ServiceName(),
+									Port: networkingv1.ServiceBackendPort{Name: "http"},
+								},
+							},
+						},
+					},
+				},
+			},
+		})
 	}
 
 	// and handle the Dashboard, if needed
