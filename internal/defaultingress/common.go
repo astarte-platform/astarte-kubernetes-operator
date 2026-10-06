@@ -144,10 +144,10 @@ func appendHAProxyCorsAnnotations(enableCors bool, annotations map[string]string
 	return annotations
 }
 
-// getHAProxyBackendConfig returns the backend config snippet for HAProxy Ingresses
-// Performs path rewriting only for Astarte API paths, leaving others (like dashboard) untouched.
+// getHAProxyBackendConfig returns the backend config snippet for HAProxy Ingresses.
+// It rewrites standard Astarte API paths while preserving FDO and dashboard paths.
 func getHAProxyBackendConfig(cr *apiv2alpha1.Astarte) string {
-	return fmt.Sprintf(`http-request replace-path /(appengine|pairing|fdo|housekeeping|realmmanagement)/(.*) /\2 if { hdr(host) -i %s }`, cr.Spec.API.Host)
+	return fmt.Sprintf(`http-request replace-path /(appengine|pairing|housekeeping|realmmanagement)/(.*) /\2 if { hdr(host) -i %s }`, cr.Spec.API.Host)
 }
 
 func getIngressTLS(cr *ingressv2alpha1.AstarteDefaultIngress, parent *apiv2alpha1.Astarte, includeDashboard bool) []networkingv1.IngressTLS {
