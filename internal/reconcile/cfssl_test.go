@@ -75,7 +75,7 @@ var _ = Describe("CFSSL testing", Ordered, Serial, func() {
 			}, Timeout, Interval).Should(Succeed())
 
 			// Store the checksum
-			initialChecksum := cfsslDeployment.Spec.Template.Annotations["checksum/config"]
+			initialChecksum := cfsslDeployment.Spec.Template.Annotations[configChecksumAnnotation]
 			Expect(initialChecksum).ToNot(BeEmpty())
 
 			// Update the Astarte CR
@@ -91,7 +91,7 @@ var _ = Describe("CFSSL testing", Ordered, Serial, func() {
 				if err != nil {
 					return ""
 				}
-				return cfsslDeployment.Spec.Template.Annotations["checksum/config"]
+				return cfsslDeployment.Spec.Template.Annotations[configChecksumAnnotation]
 			}, Timeout, Interval).ShouldNot(Equal(initialChecksum))
 		})
 	})

@@ -22,11 +22,14 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base32"
+	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -52,11 +55,12 @@ import (
 )
 
 const (
-	astarteServicesPort int32  = 4000
-	noneClusterIP       string = "None"
-	highPriority        string = "high"
-	midPriority         string = "mid"
-	lowPriority         string = "low"
+	astarteServicesPort      int32  = 4000
+	noneClusterIP            string = "None"
+	highPriority             string = "high"
+	midPriority              string = "mid"
+	lowPriority              string = "low"
+	configChecksumAnnotation string = "checksum/config"
 )
 
 func encodePEMBlockToEncodedBytes(block *pem.Block) string {
@@ -1145,4 +1149,25 @@ func appendAstarteKeyspaceEnvVars(cr *apiv2alpha1.Astarte) []v1.EnvVar {
 		Value: string(b),
 	})
 	return ret
+}
+
+func getChecksumForConfigMap(cm *v1.ConfigMap) (string, error) {
+	// json.Marshal is not consistent in map ordering. We need to handle this to have a consistent checksum.
+	// Let's sort the keys of the map, and then concatenate the values.
+	keys := make([]string, 0, len(cm.Data))
+	for k := range cm.Data {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	var allData string
+	for _, k := range keys {
+		allData += cm.Data[k]
+	}
+
+	hasher := sha256.New()
+	if _, err := hasher.Write([]byte(allData)); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(hasher.Sum(nil)), nil
 }

@@ -91,6 +91,7 @@ var _ = Describe("Astarte Dashboard reconcile tests", Ordered, Serial, func() {
 			Expect(dep.Labels["app"]).To(Equal(cr.Name + "-dashboard"))
 			Expect(dep.Labels["component"]).To(Equal("astarte"))
 			Expect(dep.Labels["astarte-component"]).To(Equal("dashboard"))
+			Expect(dep.Spec.Template.Annotations[configChecksumAnnotation]).ToNot(BeEmpty())
 
 			// Service
 			svc := &v1.Service{}
@@ -243,6 +244,40 @@ var _ = Describe("Astarte Dashboard reconcile tests", Ordered, Serial, func() {
 				}
 			}
 			Expect(found).To(BeTrue())
+		})
+
+		It("should update deployment checksum annotation when configmap changes", func() {
+			cr.Spec.Components.Dashboard.Deploy = pointy.Bool(true)
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
+			Eventually(func() error {
+				return k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
+			}, Timeout, Interval).Should(Succeed())
+
+			// First reconciliation
+			Expect(EnsureAstarteDashboard(cr, cr.Spec.Components.Dashboard, k8sClient, scheme.Scheme)).To(Succeed())
+
+			dep := &appsv1.Deployment{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name + "-dashboard", Namespace: cr.Namespace}, dep)).To(Succeed())
+			initialChecksum := dep.Spec.Template.Annotations[configChecksumAnnotation]
+			Expect(initialChecksum).ToNot(BeEmpty())
+
+			// Update cluster API URL
+			cr.Spec.API.Host = "new-api.astarte.example.com"
+			Expect(k8sClient.Update(ctx, cr)).To(Succeed())
+			Eventually(func() error {
+				return k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, cr)
+			}, Timeout, Interval).Should(Succeed())
+
+			// Second reconciliation
+			Expect(EnsureAstarteDashboard(cr, cr.Spec.Components.Dashboard, k8sClient, scheme.Scheme)).To(Succeed())
+
+			Eventually(func() string {
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: cr.Name + "-dashboard", Namespace: cr.Namespace}, dep)
+				if err != nil {
+					return ""
+				}
+				return dep.Spec.Template.Annotations[configChecksumAnnotation]
+			}, Timeout, Interval).ShouldNot(Equal(initialChecksum))
 		})
 	})
 })

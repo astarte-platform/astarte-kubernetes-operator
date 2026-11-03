@@ -41,6 +41,7 @@ func EnsureAstarteDashboard(cr *apiv2alpha1.Astarte, dashboard apiv2alpha1.Astar
 	reqLogger := log.WithValues("Request.Namespace", cr.Namespace, "Request.Name", cr.Name, "Astarte.Component", "dashboard")
 	deploymentName := cr.Name + "-dashboard"
 	serviceName := cr.Name + "-dashboard"
+	configMapName := deploymentName + "-config"
 	labels := map[string]string{
 		"app":               deploymentName,
 		"component":         "astarte",
@@ -68,7 +69,17 @@ func EnsureAstarteDashboard(cr *apiv2alpha1.Astarte, dashboard apiv2alpha1.Astar
 	}
 
 	// Good. Reconcile the ConfigMap.
-	if _, err := misc.ReconcileConfigMap(deploymentName+"-config", getAstarteDashboardConfigMapData(cr, dashboard), cr, c, scheme, log); err != nil {
+	if _, err := misc.ReconcileConfigMap(configMapName, getAstarteDashboardConfigMapData(cr, dashboard), cr, c, scheme, log); err != nil {
+		return err
+	}
+
+	// Grab the reconciled ConfigMap and compute the checksum
+	theConfigMap := &v1.ConfigMap{}
+	if err := c.Get(context.TODO(), types.NamespacedName{Name: configMapName, Namespace: cr.Namespace}, theConfigMap); err != nil {
+		return err
+	}
+	configMapChecksum, err := getChecksumForConfigMap(theConfigMap)
+	if err != nil {
 		return err
 	}
 
@@ -105,7 +116,8 @@ func EnsureAstarteDashboard(cr *apiv2alpha1.Astarte, dashboard apiv2alpha1.Astar
 		Strategy: getDeploymentStrategyForClusteredResource(cr, dashboard.AstarteGenericClusteredResource, apiv2alpha1.Dashboard),
 		Template: v1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Labels: computePodLabels(dashboard.AstarteGenericClusteredResource, labels),
+				Labels:      computePodLabels(dashboard.AstarteGenericClusteredResource, labels),
+				Annotations: map[string]string{configChecksumAnnotation: configMapChecksum},
 			},
 			Spec: getAstarteDashboardPodSpec(cr, dashboard),
 		},
