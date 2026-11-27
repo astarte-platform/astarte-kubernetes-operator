@@ -592,6 +592,26 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 		})
 	})
 
+	Describe("Test getFDOEnvironmentVariables", func() {
+		It("should return FDO env vars including ASTARTE_BASE_URL_HOST and ASTARTE_BASE_URL_DOMAIN when FDO is enabled", func() {
+			cr.Spec.Features.FDO = &apiv2alpha1.AstarteFDOSpec{
+				Enable: true,
+				RendezvousServer: apiv2alpha1.HostAndPort{
+					Host: "fdo.example.com",
+					Port: pointy.Int32(8041),
+				},
+			}
+			cr.Spec.API.Host = CustomAPIHost
+
+			envVars := appendAstarteFDOEnvVars(nil, cr)
+			Expect(envVars).To(ContainElement(v1.EnvVar{Name: "ASTARTE_BASE_URL_HOST", Value: CustomAPIHost}))
+			Expect(envVars).To(ContainElement(v1.EnvVar{Name: "ASTARTE_BASE_URL_DOMAIN", Value: CustomAPIHost}))
+			Expect(envVars).To(ContainElement(v1.EnvVar{Name: "PAIRING_ENABLE_FDO", Value: "true"}))
+			Expect(envVars).To(ContainElement(v1.EnvVar{Name: "DATA_UPDATER_PLANT_ENABLE_FDO", Value: "true"}))
+			Expect(envVars).To(ContainElement(v1.EnvVar{Name: "DATA_UPDATER_PLANT_FDO_RENDEZVOUS_URL", Value: "fdo.example.com:8041"}))
+		})
+	})
+
 	Describe("Test createOrUpdateService", func() {
 		It("should create service with correct specifications", func() {
 			serviceName := "test-service"

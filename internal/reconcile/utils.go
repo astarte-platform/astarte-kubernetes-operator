@@ -340,10 +340,13 @@ func computePersistentVolumeClaim(defaultName string, defaultSize *resource.Quan
 	}
 }
 
-// appendAstarteFDOEnvVars returns the environment variables needed to enable FDO support in Pairing
+// appendAstarteFDOEnvVars returns the environment variables needed to enable FDO support in Pairing and Data Updater Plant
 func appendAstarteFDOEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astarte) []v1.EnvVar {
 	if cr.Spec.Features.FDO == nil || !cr.Spec.Features.FDO.Enable {
-		return append(ret, v1.EnvVar{Name: "PAIRING_ENABLE_FDO", Value: "false"})
+		return append(ret,
+			v1.EnvVar{Name: "PAIRING_ENABLE_FDO", Value: "false"},
+			v1.EnvVar{Name: "DATA_UPDATER_PLANT_ENABLE_FDO", Value: "false"},
+		)
 	}
 
 	scheme := "https"
@@ -354,6 +357,7 @@ func appendAstarteFDOEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astarte) []v1.EnvV
 	}
 
 	rsPort := pointy.Int32Value(cr.Spec.Features.FDO.RendezvousServer.Port, 8041)
+	rsURL := fmt.Sprintf("%s:%d", cr.Spec.Features.FDO.RendezvousServer.Host, rsPort)
 
 	ret = append(ret,
 		v1.EnvVar{
@@ -362,7 +366,19 @@ func appendAstarteFDOEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astarte) []v1.EnvV
 		},
 		v1.EnvVar{
 			Name:  "PAIRING_FDO_RENDEZVOUS_URL",
-			Value: fmt.Sprintf("%s:%d", cr.Spec.Features.FDO.RendezvousServer.Host, rsPort),
+			Value: rsURL,
+		},
+		v1.EnvVar{
+			Name:  "DATA_UPDATER_PLANT_ENABLE_FDO",
+			Value: "true",
+		},
+		v1.EnvVar{
+			Name:  "DATA_UPDATER_PLANT_FDO_RENDEZVOUS_URL",
+			Value: rsURL,
+		},
+		v1.EnvVar{
+			Name:  "ASTARTE_BASE_URL_HOST",
+			Value: cr.Spec.API.Host,
 		},
 		v1.EnvVar{
 			Name:  "ASTARTE_BASE_URL_DOMAIN",

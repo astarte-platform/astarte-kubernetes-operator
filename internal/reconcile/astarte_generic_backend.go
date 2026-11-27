@@ -294,6 +294,9 @@ func getAstarteDataUpdaterPlantBackendEnvVars(replicaIndex, replicas int, cr *ap
 			})
 	}
 
+	// FDO support for DataUpdaterPlant
+	ret = appendAstarteFDOEnvVars(ret, cr)
+
 	return ret
 }
 

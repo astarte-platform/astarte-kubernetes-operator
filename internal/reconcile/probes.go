@@ -20,6 +20,7 @@ package reconcile
 
 import (
 	apiv2alpha1 "github.com/astarte-platform/astarte-kubernetes-operator/api/api/v2alpha1"
+	"github.com/astarte-platform/astarte-kubernetes-operator/internal/version"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -137,7 +138,11 @@ func getVerneMQReadinessProbe(cr *apiv2alpha1.Astarte) *v1.Probe {
 	if cr.Spec.VerneMQ.ReadinessProbe != nil {
 		return cr.Spec.VerneMQ.ReadinessProbe
 	}
-	return getVerneMQDefaultProbe()
+	probe := getVerneMQDefaultProbe()
+	if version.CheckConstraintAgainstAstarteVersion(">= 1.5.0-0", cr.Spec.Version) == nil {
+		probe.HTTPGet.Path = "/healthz"
+	}
+	return probe
 }
 
 // getVerneMQLivenessProbe returns the liveness probe for VerneMQ
