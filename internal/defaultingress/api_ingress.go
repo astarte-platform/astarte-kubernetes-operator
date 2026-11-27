@@ -160,6 +160,18 @@ func getHAProxyAPIIngressRules(cr *ingressv2alpha1.AstarteDefaultIngress, parent
 					},
 				},
 			})
+			if component == apiv2alpha1.Pairing && parent.Spec.Features.FDO != nil && parent.Spec.Features.FDO.Enable {
+				apiPaths = append(apiPaths, networkingv1.HTTPIngressPath{
+					Path:     "/fdo",
+					PathType: &pathTypePrefix,
+					Backend: networkingv1.IngressBackend{
+						Service: &networkingv1.IngressServiceBackend{
+							Name: cr.Spec.Astarte + "-" + component.ServiceName(),
+							Port: networkingv1.ServiceBackendPort{Name: "http"},
+						},
+					},
+				})
+			}
 		}
 	}
 
@@ -237,6 +249,27 @@ func getNgnixAPIIngressRules(cr *ingressv2alpha1.AstarteDefaultIngress, parent *
 					},
 				},
 			})
+			if component == apiv2alpha1.Pairing && parent.Spec.Features.FDO != nil && parent.Spec.Features.FDO.Enable {
+				ingressRules = append(ingressRules, networkingv1.IngressRule{
+					Host: parent.Spec.API.Host,
+					IngressRuleValue: networkingv1.IngressRuleValue{
+						HTTP: &networkingv1.HTTPIngressRuleValue{
+							Paths: []networkingv1.HTTPIngressPath{
+								{
+									Path:     "/fdo(/|$)(.*)",
+									PathType: &pathTypePrefix,
+									Backend: networkingv1.IngressBackend{
+										Service: &networkingv1.IngressServiceBackend{
+											Name: cr.Spec.Astarte + "-" + component.ServiceName(),
+											Port: networkingv1.ServiceBackendPort{Name: "http"},
+										},
+									},
+								},
+							},
+						},
+					},
+				})
+			}
 		}
 	}
 

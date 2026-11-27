@@ -365,6 +365,10 @@ func appendAstarteFDOEnvVars(ret []v1.EnvVar, cr *apiv2alpha1.Astarte) []v1.EnvV
 			Value: fmt.Sprintf("%s:%d", cr.Spec.Features.FDO.RendezvousServer.Host, rsPort),
 		},
 		v1.EnvVar{
+			Name:  "ASTARTE_BASE_URL_HOST",
+			Value: cr.Spec.API.Host,
+		},
+		v1.EnvVar{
 			Name:  "ASTARTE_BASE_URL_DOMAIN",
 			Value: cr.Spec.API.Host,
 		},
