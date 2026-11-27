@@ -607,6 +607,8 @@ var _ = Describe("Utils functions testing", Ordered, Serial, func() {
 			Expect(envVars).To(ContainElement(v1.EnvVar{Name: "ASTARTE_BASE_URL_HOST", Value: CustomAPIHost}))
 			Expect(envVars).To(ContainElement(v1.EnvVar{Name: "ASTARTE_BASE_URL_DOMAIN", Value: CustomAPIHost}))
 			Expect(envVars).To(ContainElement(v1.EnvVar{Name: "PAIRING_ENABLE_FDO", Value: "true"}))
+			Expect(envVars).To(ContainElement(v1.EnvVar{Name: "DATA_UPDATER_PLANT_ENABLE_FDO", Value: "true"}))
+			Expect(envVars).To(ContainElement(v1.EnvVar{Name: "DATA_UPDATER_PLANT_FDO_RENDEZVOUS_URL", Value: "fdo.example.com:8041"}))
 		})
 	})
 

@@ -146,6 +146,7 @@ var _ = Describe("controller", Ordered, func() {
 
 			targetTestVersions := map[string]string{
 				"1.3": filepath.Join(projectDir, "/test/manifests/api_v2alpha1_astarte_1.3.yaml"),
+				"1.5": filepath.Join(projectDir, "/test/manifests/api_v2alpha1_astarte_1.5.yaml"),
 			}
 
 			for k, v := range targetTestVersions {

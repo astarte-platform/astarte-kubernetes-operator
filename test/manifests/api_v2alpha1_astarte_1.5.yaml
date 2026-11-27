@@ -1,0 +1,56 @@
+#In an ephemeral env such as E2E testing we allow components to allocate resources as needed without setting requests and limits. This approach is not recommended in prod envs.
+#For a Pod to be given a QoS class of BestEffort, the Containers in the Pod must not have any memory or CPU limits or requests.
+
+apiVersion: api.astarte-platform.org/v2alpha1
+kind: Astarte
+metadata:
+  name: example-astarte
+spec:
+  # Minimal configuration to spin up an Astarte 1.5 instance in E2E tests
+  version: "1.5"
+  api:
+    host: "api.astarte-example.com"
+  rabbitmq:
+    connection:
+      host: "rabbitmq.rabbitmq.svc.cluster.local"
+      port: 5672
+      credentialsSecret:
+        name: "rabbitmq-connection-secret"
+        usernameKey: "username"
+        passwordKey: "password"
+    managementConnection:
+      host: "rabbitmq.rabbitmq.svc.cluster.local"
+      port: 80
+      credentialsSecret:
+        name: "rabbitmq-connection-secret"
+        usernameKey: "username"
+        passwordKey: "password"
+  cassandra:
+    connection:
+      nodes:
+      - host: "scylla-local-kind-1-local-kind-1a-0.scylla.svc.cluster.local"
+        port: 9042
+      credentialsSecret:
+        name: "scylladb-connection-secret"
+        usernameKey: "username"
+        passwordKey: "password"
+  vernemq:
+    host: "broker.astarte-example.com"
+    image: "docker.io/astarte/vernemq:1.5-snapshot"
+    port: 8883
+  components:
+    realmManagement:
+      image: "docker.io/astarte/astarte_realm_management:1.5-snapshot"
+    dataUpdaterPlant:
+      image: "docker.io/astarte/astarte_data_updater_plant:1.5-snapshot"
+    appengineApi:
+      image: "docker.io/astarte/astarte_appengine_api:1.5-snapshot"
+    pairing:
+      image: "docker.io/astarte/astarte_pairing:1.5-snapshot"
+    triggerEngine:
+      image: "docker.io/astarte/astarte_trigger_engine:1.5-snapshot"
+    housekeeping:
+      image: "docker.io/astarte/astarte_housekeeping:1.5-snapshot"
+    dashboard:
+      image: "docker.io/astarte/astarte-dashboard:1.2.1-rc.0"
+      deploy: true
