@@ -421,6 +421,17 @@ var _ = Describe("Astarte Probes testing", Ordered, Serial, func() {
 				})
 			})
 
+			Context("with default probe for Astarte 1.5.0", func() {
+				It("returns the /healthz readiness probe", func() {
+					cr.Spec.Version = "1.5.0"
+					readiness := getVerneMQReadinessProbe(cr)
+					Expect(readiness).ToNot(BeNil())
+					Expect(readiness.HTTPGet).ToNot(BeNil())
+					Expect(readiness.HTTPGet.Path).To(Equal("/healthz"))
+					Expect(readiness.HTTPGet.Port.IntVal).To(Equal(int32(8888)))
+				})
+			})
+
 			Context("with custom probes", func() {
 				It("returns the custom readiness probe", func() {
 					cr.Spec.VerneMQ.ReadinessProbe = customProbe
